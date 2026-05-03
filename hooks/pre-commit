@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Injects fresh token usage stats into docs/progress.html before every commit.
+# No extra commits, no push races — stats are baked into the commit itself.
+# Requires: python3 (stdlib only, no extra deps)
+#
+# Setup (once per project clone):
+#   git config core.hooksPath .githooks
+#
+# Or if using forge as submodule at .agentic/:
+#   cp .agentic/hooks/pre-commit .githooks/pre-commit
+#   chmod +x .githooks/pre-commit
+#   git config core.hooksPath .githooks
+
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+# Support both forge-as-submodule and direct copy layouts
+if [ -f "$ROOT/.agentic/scripts/token-stats.py" ]; then
+  SCRIPT="$ROOT/.agentic/scripts/token-stats.py"
+elif [ -f "$ROOT/.claude/scripts/token-stats.py" ]; then
+  SCRIPT="$ROOT/.claude/scripts/token-stats.py"
+else
+  exit 0
+fi
+
+HTML="$ROOT/docs/progress.html"
+
+if [ ! -f "$HTML" ]; then
+  exit 0
+fi
+
+python3 "$SCRIPT" --patch-html "$HTML" 2>&1 || true
+
+if ! git -C "$ROOT" diff --quiet "$HTML"; then
+  git -C "$ROOT" add "$HTML"
+fi
