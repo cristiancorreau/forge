@@ -29,6 +29,28 @@ def find_project_root() -> Path:
     raise FileNotFoundError("No se encontró project.yaml")
 
 
+def _render_phases(config: dict) -> str:
+    sprint = config.get("sprint", {})
+    current = sprint.get("current", 1)
+    phases = sprint.get("phases", [])
+    if not phases:
+        return (
+            f"- **Sprint actual:** Sprint {current}\n"
+            "- **Completadas:** —\n"
+            "- **En curso:** —\n"
+            "- **Pendientes:** —"
+        )
+    lines = [f"- **Sprint actual:** Sprint {current}"]
+    for phase in phases:
+        pid = phase.get("id", "?")
+        name = phase.get("name", "")
+        specs = phase.get("specs", [])
+        status = phase.get("status", "pendiente")
+        spec_list = ", ".join(specs) if specs else "—"
+        lines.append(f"- **Fase {pid} — {name}** ({status}): {spec_list}")
+    return "\n".join(lines)
+
+
 def generate_claude_md(config: dict) -> str:
     proj = config.get("project", {})
     stack = config.get("stack", {})
@@ -71,6 +93,16 @@ def generate_claude_md(config: dict) -> str:
         test_cmd = "go test ./..."
         lint_cmd = "golangci-lint run"
         build_cmd = "go build ./..."
+    elif language == "php":
+        dev_cmd = "php artisan serve  # o php -S localhost:8000 -t public"
+        test_cmd = "vendor/bin/phpunit  # o ./vendor/bin/pest"
+        lint_cmd = "vendor/bin/phpstan analyse"
+        build_cmd = "composer install --no-dev --optimize-autoloader"
+    elif language == "mixed":
+        dev_cmd = "# ver documentación del proyecto (stack mixto)"
+        test_cmd = "# ver documentación del proyecto (stack mixto)"
+        lint_cmd = "# ver documentación del proyecto (stack mixto)"
+        build_cmd = "# ver documentación del proyecto (stack mixto)"
     else:
         dev_cmd = "# ver documentación del proyecto"
         test_cmd = "# ver documentación del proyecto"
@@ -135,12 +167,9 @@ Cuando recibás una tarea:
 {compliance_section}
 ## Phases activas y estado
 
-- **Sprint actual:** Sprint 1
-- **Completadas:** —
-- **En curso:** —
-- **Pendientes:** —
+{_render_phases(config)}
 
-> Actualizar esta sección al inicio y final de cada sprint.
+> Actualizar `project.yaml` (sprint.phases) para reflejar el estado real.
 
 ## Comandos frecuentes
 
