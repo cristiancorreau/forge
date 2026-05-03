@@ -44,8 +44,10 @@ herramientas diferentes? Si la respuesta es sí → Tier 2.
 | `nextjs-admin` | `admin-engineer` |
 | `expo` | `mobile-engineer` |
 | `playwright-crawler` | `scanner-engineer` |
-| `rails` | `backend-engineer` *(pendiente)* |
-| `fastapi` | `backend-engineer` *(pendiente)* |
+| `fastapi` | `api-engineer` |
+| `express` | `api-engineer` |
+| `rails` | `fullstack-engineer` |
+| `nestjs` | `api-engineer` |
 
 ### Tier 3 — Dominio
 

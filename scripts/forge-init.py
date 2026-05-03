@@ -254,22 +254,23 @@ def _write_agents_md(root: Path, config: dict, active: list, compliance: list, s
     frameworks = config.get("compliance", {}).get("frameworks", [])
 
     role_descriptions = {
-        "orchestrator":       "Lead del team — coordina, descompone tareas, sintetiza",
-        "backend-engineer":   "Backend — API, base de datos, lógica de negocio",
-        "frontend-engineer":  "Frontend — UI, componentes, integración con API",
-        "api-engineer":       "API — Hono/Express/FastAPI + ORM + lógica de negocio",
-        "admin-engineer":     "Admin dashboard — UI de gestión interna",
-        "banner-engineer":    "Banner SDK — script de consentimiento embebido",
-        "scanner-engineer":   "Scanner de cookies y trackers",
-        "mobile-engineer":    "Apps móviles — React Native / Expo",
-        "test-engineer":      "Testing — unitario, integración, E2E",
-        "docs-writer":        "Documentación — specs, ADRs, READMEs",
-        "compliance-reviewer":"Compliance — revisa contra marcos regulatorios activos",
-        "security-auditor":   "Seguridad — auditoría de vulnerabilidades",
-        "dsar-specialist":    "DSAR — derechos del titular (acceso, rectificación, supresión…)",
-        "policy-engineer":    "Policy Generator — plantillas de política de privacidad",
-        "sites-engineer":     "Sites & Domains — gestión de sitios y snippets",
-        "gcm-engineer":       "Google Consent Mode v2 — integración GCM",
+        "orchestrator":        "Lead del team — coordina, descompone tareas, sintetiza",
+        "backend-engineer":    "Backend — API, base de datos, lógica de negocio",
+        "frontend-engineer":   "Frontend — UI, componentes, integración con API",
+        "fullstack-engineer":  "Full-stack — backend + frontend + migraciones (Rails y similares)",
+        "api-engineer":        "API — Hono/Express/FastAPI/NestJS + ORM + lógica de negocio",
+        "admin-engineer":      "Admin dashboard — UI de gestión interna",
+        "banner-engineer":     "Banner SDK — script de consentimiento embebido",
+        "scanner-engineer":    "Scanner de cookies y trackers",
+        "mobile-engineer":     "Apps móviles — React Native / Expo",
+        "test-engineer":       "Testing — unitario, integración, E2E",
+        "docs-writer":         "Documentación — specs, ADRs, READMEs",
+        "compliance-reviewer": "Compliance — revisa contra marcos regulatorios activos",
+        "security-auditor":    "Seguridad — auditoría de vulnerabilidades",
+        "dsar-specialist":     "DSAR — derechos del titular (acceso, rectificación, supresión…)",
+        "policy-engineer":     "Policy Generator — plantillas de política de privacidad",
+        "sites-engineer":      "Sites & Domains — gestión de sitios y snippets",
+        "gcm-engineer":        "Google Consent Mode v2 — integración GCM",
     }
 
     lines = [
@@ -339,6 +340,19 @@ def _write_agents_md(root: Path, config: dict, active: list, compliance: list, s
     print(f"  [OK] AGENTS.md (roster completo: {len(active + compliance + specialized)} agentes)")
 
 
+def init_opencode(root: Path, forge: Path, config: dict):
+    """Delega en el adapter de OpenCode para generar AGENTS.md."""
+    import subprocess
+    adapter = forge / "adapters" / "opencode" / "generate-agents-md.py"
+    if not adapter.exists():
+        print(f"  [MISS] {adapter} — adapter de OpenCode no encontrado", file=sys.stderr)
+        return
+    args = ["python3", str(adapter)]
+    result = subprocess.run(args, cwd=str(root))
+    if result.returncode != 0:
+        print(f"  [ERR] generate-agents-md.py salió con código {result.returncode}", file=sys.stderr)
+
+
 def init_kiro(root: Path, forge: Path, config: dict):
     """Delega en el adapter de Kiro para generar los steering files."""
     import subprocess
@@ -379,14 +393,17 @@ def main():
         print(f"Only     : {ONLY_AGENT} (solo ese agente)")
     print()
 
-    if tool in ("claude-code", "opencode", "all"):
-        label = "Claude Code / OpenCode" if tool == "all" else tool.title().replace("-", " ")
-        print(f"--- {label} ---")
+    if tool in ("claude-code", "all"):
+        print(f"--- Claude Code ---")
         init_claude_code(root, forge, config)
         print("\n  Slash commands:")
         install_claude_commands(root, forge, config)
         print("\n  Wiki:")
         init_wiki(root, forge, config)
+
+    if tool in ("opencode", "all"):
+        print(f"\n--- OpenCode ---")
+        init_opencode(root, forge, config)
 
     if tool in ("kiro", "all"):
         print("\n--- Kiro ---")

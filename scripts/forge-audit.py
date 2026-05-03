@@ -220,7 +220,7 @@ def check_vs_forge(agent, forge, profiles):
             issues.append({
                 "level": "warn",
                 "msg": f"Posibles mejoras disponibles en forge ({source}) — similitud {ratio:.0%}, forge tiene +{diff_lines} líneas",
-                "fix": f"forge-init.py --tool claude-code --force --only={agent['name']}"
+                "fix": f"python3 .agentic/scripts/forge-init.py --tool claude-code --force --only={agent['name']}"
             })
     else:
         if extended:
@@ -233,13 +233,13 @@ def check_vs_forge(agent, forge, profiles):
             issues.append({
                 "level": "warn",
                 "msg": f"Contenido muy diferente a forge ({source}) — similitud {ratio:.0%}. ¿Especialización intencional o desactualizado?",
-                "fix": f"Revisar manualmente vs forge-init.py --tool claude-code --force --only={agent['name']}"
+                "fix": f"Revisar manualmente vs python3 .agentic/scripts/forge-init.py --tool claude-code --force --only={agent['name']}"
             })
         else:
             issues.append({
                 "level": "error",
                 "msg": f"Muy diferente a forge ({source}) — similitud {ratio:.0%}. Probablemente desactualizado",
-                "fix": f"forge-init.py --tool claude-code --force --only={agent['name']}"
+                "fix": f"python3 .agentic/scripts/forge-init.py --tool claude-code --force --only={agent['name']}"
             })
 
     return issues
@@ -300,13 +300,13 @@ def find_opportunities(forge, config, installed_names):
                 opps.append({
                     "type": "wiki",
                     "msg": f"Skills de wiki activos pero {wiki_path_str}/ no existe",
-                    "fix": "forge-init.py --tool claude-code  (crea la estructura inicial)"
+                    "fix": "python3 .agentic/scripts/forge-init.py --tool claude-code  (crea la estructura inicial)"
                 })
             elif not (wiki_path / "index.md").exists():
                 opps.append({
                     "type": "wiki",
                     "msg": f"{wiki_path_str}/index.md falta — wiki incompleto",
-                    "fix": "forge-init.py --tool claude-code  (recrea el índice)"
+                    "fix": "python3 .agentic/scripts/forge-init.py --tool claude-code  (recrea el índice)"
                 })
 
     # Integración obsidian disponible
@@ -480,7 +480,7 @@ def run_audit(as_json: bool = False):
             print(f"  {ERR('✗')}  {name}.md — declarado en project.yaml pero no existe en .claude/agents/")
             forge_path, source = get_forge_version(forge, name, active_profiles)
             if forge_path:
-                print(f"       {DIM(f'→ Disponible en forge ({source}): forge-init.py --tool claude-code')}")
+                print(f"       {DIM(f'→ Disponible en forge ({source}): python3 .agentic/scripts/forge-init.py --tool claude-code')}")
             else:
                 print(f"       {DIM('→ Crear manualmente en .claude/agents/')}")
 
