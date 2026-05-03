@@ -197,23 +197,25 @@ def check_vs_forge(agent, forge, profiles):
     forge_lines = len(forge_content.splitlines())
     project_lines = agent["lines"]
 
-    extended = project_lines > forge_lines * 1.2  # proyecto tiene >20% más líneas
+    extended = project_lines > forge_lines * 1.2   # proyecto tiene >20% más líneas
+    # Divergencia simétrica: mismo orden de magnitud, contenido diferente (especialización)
+    comparable = forge_lines * 0.7 <= project_lines <= forge_lines * 1.2
 
     if ratio >= SIMILARITY_WARN:
         issues.append({"level": "ok", "msg": f"Al día con forge ({source}) — similitud {ratio:.0%}"})
     elif ratio >= SIMILARITY_OUTDATED:
-        if extended:
+        if extended or comparable:
             diff_lines = project_lines - forge_lines
+            sign = "+" if diff_lines >= 0 else ""
             issues.append({
                 "level": "info",
-                "msg": f"Extendido intencionalmente vs forge ({source}) — similitud {ratio:.0%}, proyecto tiene +{diff_lines} líneas extra",
+                "msg": f"Especialización intencional vs forge ({source}) — similitud {ratio:.0%}, {sign}{diff_lines} líneas respecto a forge",
             })
         else:
             diff_lines = forge_lines - project_lines
-            sign = "+" if diff_lines > 0 else ""
             issues.append({
                 "level": "warn",
-                "msg": f"Posibles mejoras disponibles en forge ({source}) — similitud {ratio:.0%}, forge tiene {sign}{diff_lines} líneas",
+                "msg": f"Posibles mejoras disponibles en forge ({source}) — similitud {ratio:.0%}, forge tiene +{diff_lines} líneas",
                 "fix": f"forge-init.py --tool claude-code --force --only={agent['name']}"
             })
     else:
@@ -222,6 +224,12 @@ def check_vs_forge(agent, forge, profiles):
             issues.append({
                 "level": "info",
                 "msg": f"Muy extendido vs forge ({source}) — similitud {ratio:.0%}, proyecto tiene +{diff_lines} líneas (fork intencional)",
+            })
+        elif comparable:
+            issues.append({
+                "level": "warn",
+                "msg": f"Contenido muy diferente a forge ({source}) — similitud {ratio:.0%}. ¿Especialización intencional o desactualizado?",
+                "fix": f"Revisar manualmente vs forge-init.py --tool claude-code --force --only={agent['name']}"
             })
         else:
             issues.append({
@@ -410,9 +418,9 @@ def run_audit(as_json: bool = False):
                 print(f"       {sub_icon} {check['msg']}")
                 if "fix" in check:
                     print(f"         {DIM('→ ' + check['fix'])}")
-            # Si el agente está ok o info, mostrar el mensaje positivo principal
-            if result["status"] in ("ok", "info"):
-                good = [c for c in result["checks"] if c["level"] in ("ok", "info")]
+            # Si el agente está ok, mostrar el mensaje positivo (el loop no imprime "ok")
+            if result["status"] == "ok":
+                good = [c for c in result["checks"] if c["level"] == "ok"]
                 if good:
                     print(f"       {level_icon(good[0]['level'])} {DIM(good[0]['msg'])}")
 
