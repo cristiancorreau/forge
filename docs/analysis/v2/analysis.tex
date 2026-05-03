@@ -1,0 +1,431 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\geometry{margin=2.5cm}
+
+\definecolor{codegray}{rgb}{0.95,0.95,0.95}
+\definecolor{codeblue}{rgb}{0.13,0.29,0.53}
+\definecolor{codegreen}{rgb}{0.0,0.4,0.0}
+
+\lstset{
+  backgroundcolor=\color{codegray},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codeblue}\bfseries,
+  commentstyle=\color{codegreen},
+  stringstyle=\color{orange},
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  showstringspaces=false,
+  captionpos=b
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=codeblue,
+  urlcolor=codeblue,
+  pdftitle={forge Framework -- Informe de Analisis Tecnico v2.0},
+  pdfauthor={Analisis Adversarial Comparativo},
+  pdfsubject={Agentic Development Framework}
+}
+
+\title{\textbf{forge Framework}\\
+  \large Informe de An\'alisis T\'ecnico v2.0\\
+  An\'alisis Adversarial Comparativo v1~$\rightarrow$~v2}
+\author{An\'alisis Adversarial Independiente}
+\date{3 de mayo de 2026}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% ----------------------------------------------------------------
+\section{Resumen ejecutivo}
+
+forge es un framework de agentic development que centraliza la configuraci\'on
+de agentes de IA en un \'unico archivo \texttt{project.yaml} y genera, mediante
+scripts determin\'isticos, los artefactos de configuraci\'on para m\'ultiples
+runtimes (Claude Code, OpenCode, Kiro). Su propuesta arquitect\'onica ---taxonom\'ia
+de tres tiers, compliance por dise\~no, Spec-Driven Development como workflow
+obligatorio--- se mantiene intacta desde v1 y est\'a respaldada por evidencia de
+c\'odigo.
+
+La segunda ronda de an\'alisis (v2) eval\'ua el commit \texttt{d828157}, que
+incorpora mejoras directamente motivadas por el an\'alisis v1. Las conclusiones
+son mixtas. En las dimensiones que el an\'alisis v1 identific\'o como cr\'iticas,
+la mejora es real y verificable: el bug de \texttt{install\_agent} est\'a
+corregido, los adapters de OpenCode y Kiro tienen implementaciones funcionales,
+el framework tiene teardown, el ecosistema de profiles pas\'o de cuatro a ocho, y
+existe una suite de 112 tests. En las dimensiones donde los problemas son
+estructurales ---coherencia entre documentaci\'on y c\'odigo, integraci\'on real
+del flujo multi-runtime, ejecutabilidad de los fix messages del audit--- las
+mejoras son parciales o nulas.
+
+La recomendaci\'on consolidada es: forge v2 es adoptable para equipos de 3-8
+personas que usen Claude Code como runtime principal, que entiendan que la
+documentaci\'on central \texttt{agent-standard.md} no refleja el estado del
+c\'odigo, y que no dependan de los fix messages del audit como comandos
+ejecutables.
+
+% ----------------------------------------------------------------
+\section{Introducci\'on: contexto y metodolog\'ia}
+
+\subsection{El framework}
+
+forge se instala como git submodule en proyectos de desarrollo con agentes de IA.
+Su funci\'on es proporcionar una base de agentes especializados, skills
+componibles, y herramientas de auditor\'ia que hagan predecible y auditable el
+comportamiento de los agentes en producci\'on.
+
+La arquitectura central se basa en tres tiers:
+
+\begin{itemize}
+  \item \textbf{Tier 1 (Universal):} agentes que aplican a cualquier proyecto
+    independientemente del stack.
+  \item \textbf{Tier 2 (Profile):} agentes especializados en un stack t\'ecnico
+    espec\'ifico (FastAPI, Rails, NestJS, etc.).
+  \item \textbf{Tier 3 (Dominio):} agentes creados por el equipo para necesidades
+    espec\'ificas del proyecto.
+\end{itemize}
+
+El \texttt{project.yaml} act\'ua como fuente de verdad: stack, roster de agentes,
+frameworks de compliance, fases del sprint. Scripts determin\'isticos generan los
+artefactos de configuraci\'on para cada runtime desde esa \'unica fuente.
+
+\subsection{Metodolog\'ia}
+
+Este informe consolida dos an\'alisis adversariales independientes realizados
+sobre el mismo commit:
+
+\begin{itemize}
+  \item \textbf{An\'alisis favorable (\texttt{advocate-report.md} v2):} eval\'ua
+    el dise\~no, las fortalezas, y las mejoras concretas incorporadas desde v1.
+  \item \textbf{An\'alisis cr\'itico (\texttt{critic-report.md} v2):} examina la
+    implementaci\'on en busca de problemas que afecten la adopci\'on en
+    producci\'on.
+\end{itemize}
+
+Ambos an\'alisis se basan en lectura directa del c\'odigo fuente: scripts Python,
+agentes Markdown, tests, hooks, adapters, y documentaci\'on. No se ejecut\'o el
+framework en un proyecto real.
+
+% ----------------------------------------------------------------
+\section{Problemas del v1 resueltos en v2}
+
+\subsection{Bug de \texttt{install\_agent} --- resuelto}
+
+El an\'alisis v1 identific\'o que la funci\'on \texttt{install\_agent()} en
+\texttt{forge-init.py} retornaba siempre \texttt{"UPDATE"} para instalaciones
+nuevas, porque evaluaba \texttt{dst.exists()} despu\'es de copiar el archivo. La
+correcci\'on consiste en capturar el estado del archivo antes de la operaci\'on de
+copia:
+
+\begin{lstlisting}[language=Python, caption={Correcci\'on en forge-init.py (l\'ineas 95--105)}]
+# evaluar ANTES de copiar
+already_existed = dst.exists()
+shutil.copy2(src, dst)
+return "UPDATE" if already_existed else "OK"
+\end{lstlisting}
+
+El test \texttt{test\_ok\_no\_es\_update\_en\_instalacion\_nueva} documenta
+expl\'icitamente el bug original en su docstring. Correcci\'on completa.
+
+\subsection{Flag \texttt{-{}-only} inexistente --- resuelto}
+
+El audit generaba fix messages con \texttt{-{}-force -{}-only=<agente>}, pero el
+flag \texttt{-{}-only} no exist\'ia. Ahora est\'a implementado en ambas sintaxis
+(\texttt{-{}-only=nombre} y \texttt{-{}-only nombre}) con cobertura de tests en
+dos archivos distintos.
+
+\subsection{Adapters de OpenCode y Kiro vac\'ios --- parcialmente resuelto}
+
+Los directorios \texttt{adapters/opencode/} y \texttt{adapters/kiro/} estaban
+vac\'ios en v1. Ahora contienen implementaciones funcionales con 24 tests de
+integraci\'on. La calificaci\'on es parcialmente resuelto porque el flag
+\texttt{-{}-tool opencode} de \texttt{forge-init.py} no invoca el adapter (ver
+secci\'on~\ref{sec:bug-opencode}).
+
+\subsection{Ausencia de teardown --- resuelto}
+
+\texttt{forge-teardown.py} no exist\'ia en v1. Ahora existe con dry-run por
+defecto, eliminaci\'on selectiva de artefactos de forge (no Tier 3 del proyecto),
+y 8 tests de cobertura.
+
+\subsection{Ecosistema de profiles insuficiente --- resuelto}
+
+En v1 hab\'ia cuatro profiles. En v2 hay ocho: se agregaron \texttt{fastapi},
+\texttt{express}, \texttt{rails}, \texttt{nestjs}. El test param\'etrico en
+\texttt{test\_profiles.py} verifica que cada agente de cada profile cumpla el
+est\'andar de frontmatter, modelo, secciones y longitud m\'inima.
+
+\subsection{Otras mejoras verificadas}
+
+\begin{itemize}
+  \item \textbf{Fases de sprint en CLAUDE.md:} \texttt{\_render\_phases()} lee
+    \texttt{sprint.phases} desde \texttt{project.yaml} y genera el listado real.
+  \item \textbf{Disclaimer en compliance:} la secci\'on ``Limitaciones'' advierte
+    que el agente opera sobre conocimiento de entrenamiento, no texto legal oficial.
+  \item \textbf{Compatibilidad Python 3.9:} se usa \texttt{Optional[str]} en lugar
+    de \texttt{str | None}.
+\end{itemize}
+
+% ----------------------------------------------------------------
+\section{Problemas del v1 que persisten en v2}
+
+\subsection{Fix messages del audit no ejecutables}
+
+El audit genera la siguiente cadena como acci\'on correctiva:
+
+\begin{lstlisting}[language=Python, caption={forge-audit.py l\'ineas 223, 242}]
+"fix": f"forge-init.py --tool claude-code --force --only={agent['name']}"
+\end{lstlisting}
+
+\texttt{forge-init.py} no est\'a en el PATH del sistema. El README muestra el
+comando correcto: \texttt{python3 .agentic/scripts/forge-init.py -{}-tool
+claude-code}. Un usuario que copie y ejecute la acci\'on correctiva del audit
+recibir\'a \texttt{command not found}. Ning\'un test verifica el formato de los
+fix messages.
+
+\subsection{Mutaci\'on silenciosa en el hook pre-commit}
+
+El hook sigue haciendo \texttt{git add} sobre \texttt{docs/progress.html} dentro
+del proceso de commit, sin que el desarrollador haya inspeccionado ese archivo:
+
+\begin{lstlisting}[language=bash, caption={hooks/pre-commit: mutaci\'on activa}]
+if ! git -C "$ROOT" diff --quiet "$HTML"; then
+  echo "[forge pre-commit] Actualizando docs/progress.html..."
+  git -C "$ROOT" add "$HTML"
+fi
+\end{lstlisting}
+
+El mensaje informativo agregado en v2 notifica la operaci\'on pero no cambia el
+comportamiento. No existe ning\'un test que cubra el hook ni \texttt{token-stats.py}.
+
+\subsection{Similitud de texto como m\'etrica de calidad}
+
+El audit usa \texttt{SequenceMatcher.ratio()} con umbrales fijos
+(\texttt{SIMILARITY\_WARN = 0.80}, \texttt{SIMILARITY\_OUTDATED = 0.50}).
+Un agente correctamente especializado para Rails puede tener baja similitud con el
+core gen\'erico y aparecer como posiblemente desactualizado.
+
+\subsection{Mecanismo de actualizaci\'on destructivo}
+
+\texttt{-{}-force} sobreescribe el agente de destino completamente. No existe
+merge, diff interactivo, ni versionado de customizaciones locales.
+
+% ----------------------------------------------------------------
+\section{Problemas nuevos detectados en v2}
+
+\subsection{agent-standard.md desincronizado}
+
+La documentaci\'on de referencia de profiles contiene:
+
+\begin{lstlisting}[caption={agent-standard.md: datos incorrectos}]
+| `rails`  | `backend-engineer` *(pendiente)* |
+| `fastapi` | `backend-engineer` *(pendiente)* |
+\end{lstlisting}
+
+Los agentes reales son \texttt{fullstack-engineer} (rails) y
+\texttt{api-engineer} (fastapi). Los profiles \texttt{express} y \texttt{nestjs}
+no aparecen en la tabla en absoluto.
+
+\subsection{fullstack-engineer sin descripci\'on en forge-init.py}
+
+El profile \texttt{rails} provee \texttt{fullstack-engineer}, pero el diccionario
+\texttt{role\_descriptions} en \texttt{forge-init.py} no tiene esa entrada. Un
+proyecto que use el profile \texttt{rails} ver\'a ``Agente de implementaci\'on''
+(descripci\'on gen\'erica) en su \texttt{AGENTS.md} generado. El adapter de Kiro
+s\'i tiene la entrada correcta, creando una inconsistencia entre adapters para el
+mismo agente.
+
+\subsection{--tool opencode no invoca el adapter de OpenCode}
+\label{sec:bug-opencode}
+
+\texttt{forge-init.py} agrupa \texttt{"claude-code"} y \texttt{"opencode"} bajo el
+mismo bloque de c\'odigo:
+
+\begin{lstlisting}[language=Python, caption={forge-init.py l\'ineas 382--389: mismo c\'odigo para ambos tools}]
+if tool in ("claude-code", "opencode", "all"):
+    label = "Claude Code / OpenCode" if tool == "all" else tool.title()
+    init_claude_code(root, forge, config)   # mismo codigo para ambos
+    install_claude_commands(root, forge, config)
+    init_wiki(root, forge, config)
+\end{lstlisting}
+
+Un usuario de OpenCode que ejecute \texttt{forge-init.py -{}-tool opencode}
+obtendr\'a una instalaci\'on de Claude Code (\texttt{.claude/agents/}, slash
+commands) con exit code 0 y sin mensajes de error. El adapter
+\texttt{adapters/opencode/generate-agents-md.py} no se invoca desde
+\texttt{forge-init.py} en ning\'un caso.
+
+\subsection{Brechas cr\'iticas en el suite de tests}
+
+El suite no incluye:
+\begin{itemize}
+  \item Tests para \texttt{token-stats.py} (\'unico script sin cobertura).
+  \item Tests para el hook pre-commit.
+  \item Tests que validen el formato de los fix messages del audit.
+  \item Tests que detecten inconsistencias entre \texttt{agent-standard.md} y el
+    c\'odigo.
+  \item Tests que ejecuten \texttt{-{}-tool opencode} y verifiquen output
+    espec\'ifico de OpenCode.
+\end{itemize}
+
+% ----------------------------------------------------------------
+\section{Nuevas fortalezas presentes solo en v2}
+
+\subsection{Suite de tests con 112 casos}
+
+La adici\'on m\'as significativa para la madurez del proyecto. Cuatro categor\'ias
+complementarias: tests de integraci\'on que ejecutan scripts reales sobre
+directorios temporales, tests unitarios con \texttt{importlib} controlando
+\texttt{sys.argv}, tests estructurales param\'etricos que recorren todos los
+profiles, y tests de regresi\'on con docstrings que documentan los bugs
+originales. El \texttt{conftest.py} tiene fixtures con deep merge que permiten
+configurar exactamente lo necesario sin boilerplate.
+
+\subsection{Adapters con l\'ogica condicional correcta}
+
+El adapter de Kiro genera \texttt{compliance.md} solo si hay frameworks
+configurados en \texttt{project.yaml}. Los tres adapters implementan la misma
+l\'ogica de compliance autom\'atico. El adapter de OpenCode lee descriptions desde
+el frontmatter de los agentes, respetando la prioridad profiles $>$ core.
+
+\subsection{Test param\'etrico de profiles como garant\'ia de est\'andar}
+
+\texttt{test\_profiles.py} recorre din\'amicamente todos los profiles y verifica
+frontmatter completo, modelo correcto, secciones requeridas y longitud m\'inima.
+Agregar un profile sin que pase estos tests es imposible sin romper el suite.
+
+\subsection{forge-teardown.py con l\'ogica deliberada}
+
+La distinci\'on entre lo que le pertenece al framework y lo que le pertenece al
+proyecto est\'a codificada en la l\'ogica del script. Los agentes Tier 3
+sobreviven el teardown.
+
+% ----------------------------------------------------------------
+\section{An\'alisis comparativo v1 vs. v2}
+
+\begin{table}[h!]
+\centering
+\caption{Comparativa de dimensiones clave entre v1 y v2}
+\begin{tabular}{@{}lllc@{}}
+\toprule
+\textbf{Dimensi\'on} & \textbf{v1} & \textbf{v2} & \textbf{Tendencia} \\
+\midrule
+Profiles implementados & 4 & 8 & $\uparrow$ \\
+Tests & 0 & 112 & $\uparrow$ \\
+Bug \texttt{install\_agent} & Presente & Resuelto & $\checkmark$ \\
+Flag \texttt{-{}-only} & Inexistente & Implementado & $\checkmark$ \\
+Adapter OpenCode & Vac\'io & Funcional (no integrado) & $\sim$ \\
+Adapter Kiro & Vac\'io & Funcional (integrado) & $\checkmark$ \\
+Teardown & Ausente & Presente (parcial) & $\uparrow$ \\
+Fix messages ejecutables & No & No & $\times$ \\
+Hook pre-commit (mutaci\'on) & Silenciosa & Con notificaci\'on & $\sim$ \\
+Disclaimer en compliance & Ausente & Presente & $\checkmark$ \\
+\texttt{agent-standard.md} sincronizado & Parcialmente & Menos que v1 & $\downarrow$ \\
+\texttt{-{}-tool opencode} invoca adapter & N/A & No & $\times$ \\
+\texttt{fullstack-engineer} en role\_descriptions & N/A & Ausente & $\times$ \\
+Python 3.9 compatible & No & S\'i & $\checkmark$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ----------------------------------------------------------------
+\section{Conclusiones y recomendaciones}
+
+forge v2 resolvi\'o los problemas m\'as visibles identificados en v1. Este es un
+m\'erito real que el an\'alisis debe reconocer. Sin embargo, el patr\'on que
+emerge al examinar los problemas nuevos es preocupante: al agregar funcionalidad
+(profiles, adapters, scripts), la coherencia interna del framework se degrad\'o.
+La documentaci\'on de referencia ahora describe un ecosistema m\'as desactualizado
+que en v1. El adapter de OpenCode existe pero est\'a desconectado del flujo
+principal. Un agente nuevo (\texttt{fullstack-engineer}) no est\'a registrado en
+el script principal.
+
+\subsection{Recomendaciones por perfil de equipo}
+
+\begin{description}
+  \item[Adopci\'on inmediata] Equipos de 3--8 personas con Claude Code como
+    runtime principal, stack cubierto por los ocho profiles, y disposici\'on a
+    complementar la documentaci\'on con lectura del c\'odigo fuente.
+
+  \item[Esperar] Equipos que dependan de la documentaci\'on oficial, usen
+    OpenCode como runtime principal, o necesiten que los fix messages del audit
+    sean ejecutables sin modificaci\'on.
+
+  \item[Contribuir] Equipos cuyo stack no est\'a en los 8 profiles. El test
+    param\'etrico facilita agregar profiles sin overhead adicional.
+\end{description}
+
+\subsection{Hoja de ruta recomendada para v3}
+
+\begin{enumerate}
+  \item Sincronizar \texttt{agent-standard.md} con el ecosistema real de profiles.
+  \item Hacer que \texttt{-{}-tool opencode} invoque el adapter correcto.
+  \item Corregir el formato de los fix messages del audit para que sean ejecutables.
+  \item Agregar tests que detecten inconsistencias entre capas (documentaci\'on,
+    scripts, adapters).
+\end{enumerate}
+
+% ----------------------------------------------------------------
+\section*{Anexo A: Bugs nuevos encontrados en v2}
+\addcontentsline{toc}{section}{Anexo A: Bugs nuevos encontrados en v2}
+
+\subsection*{A.1 Fix messages no ejecutables en el audit}
+
+\textbf{Archivo:} \texttt{scripts/forge-audit.py}, l\'ineas 223 y 242
+
+\begin{lstlisting}[language=Python, caption={Fix message actual --- no ejecutable}]
+"fix": f"forge-init.py --tool claude-code --force --only={agent['name']}"
+\end{lstlisting}
+
+\texttt{forge-init.py} no est\'a en el PATH del sistema. El comando correcto es
+\texttt{python3 .agentic/scripts/forge-init.py -{}-tool claude-code}. Un usuario
+que copie y ejecute el fix sugerido recibir\'a \texttt{command not found}.
+
+\textbf{Fix sugerido:}
+
+\begin{lstlisting}[language=Python, caption={Fix message corregido}]
+"fix": f"python3 .agentic/scripts/forge-init.py --tool claude-code --force --only={agent['name']}"
+\end{lstlisting}
+
+\subsection*{A.2 fullstack-engineer sin entrada en role\_descriptions}
+
+\textbf{Archivo:} \texttt{scripts/forge-init.py}, diccionario
+\texttt{role\_descriptions}
+
+El profile \texttt{rails} provee \texttt{fullstack-engineer}, pero ese nombre no
+tiene entrada en \texttt{role\_descriptions}. El \texttt{AGENTS.md} generado
+mostrar\'a \texttt{"Agente de implementaci\'on"} para ese agente.
+
+\textbf{Fix sugerido:}
+
+\begin{lstlisting}[language=Python, caption={Entrada faltante en role\_descriptions}]
+"fullstack-engineer": "Full-stack -- frontend, backend y base de datos en proyectos Rails"
+\end{lstlisting}
+
+\subsection*{A.3 --tool opencode no invoca el adapter de OpenCode}
+
+\textbf{Archivo:} \texttt{scripts/forge-init.py}, bloque de selecci\'on de tool
+(l\'ineas 382--389)
+
+Ejecutar \texttt{forge-init.py -{}-tool opencode} produce exactamente el mismo
+resultado que \texttt{-{}-tool claude-code}. El adapter
+\texttt{adapters/opencode/generate-agents-md.py} no se invoca desde
+\texttt{forge-init.py} en ning\'un caso. El script termina con exit code 0.
+
+\textbf{Fix sugerido:} agregar un branch espec\'ifico para
+\texttt{tool == "opencode"} que invoque el adapter v\'ia subprocess, siguiendo el
+mismo patr\'on que \texttt{-{}-tool kiro} usa para invocar
+\texttt{adapters/kiro/generate-steering.py}.
+
+\end{document}

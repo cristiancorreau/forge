@@ -1,0 +1,5 @@
+Hicimos un análisis adversarial comparativo v1→v2 del framework forge (agentic development). Lo que más me llamó la atención no fueron las mejoras en sí —pasar de 0 a 112 tests, de 4 a 8 profiles, de adapters vacíos a implementaciones reales— sino el patrón: el equipo respondió al feedback con trabajo real, medible y verificable. Pero al crecer, aparecieron problemas nuevos de coherencia interna que los números no muestran. Eso es exactamente lo que pasa cuando un proyecto escala más rápido de lo que sus controles de calidad cubren. La iteración funciona. La sincronización entre capas hay que ganársela.
+
+[428 caracteres]
+
+#AgenticDevelopment #SoftwareEngineering #DeveloperTooling
