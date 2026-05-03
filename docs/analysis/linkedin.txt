@@ -1,0 +1,3 @@
+Analizamos forge, el framework que estandariza cómo trabajan los agentes de IA en equipo. Propuesta central: un project.yaml como fuente de verdad, agentes especializados por stack y compliance integrado desde el inicio. Las reglas de seguridad no viven en la cabeza de nadie: viven en archivos versionados que los agentes leen. El agentic development necesita esa estructura para escalar con calidad. forge apunta en esa dirección, aunque su implementación es temprana. #AgenticDevelopment #IA #Dev
+
+[499 caracteres]

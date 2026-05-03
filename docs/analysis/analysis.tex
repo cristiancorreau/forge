@@ -1,0 +1,490 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\geometry{margin=2.5cm}
+
+% Configuracion de listings para codigo
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=single,
+  framesep=3pt,
+  xleftmargin=5pt,
+  xrightmargin=5pt,
+  backgroundcolor=\color{gray!10},
+  keywordstyle=\color{blue},
+  commentstyle=\color{green!50!black},
+  stringstyle=\color{red!70!black},
+  showstringspaces=false,
+  tabsize=2,
+  captionpos=b,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=5pt,
+  extendedchars=true,
+  literate=
+    {á}{{\'{a}}}1
+    {é}{{\'{e}}}1
+    {í}{{\'{i}}}1
+    {ó}{{\'{o}}}1
+    {ú}{{\'{u}}}1
+    {ñ}{{\~{n}}}1
+    {Á}{{\'{A}}}1
+    {É}{{\'{E}}}1
+    {Í}{{\'{I}}}1
+    {Ó}{{\'{O}}}1
+    {Ú}{{\'{U}}}1
+    {Ñ}{{\~{N}}}1
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!70!black,
+  urlcolor=blue!70!black,
+  pdftitle={Evaluacion tecnica del framework forge},
+  pdfauthor={Analisis tecnico independiente},
+}
+
+\title{\textbf{Evaluación técnica del framework forge}\\
+\large para desarrollo con agentes de IA}
+\author{Análisis técnico independiente}
+\date{3 de mayo de 2026 \\ Versión 1.0}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+El presente informe evalúa \textbf{forge}, un framework de trabajo para equipos que
+desarrollan software con agentes de inteligencia artificial. El análisis integra dos
+perspectivas técnicas independientes ---una crítica y una favorable--- sobre la misma
+base de código, commit \texttt{d828157}, con el objetivo de producir una evaluación
+balanceada que permita a equipos de desarrollo tomar una decisión informada sobre la
+adopción del framework. La conclusión principal es que forge contiene ideas de diseño
+sólidas implementadas parcialmente, cuya aplicabilidad queda limitada a casos de uso
+específicos en su estado actual.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Introducción y contexto}
+% ============================================================
+
+\subsection{El problema que forge intenta resolver}
+
+El desarrollo de software asistido por agentes de IA enfrenta un problema de
+coordinación que se vuelve crítico a escala de equipo. Sin convenciones explícitas,
+los agentes tienden a:
+
+\begin{itemize}
+  \item Actuar fuera del scope asignado, modificando componentes no relacionados.
+  \item Implementar funcionalidades sin verificación de seguridad (autorización,
+        sanitización de inputs, protección de PII).
+  \item Producir código inconsistente entre sesiones porque sus reglas están en la
+        memoria de cada desarrollador, no en archivos versionados.
+  \item Desactualizarse de las prácticas del equipo a medida que el proyecto evoluciona.
+\end{itemize}
+
+\textbf{forge} propone una respuesta estructural: codificar las convenciones del equipo
+en archivos que los agentes leen, versionados en un repositorio central, y propagados
+a los proyectos mediante scripts determinísticos.
+
+\subsection{Descripción del framework}
+
+forge se integra a un proyecto mediante \texttt{git submodule}:
+
+\begin{lstlisting}[language=bash, caption={Instalación básica de forge}]
+git submodule add https://github.com/tu-org/forge .agentic
+python3 .agentic/scripts/forge-init.py --tool claude-code
+\end{lstlisting}
+
+Una vez instalado, el desarrollador describe su proyecto en un \texttt{project.yaml}
+y ejecuta \texttt{forge-init.py} para generar la configuración de los agentes.
+La estructura del repositorio incluye:
+
+\begin{itemize}
+  \item \texttt{core/agents/}: agentes genéricos (orchestrator, backend-engineer,
+        security-auditor, compliance-reviewer, test-engineer, frontend-engineer,
+        mobile-engineer).
+  \item \texttt{profiles/<stack>/agents/}: agentes especializados por stack tecnológico.
+  \item \texttt{core/skills/}: skills reutilizables (new-feature, security-audit,
+        db-migrate, local2prod, browser-test).
+  \item \texttt{adapters/}: scripts para generar configuración en distintos runtimes
+        (Claude Code, OpenCode, Kiro).
+  \item \texttt{scripts/}: herramientas de gestión (forge-init.py, forge-audit.py).
+  \item \texttt{hooks/}: hook de pre-commit para estadísticas de tokens.
+\end{itemize}
+
+\subsection{Alcance del análisis}
+
+El análisis cubre el commit \texttt{d828157} del repositorio forge. Los archivos
+analizados incluyen: \texttt{README.md}, \texttt{templates/project.yaml.tpl},
+\texttt{scripts/forge-init.py}, \texttt{scripts/forge-audit.py},
+\texttt{adapters/claude-code/generate-claude-md.py}, siete agentes del core,
+\texttt{core/skills/README.md}, cuatro skills, cuatro profiles, \texttt{hooks/pre-commit},
+\texttt{docs/agent-standard.md}, y \texttt{core/workflows/sdd.md}.
+
+% ============================================================
+\section{Metodología de análisis}
+% ============================================================
+
+El análisis se realizó mediante lectura directa del código fuente, sin ejecutar
+el framework en un entorno de prueba. Se adoptó un enfoque adversarial estructurado:
+dos analistas independientes revisaron el mismo repositorio con instrucciones opuestas
+---uno buscando argumentos en contra, otro en favor--- y produjeron informes separados.
+El presente documento integra ambos informes con el objetivo de producir una evaluación
+libre de sesgos de confirmación.
+
+La evaluación de cada componente siguió tres preguntas:
+
+\begin{enumerate}
+  \item ¿Qué problema declara resolver este componente?
+  \item ¿El código implementa efectivamente esa solución?
+  \item ¿Qué condiciones deben cumplirse para que la implementación aporte valor neto positivo?
+\end{enumerate}
+
+Las evidencias citadas son fragmentos directos del código fuente del repositorio,
+no inferencias sobre la intención de los autores.
+
+% ============================================================
+\section{Hallazgos del análisis crítico}
+% ============================================================
+
+\subsection{Los adapters para runtimes alternativos no existen}
+
+El README de forge promete compatibilidad con Claude Code, OpenCode, Codex y otros
+runtimes. La inspección del código revela una brecha significativa:
+
+\begin{itemize}
+  \item \texttt{adapters/claude-code/}: funcional.
+  \item \texttt{adapters/opencode/}: directorio vacío. Cero archivos.
+  \item \texttt{adapters/kiro/}: directorio vacío. Cero archivos.
+\end{itemize}
+
+La función \texttt{init\_kiro()} en \texttt{forge-init.py} existe y genera dos archivos
+\texttt{.md} con contenido genérico. La comparación de complejidad es ilustrativa:
+\texttt{init\_claude\_code} tiene aproximadamente 130 líneas de lógica; \texttt{init\_kiro}
+tiene aproximadamente 30 y produce documentos de placeholder sin aprovechar ningún
+concepto del framework.
+
+\subsection{El ecosistema de profiles cubre cuatro stacks}
+
+El sistema de profiles es la parte conceptualmente más valiosa del framework.
+La realidad del inventario en el commit analizado se muestra en la Tabla~\ref{tab:profiles}.
+
+\begin{table}[h]
+\centering
+\caption{Profiles implementados en forge (mayo 2026)}
+\label{tab:profiles}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Profile} & \textbf{Agente incluido} \\
+\midrule
+expo & mobile-engineer.md \\
+hono-drizzle & api-engineer.md \\
+nextjs-admin & admin-engineer.md \\
+playwright-crawler & scanner-engineer.md \\
+\midrule
+\multicolumn{2}{l}{\textit{Stacks sin profile: Django, Express, Laravel, NestJS, Nuxt}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Bug en la función \texttt{install\_agent}}
+
+En \texttt{scripts/forge-init.py}, la función de instalación de agentes contiene
+un defecto lógico:
+
+\begin{lstlisting}[language=Python, caption={Bug en install\_agent: status "OK" nunca retorna}]
+def install_agent(src: Path, dst: Path, name: str, source_label: str) -> str:
+    if not src.exists():
+        return "MISS"
+    if dst.exists() and not FORCE:
+        return "KEEP"
+    shutil.copy2(src, dst)
+    # Bug: dst.exists() siempre True despues de copy2
+    return "UPDATE" if dst.exists() else "OK"
+\end{lstlisting}
+
+La evaluación \texttt{dst.exists()} ocurre después de que \texttt{shutil.copy2} ya
+copió el archivo. En consecuencia, \texttt{dst.exists()} siempre es \texttt{True}
+en ese punto, y el status \texttt{"OK"} nunca se devuelve.
+
+\subsection{El audit recomienda un comando inexistente}
+
+\texttt{forge-audit.py} genera mensajes de corrección de la forma:
+
+\begin{lstlisting}[language=Python, caption={Comando de fix con flag inexistente}]
+"fix": f"forge-init.py --tool claude-code --force --only={agent['name']}"
+# El flag --only no existe en forge-init.py
+\end{lstlisting}
+
+Un desarrollador que siga la recomendación del audit ejecutará un comando que falla.
+
+\subsection{El generador de \texttt{CLAUDE.md} desconecta la fuente de verdad}
+
+El \texttt{project.yaml} contiene una sección \texttt{sprint.phases}. El
+\texttt{generate-claude-md.py} genera una sección "Phases activas y estado" con
+contenido fijo, no conectado con los datos del YAML. El usuario debe actualizar
+manualmente la sección más dinámica del documento más importante que los agentes leerán.
+
+\subsection{El pre-commit hook muta archivos sin visibilidad del desarrollador}
+
+El hook ejecuta \texttt{token-stats.py}, modifica \texttt{docs/progress.html},
+y hace \texttt{git add} sobre ese archivo antes de completar el commit. El archivo
+entra al commit sin haber sido inspeccionado. Los errores del script se suprimen
+con \texttt{|| true}, haciendo que los fallos sean silenciosos.
+
+% ============================================================
+\section{Hallazgos del análisis favorable}
+% ============================================================
+
+\subsection{La taxonomía de tres tiers resuelve el problema de los agentes God-object}
+
+El \texttt{docs/agent-standard.md} define tres niveles con criterios de clasificación
+claros y aplicables:
+
+\begin{itemize}
+  \item \textbf{Tier 1 (Universal):} definidos por tipo de output, no por tecnología.
+        El orchestrator, security-auditor, compliance-reviewer y test-engineer son
+        genuinamente agnósticos al stack.
+  \item \textbf{Tier 2 (Profile):} mismo rol que Tier 1 con instrucciones específicas
+        al stack. El \texttt{api-engineer} de \texttt{hono-drizzle} sabe que las
+        migraciones reversibles requieren un \texttt{down} manual y que el runtime
+        en dev es Bun pero en producción es Node 22 LTS.
+  \item \textbf{Tier 3 (Dominio):} agentes que conocen conceptos del negocio. Viven
+        en el proyecto, no en forge. El framework los reconoce y los verifica en la
+        auditoría sin prescribirlos.
+\end{itemize}
+
+\subsection{Las reglas de seguridad son específicas y verificables}
+
+Los agentes de forge no mencionan seguridad como aspiración: la codifican como reglas
+específicas. El \texttt{backend-engineer} incluye instrucciones no ambiguas:
+
+\begin{lstlisting}[caption={Reglas de seguridad en backend-engineer.md}]
+- Usa parametros preparados siempre -- nunca concatenar inputs en queries SQL
+- Verifica autenticacion Y autorizacion en cada endpoint
+- No loguear PII. Solo IDs hash o indicadores
+- No exponer detalles tecnicos de errores al cliente en produccion
+\end{lstlisting}
+
+El \texttt{api-engineer} de \texttt{hono-drizzle} agrega restricciones específicas
+al stack:
+
+\begin{lstlisting}[caption={Reglas específicas de stack en api-engineer.md}]
+- Logs de auditoria son append-only. NUNCA UPDATE ni DELETE
+- Multi-tenancy: toda query filtra por tenant_id. Sin excepciones
+- Migraciones reversibles: toda migracion tiene down
+\end{lstlisting}
+
+\subsection{El skill \texttt{new-feature} codifica un pipeline de calidad completo}
+
+El skill \texttt{core/skills/new-feature/SKILL.md} define seis fases secuenciales
+con condiciones de corte: (1) verificar spec aprobada, (2) leer documentación del
+área, (3) evaluar si justifica un team de agentes, (4) checklist de seguridad,
+(5) orden de implementación (schema $\rightarrow$ tipos $\rightarrow$ backend
+$\rightarrow$ frontend $\rightarrow$ build check), y (6) post-implementación completa.
+
+Los agentes no pueden \textit{terminar} una tarea sin haber pasado por security audit
+y haber verificado el deploy.
+
+\subsection{El diseño de skills evita el acoplamiento circular}
+
+El \texttt{README.md} de skills documenta explícitamente el grafo de dependencias:
+
+\begin{lstlisting}[caption={Grafo de dependencias de skills}]
+new-feature orquesta:
+  spec, phase-kickoff, security-audit, db-migrate,
+  browser-test (opt), local2prod
+local2prod invoca: obsidian-sync (opt)
+security-audit: standalone
+db-migrate: standalone
+\end{lstlisting}
+
+Las dependencias opcionales se resuelven por configuración en \texttt{project.yaml}.
+Si \texttt{browser-test} no está en \texttt{skills.active}, \texttt{new-feature}
+lo saltea silenciosamente sin romper el pipeline.
+
+\subsection{La auditoría automatizada tiene valor real en CI}
+
+\texttt{forge-audit.py} acepta \texttt{--json} para integración en CI. Detecta:
+frontmatter incompleto en agentes, modelo incorrecto (Sonnet en lugar de Opus para
+compliance y security), agentes desactualizados respecto al core, agentes huérfanos
+no declarados en \texttt{project.yaml}, y oportunidades de activar profiles o skills
+disponibles. Esta capacidad transforma los estándares de documentación aspiracional
+a reglas ejecutables.
+
+% ============================================================
+\section{Análisis comparativo}
+% ============================================================
+
+\subsection{Diseño versus implementación}
+
+El análisis revela una brecha consistente entre la calidad del diseño conceptual y
+el estado de la implementación. La Tabla~\ref{tab:comparativa} resume los hallazgos
+por dimensión.
+
+\begin{table}[h]
+\centering
+\caption{Análisis comparativo por dimensión}
+\label{tab:comparativa}
+\begin{tabular}{@{}p{3.5cm}p{5cm}p{5cm}@{}}
+\toprule
+\textbf{Dimensión} & \textbf{A favor} & \textbf{En contra} \\
+\midrule
+Arquitectura & Taxonomía 3 tiers coherente & Solo 4 profiles implementados \\
+\midrule
+Fuente de verdad & project.yaml centraliza todo & Fases del sprint no se propagan \\
+\midrule
+Seguridad & Reglas específicas y verificables & Compliance sin acceso a texto legal \\
+\midrule
+Multi-runtime & Diseño limpio de separación & OpenCode y Kiro: vacíos \\
+\midrule
+Auditoría & Output JSON integrable en CI & Flag --only del fix no existe \\
+\midrule
+Actualización & Propagación desde repo central & --force destruye customizaciones \\
+\midrule
+Adopción & Setup en un solo comando & Sin comando de teardown \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparación con alternativas}
+
+La alternativa más común es escribir agentes directamente en \texttt{.claude/agents/}
+sin framework: costo de 30 minutos para un \texttt{CLAUDE.md} inicial, control total,
+sin dependencias. forge agrega valor cuando el equipo necesita: (a) propagación
+consistente de reglas de seguridad entre proyectos, (b) agentes especializados por
+stack mantenidos centralmente, (c) auditoría en CI, o (d) compliance con poder de veto.
+
+\subsection{Riesgos sistémicos}
+
+Los riesgos más significativos no son los bugs individuales sino los patrones sistémicos:
+
+\begin{itemize}
+  \item \textbf{Actualización destructiva:} el mecanismo \texttt{--force} sobreescribe
+        customizaciones sin merge. Con el tiempo, los equipos dejan de actualizar los
+        agentes para proteger sus customizaciones.
+  \item \textbf{Dependencia sin escape:} no existe comando de teardown. La salida
+        requiere limpieza manual que puede ser omitida.
+  \item \textbf{Falsa seguridad en compliance:} el \texttt{compliance-reviewer} es
+        un primer filtro valioso, pero el framework no advierte que opera sin acceso
+        a texto legal oficial.
+\end{itemize}
+
+% ============================================================
+\section{Conclusiones y recomendaciones}
+% ============================================================
+
+\subsection{Conclusión general}
+
+forge es un framework con arquitectura conceptual correcta e implementación en estado
+temprano. La taxonomía de tres tiers resuelve un problema real de forma elegante.
+Las reglas de seguridad codificadas en los agentes son específicas, verificables y
+no se degradan entre sesiones. El pipeline del skill \texttt{new-feature} define una
+barra de calidad ejecutable. Sin embargo, los adapters para runtimes alternativos son
+directorios vacíos, el ecosistema de profiles cubre cuatro stacks, y el tooling de
+auditoría tiene bugs que afectan directamente la experiencia del usuario.
+
+\subsection{Condiciones de adopción recomendable}
+
+Se recomienda adoptar forge cuando se cumplen simultáneamente:
+
+\begin{enumerate}
+  \item Equipo de 3 a 8 personas usando agentes de IA activamente en el loop de desarrollo.
+  \item Stack cubierto por alguno de los cuatro profiles existentes.
+  \item Claude Code como runtime principal.
+  \item Necesidades de compliance reales (GDPR, Ley 21.719, LGPD).
+  \item Tolerancia para customizaciones mínimas de agentes.
+\end{enumerate}
+
+\subsection{Recomendaciones para equipos adoptantes}
+
+\begin{itemize}
+  \item Documentar la política de uso de \texttt{--force}: cuándo está permitido
+        sobreescribir agentes customizados.
+  \item No confiar en los mensajes de fix del audit para comandos con el flag
+        \texttt{--only}: ese flag no existe en \texttt{forge-init.py}.
+  \item Verificar manualmente la sección de fases del sprint en \texttt{CLAUDE.md}
+        después de cada regeneración.
+  \item Tratar el \texttt{compliance-reviewer} como primer filtro, no como revisión
+        legal suficiente.
+\end{itemize}
+
+\subsection{Recomendaciones para el equipo de forge}
+
+\begin{itemize}
+  \item Implementar los adapters para OpenCode y Kiro o remover su mención del
+        README hasta que estén disponibles.
+  \item Corregir el flag \texttt{--only} en los mensajes del audit o implementar
+        el flag en \texttt{forge-init.py}.
+  \item Conectar la sección \texttt{sprint.phases} de \texttt{project.yaml} con
+        la generación de \texttt{CLAUDE.md}.
+  \item Agregar un comando de teardown documentado.
+  \item Implementar un mecanismo de merge para actualizaciones de agentes que no
+        destruya customizaciones.
+\end{itemize}
+
+% ============================================================
+\appendix
+\section{Estado de los adapters (mayo 2026)}
+% ============================================================
+
+\begin{lstlisting}[caption={Estado del directorio adapters/}]
+adapters/
+|-- claude-code/
+|   |-- generate-claude-md.py   <- implementado
+|   +-- commands/wiki/          <- implementado
+|-- opencode/                   <- directorio vacio
++-- kiro/                       <- directorio vacio
+\end{lstlisting}
+
+% ============================================================
+\section{Bug completo en \texttt{install\_agent}}
+% ============================================================
+
+\begin{lstlisting}[language=Python, caption={Función install\_agent completa con el bug}]
+def install_agent(src: Path, dst: Path, name: str, source_label: str) -> str:
+    if not src.exists():
+        return "MISS"
+    if dst.exists() and not FORCE:
+        return "KEEP"
+    shutil.copy2(src, dst)
+    # Bug: dst.exists() siempre es True despues de copy2
+    # El status "OK" para nueva instalacion nunca se retorna
+    return "UPDATE" if dst.exists() else "OK"
+\end{lstlisting}
+
+% ============================================================
+\section{Grafo de dependencias de skills}
+% ============================================================
+
+\begin{lstlisting}[caption={Grafo de dependencias documentado en core/skills/README.md}]
+new-feature orquesta:
+  spec, phase-kickoff, security-audit, db-migrate,
+  browser-test (opt), local2prod
+
+local2prod invoca:
+  obsidian-sync (opt)
+
+security-audit: standalone
+db-migrate: standalone
+\end{lstlisting}
+
+\bigskip
+\hrule
+\bigskip
+\noindent\textit{Informe generado el 3 de mayo de 2026.
+Base de análisis: commit \texttt{d828157} del repositorio forge.}
+
+\end{document}
