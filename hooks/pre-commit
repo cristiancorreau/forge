@@ -30,8 +30,14 @@ if [ ! -f "$HTML" ]; then
   exit 0
 fi
 
-python3 "$SCRIPT" --patch-html "$HTML" 2>&1 || true
+# Actualizar stats; mostrar errores pero no bloquear el commit
+if ! python3 "$SCRIPT" --patch-html "$HTML" 2>&1; then
+  echo "[forge pre-commit] Advertencia: token-stats.py falló — progress.html no actualizado." >&2
+  exit 0
+fi
 
+# Solo hacer git add si el archivo fue realmente modificado, e informar al usuario
 if ! git -C "$ROOT" diff --quiet "$HTML"; then
+  echo "[forge pre-commit] Actualizando docs/progress.html con token stats..."
   git -C "$ROOT" add "$HTML"
 fi
