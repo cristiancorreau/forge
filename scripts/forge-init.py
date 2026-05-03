@@ -4,7 +4,8 @@ forge-init.py — Setup de un proyecto nuevo con el framework forge.
 
 Usage:
   python3 .agentic/scripts/forge-init.py --tool claude-code
-  python3 .agentic/scripts/forge-init.py --tool claude-code --force   # sobreescribir existentes
+  python3 .agentic/scripts/forge-init.py --tool claude-code --force          # sobreescribir existentes
+  python3 .agentic/scripts/forge-init.py --tool claude-code --force --only=backend-engineer  # solo ese agente
   python3 .agentic/scripts/forge-init.py --tool opencode
   python3 .agentic/scripts/forge-init.py --tool kiro
   python3 .agentic/scripts/forge-init.py --tool all
@@ -17,9 +18,13 @@ Comportamiento por defecto (sin --force):
   - Solo instala los agentes de forge que aún no existen
   - AGENTS.md se genera siempre (documenta el roster completo)
 
+--only=<nombre>  Instala/actualiza únicamente el agente indicado (requiere --force).
+
 Requiere: pyyaml  →  pip3 install pyyaml
           o instalar via: pip3 install -r .agentic/requirements.txt
 """
+from __future__ import annotations
+
 import os
 import sys
 import shutil
@@ -37,6 +42,17 @@ except ImportError:
     sys.exit(1)
 
 FORCE = "--force" in sys.argv
+
+# --only=<nombre> o --only <nombre>
+ONLY_AGENT: str | None = None
+for _arg in sys.argv:
+    if _arg.startswith("--only="):
+        ONLY_AGENT = _arg.split("=", 1)[1].strip()
+        break
+if ONLY_AGENT is None and "--only" in sys.argv:
+    _idx = sys.argv.index("--only")
+    if _idx + 1 < len(sys.argv):
+        ONLY_AGENT = sys.argv[_idx + 1].strip()
 
 
 def find_project_root() -> Path:
@@ -77,13 +93,16 @@ def get_all_agent_names(config: dict) -> tuple[list[str], list[str], list[str], 
 
 
 def install_agent(src: Path, dst: Path, name: str, source_label: str) -> str:
-    """Copia un agente de src a dst. Respeta --force. Retorna el status."""
+    """Copia un agente de src a dst. Respeta --force y --only. Retorna el status."""
     if not src.exists():
         return "MISS"
-    if dst.exists() and not FORCE:
+    if ONLY_AGENT and name != ONLY_AGENT:
+        return "SKIP"
+    already_existed = dst.exists()
+    if already_existed and not FORCE:
         return "KEEP"
     shutil.copy2(src, dst)
-    return "UPDATE" if dst.exists() else "OK"
+    return "UPDATE" if already_existed else "OK"
 
 
 def init_wiki(root: Path, forge: Path, config: dict):
@@ -214,6 +233,7 @@ def _print_agent_status(status: str, name: str, source: str):
         "UPDATE": f"  [UPD]  .claude/agents/{name}.md  ← {source} (sobreescrito)",
         "KEEP":   f"  [KEEP] .claude/agents/{name}.md  — ya existe (--force para sobreescribir)",
         "MISS":   f"  [MISS] {source}{name}.md — no existe en forge",
+        "SKIP":   f"  [SKIP] .claude/agents/{name}.md  — omitido (--only={ONLY_AGENT})",
     }
     print(msgs.get(status, f"  [?] {name}"))
 
@@ -225,6 +245,7 @@ def _record_status(stats: dict, status: str, name: str):
         stats["kept"].append(name)
     elif status == "MISS":
         stats["missing"].append(name)
+    # SKIP no cuenta en ningún total — es comportamiento esperado con --only
 
 
 def _write_agents_md(root: Path, config: dict, active: list, compliance: list, specialized: list, profiles: list = []):
@@ -319,42 +340,23 @@ def _write_agents_md(root: Path, config: dict, active: list, compliance: list, s
 
 
 def init_kiro(root: Path, forge: Path, config: dict):
-    steering_dir = root / ".kiro" / "steering"
-    steering_dir.mkdir(parents=True, exist_ok=True)
-
-    proj = config.get("project", {})
-    stack = config.get("stack", {})
-
-    product_md = (
-        f"# {proj.get('name', 'Proyecto')}\n\n"
-        f"{proj.get('description', '')}\n\n"
-        f"## Stack\n\n"
-        f"- Backend: {stack.get('backend', 'por definir')}\n"
-        f"- Frontend: {stack.get('frontend', 'por definir')}\n"
-        f"- Base de datos: {stack.get('database', 'por definir')}\n"
-        f"- Testing: {', '.join(stack.get('testing', []))}\n"
-    )
-    with open(steering_dir / "product.md", "w") as f:
-        f.write(product_md)
-    print(f"  [OK] .kiro/steering/product.md")
-
-    structure_md = (
-        "# Estructura del proyecto\n\n"
-        "Ver CLAUDE.md para estructura detallada y comandos de desarrollo.\n\n"
-        "## Workflow\n\n"
-        "1. Spec en docs/specs/ antes de implementar\n"
-        "2. Tests junto con la implementación\n"
-        "3. Compliance review si toca datos de usuarios\n"
-    )
-    with open(steering_dir / "structure.md", "w") as f:
-        f.write(structure_md)
-    print(f"  [OK] .kiro/steering/structure.md")
-    print(f"\nKiro: steering files generados en .kiro/steering/")
+    """Delega en el adapter de Kiro para generar los steering files."""
+    import subprocess
+    adapter = forge / "adapters" / "kiro" / "generate-steering.py"
+    if not adapter.exists():
+        print(f"  [MISS] {adapter} — adapter de Kiro no encontrado", file=sys.stderr)
+        return
+    args = ["python3", str(adapter)]
+    if FORCE:
+        args.append("--force")
+    result = subprocess.run(args, cwd=str(root))
+    if result.returncode != 0:
+        print(f"  [ERR] generate-steering.py salió con código {result.returncode}", file=sys.stderr)
 
 
 def main():
     if "--tool" not in sys.argv:
-        print("Uso: forge-init.py --tool <claude-code|opencode|kiro|all> [--force]")
+        print("Uso: forge-init.py --tool <claude-code|opencode|kiro|all> [--force] [--only=<agente>]")
         sys.exit(1)
 
     idx = sys.argv.index("--tool")
@@ -372,7 +374,10 @@ def main():
     print(f"Root     : {root}")
     print(f"Forge    : {forge}")
     print(f"Tool     : {tool}")
-    print(f"Force    : {'sí — sobreescribe existentes' if FORCE else 'no — preserva existentes'}\n")
+    print(f"Force    : {'sí — sobreescribe existentes' if FORCE else 'no — preserva existentes'}")
+    if ONLY_AGENT:
+        print(f"Only     : {ONLY_AGENT} (solo ese agente)")
+    print()
 
     if tool in ("claude-code", "opencode", "all"):
         label = "Claude Code / OpenCode" if tool == "all" else tool.title().replace("-", " ")
