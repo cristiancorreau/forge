@@ -197,22 +197,38 @@ def check_vs_forge(agent, forge, profiles):
     forge_lines = len(forge_content.splitlines())
     project_lines = agent["lines"]
 
+    extended = project_lines > forge_lines * 1.2  # proyecto tiene >20% más líneas
+
     if ratio >= SIMILARITY_WARN:
         issues.append({"level": "ok", "msg": f"Al día con forge ({source}) — similitud {ratio:.0%}"})
     elif ratio >= SIMILARITY_OUTDATED:
-        diff_lines = forge_lines - project_lines
-        sign = "+" if diff_lines > 0 else ""
-        issues.append({
-            "level": "warn",
-            "msg": f"Posibles mejoras disponibles en forge ({source}) — similitud {ratio:.0%}, forge tiene {sign}{diff_lines} líneas",
-            "fix": f"forge-init.py --tool claude-code --force --only={agent['name']}"
-        })
+        if extended:
+            diff_lines = project_lines - forge_lines
+            issues.append({
+                "level": "info",
+                "msg": f"Extendido intencionalmente vs forge ({source}) — similitud {ratio:.0%}, proyecto tiene +{diff_lines} líneas extra",
+            })
+        else:
+            diff_lines = forge_lines - project_lines
+            sign = "+" if diff_lines > 0 else ""
+            issues.append({
+                "level": "warn",
+                "msg": f"Posibles mejoras disponibles en forge ({source}) — similitud {ratio:.0%}, forge tiene {sign}{diff_lines} líneas",
+                "fix": f"forge-init.py --tool claude-code --force --only={agent['name']}"
+            })
     else:
-        issues.append({
-            "level": "error",
-            "msg": f"Muy diferente a forge ({source}) — similitud {ratio:.0%}. Probablemente desactualizado",
-            "fix": f"forge-init.py --tool claude-code --force --only={agent['name']}"
-        })
+        if extended:
+            diff_lines = project_lines - forge_lines
+            issues.append({
+                "level": "info",
+                "msg": f"Muy extendido vs forge ({source}) — similitud {ratio:.0%}, proyecto tiene +{diff_lines} líneas (fork intencional)",
+            })
+        else:
+            issues.append({
+                "level": "error",
+                "msg": f"Muy diferente a forge ({source}) — similitud {ratio:.0%}. Probablemente desactualizado",
+                "fix": f"forge-init.py --tool claude-code --force --only={agent['name']}"
+            })
 
     return issues
 
