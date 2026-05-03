@@ -46,8 +46,29 @@ sprint:
       name: "Features"
       specs: []
 
+skills:
+  # Skills universales — activos por defecto si el stack aplica
+  active:
+    - security-audit              # siempre recomendado si hay endpoints de API
+    - db-migrate                  # activar si stack.database está configurado
+    - local2prod                  # activar si hay deploy automatizado
+    - new-feature                 # orquestador de implementación
+  # Integraciones opcionales — requieren herramienta externa
+  integrations: []               # "obsidian-sync" si usas Obsidian + Local REST API
+
+deploy:
+  provider: null                 # "vercel" | "railway" | "fly" | "github-actions" | "custom"
+  branch: "main"                 # branch que trigerea el deploy
+  # Para Vercel:
+  # team_id: "team_..."
+  # project_id: "prj_..."
+  # Para Fly.io:
+  # app_name: "mi-app"
+  # Para custom:
+  # check_command: "kubectl rollout status deploy/mi-app"
+
 compliance:
-  frameworks: []                  # gdpr | lgpd | ley-21719 | ccpa
+  frameworks: []                 # gdpr | lgpd | ley-21719 | ccpa
   pii_handling: false            # true si el proyecto maneja PII
   audit_logs: false              # true si requiere logs inmutables
 
@@ -57,3 +78,15 @@ paths:
   progress: "docs/progress.html"
   migrations: null               # "packages/api/migrations" | "db/migrate" | null
   tests: null                    # "tests/" | "__tests__/" | null
+
+# Integraciones (solo configurar si están activas en skills.integrations)
+integrations:
+  obsidian:
+    vault_path: null             # "docs/mi-vault" — relativo a la raíz del repo
+    # El token va en .env.local como OBSIDIAN_TOKEN (nunca en este archivo)
+    map:                         # área → nota del vault a actualizar
+      api: null                  # "03-api/endpoints.md"
+      database: null             # "02-base-de-datos/migraciones.md"
+      frontend: null             # "01-arquitectura/componentes.md"
+      deploy: null               # "06-deploy/ci-cd.md"
+      decisions: null            # "08-decisiones/log-decisiones.md"
