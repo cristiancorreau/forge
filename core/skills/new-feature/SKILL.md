@@ -98,14 +98,18 @@ Invocar el skill `/security-audit` como checklist mental antes de escribir cualq
 1. **Actualizar la spec** con decisiones tomadas durante la implementación
    (agregar en sección "Notas de implementación" del archivo de spec)
 
-2. **Actualizar documentación del proyecto** [si aplica]
+2. **Verificación visual** [si la feature tiene UI]
+   - Si el proyecto tiene `browser-test` activo → invocar `/browser-test` para tomar screenshot de evidencia
+   - Verificar estados: loading, error, vacío, con datos
+
+3. **Actualizar documentación del proyecto** [si aplica]
    - Si el proyecto usa `obsidian-sync` → invocar ese skill ahora
    - Si hay wiki o docs/ → actualizar la sección correspondiente
 
-3. **Deploy** → invocar skill `/local2prod`
+4. **Deploy** → invocar skill `/local2prod`
    - Esperar estado READY/SUCCESS antes de declarar la feature terminada
 
-4. **Marcar spec como IMPLEMENTED**
+5. **Marcar spec como IMPLEMENTED**
    ```bash
    # En docs/specs/<ID>-<nombre>.md, cambiar:
    # > Estado: APPROVED
@@ -124,6 +128,7 @@ Invocar el skill `/security-audit` como checklist mental antes de escribir cualq
 - [ ] Checklist de seguridad aplicado a endpoints nuevos
 - [ ] DB migrada correctamente (dev y prod si aplica)
 - [ ] Build pasando sin errores
+- [ ] Screenshot de evidencia tomado (si hay UI y `browser-test` activo)
 - [ ] Spec actualizada con decisiones de implementación
 - [ ] Documentación del proyecto actualizada
 - [ ] Deploy exitoso (estado READY confirmado)
@@ -141,8 +146,10 @@ new-feature
 ├── phase-kickoff (Fase 3 — si se crea team de agentes)
 ├── security-audit (Fase 4 — checklist de seguridad)
 ├── db-migrate (Fase 5 — si hay cambios de schema)
+├── browser-test (Fase 6 — [OPCIONAL] screenshot de evidencia si hay UI)
 ├── obsidian-sync (Fase 6 — [OPCIONAL] si el proyecto lo tiene configurado)
 └── local2prod (Fase 6 — deploy a producción)
 ```
 
-Dependencias opcionales: `obsidian-sync` solo se invoca si está en `project.yaml` bajo `skills.integrations`.
+Dependencias opcionales: `browser-test` solo se invoca si está en `project.yaml` bajo `skills.active`.
+`obsidian-sync` solo se invoca si está en `project.yaml` bajo `skills.integrations`.

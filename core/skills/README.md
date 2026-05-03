@@ -22,6 +22,7 @@ new-feature ──────────────────────�
 | `phase-kickoff` | Core | No | orchestrator, new-feature |
 | `security-audit` | Universal | No | new-feature, security-auditor |
 | `db-migrate` | Universal | No (solo el ORM del proyecto) | new-feature |
+| `browser-test` | Universal | `agent-browser` CLI (npm i -g) | new-feature, usuario directo |
 | `local2prod` | Universal | CLI del provider de deploy | new-feature |
 | `new-feature` | Universal | No (orquesta los otros) | Usuario directo |
 | `obsidian-sync` | Integración | Obsidian + Local REST API | new-feature, local2prod |
@@ -36,6 +37,7 @@ new-feature ──────────────────────�
 Configurar en `project.yaml` bajo `skills.active`:
 - **`security-audit`**: checklist de auth, authz, IDOR, input validation
 - **`db-migrate`**: flujo seguro de migraciones (Prisma, Drizzle, Rails, Alembic, Goose)
+- **`browser-test`**: automatización de navegador — screenshots, verificación de UI, testeo visual. Requiere `agent-browser` instalado globalmente (`npm i -g agent-browser && agent-browser install`)
 - **`local2prod`**: commit → push → esperar CI → verificar (Vercel, Railway, Fly, custom)
 - **`new-feature`**: checklist completo de implementación (orquesta los otros)
 

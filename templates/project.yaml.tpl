@@ -53,6 +53,7 @@ skills:
     - db-migrate                  # activar si stack.database está configurado
     - local2prod                  # activar si hay deploy automatizado
     - new-feature                 # orquestador de implementación
+    # - browser-test              # descomenta si tienes agent-browser instalado (npm i -g agent-browser)
   # Integraciones opcionales — requieren herramienta externa
   integrations: []               # "obsidian-sync" si usas Obsidian + Local REST API
 

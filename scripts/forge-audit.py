@@ -271,7 +271,7 @@ def find_opportunities(forge, config, installed_names):
 
     # Skills universales disponibles que no están activos
     skills_dir = forge / "core" / "skills"
-    universal_skills = {"security-audit", "db-migrate", "local2prod", "new-feature"}
+    universal_skills = {"security-audit", "db-migrate", "local2prod", "new-feature", "browser-test"}
     for skill in sorted(universal_skills - set(active_skills)):
         skill_path = skills_dir / skill / "SKILL.md"
         if skill_path.exists():
