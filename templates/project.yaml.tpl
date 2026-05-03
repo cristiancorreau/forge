@@ -54,8 +54,16 @@ skills:
     - local2prod                  # activar si hay deploy automatizado
     - new-feature                 # orquestador de implementación
     # - browser-test              # descomenta si tienes agent-browser instalado (npm i -g agent-browser)
+    # Wiki — knowledge base del proyecto (instala /wiki-ingest, /wiki-query, /wiki-lint)
+    # - wiki-ingest
+    # - wiki-query
+    # - wiki-lint
   # Integraciones opcionales — requieren herramienta externa
   integrations: []               # "obsidian-sync" si usas Obsidian + Local REST API
+
+# Wiki — solo si wiki-ingest/wiki-query/wiki-lint están activos
+# wiki:
+#   path: "docs/wiki"            # default — donde vive el wiki del proyecto
 
 deploy:
   provider: null                 # "vercel" | "railway" | "fly" | "github-actions" | "custom"

@@ -86,6 +86,73 @@ def install_agent(src: Path, dst: Path, name: str, source_label: str) -> str:
     return "UPDATE" if dst.exists() else "OK"
 
 
+def init_wiki(root: Path, forge: Path, config: dict):
+    """Inicializa estructura docs/wiki/ desde templates si hay skills de wiki activos."""
+    skills_active = config.get("skills", {}).get("active", [])
+    wiki_skills = {"wiki-ingest", "wiki-query", "wiki-lint"}
+    if not wiki_skills.intersection(skills_active):
+        return
+
+    wiki_cfg = config.get("wiki", {})
+    wiki_path = root / wiki_cfg.get("path", "docs/wiki")
+
+    if wiki_path.exists():
+        print(f"  [KEEP] {wiki_path.relative_to(root)}/ — ya existe")
+        return
+
+    tpl = forge / "templates" / "wiki"
+    if not tpl.exists():
+        print(f"  [MISS] templates/wiki/ no encontrado en forge")
+        return
+
+    shutil.copytree(tpl, wiki_path)
+    # Renombrar _template.md → no copiarlos (son solo referencias)
+    for f in wiki_path.rglob("_template.md"):
+        f.unlink()
+    # Crear carpeta raw/ vacía
+    (wiki_path / "raw").mkdir(exist_ok=True)
+
+    print(f"  [OK]   {wiki_path.relative_to(root)}/ — estructura inicial creada")
+    print(f"         Usar /wiki-ingest para agregar conocimiento")
+
+
+def install_claude_commands(root: Path, forge: Path, config: dict):
+    """Instala slash commands de forge en .claude/commands/."""
+    skills_active = config.get("skills", {}).get("active", [])
+    commands_src = forge / "adapters" / "claude-code" / "commands"
+    if not commands_src.exists():
+        return
+
+    commands_dir = root / ".claude" / "commands"
+    commands_dir.mkdir(parents=True, exist_ok=True)
+
+    # Mapeo skill → comando(s) que provee
+    skill_commands = {
+        "wiki-ingest": ["wiki-ingest.md"],
+        "wiki-query":  ["wiki-query.md"],
+        "wiki-lint":   ["wiki-lint.md"],
+    }
+
+    installed = []
+    for skill, cmd_files in skill_commands.items():
+        if skill not in skills_active:
+            continue
+        for cmd_file in cmd_files:
+            src = commands_src / cmd_file
+            dst = commands_dir / cmd_file
+            if not src.exists():
+                continue
+            if dst.exists() and not FORCE:
+                print(f"  [KEEP] .claude/commands/{cmd_file}")
+                continue
+            shutil.copy2(src, dst)
+            installed.append(cmd_file)
+            print(f"  [OK]   .claude/commands/{cmd_file}")
+
+    if installed:
+        print(f"  Slash commands instalados: {', '.join(f'/{f[:-3]}' for f in installed)}")
+
+
 def init_claude_code(root: Path, forge: Path, config: dict):
     """Instala agentes de forge en .claude/agents/ (sin sobreescribir por defecto) y genera AGENTS.md."""
     agents_dir = root / ".claude" / "agents"
@@ -311,6 +378,10 @@ def main():
         label = "Claude Code / OpenCode" if tool == "all" else tool.title().replace("-", " ")
         print(f"--- {label} ---")
         init_claude_code(root, forge, config)
+        print("\n  Slash commands:")
+        install_claude_commands(root, forge, config)
+        print("\n  Wiki:")
+        init_wiki(root, forge, config)
 
     if tool in ("kiro", "all"):
         print("\n--- Kiro ---")

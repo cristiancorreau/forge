@@ -9,9 +9,17 @@ new-feature ──────────────────────�
 ├── phase-kickoff     (Fase 3 — si se crea team de agentes)    │
 ├── security-audit    (Fase 4 — checklist antes de API routes) │
 ├── db-migrate        (Fase 5 — si hay cambios de schema)      │
+├── browser-test      (Fase 6 — OPCIONAL, screenshot evidencia)│
 ├── obsidian-sync     (Fase 6 — OPCIONAL, si está configurado) │
 └── local2prod        (Fase 6 — deploy a producción)           │
     └── obsidian-sync (Paso 5 — OPCIONAL)               ───────┘
+
+wiki-ingest ← fuente (URL | archivo | texto)
+     ↓ crea/actualiza
+wiki/ (concepts, entities, sources, synthesis)
+     ↑
+wiki-query  ← pregunta → respuesta con citas
+wiki-lint   → health check + auto-reparación
 ```
 
 ## Catálogo
@@ -23,6 +31,9 @@ new-feature ──────────────────────�
 | `security-audit` | Universal | No | new-feature, security-auditor |
 | `db-migrate` | Universal | No (solo el ORM del proyecto) | new-feature |
 | `browser-test` | Universal | `agent-browser` CLI (npm i -g) | new-feature, usuario directo |
+| `wiki-ingest` | Wiki | No | usuario directo, docs-writer |
+| `wiki-query` | Wiki | No | usuario directo, new-feature |
+| `wiki-lint` | Wiki | No | usuario directo |
 | `local2prod` | Universal | CLI del provider de deploy | new-feature |
 | `new-feature` | Universal | No (orquesta los otros) | Usuario directo |
 | `obsidian-sync` | Integración | Obsidian + Local REST API | new-feature, local2prod |
@@ -40,6 +51,18 @@ Configurar en `project.yaml` bajo `skills.active`:
 - **`browser-test`**: automatización de navegador — screenshots, verificación de UI, testeo visual. Requiere `agent-browser` instalado globalmente (`npm i -g agent-browser && agent-browser install`)
 - **`local2prod`**: commit → push → esperar CI → verificar (Vercel, Railway, Fly, custom)
 - **`new-feature`**: checklist completo de implementación (orquesta los otros)
+
+### Wiki — knowledge base del proyecto
+Configurar en `project.yaml` bajo `skills.active`. Generan slash commands `/wiki-ingest`, `/wiki-query`, `/wiki-lint` en Claude Code. La estructura `docs/wiki/` se inicializa con `forge-init.py`:
+- **`wiki-ingest`**: ingesta fuentes (URL, archivo, texto) → actualiza `raw/` + páginas wiki + index + log
+- **`wiki-query`**: responde preguntas usando el wiki como base, con citas a páginas
+- **`wiki-lint`**: verifica integridad del wiki: links, huérfanos, frontmatter, log
+
+Configuración opcional en `project.yaml`:
+```yaml
+wiki:
+  path: "docs/wiki"   # default
+```
 
 ### Integraciones — requieren herramienta externa
 Configurar en `project.yaml` bajo `skills.integrations`:

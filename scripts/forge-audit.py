@@ -271,7 +271,10 @@ def find_opportunities(forge, config, installed_names):
 
     # Skills universales disponibles que no están activos
     skills_dir = forge / "core" / "skills"
-    universal_skills = {"security-audit", "db-migrate", "local2prod", "new-feature", "browser-test"}
+    universal_skills = {
+        "security-audit", "db-migrate", "local2prod", "new-feature",
+        "browser-test", "wiki-ingest", "wiki-query", "wiki-lint",
+    }
     for skill in sorted(universal_skills - set(active_skills)):
         skill_path = skills_dir / skill / "SKILL.md"
         if skill_path.exists():
@@ -280,6 +283,27 @@ def find_opportunities(forge, config, installed_names):
                 "msg": f"Skill '{skill}' disponible pero no activo en project.yaml",
                 "fix": f"Agregar '{skill}' a skills.active en project.yaml"
             })
+
+    # Wiki health — si los skills están activos, verificar que el wiki existe
+    wiki_skills_active = {"wiki-ingest", "wiki-query", "wiki-lint"}.intersection(active_skills)
+    if wiki_skills_active:
+        root = config.get("_root")
+        wiki_cfg = config.get("wiki", {})
+        wiki_path_str = wiki_cfg.get("path", "docs/wiki") if wiki_cfg else "docs/wiki"
+        if root:
+            wiki_path = Path(root) / wiki_path_str
+            if not wiki_path.exists():
+                opps.append({
+                    "type": "wiki",
+                    "msg": f"Skills de wiki activos pero {wiki_path_str}/ no existe",
+                    "fix": "forge-init.py --tool claude-code  (crea la estructura inicial)"
+                })
+            elif not (wiki_path / "index.md").exists():
+                opps.append({
+                    "type": "wiki",
+                    "msg": f"{wiki_path_str}/index.md falta — wiki incompleto",
+                    "fix": "forge-init.py --tool claude-code  (recrea el índice)"
+                })
 
     # Integración obsidian disponible
     if "obsidian-sync" not in integrations:
@@ -312,6 +336,7 @@ def run_audit(as_json: bool = False):
         root = find_project_root()
         forge = find_forge_dir()
         config = load_project(root)
+        config["_root"] = str(root)  # pass root for wiki path resolution
     except FileNotFoundError as e:
         print(ERR(f"ERROR: {e}"), file=sys.stderr)
         sys.exit(1)
@@ -428,7 +453,7 @@ def run_audit(as_json: bool = False):
     if opps:
         print(f"\n{BOLD('OPORTUNIDADES DE MEJORA')}")
         print("─" * 60)
-        type_labels = {"profile": "Profile", "skill": "Skill", "integration": "Integración", "config": "Config"}
+        type_labels = {"profile": "Profile", "skill": "Skill", "integration": "Integración", "config": "Config", "wiki": "Wiki"}
         for opp in opps:
             label = DIM(f"[{type_labels.get(opp['type'], opp['type'])}]")
             print(f"  {INFO('→')}  {label} {opp['msg']}")
