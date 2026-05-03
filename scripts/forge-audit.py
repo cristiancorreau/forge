@@ -100,7 +100,7 @@ def read_agent(path: Path) -> dict:
     }
 
 
-def get_forge_version(forge: Path, name: str, profiles: list[str]) -> tuple[Path | None, str]:
+def get_forge_version(forge, name, profiles):
     """
     Busca la versión forge de un agente.
     Prioridad: profiles (en orden) → core.
@@ -122,7 +122,7 @@ def similarity(a: str, b: str) -> float:
 
 # ── Checks ────────────────────────────────────────────────────────────────────
 
-def check_frontmatter(agent: dict) -> list[dict]:
+def check_frontmatter(agent):
     issues = []
     fm = agent["frontmatter"]
 
@@ -154,7 +154,7 @@ def check_frontmatter(agent: dict) -> list[dict]:
     return issues
 
 
-def check_sections(agent: dict) -> list[dict]:
+def check_sections(agent):
     issues = []
     content = agent["content"]
 
@@ -173,14 +173,22 @@ def check_sections(agent: dict) -> list[dict]:
     return issues
 
 
-def check_vs_forge(agent: dict, forge: Path, profiles: list[str]) -> list[dict]:
+def check_vs_forge(agent, forge, profiles):
     issues = []
+    tier = agent["frontmatter"].get("tier")
+
+    # Tier 3 (dominio): no existe en forge por diseño — correcto
+    if tier == 3:
+        issues.append({"level": "ok", "msg": "Tier 3 (dominio) — no se compara con forge"})
+        return issues
+
     forge_path, source = get_forge_version(forge, agent["name"], profiles)
 
     if forge_path is None:
-        # No está en forge — puede ser Tier 3 (correcto) o Tier 2 no migrado
-        tier = agent["frontmatter"].get("tier")
-        if tier in (1, 2):
+        if not tier:
+            # Sin tier: posiblemente Tier 3 no anotado, reportar como sugerencia
+            issues.append({"level": "info", "msg": "No encontrado en forge — si es Tier 3, agregar 'tier: 3' al frontmatter"})
+        elif tier in (1, 2):
             issues.append({"level": "warn", "msg": f"Tier {tier} declarado pero no existe en forge — ¿falta crear el profile?"})
         return issues
 
@@ -211,7 +219,7 @@ def check_vs_forge(agent: dict, forge: Path, profiles: list[str]) -> list[dict]:
 
 # ── Oportunidades ─────────────────────────────────────────────────────────────
 
-def find_opportunities(forge: Path, config: dict, installed_names: set[str]) -> list[dict]:
+def find_opportunities(forge, config, installed_names):
     opps = []
     agents_cfg = config.get("agents", {})
     active_profiles = agents_cfg.get("profiles", [])
@@ -323,8 +331,10 @@ def run_audit(as_json: bool = False):
             if c_["level"] == "error":
                 worst = "error"
                 break
-            if c_["level"] == "warn":
+            if c_["level"] == "warn" and worst != "error":
                 worst = "warn"
+            if c_["level"] == "info" and worst == "ok":
+                worst = "info"
 
         agent_results[name] = {"tier": tier, "checks": checks, "status": worst}
 
@@ -346,6 +356,7 @@ def run_audit(as_json: bool = False):
 
     proj_name = config.get("project", {}).get("name", "?")
     n_ok   = sum(1 for r in agent_results.values() if r["status"] == "ok")
+    n_info = sum(1 for r in agent_results.values() if r["status"] == "info")
     n_warn = sum(1 for r in agent_results.values() if r["status"] == "warn")
     n_err  = sum(1 for r in agent_results.values() if r["status"] == "error")
 
@@ -357,7 +368,7 @@ def run_audit(as_json: bool = False):
     print(f"\n{BOLD('RESUMEN')}")
     print(f"  {len(installed)} agentes en .claude/agents/")
     print(f"  {len(declared)} declarados en project.yaml")
-    print(f"  {OK(str(n_ok))} conformes   {WARN(str(n_warn))} advertencias   {ERR(str(n_err))} gaps")
+    print(f"  {OK(str(n_ok))} conformes  {INFO(str(n_info))} sugerencias  {WARN(str(n_warn))} advertencias  {ERR(str(n_err))} gaps")
     if orphans:
         print(f"  {WARN(str(len(orphans)))} huérfanos (en .claude/ pero no en project.yaml)")
 
@@ -383,11 +394,11 @@ def run_audit(as_json: bool = False):
                 print(f"       {sub_icon} {check['msg']}")
                 if "fix" in check:
                     print(f"         {DIM('→ ' + check['fix'])}")
-            # Si todos son OK, mostrar solo el primero
-            if result["status"] == "ok":
-                ok_checks = [c for c in result["checks"] if c["level"] == "ok"]
-                if ok_checks:
-                    print(f"       {level_icon('ok')} {DIM(ok_checks[0]['msg'])}")
+            # Si el agente está ok o info, mostrar el mensaje positivo principal
+            if result["status"] in ("ok", "info"):
+                good = [c for c in result["checks"] if c["level"] in ("ok", "info")]
+                if good:
+                    print(f"       {level_icon(good[0]['level'])} {DIM(good[0]['msg'])}")
 
     # Oportunidades
     if opps:
