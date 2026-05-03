@@ -3,6 +3,7 @@ name: security-auditor
 description: Audita el código por vulnerabilidades de seguridad. Foco en autenticación, autorización, inyección y dependencias. NO modifica código.
 model: opus
 tools: Read, Grep, Glob, Bash
+tier: 1
 ---
 
 # Security Auditor

@@ -60,19 +60,30 @@ def load_project(root: Path) -> dict:
         return yaml.safe_load(f)
 
 
-def get_all_agent_names(config: dict) -> tuple[list[str], list[str], list[str]]:
-    """Retorna (active, compliance, specialized) — listas de nombres de agentes."""
+def get_all_agent_names(config: dict) -> tuple[list[str], list[str], list[str], list[str]]:
+    """Retorna (active, compliance, specialized, profiles) — listas de nombres/strings."""
     agents = config.get("agents", {})
     active = agents.get("active", ["orchestrator", "backend-engineer", "frontend-engineer"])
     compliance = agents.get("compliance", [])
     specialized = agents.get("specialized", [])
+    profiles = agents.get("profiles", [])
 
     # Compliance-reviewer automático si hay frameworks configurados
     frameworks = config.get("compliance", {}).get("frameworks", [])
     if frameworks and "compliance-reviewer" not in active + compliance:
         compliance = list(set(compliance + ["compliance-reviewer"]))
 
-    return active, compliance, specialized
+    return active, compliance, specialized, profiles
+
+
+def install_agent(src: Path, dst: Path, name: str, source_label: str) -> str:
+    """Copia un agente de src a dst. Respeta --force. Retorna el status."""
+    if not src.exists():
+        return "MISS"
+    if dst.exists() and not FORCE:
+        return "KEEP"
+    shutil.copy2(src, dst)
+    return "UPDATE" if dst.exists() else "OK"
 
 
 def init_claude_code(root: Path, forge: Path, config: dict):
@@ -80,46 +91,76 @@ def init_claude_code(root: Path, forge: Path, config: dict):
     agents_dir = root / ".claude" / "agents"
     agents_dir.mkdir(parents=True, exist_ok=True)
 
-    active, compliance, specialized = get_all_agent_names(config)
-    all_from_forge = list(set(active + compliance))  # los que forge puede proveer
+    active, compliance, specialized, profiles = get_all_agent_names(config)
+    stats = {"installed": [], "kept": [], "missing": []}
 
-    installed, skipped_exists, skipped_missing = [], [], []
+    # 1. Tier 2 — profiles tienen prioridad sobre core
+    profile_provided: set[str] = set()
+    if profiles:
+        print(f"\n  Tier 2 — profiles: {', '.join(profiles)}")
+    for profile in profiles:
+        profile_agents_dir = forge / "profiles" / profile / "agents"
+        if not profile_agents_dir.exists():
+            print(f"  [WARN] profiles/{profile}/ no encontrado en forge")
+            continue
+        for src in sorted(profile_agents_dir.glob("*.md")):
+            name = src.stem
+            dst = agents_dir / src.name
+            status = install_agent(src, dst, name, f"profile:{profile}")
+            profile_provided.add(name)
+            _print_agent_status(status, name, f"profiles/{profile}/agents/")
+            _record_status(stats, status, name)
 
-    for agent_name in all_from_forge:
+    # 2. Tier 1 — core (solo agentes que no fueron cubiertos por profiles)
+    all_from_core = list(set(active + compliance))
+    core_only = [a for a in all_from_core if a not in profile_provided]
+    if core_only:
+        print(f"\n  Tier 1 — core:")
+    for agent_name in sorted(core_only):
         src = forge / "core" / "agents" / f"{agent_name}.md"
         dst = agents_dir / f"{agent_name}.md"
+        status = install_agent(src, dst, agent_name, "core")
+        _print_agent_status(status, agent_name, "core/agents/")
+        _record_status(stats, status, agent_name)
 
-        if not src.exists():
-            skipped_missing.append(agent_name)
-            print(f"  [MISS] core/agents/{agent_name}.md — no existe en forge (crear manualmente)")
-            continue
-
-        if dst.exists() and not FORCE:
-            skipped_exists.append(agent_name)
-            print(f"  [KEEP] .claude/agents/{agent_name}.md — ya existe (usar --force para sobreescribir)")
-            continue
-
-        shutil.copy2(src, dst)
-        installed.append(agent_name)
-        action = "UPDATED" if dst.exists() else "OK"
-        print(f"  [{action}] .claude/agents/{agent_name}.md")
-
+    # 3. Tier 3 — especializados (solo verificar que existen en el proyecto)
     if specialized:
-        print(f"\n  Agentes especializados del proyecto (deben existir en .claude/agents/):")
+        print(f"\n  Tier 3 — especializados del proyecto:")
         for name in specialized:
             dst = agents_dir / f"{name}.md"
-            status = "OK" if dst.exists() else "FALTA — crear manualmente"
-            print(f"    [{status}] .claude/agents/{name}.md")
+            status = "OK" if dst.exists() else "FALTA"
+            icon = "OK" if dst.exists() else "FALTA — crear manualmente en .claude/agents/"
+            print(f"    [{icon}] {name}.md")
 
-    # AGENTS.md siempre se regenera (documenta el roster completo)
-    _write_agents_md(root, config, active, compliance, specialized)
+    # AGENTS.md siempre se regenera
+    _write_agents_md(root, config, active, compliance, specialized, profiles)
 
-    print(f"\n  Instalados: {len(installed)} | Ya existían: {len(skipped_exists)} | Faltaban en forge: {len(skipped_missing)}")
-    if skipped_missing:
-        print(f"  Crear en forge/core/agents/: {', '.join(skipped_missing)}")
+    i, k, m = len(stats["installed"]), len(stats["kept"]), len(stats["missing"])
+    print(f"\n  Instalados: {i} | Preservados: {k} | Sin archivo en forge: {m}")
+    if stats["missing"]:
+        print(f"  Pendientes en forge: {', '.join(stats['missing'])}")
 
 
-def _write_agents_md(root: Path, config: dict, active: list, compliance: list, specialized: list):
+def _print_agent_status(status: str, name: str, source: str):
+    msgs = {
+        "OK":     f"  [OK]   .claude/agents/{name}.md  ← {source}",
+        "UPDATE": f"  [UPD]  .claude/agents/{name}.md  ← {source} (sobreescrito)",
+        "KEEP":   f"  [KEEP] .claude/agents/{name}.md  — ya existe (--force para sobreescribir)",
+        "MISS":   f"  [MISS] {source}{name}.md — no existe en forge",
+    }
+    print(msgs.get(status, f"  [?] {name}"))
+
+
+def _record_status(stats: dict, status: str, name: str):
+    if status in ("OK", "UPDATE"):
+        stats["installed"].append(name)
+    elif status == "KEEP":
+        stats["kept"].append(name)
+    elif status == "MISS":
+        stats["missing"].append(name)
+
+
+def _write_agents_md(root: Path, config: dict, active: list, compliance: list, specialized: list, profiles: list = []):
     project_name = config.get("project", {}).get("name", "Mi Proyecto")
     team_name = config.get("team", {}).get("name", "Team")
     frameworks = config.get("compliance", {}).get("frameworks", [])

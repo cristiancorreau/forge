@@ -3,6 +3,7 @@ name: test-engineer
 description: Escribe y mantiene tests unitarios, integración y E2E. NO escribe código de producción.
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
+tier: 1
 ---
 
 # Test Engineer

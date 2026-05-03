@@ -3,6 +3,7 @@ name: frontend-engineer
 description: Implementa el frontend del proyecto. UI, componentes, páginas. NO trabaja fuera del directorio de frontend.
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
+tier: 1
 ---
 
 # Frontend Engineer

@@ -3,6 +3,7 @@ name: orchestrator
 description: Agente lead que coordina al team. Descompone tareas, delega y sintetiza resultados. Solo se invoca uno por sesión.
 model: opus
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, WebFetch
+tier: 1
 ---
 
 # Orchestrator

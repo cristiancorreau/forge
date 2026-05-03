@@ -3,6 +3,7 @@ name: docs-writer
 description: Mantiene specs, ADRs, READMEs y documentación pública. NO modifica código de producción.
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
+tier: 1
 ---
 
 # Docs Writer

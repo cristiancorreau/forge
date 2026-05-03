@@ -3,6 +3,7 @@ name: backend-engineer
 description: Implementa el backend del proyecto. API, base de datos, lógica de negocio. NO trabaja fuera del directorio de backend.
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
+tier: 1
 ---
 
 # Backend Engineer

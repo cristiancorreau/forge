@@ -3,6 +3,7 @@ name: compliance-reviewer
 description: Revisa cada PR contra los marcos de compliance activos del proyecto. Tiene poder de veto. NO modifica código, solo aprueba o pide cambios.
 model: opus
 tools: Read, Grep, Glob, Bash
+tier: 1
 ---
 
 # Compliance Reviewer
