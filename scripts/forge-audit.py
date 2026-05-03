@@ -48,9 +48,13 @@ VALID_MODELS = {"opus", "sonnet", "haiku"}
 # Tier 1 reviewers deben usar opus
 OPUS_ROLES = {"compliance-reviewer", "security-auditor", "orchestrator"}
 
-# Similitud mínima para considerar "al día" vs forge (0-1)
-SIMILARITY_WARN  = 0.80   # <80% → advertir de posibles mejoras
-SIMILARITY_OUTDATED = 0.50  # <50% → probablemente desactualizado
+# Umbrales de similitud de texto (SequenceMatcher.ratio, escala 0-1).
+# Calibración: agentes Tier 1 sin modificar tienen ratio ~0.95-1.0 vs forge.
+# Agentes con especialización moderada (añadir 20-40 líneas) caen a ~0.65-0.80.
+# Agentes reescritos para un dominio específico (Tier 3) caen a <0.40.
+# Ajustar SIMILARITY_WARN a 0.70 para proyectos con fuerte especialización.
+SIMILARITY_WARN     = 0.80  # <80% → posibles mejoras disponibles en forge
+SIMILARITY_OUTDATED = 0.50  # <50% → probablemente desactualizado o fork intencional
 
 
 # ── Parsing ───────────────────────────────────────────────────────────────────
