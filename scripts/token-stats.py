@@ -20,10 +20,13 @@ from datetime import datetime, timezone
 
 
 def detect_project_dir() -> str:
-    """Detecta el directorio de sesiones Claude Code para el proyecto actual."""
+    """Detecta el directorio de sesiones Claude Code para el proyecto actual.
+
+    Claude Code usa el path completo con cada '/' reemplazado por '-',
+    manteniendo el '-' inicial (e.g. /Users/foo/proj → -Users-foo-proj).
+    """
     cwd = os.getcwd()
-    # Claude Code almacena sesiones como: ~/.claude/projects/<path-con-guiones>/
-    project_slug = cwd.replace("/", "-").lstrip("-")
+    project_slug = cwd.replace("/", "-")   # /Users/foo → -Users-foo (mantiene el '-' inicial)
     return os.path.expanduser(f"~/.claude/projects/{project_slug}")
 
 
