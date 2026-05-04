@@ -93,12 +93,17 @@ Tier 3 — Dominio       proyecto/.claude/agents/   (no está en forge)
 |---------|-------------------|
 | `hono-drizzle` | `api-engineer` — Hono + Drizzle + TypeScript |
 | `nextjs-admin` | `admin-engineer` — Next.js 15 + shadcn/ui |
+| `astro` | `frontend-engineer` — Astro + Tailwind + TypeScript |
 | `expo` | `mobile-engineer` — React Native / Expo |
 | `playwright-crawler` | `scanner-engineer` — Scraping y crawling |
 | `fastapi` | `api-engineer` — FastAPI + Python |
 | `express` | `api-engineer` — Express + Node.js |
 | `rails` | `fullstack-engineer` — Ruby on Rails |
 | `nestjs` | `api-engineer` — NestJS + TypeScript |
+| `django` | `api-engineer` — Django 4.x + Django REST Framework |
+| `vuenuxt` | `frontend-engineer` — Nuxt 3 + Vue 3 + Pinia |
+| `go-gin` | `api-engineer` — Go + Gin + sqlc |
+| `sveltekit` | `frontend-engineer` — SvelteKit 2 + Svelte 5 runes |
 
 Para stacks no cubiertos, el CLI ofrece scaffoldear un profile Tier 2 nuevo.
 
@@ -111,7 +116,8 @@ Para stacks no cubiertos, el CLI ofrece scaffoldear un profile Tier 2 nuevo.
 | Claude Code | `.claude/agents/` + `CLAUDE.md` | `--tool claude-code` |
 | OpenCode | `AGENTS.md` | `--tool opencode` |
 | Kiro | `.kiro/steering/` | `--tool kiro` |
-| Todos | Los tres anteriores | `--tool all` |
+| Codex CLI | `AGENTS.md` + `codex.md` | `--tool codex` |
+| Todos | Los cuatro anteriores | `--tool all` |
 
 ---
 

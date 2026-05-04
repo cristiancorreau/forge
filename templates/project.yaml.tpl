@@ -35,8 +35,8 @@ agents:
   compliance:
     - compliance-reviewer         # GDPR, LGPD, Ley 21.719, CCPA
   # Profiles stack-específicos (Tier 2) — reemplazan agentes genéricos con versiones especializadas
-  # Profiles disponibles: hono-drizzle | nextjs-admin | expo | playwright-crawler
-  #                       fastapi | express | rails | nestjs
+  # Profiles disponibles: hono-drizzle | nextjs-admin | astro | expo | playwright-crawler
+  #                       fastapi | express | rails | nestjs | django | vuenuxt | go-gin | sveltekit
   profiles: []
 
 sprint:

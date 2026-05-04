@@ -389,7 +389,7 @@ def _null(v: str) -> str:
 
 def _profiles_yaml(profiles: List[str]) -> str:
     if not profiles:
-        return "[]"
+        return "[]  # sin profile Tier 2 — usa forge-scaffold-profile.py para crear uno"
     return "[" + ", ".join(f'"{p}"' for p in profiles) + "]"
 
 def _compliance_yaml(frameworks: List[str]) -> str:
@@ -683,7 +683,15 @@ def main() -> None:
     if not profiles:
         print()
         print(f"  {yellow('Nota:')} No hay profile Tier 2 para esta combinación de stack.")
-        print(f"  Puedes crear uno con:")
+        print(f"  Los profiles disponibles son:")
+        print(f"  {dim('  API/Backend:')}")
+        print(f"  {dim('    hono-drizzle · express · nestjs · fastapi · django · rails · go-gin')}")
+        print(f"  {dim('  Frontend:')}")
+        print(f"  {dim('    nextjs-admin · astro · vuenuxt · sveltekit')}")
+        print(f"  {dim('  Otros:')}")
+        print(f"  {dim('    expo (mobile) · playwright-crawler (scraping)')}")
+        print()
+        print(f"  Para crear un profile propio para tu stack:")
         print(f"  {dim('python3 .agentic/scripts/forge-scaffold-profile.py --name <stack> --engineer <agente>')}")
 
     # 11 — Destino del project.yaml
