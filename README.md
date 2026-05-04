@@ -11,7 +11,7 @@ Un único `project.yaml` genera la configuración correcta para cada herramienta
 
 ```bash
 # 1. Agregar forge al proyecto como submodule
-git submodule add https://github.com/socialweb-cl/forge .agentic
+git submodule add https://github.com/socialwebcl/forge .agentic
 
 # 2. Instalar dependencias (solo pyyaml)
 pip3 install -r .agentic/requirements.txt
