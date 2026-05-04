@@ -42,6 +42,7 @@ herramientas diferentes? Si la respuesta es sí → Tier 2.
 |---------|-------------------|
 | `hono-drizzle` | `api-engineer` |
 | `nextjs-admin` | `admin-engineer` |
+| `astro` | `frontend-engineer` |
 | `expo` | `mobile-engineer` |
 | `playwright-crawler` | `scanner-engineer` |
 | `fastapi` | `api-engineer` |
