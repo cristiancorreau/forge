@@ -94,6 +94,13 @@ CATALOG: list[dict] = [
         "tags":        ["filesystem", "files", "read", "write", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
         "language":    "TypeScript",
+        "install": {
+            "slug": "filesystem",
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-filesystem", "{ALLOWED_DIR}"],
+            "params": [{"key": "ALLOWED_DIR", "label": "Directorio permitido", "default": "."}],
+            "env": [],
+        },
     },
     {
         "name":        "MCP — git",
@@ -102,6 +109,13 @@ CATALOG: list[dict] = [
         "tags":        ["git", "version-control", "commits", "diff", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
         "language":    "Python",
+        "install": {
+            "slug": "git",
+            "command": "uvx",
+            "args": ["mcp-server-git", "--repository", "{REPO_PATH}"],
+            "params": [{"key": "REPO_PATH", "label": "Ruta del repositorio git", "default": "."}],
+            "env": [],
+        },
     },
     {
         "name":        "MCP — github",
@@ -110,6 +124,13 @@ CATALOG: list[dict] = [
         "tags":        ["github", "issues", "pull-requests", "api", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/github",
         "language":    "TypeScript",
+        "install": {
+            "slug": "github",
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-github"],
+            "params": [],
+            "env": [{"key": "GITHUB_TOKEN", "label": "GitHub personal access token (ghp_...)"}],
+        },
     },
     {
         "name":        "MCP — postgres",
@@ -118,6 +139,13 @@ CATALOG: list[dict] = [
         "tags":        ["postgres", "postgresql", "database", "sql", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/postgres",
         "language":    "TypeScript",
+        "install": {
+            "slug": "postgres",
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-postgres", "{CONNECTION_STRING}"],
+            "params": [{"key": "CONNECTION_STRING", "label": "PostgreSQL connection string", "default": "postgresql://localhost/mydb"}],
+            "env": [],
+        },
     },
     {
         "name":        "MCP — sqlite",
@@ -126,6 +154,13 @@ CATALOG: list[dict] = [
         "tags":        ["sqlite", "database", "sql", "local", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/sqlite",
         "language":    "Python",
+        "install": {
+            "slug": "sqlite",
+            "command": "uvx",
+            "args": ["mcp-server-sqlite", "--db-path", "{DB_PATH}"],
+            "params": [{"key": "DB_PATH", "label": "Ruta del archivo SQLite", "default": "./data.db"}],
+            "env": [],
+        },
     },
     {
         "name":        "MCP — fetch",
@@ -134,6 +169,13 @@ CATALOG: list[dict] = [
         "tags":        ["http", "fetch", "web", "scraping", "markdown", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
         "language":    "Python",
+        "install": {
+            "slug": "fetch",
+            "command": "uvx",
+            "args": ["mcp-server-fetch"],
+            "params": [],
+            "env": [],
+        },
     },
     {
         "name":        "MCP — brave-search",
@@ -142,6 +184,13 @@ CATALOG: list[dict] = [
         "tags":        ["search", "web-search", "brave", "internet", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/brave-search",
         "language":    "TypeScript",
+        "install": {
+            "slug": "brave-search",
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+            "params": [],
+            "env": [{"key": "BRAVE_API_KEY", "label": "Brave Search API key"}],
+        },
     },
     {
         "name":        "MCP — slack",
@@ -150,6 +199,16 @@ CATALOG: list[dict] = [
         "tags":        ["slack", "messaging", "communication", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/slack",
         "language":    "TypeScript",
+        "install": {
+            "slug": "slack",
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-slack"],
+            "params": [],
+            "env": [
+                {"key": "SLACK_BOT_TOKEN", "label": "Slack Bot Token (xoxb-...)"},
+                {"key": "SLACK_TEAM_ID",   "label": "Slack Team ID"},
+            ],
+        },
     },
     {
         "name":        "MCP — puppeteer",
@@ -158,6 +217,13 @@ CATALOG: list[dict] = [
         "tags":        ["puppeteer", "browser", "automation", "screenshot", "scraping", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/puppeteer",
         "language":    "TypeScript",
+        "install": {
+            "slug": "puppeteer",
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+            "params": [],
+            "env": [],
+        },
     },
     {
         "name":        "MCP — sequential-thinking",
@@ -166,6 +232,13 @@ CATALOG: list[dict] = [
         "tags":        ["reasoning", "thinking", "analysis", "chain-of-thought", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking",
         "language":    "TypeScript",
+        "install": {
+            "slug": "sequential-thinking",
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+            "params": [],
+            "env": [],
+        },
     },
     {
         "name":        "MCP — memory",
@@ -174,6 +247,13 @@ CATALOG: list[dict] = [
         "tags":        ["memory", "knowledge-graph", "persistence", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/memory",
         "language":    "TypeScript",
+        "install": {
+            "slug": "memory",
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-memory"],
+            "params": [],
+            "env": [],
+        },
     },
     {
         "name":        "MCP — everything",
@@ -182,6 +262,13 @@ CATALOG: list[dict] = [
         "tags":        ["reference", "testing", "demo", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/everything",
         "language":    "TypeScript",
+        "install": {
+            "slug": "everything",
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-everything"],
+            "params": [],
+            "env": [],
+        },
     },
 
     # ── MCP Servers — comunidad ───────────────────────────────────────────────
@@ -193,6 +280,13 @@ CATALOG: list[dict] = [
         "tags":        ["supabase", "postgres", "database", "auth", "storage", "mcp"],
         "url":         "https://github.com/supabase-community/supabase-mcp",
         "language":    "TypeScript",
+        "install": {
+            "slug": "supabase",
+            "command": "npx",
+            "args": ["-y", "@supabase/mcp-server-supabase", "--access-token", "{ACCESS_TOKEN}"],
+            "params": [{"key": "ACCESS_TOKEN", "label": "Supabase personal access token"}],
+            "env": [],
+        },
     },
     {
         "name":        "MCP — Cloudflare",
@@ -201,6 +295,13 @@ CATALOG: list[dict] = [
         "tags":        ["cloudflare", "workers", "kv", "r2", "d1", "edge", "mcp"],
         "url":         "https://github.com/cloudflare/mcp-server-cloudflare",
         "language":    "TypeScript",
+        "install": {
+            "slug": "cloudflare",
+            "command": "npx",
+            "args": ["-y", "@cloudflare/mcp-server-cloudflare"],
+            "params": [],
+            "env": [{"key": "CLOUDFLARE_API_TOKEN", "label": "Cloudflare API token"}],
+        },
     },
     {
         "name":        "MCP — Vercel",
@@ -209,6 +310,13 @@ CATALOG: list[dict] = [
         "tags":        ["vercel", "deploy", "serverless", "hosting", "mcp"],
         "url":         "https://github.com/vercel/mcp-server",
         "language":    "TypeScript",
+        "install": {
+            "slug": "vercel",
+            "command": "npx",
+            "args": ["-y", "@vercel/mcp-adapter"],
+            "params": [],
+            "env": [{"key": "VERCEL_TOKEN", "label": "Vercel API token"}],
+        },
     },
     {
         "name":        "MCP — Linear",
@@ -217,6 +325,13 @@ CATALOG: list[dict] = [
         "tags":        ["linear", "project-management", "issues", "mcp"],
         "url":         "https://github.com/linear/linear-mcp",
         "language":    "TypeScript",
+        "install": {
+            "slug": "linear",
+            "command": "npx",
+            "args": ["-y", "@linear/mcp-server"],
+            "params": [],
+            "env": [{"key": "LINEAR_API_KEY", "label": "Linear API key"}],
+        },
     },
     {
         "name":        "MCP — Playwright",
@@ -225,6 +340,13 @@ CATALOG: list[dict] = [
         "tags":        ["playwright", "browser", "e2e", "testing", "automation", "mcp"],
         "url":         "https://github.com/microsoft/playwright-mcp",
         "language":    "TypeScript",
+        "install": {
+            "slug": "playwright",
+            "command": "npx",
+            "args": ["-y", "@playwright/mcp@latest"],
+            "params": [],
+            "env": [],
+        },
     },
     {
         "name":        "MCP — Sentry",
@@ -233,6 +355,13 @@ CATALOG: list[dict] = [
         "tags":        ["sentry", "errors", "monitoring", "debugging", "mcp"],
         "url":         "https://github.com/getsentry/sentry-mcp",
         "language":    "Python",
+        "install": {
+            "slug": "sentry",
+            "command": "uvx",
+            "args": ["mcp-server-sentry"],
+            "params": [],
+            "env": [{"key": "SENTRY_AUTH_TOKEN", "label": "Sentry auth token"}],
+        },
     },
     {
         "name":        "MCP — Docker",
@@ -241,6 +370,13 @@ CATALOG: list[dict] = [
         "tags":        ["docker", "containers", "devops", "infrastructure", "mcp"],
         "url":         "https://github.com/ckreiling/mcp-server-docker",
         "language":    "Python",
+        "install": {
+            "slug": "docker",
+            "command": "uvx",
+            "args": ["mcp-server-docker"],
+            "params": [],
+            "env": [],
+        },
     },
     {
         "name":        "MCP — AWS (aws-kb-retrieval)",
@@ -249,6 +385,17 @@ CATALOG: list[dict] = [
         "tags":        ["aws", "bedrock", "knowledge-base", "rag", "mcp", "oficial"],
         "url":         "https://github.com/modelcontextprotocol/servers/tree/main/src/aws-kb-retrieval-server",
         "language":    "TypeScript",
+        "install": {
+            "slug": "aws-kb",
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-aws-kb-retrieval"],
+            "params": [],
+            "env": [
+                {"key": "AWS_ACCESS_KEY_ID",     "label": "AWS Access Key ID"},
+                {"key": "AWS_SECRET_ACCESS_KEY",  "label": "AWS Secret Access Key"},
+                {"key": "AWS_REGION",             "label": "AWS Region", "default": "us-east-1"},
+            ],
+        },
     },
 
     # ── Profiles de forge ─────────────────────────────────────────────────────

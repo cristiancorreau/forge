@@ -8,6 +8,8 @@ Uso:
 """
 from __future__ import annotations
 
+import importlib.util
+import json
 import os
 import sys
 import subprocess
@@ -253,6 +255,295 @@ def _ask_yes_no(prompt: str, default: bool = True) -> bool:
     return raw in ("s", "si", "sí", "y", "yes")
 
 # ---------------------------------------------------------------------------
+# Catálogo — helpers de integración
+# ---------------------------------------------------------------------------
+
+_AITMPL_MOD = None  # cache del módulo cargado
+
+def _load_aitmpl_mod():
+    global _AITMPL_MOD
+    if _AITMPL_MOD is not None:
+        return _AITMPL_MOD
+    script = SCRIPTS / "aitmpl-search.py"
+    spec = importlib.util.spec_from_file_location("aitmpl_search", script)
+    mod  = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    _AITMPL_MOD = mod
+    return mod
+
+
+CATEGORY_ICONS = {
+    "framework":  "◆",
+    "mcp-server": "⬡",
+    "profile":    "◈",
+    "tool":       "⚙",
+    "resource":   "◉",
+}
+
+CATEGORY_LABELS_MENU = {
+    "framework":  "Framework",
+    "mcp-server": "MCP Server",
+    "profile":    "Profile forge",
+    "tool":       "Herramienta",
+    "resource":   "Recurso",
+}
+
+
+def _mcp_slug(item: dict) -> str:
+    install = item.get("install")
+    if install:
+        return install["slug"]
+    name = item.get("name", "")
+    if "—" in name:
+        return name.split("—", 1)[1].strip().split()[0].lower()
+    return name.lower().replace(" ", "-")
+
+
+def _profile_slug(item: dict) -> str:
+    name = item.get("name", "")
+    if "—" in name:
+        return name.split("—", 1)[1].strip().lower()
+    return name.lower().replace(" ", "-")
+
+
+def _copy_to_clipboard(text: str) -> None:
+    try:
+        subprocess.run(["pbcopy"], input=text.encode(), check=True, timeout=3)
+        clr()
+        _draw_header()
+        print(f"\n  {g('Copiado al portapapeles.')}\n  {d(text)}")
+    except Exception:
+        clr()
+        _draw_header()
+        print(f"\n  URL: {text}")
+    pause()
+
+
+def _load_settings() -> dict:
+    f = Path.cwd() / ".claude" / "settings.json"
+    if not f.exists():
+        return {}
+    try:
+        with open(f) as fh:
+            return json.load(fh)
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _save_settings(data: dict) -> None:
+    f = Path.cwd() / ".claude" / "settings.json"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    with open(f, "w") as fh:
+        json.dump(data, fh, indent=2, ensure_ascii=False)
+        fh.write("\n")
+
+
+def _is_mcp_installed(slug: str) -> bool:
+    return slug in _load_settings().get("mcpServers", {})
+
+
+def _install_mcp_server(item: dict) -> None:
+    install = item["install"]
+    slug    = install["slug"]
+    params  = install.get("params", [])
+    env_defs = install.get("env", [])
+
+    clr()
+    _draw_header()
+    print(f"\n  Instalando {b(item['name'])}\n")
+
+    # Prompts para parámetros en args
+    values: dict[str, str] = {}
+    for p in params:
+        default = p.get("default", "")
+        val = _ask_input(p["label"], default)
+        values[p["key"]] = val if val else default
+
+    # Construir args finales sustituyendo placeholders
+    final_args = []
+    for a in install.get("args", []):
+        try:
+            final_args.append(a.format_map(values))
+        except KeyError:
+            final_args.append(a)
+
+    # Prompts para variables de entorno
+    env_block: dict[str, str] = {}
+    for e in env_defs:
+        val = _ask_input(e["label"], e.get("default", ""))
+        if val:
+            env_block[e["key"]] = val
+
+    # Construir config del server
+    server_cfg: dict = {
+        "command": install["command"],
+        "args":    final_args,
+    }
+    if env_block:
+        server_cfg["env"] = env_block
+
+    # Merge en settings.json
+    settings = _load_settings()
+    already  = slug in settings.get("mcpServers", {})
+    if "mcpServers" not in settings:
+        settings["mcpServers"] = {}
+    settings["mcpServers"][slug] = server_cfg
+    _save_settings(settings)
+
+    print()
+    if already:
+        print(f"  {y('Actualizado')} — '{slug}' ya existía en .claude/settings.json (reemplazado).")
+    else:
+        print(f"  {g('Instalado')} — '{slug}' agregado a .claude/settings.json.")
+    print(f"\n  Reinicia Claude Code para activar el servidor MCP.")
+    pause()
+
+
+def _find_project_yaml() -> Optional[Path]:
+    cwd = Path.cwd()
+    for candidate in [cwd / "project.yaml", cwd / ".claude" / "project.yaml"]:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _is_profile_in_project(slug: str) -> bool:
+    yaml_file = _find_project_yaml()
+    if not yaml_file:
+        return False
+    try:
+        import yaml  # type: ignore
+        with open(yaml_file) as f:
+            data = yaml.safe_load(f)
+        return slug in (data or {}).get("agents", {}).get("profiles", [])
+    except Exception:
+        return False
+
+
+def _add_profile_to_project(slug: str) -> None:
+    yaml_file = _find_project_yaml()
+    if not yaml_file:
+        clr()
+        _draw_header()
+        print(f"\n  {r('No se encontró project.yaml')} en el directorio actual.")
+        print(f"  Ejecuta primero el wizard para crear el proyecto.")
+        pause()
+        return
+
+    try:
+        import yaml  # type: ignore
+    except ImportError:
+        clr()
+        _draw_header()
+        print(f"\n  {r('PyYAML no está instalado.')} Instálalo con: pip install pyyaml")
+        pause()
+        return
+
+    try:
+        with open(yaml_file) as f:
+            data = yaml.safe_load(f) or {}
+
+        agents   = data.setdefault("agents", {})
+        profiles = agents.setdefault("profiles", [])
+
+        clr()
+        _draw_header()
+        if slug in profiles:
+            print(f"\n  El profile '{b(slug)}' ya está en project.yaml.")
+        else:
+            profiles.append(slug)
+            with open(yaml_file, "w") as f:
+                yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            print(f"\n  {g('Agregado')} — profile '{b(slug)}' añadido a project.yaml.")
+            print(f"\n  Ejecuta 'Inicializar agentes' para instalar el agente en el proyecto.")
+        pause()
+    except Exception as exc:
+        clr()
+        _draw_header()
+        print(f"\n  {r('Error al modificar project.yaml:')} {exc}")
+        pause()
+
+
+def _build_result_menu(results: list[dict]) -> list[MenuItem]:
+    items = []
+    for i, r in enumerate(results):
+        cat   = r.get("category", "")
+        icon  = CATEGORY_ICONS.get(cat, "·")
+        name  = r.get("name", "")
+        label = f"{icon} {name}"
+        if len(label) > 48:
+            label = label[:45] + "…"
+        items.append(MenuItem(label, key=str(i), description=r.get("description", "")))
+    items.append(MenuItem("", separator=True))
+    items.append(MenuItem("← Volver", key="back", description="Regresa al menú de búsqueda."))
+    return items
+
+
+def _action_menu_item(item: dict) -> None:
+    category = item.get("category", "")
+    name     = item.get("name", "")
+    url      = item.get("url", "")
+
+    actions: list[MenuItem] = []
+
+    # MCP server: instalar
+    if category == "mcp-server" and item.get("install"):
+        slug    = _mcp_slug(item)
+        already = _is_mcp_installed(slug)
+        label   = (
+            f"Reinstalar  ({slug} ya instalado)"
+            if already else
+            "Instalar en proyecto  (.claude/settings.json)"
+        )
+        desc = (
+            f"'{slug}' ya está en .claude/settings.json. Reinstalar sobreescribirá la configuración."
+            if already else
+            "Agrega este MCP server a .claude/settings.json con los parámetros que indiques."
+        )
+        actions.append(MenuItem(label, key="install", description=desc))
+
+    # Profile: agregar a project.yaml
+    if category == "profile":
+        slug    = _profile_slug(item)
+        already = _is_profile_in_project(slug)
+        if already:
+            actions.append(MenuItem(
+                f"Ya en project.yaml  ({slug})", key="noop",
+                description=f"El profile '{slug}' ya está en agents.profiles de project.yaml.",
+            ))
+        else:
+            actions.append(MenuItem(
+                f"Agregar a project.yaml  ({slug})", key="add-profile",
+                description=f"Añade '{slug}' a agents.profiles en project.yaml. Luego ejecuta 'Inicializar agentes'.",
+            ))
+
+    # Abrir en browser / copiar URL
+    if url:
+        actions.append(MenuItem(
+            "Abrir en browser", key="open",
+            description=f"Abre {url[:60]} en el navegador predeterminado.",
+        ))
+        actions.append(MenuItem(
+            "Copiar URL al portapapeles", key="copy",
+            description=url,
+        ))
+
+    actions.append(MenuItem("", separator=True))
+    actions.append(MenuItem("← Volver", key="back", description="Regresa a la lista de resultados."))
+
+    title_short = name if len(name) <= 52 else name[:49] + "…"
+    key = show_menu(title_short, actions)
+
+    if key == "install":
+        _install_mcp_server(item)
+    elif key == "add-profile":
+        _add_profile_to_project(_profile_slug(item))
+    elif key == "open":
+        subprocess.Popen(["open", url])
+    elif key == "copy":
+        _copy_to_clipboard(url)
+
+# ---------------------------------------------------------------------------
 # Submenús
 # ---------------------------------------------------------------------------
 
@@ -405,58 +696,81 @@ def menu_audit() -> None:
 
 
 def menu_aitmpl() -> None:
-    clr()
-    _draw_header()
-    print(f"\n  {b('Buscar templates y recursos de agentes IA')}\n")
-    print(f"  {d('Catálogo curado: frameworks, MCP servers, profiles y herramientas.')}\n")
-    items_mode = [
-        MenuItem(
-            "Buscar por palabra clave", key="query",
-            description=(
-                "Busca en el catálogo por nombre, descripción o tecnología. "
-                "Ejemplos: 'postgres', 'rails', 'nextjs typescript', 'playwright'."
-            ),
-        ),
-        MenuItem(
-            "Ver por categoría        framework · mcp-server · profile · tool", key="category",
-            description=(
-                "Muestra todos los items de una categoría: frameworks de agentes, "
-                "MCP servers (20 disponibles), profiles de forge (9), herramientas y recursos."
-            ),
-        ),
-        MenuItem("", separator=True),
-        MenuItem("← Volver", key="back", description="Regresa al menú principal."),
-    ]
-    mode = show_menu("¿Cómo quieres buscar?", items_mode)
-    if not mode or mode == "back":
-        return
+    mod = _load_aitmpl_mod()
 
-    if mode == "category":
-        categories = ["framework", "mcp-server", "profile", "tool", "resource"]
-        cat_items = [
-            MenuItem("framework    Frameworks de agentes IA",        key="framework",
-                     description="forge, aider, micro-agent, anthropic-quickstarts, claude-code-action."),
-            MenuItem("mcp-server   Servidores MCP",                  key="mcp-server",
-                     description="20 servers: filesystem, git, github, postgres, sqlite, slack, puppeteer, playwright, docker, cloudflare, vercel y más."),
-            MenuItem("profile      Profiles de stack para forge",    key="profile",
-                     description="Los 9 profiles actuales: hono-drizzle, nextjs-admin, astro, fastapi, rails, nestjs, express, expo, playwright-crawler."),
-            MenuItem("tool         Herramientas CLI",                key="tool",
-                     description="Claude Code CLI, MCP Inspector."),
-            MenuItem("resource     Documentación y listas",          key="resource",
-                     description="Docs oficiales MCP, docs Claude Code, awesome-mcp-servers."),
+    while True:
+        items_mode = [
+            MenuItem(
+                "Buscar por palabra clave", key="query",
+                description=(
+                    "Busca en el catálogo por nombre, descripción o tecnología. "
+                    "Ejemplos: 'postgres', 'rails', 'nextjs typescript', 'playwright'."
+                ),
+            ),
+            MenuItem(
+                "Ver por categoría        framework · mcp-server · profile · tool", key="category",
+                description=(
+                    "Muestra todos los items de una categoría: frameworks de agentes, "
+                    "MCP servers (20 disponibles), profiles de forge (9), herramientas y recursos."
+                ),
+            ),
             MenuItem("", separator=True),
-            MenuItem("← Volver", key="back", description="Regresa al menú anterior."),
+            MenuItem("← Volver", key="back", description="Regresa al menú principal."),
         ]
-        cat = show_menu("Seleccionar categoría", cat_items)
-        if not cat or cat == "back":
+        mode = show_menu("Buscar templates y recursos", items_mode,
+                         subtitle="Catálogo curado — instala MCP servers y profiles directamente")
+        if not mode or mode == "back":
             return
-        run_script(SCRIPTS / "aitmpl-search.py", "--category", cat)
-    else:
-        query = _ask_input("¿Qué buscas?", "mcp postgres")
-        if not query:
-            return
-        run_script(SCRIPTS / "aitmpl-search.py", query)
-    pause()
+
+        results: list[dict] = []
+
+        if mode == "category":
+            cat_items = [
+                MenuItem("framework    Frameworks de agentes IA",     key="framework",
+                         description="forge, aider, micro-agent, anthropic-quickstarts, claude-code-action."),
+                MenuItem("mcp-server   Servidores MCP instalables",   key="mcp-server",
+                         description="20 servers con instalación directa: filesystem, git, github, postgres, slack, playwright, docker, cloudflare, vercel y más."),
+                MenuItem("profile      Profiles de stack para forge", key="profile",
+                         description="9 profiles: hono-drizzle, nextjs-admin, astro, fastapi, rails, nestjs, express, expo, playwright-crawler."),
+                MenuItem("tool         Herramientas CLI",             key="tool",
+                         description="Claude Code CLI, MCP Inspector."),
+                MenuItem("resource     Documentación y listas",       key="resource",
+                         description="Docs oficiales MCP, docs Claude Code, awesome-mcp-servers."),
+                MenuItem("", separator=True),
+                MenuItem("← Volver", key="back", description="Regresa al menú anterior."),
+            ]
+            cat = show_menu("Seleccionar categoría", cat_items)
+            if not cat or cat == "back":
+                continue
+            results = mod._search_local("", category=cat)
+        else:
+            clr()
+            _draw_header()
+            print()
+            query = _ask_input("¿Qué buscas?", "mcp postgres")
+            if not query:
+                continue
+            results = mod._search_local(query)
+
+        if not results:
+            clr()
+            _draw_header()
+            print(f"\n  {y('Sin resultados.')} Prueba con otro término o cambia la categoría.\n")
+            pause()
+            continue
+
+        # Mostrar resultados navegables
+        while True:
+            result_items = _build_result_menu(results)
+            n = len(results)
+            sel = show_menu(
+                f"Resultados — {n} encontrado{'s' if n != 1 else ''}",
+                result_items,
+                subtitle="Enter para ver acciones  ·  instalar MCP · agregar profile · abrir URL",
+            )
+            if not sel or sel == "back":
+                break
+            _action_menu_item(results[int(sel)])
 
 
 def menu_scaffold() -> None:
