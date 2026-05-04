@@ -396,34 +396,55 @@ def menu_audit() -> None:
 def menu_aitmpl() -> None:
     clr()
     _draw_header()
-    print(f"\n  {b('Buscar templates en aitmpl.com')}\n")
-    print(f"  {d('Busca templates de agentes IA para explorar patrones y arquitecturas.')}\n")
-    query = _ask_input("¿Qué buscas?", "fastapi backend")
-    if not query:
-        return
-    items = [
+    print(f"\n  {b('Buscar templates y recursos de agentes IA')}\n")
+    print(f"  {d('Catálogo curado: frameworks, MCP servers, profiles y herramientas.')}\n")
+    items_mode = [
         MenuItem(
-            "Texto  — formato legible", key="text",
+            "Buscar por palabra clave", key="query",
             description=(
-                "Muestra los resultados con nombre, categoría, descripción y URL "
-                "en un formato fácil de leer. Ideal para explorar opciones."
+                "Busca en el catálogo por nombre, descripción o tecnología. "
+                "Ejemplos: 'postgres', 'rails', 'nextjs typescript', 'playwright'."
             ),
         ),
         MenuItem(
-            "JSON   — para scripts o integración", key="json",
+            "Ver por categoría        framework · mcp-server · profile · tool", key="category",
             description=(
-                "Salida JSON estructurada con todos los campos de cada template. "
-                "Útil para procesar los resultados con jq o integrarlos en otros flujos."
+                "Muestra todos los items de una categoría: frameworks de agentes, "
+                "MCP servers (20 disponibles), profiles de forge (9), herramientas y recursos."
             ),
         ),
         MenuItem("", separator=True),
         MenuItem("← Volver", key="back", description="Regresa al menú principal."),
     ]
-    key = show_menu("Formato de salida", items)
-    if not key or key == "back":
+    mode = show_menu("¿Cómo quieres buscar?", items_mode)
+    if not mode or mode == "back":
         return
-    args = [query] + (["--json"] if key == "json" else [])
-    run_script(SCRIPTS / "aitmpl-search.py", *args)
+
+    if mode == "category":
+        categories = ["framework", "mcp-server", "profile", "tool", "resource"]
+        cat_items = [
+            MenuItem("framework    Frameworks de agentes IA",        key="framework",
+                     description="forge, aider, micro-agent, anthropic-quickstarts, claude-code-action."),
+            MenuItem("mcp-server   Servidores MCP",                  key="mcp-server",
+                     description="20 servers: filesystem, git, github, postgres, sqlite, slack, puppeteer, playwright, docker, cloudflare, vercel y más."),
+            MenuItem("profile      Profiles de stack para forge",    key="profile",
+                     description="Los 9 profiles actuales: hono-drizzle, nextjs-admin, astro, fastapi, rails, nestjs, express, expo, playwright-crawler."),
+            MenuItem("tool         Herramientas CLI",                key="tool",
+                     description="Claude Code CLI, MCP Inspector."),
+            MenuItem("resource     Documentación y listas",          key="resource",
+                     description="Docs oficiales MCP, docs Claude Code, awesome-mcp-servers."),
+            MenuItem("", separator=True),
+            MenuItem("← Volver", key="back", description="Regresa al menú anterior."),
+        ]
+        cat = show_menu("Seleccionar categoría", cat_items)
+        if not cat or cat == "back":
+            return
+        run_script(SCRIPTS / "aitmpl-search.py", "--category", cat)
+    else:
+        query = _ask_input("¿Qué buscas?", "mcp postgres")
+        if not query:
+            return
+        run_script(SCRIPTS / "aitmpl-search.py", query)
     pause()
 
 
@@ -529,11 +550,12 @@ MAIN_ITEMS = [
         ),
     ),
     MenuItem(
-        "Buscar templates       aitmpl.com", key="aitmpl",
+        "Buscar templates       frameworks · MCP · profiles", key="aitmpl",
         description=(
-            "Busca templates de agentes IA en aitmpl.com para explorar patrones "
-            "de instrucciones reutilizables. Útil antes de crear un agente nuevo "
-            "o diseñar un workflow de orquestación."
+            "Catálogo curado de 40+ recursos: frameworks (forge, aider), "
+            "20 MCP servers (postgres, github, slack, playwright...), "
+            "profiles de stack y herramientas. Filtrable por categoría. "
+            "Funciona offline — sin dependencias de red."
         ),
     ),
     MenuItem(
@@ -584,7 +606,7 @@ def main() -> None:
               scripts/forge-audit.py             Audita el proyecto
               scripts/forge-scaffold-profile.py  Crea un profile Tier 2
               scripts/forge-teardown.py          Revierte la instalación
-              scripts/aitmpl-search.py           Busca templates en aitmpl.com
+              scripts/aitmpl-search.py           Busca templates y recursos de agentes IA
         """))
         return
 
