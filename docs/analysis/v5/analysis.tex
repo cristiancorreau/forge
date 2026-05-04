@@ -1,0 +1,314 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+% Colores
+\definecolor{forgeblue}{RGB}{37,99,235}
+\definecolor{forgegray}{RGB}{107,114,128}
+\definecolor{forgered}{RGB}{220,38,38}
+\definecolor{forgegreen}{RGB}{22,163,74}
+\definecolor{forgeyellow}{RGB}{202,138,4}
+
+% Cabecera y pie de página
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small forge v2.0+ — Análisis Técnico v5}
+\lhead{\small 2026-05-03}
+\rfoot{\small Pág. \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Formato de secciones
+\titleformat{\section}{\large\bfseries\color{forgeblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\begin{document}
+
+% ============================================================
+% PORTADA
+% ============================================================
+\begin{titlepage}
+\centering
+\vspace*{3cm}
+
+{\LARGE\bfseries\color{forgeblue} forge v2.0+}\\[0.5em]
+{\Large Análisis Técnico Independiente v5}\\[1.5em]
+
+\rule{0.6\textwidth}{0.4pt}\\[1em]
+
+{\large Evaluación dual-agent para equipos nuevos en\\
+Claude Code / OpenCode / Codex CLI}\\[2em]
+
+{\normalsize 2026-05-03}\\[3em]
+
+\begin{tabular}{ll}
+\textbf{Versión analizada:} & forge v2.0 \\
+\textbf{Metodología:} & Dual-agent independiente \\
+\textbf{Audiencia:} & Devs iniciándose en Claude Code / OpenCode / Codex \\
+\textbf{Tests verificados:} & 358 casos (210 funciones + parametrización) \\
+\textbf{Profiles evaluados:} & 13 (9 documentados + 4 verificados en código) \\
+\end{tabular}
+
+\vfill
+{\small\color{forgegray} Este documento fue generado mediante análisis dual-agent del código fuente.\\
+Ningún agente ejecutó el framework en un entorno real.}
+\end{titlepage}
+
+% ============================================================
+% ABSTRACT (en inglés, como se solicitó)
+% ============================================================
+\section*{Abstract}
+
+This document presents an independent technical analysis of forge v2.0, an agentic development framework installed as a git submodule that generates agent configurations for Claude Code, OpenCode, Kiro, and Codex CLI runtimes. The analysis employs a dual-agent methodology: one instance tasked with identifying risks and friction points, another with articulating differential value and competitive positioning. Findings are synthesized into a neutral verdict.
+
+Key findings: forge provides demonstrable value through stack-specific agent profiles (13 stacks covered), CI-integrable drift detection via structured JSON audit output, and native multi-runtime support across four tools. Critical blockers for broad adoption include Windows incompatibility without warning (hard crash on \texttt{termios} import), a VS Code extension that exists in source code but is inaccessible to any external user (no publisher, no \texttt{.vsix}, no documentation), and governance risks from a single-maintainer repository without semantic releases or CI/CD. Recommended for macOS/Linux teams of 2--8 developers working on covered stacks with compliance requirements. Not recommended for developers beginning their Claude Code journey or teams requiring Windows support without WSL.
+
+\tableofcontents
+\newpage
+
+% ============================================================
+% 1. INTRODUCCIÓN
+% ============================================================
+\section{Introducción}
+
+forge es un framework de configuración de agentes IA que se instala como git submodule en el directorio \texttt{.agentic/} de un proyecto. Su función principal es generar archivos de contexto estructurados para distintos runtimes de codificación agentic: Claude Code (\texttt{.claude/agents/}), OpenCode (\texttt{.opencode/agents/}), Kiro (\texttt{.kiro/agents/}), y Codex CLI (\texttt{AGENTS.md}).
+
+El framework aborda un problema concreto: configurar correctamente un equipo de agentes IA especializados requiere conocimiento que no es obvio para alguien que recién adopta estas herramientas. ¿Qué modelo asignar a cada agente? ¿Cómo definir el scope para evitar conflictos? ¿Qué convenciones de un ORM específico debería conocer el agente de backend? forge convierte ese conocimiento acumulado en infraestructura reutilizable.
+
+\subsection*{Audiencia objetivo evaluada}
+
+Desarrolladores que ya usan ChatGPT o Claude en su trabajo diario y están adoptando Claude Code, OpenCode o Codex CLI como herramientas de desarrollo agentic. No se asume experiencia previa con sistemas de agentes IA estructurados.
+
+\subsection*{Componentes principales analizados}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{forge.py} (997 líneas): CLI TUI principal con menú navegable
+  \item \textbf{forge-wizard.py} (808 líneas): wizard interactivo de setup inicial
+  \item \textbf{forge-audit.py} (557 líneas): sistema de detección de deriva de agentes
+  \item \textbf{forge-init.py} (453 líneas): instalador de agentes por tier
+  \item \textbf{vscode-extension/} (624 líneas TypeScript): extensión para VS Code
+  \item \textbf{adapters/} (4 adapters): Claude Code, OpenCode, Kiro, Codex CLI
+  \item \textbf{profiles/} (13 directorios): configuraciones de stack específicas
+  \item \textbf{tests/} (210 funciones, 358 casos): suite de verificación
+\end{itemize}
+
+% ============================================================
+% 2. METODOLOGÍA
+% ============================================================
+\section{Metodología}
+
+El análisis emplea una metodología dual-agent independiente: dos instancias del mismo modelo de lenguaje recibieron instrucciones opuestas sobre el mismo código fuente. La primera instancia tenía mandato de identificar problemas, fricciones y riesgos de adopción. La segunda tenía mandato de articular el valor diferencial, el benchmark competitivo y los casos de uso válidos. Ninguna instancia vio el output de la otra antes de completar su análisis.
+
+\subsection*{Ventajas del enfoque}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Reduce el sesgo de confirmación inherente a un análisis único
+  \item Fuerza la articulación explícita de tanto fortalezas como debilidades
+  \item Produce evidencia concreta con referencias a líneas de código específicas
+\end{itemize}
+
+\subsection*{Limitaciones del enfoque}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Ningún agente ejecutó el framework en un entorno real de desarrollo
+  \item Las afirmaciones sobre comportamiento agentic en runtime no fueron verificadas
+  \item El hallazgo sobre \texttt{SendMessage} como API no documentada de Claude Code no fue contrastado con la documentación oficial actualizada
+  \item Los falsos positivos del sistema de similitud del audit no fueron medidos empíricamente
+\end{itemize}
+
+% ============================================================
+% 3. ANÁLISIS CRÍTICO — RESUMEN
+% ============================================================
+\section{Análisis crítico — hallazgos principales}
+
+\subsection{Complejidad de instalación}
+
+El README describe el flujo como tres pasos, pero el proceso real involucra nueve etapas: entender git submodules, ejecutar \texttt{git submodule add} (con la URL correcta, que difiere de la del README), instalar Python 3.x y PyYAML, ejecutar el CLI interactivo, completar el wizard, ajustar el \texttt{project.yaml} generado, ejecutar \texttt{forge-init.py}, e instruir a cada colaborador nuevo sobre la inicialización del submodule.
+
+La URL en el README usa \texttt{socialweb-cl/forge} (con guión); la URL real del repositorio es \texttt{socialwebcl/forge} (sin guión). No hay instrucciones para el escenario más frecuente post-setup: clonar un repositorio que ya tiene forge como submodule (\texttt{git submodule update --init --recursive}).
+
+\subsection{Incompatibilidad Windows sin advertencia}
+
+\texttt{forge.py} y \texttt{forge-wizard.py} importan \texttt{termios} y \texttt{tty} al nivel de módulo. En Windows, el resultado es \texttt{ModuleNotFoundError: No module named 'termios'} sin ningún mensaje orientativo. Adicionalmente, \texttt{forge.py} usa \texttt{pbcopy} (macOS) para clipboard y \texttt{open} (macOS) para abrir URLs. El requisito de sistema operativo Unix/macOS no está documentado en ningún lugar visible del repositorio.
+
+\subsection{Extensión VS Code: componente inaccesible}
+
+La extensión existe en código compilado (\texttt{out/extension.js}) e implementa funcionalidades útiles, pero es inaccesible para cualquier usuario externo: no tiene campo \texttt{publisher} en \texttt{package.json}, no está publicada en el Marketplace, no hay archivo \texttt{.vsix} disponible, y no aparece mencionada en ningún archivo de documentación del repositorio.
+
+\subsection{Inconsistencias documentación vs código}
+
+Cuatro de los trece profiles (\texttt{django}, \texttt{go-gin}, \texttt{sveltekit}, \texttt{vuenuxt}) no aparecen en la tabla de referencia de \texttt{docs/agent-standard.md}. Las referencias al dominio \texttt{aitmpl.com} fueron removidas del código pero permanecen en el screenshot del README, en la tabla de scripts, y en la descripción del skill correspondiente.
+
+\subsection{Gobernanza}
+
+Maintainer único, sin tags git semánticos, sin CHANGELOG, sin CI/CD propio. La versión \texttt{"2.0"} está hardcodeada en \texttt{forge.py}. No hay mecanismo para que un adoptador externo sepa cuándo ocurre un breaking change.
+
+% ============================================================
+% 4. ANÁLISIS POSITIVO — RESUMEN
+% ============================================================
+\section{Análisis positivo — valor diferencial}
+
+\subsection{Conocimiento de stack codificado en profiles}
+
+Los profiles de forge no son variaciones de nombre sobre un template genérico. El agente \texttt{api-engineer} del profile \texttt{hono-drizzle} conoce que Drizzle no siempre genera migración \texttt{down} (hay que escribirla a mano), el comando exacto \texttt{pnpm --filter=api db:generate}, que los tests deben usar base de datos real en vez de mock del ORM, y las convenciones de multi-tenancy con \texttt{tenant\_id} en cada query. Este nivel de especificidad requiere experiencia práctica en el stack y no existe en ninguna alternativa directa.
+
+\subsection{Audit de deriva integrable en CI}
+
+\texttt{forge-audit.py} implementa detección de deriva mediante \texttt{SequenceMatcher} con heurísticas para distinguir especialización intencional de abandono del estándar. La salida \texttt{--json} tiene estructura estable y retorna exit code 1 ante errores, permitiendo la siguiente integración en CI:
+
+\begin{verbatim}
+python3 .agentic/scripts/forge-audit.py --json | jq '.summary.errors'
+\end{verbatim}
+
+Ninguna alternativa libre en el benchmark tiene un mecanismo equivalente.
+
+\subsection{Seguridad por diseño}
+
+Los agentes del core tienen instrucciones de seguridad explícitas y no boilerplate: parámetros preparados en SQL, verificación de autenticación Y autorización en cada endpoint, prohibición de loguear PII. El skill \texttt{security-audit} incluye comandos grep para detectar SQL injection, endpoints sin autenticación, y body sin validación de schema.
+
+\subsection{Dependencias mínimas}
+
+Solo dos dependencias en \texttt{requirements.txt}: \texttt{pyyaml>=6.0} y \texttt{pytest>=7.0} (solo para tests). El CLI principal usa exclusivamente stdlib de Python.
+
+% ============================================================
+% 5. BENCHMARK COMPETITIVO
+% ============================================================
+\section{Benchmark competitivo}
+
+La tabla siguiente compara forge con las alternativas más relevantes en una escala de 1 a 5 por criterio. forge es la única alternativa con audit de deriva, multi-runtime nativo y profiles de stack curados.
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Criterio} & \textbf{forge} & \textbf{.cursorrules} & \textbf{CLAUDE.md} & \textbf{aider} & \textbf{cline/Roo} & \textbf{DIY agents} \\
+\midrule
+Multi-agente con roles        & \textbf{5} & 1 & 2 & 1 & 3 & 4 \\
+Profiles por stack            & \textbf{5} & 1 & 1 & 1 & 1 & 3 \\
+Audit / drift detection       & \textbf{5} & 1 & 1 & 1 & 1 & 1 \\
+Multi-runtime                 & \textbf{5} & 1 & 2 & 1 & 1 & 2 \\
+Compliance integrado          & 4 & 1 & 2 & 1 & 1 & 3 \\
+Catálogo MCP                  & 4 & 1 & 1 & 1 & 2 & 1 \\
+CI/CD nativo (audit)          & 4 & 1 & 1 & 2 & 1 & 1 \\
+Setup inicial (facilidad)     & 4 & \textbf{5} & 3 & 4 & 4 & 2 \\
+Control sobre el contexto     & 4 & 4 & \textbf{5} & 4 & 4 & \textbf{5} \\
+Curva de aprendizaje          & 3 & \textbf{5} & 4 & 4 & 4 & 2 \\
+\bottomrule
+\end{tabular}
+\caption{Benchmark competitivo (escala 1--5 por criterio). Fuente: análisis positivo dual-agent.}
+\end{table}
+
+% ============================================================
+% 6. SÍNTESIS Y VEREDICTO
+% ============================================================
+\section{Síntesis y veredicto}
+
+\subsection{Tabla de riesgo por área}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{p{4cm}ccp{5cm}}
+\toprule
+\textbf{Área} & \textbf{Severidad} & \textbf{Tipo} & \textbf{Nota} \\
+\midrule
+Incompatibilidad Windows & Alta & Bug & Crash inmediato sin mensaje orientativo \\
+URL incorrecta en README & Alta & Bug & Paso más visible del onboarding \\
+Extensión VS Code & Alta & Deuda & Componente funcionalmente inaccesible \\
+Gobernanza & Alta & Riesgo & Sin releases ni CI/CD propio \\
+Adapter Codex sin tests & Media & Deuda & Paridad con otros adapters ausente \\
+4 profiles no documentados & Media & Deuda & Profiles válidos, solo falta documentación \\
+Referencias a aitmpl.com & Baja & Deuda & Inconsistencia entre código y docs \\
+Heurísticas de similitud & Baja & Diseño & Posibles falsos positivos en audit \\
+\bottomrule
+\end{tabular}
+\caption{Síntesis de riesgos por severidad y tipo.}
+\end{table}
+
+\subsection{Scoring global por dimensión (1--10)}
+
+\begin{center}
+\begin{tabular}{lc}
+\toprule
+\textbf{Dimensión} & \textbf{Score} \\
+\midrule
+Instalación & 4/10 \\
+Developer Experience (DX) & 6/10 \\
+Cobertura de stacks & 7/10 \\
+CI/CD & 5/10 \\
+Gobernanza & 3/10 \\
+Runtime agnosticismo & 8/10 \\
+Extensibilidad & 7/10 \\
+\midrule
+\textbf{Score global ponderado} & \textbf{5.7/10} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Veredicto diferenciado}
+
+\textbf{Recomendado si:} el equipo trabaja en macOS o Linux; el stack está entre los 13 profiles existentes; el equipo tiene 2 o más personas; existen requerimientos de compliance (GDPR, LGPD, Ley 21.719, CCPA, HIPAA, PCI-DSS); alguien del equipo entiende git submodules y puede documentar el flujo de inicialización.
+
+\textbf{No recomendado si:} el desarrollador se inicia en Claude Code y quiere empezar simple; el equipo trabaja en Windows sin WSL; el proyecto es personal o de un solo desarrollador; el equipo prefiere control total sobre el contexto de sus agentes; no hay disposición a gestionar una dependencia externa sin releases semánticos.
+
+% ============================================================
+% 7. RECOMENDACIONES
+% ============================================================
+\section{Recomendaciones}
+
+\subsection{P0 — Bloqueantes para adopción amplia}
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Guard de plataforma en Windows:} agregar verificación de \texttt{sys.platform} antes de importar \texttt{termios}/\texttt{tty}, con mensaje orientativo que indique el requisito de macOS/Linux o WSL2. Documentar el requisito en el README.
+  
+  \item \textbf{Corregir URL del submodule en README:} cambiar \texttt{socialweb-cl/forge} por \texttt{socialwebcl/forge}. Agregar instrucciones de \texttt{git submodule update --init --recursive} para el flujo de clonación de repositorio existente.
+  
+  \item \textbf{Definir estado de la extensión VS Code:} publicar en el Marketplace (agregar \texttt{publisher}, ejecutar \texttt{vsce publish}), o documentar instalación local, o mover a rama WIP. No dejar el componente en estado actual.
+\end{enumerate}
+
+\subsection{P1 — Mejoras de calidad en el siguiente ciclo}
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Documentar los 4 profiles faltantes en \texttt{docs/agent-standard.md}: django, go-gin, sveltekit, vuenuxt.
+  \item Agregar GitHub Actions con \texttt{pytest} en cada push al repositorio.
+  \item Agregar tests para el adapter Codex (paridad con adapters OpenCode y Kiro).
+  \item Limpiar referencias a \texttt{aitmpl.com} en README, tabla de scripts y SKILL.md.
+\end{enumerate}
+
+\subsection{P2 — Gobernanza sostenible}
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Crear primer tag semántico \texttt{v2.0.0} y agregar CHANGELOG.
+  \item Verificar convención \texttt{codex.md} en un entorno Codex CLI real.
+  \item Agregar modo no-interactivo al wizard para uso en CI y scripts de onboarding.
+\end{enumerate}
+
+% ============================================================
+% 8. CONCLUSIÓN
+% ============================================================
+\section{Conclusión}
+
+forge tiene propuesta de valor real y verificable en código: conocimiento de stack específico codificado en 13 profiles, detección de deriva con salida JSON integrable en CI, soporte nativo para cuatro runtimes, y seguridad por diseño en los agentes core. Para un equipo de 2 a 8 personas trabajando en macOS o Linux con un stack cubierto y requerimientos de compliance, la adopción tiene sentido técnico y económico.
+
+La deuda acumulada en instalación, Windows, la extensión VS Code y la gobernanza representa el obstáculo principal para adopción más amplia. Esta deuda no invalida el valor del framework, pero sí limita el perfil de adoptador al que puede recomendarse sin fricción.
+
+El análisis dual-agent como metodología resultó útil para separar hallazgos de bug (URL incorrecta, crash en Windows) de hallazgos de diseño discutible (wizard interactivo, catálogo estático, heurísticas de similitud). Esta distinción es relevante para priorizar el roadmap: los bugs tienen correcciones directas; las decisiones de diseño requieren validación con usuarios reales antes de cambiar.
+
+\vspace{2em}
+\hrule
+\vspace{0.5em}
+{\small\color{forgegray} Análisis generado mediante metodología dual-agent independiente sobre el código fuente de forge v2.0. Fecha: 2026-05-03.}
+
+\end{document}
