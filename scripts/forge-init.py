@@ -8,6 +8,7 @@ Usage:
   python3 .agentic/scripts/forge-init.py --tool claude-code --force --only=backend-engineer  # solo ese agente
   python3 .agentic/scripts/forge-init.py --tool opencode
   python3 .agentic/scripts/forge-init.py --tool kiro
+  python3 .agentic/scripts/forge-init.py --tool codex
   python3 .agentic/scripts/forge-init.py --tool all
 
 Lee project.yaml en la raíz del proyecto y genera la configuración
@@ -386,9 +387,22 @@ def init_kiro(root: Path, forge: Path, config: dict):
         print(f"  [ERR] generate-steering.py salió con código {result.returncode}", file=sys.stderr)
 
 
+def init_codex(root: Path, forge: Path, config: dict):
+    """Delega en el adapter de Codex CLI para generar AGENTS.md y codex.md."""
+    import subprocess
+    adapter = forge / "adapters" / "codex" / "generate-codex-config.py"
+    if not adapter.exists():
+        print(f"  [MISS] {adapter} — adapter de Codex no encontrado", file=sys.stderr)
+        return
+    args = ["python3", str(adapter)]
+    result = subprocess.run(args, cwd=str(root))
+    if result.returncode != 0:
+        print(f"  [ERR] generate-codex-config.py salió con código {result.returncode}", file=sys.stderr)
+
+
 def main():
     if "--tool" not in sys.argv:
-        print("Uso: forge-init.py --tool <claude-code|opencode|kiro|all> [--force] [--only=<agente>]")
+        print("Uso: forge-init.py --tool <claude-code|opencode|kiro|codex|all> [--force] [--only=<agente>]")
         sys.exit(1)
 
     idx = sys.argv.index("--tool")
@@ -426,6 +440,10 @@ def main():
     if tool in ("kiro", "all"):
         print("\n--- Kiro ---")
         init_kiro(root, forge, config)
+
+    if tool in ("codex", "all"):
+        print("\n--- Codex CLI ---")
+        init_codex(root, forge, config)
 
     print("\nDone. Revisar los archivos generados antes de commitear.")
 
