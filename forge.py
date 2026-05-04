@@ -201,9 +201,20 @@ def _draw_header() -> None:
 # Utilidades
 # ---------------------------------------------------------------------------
 
-def pause(msg: str = "Presiona cualquier tecla para continuar…") -> None:
-    print(f"\n  {d(msg)}")
-    getch()
+def pause(msg: str = "Presiona Enter para volver al menú…") -> None:
+    write(SHOW_CURSOR)
+    print(f"\n  {d(msg)}", flush=True)
+    try:
+        # Limpiar stdin residual del subprocess antes de leer
+        import termios as _t
+        _t.tcflush(sys.stdin.fileno(), _t.TCIFLUSH)
+    except Exception:
+        pass
+    try:
+        input()
+    except (KeyboardInterrupt, EOFError):
+        pass
+    write(HIDE_CURSOR)
 
 
 def run_script(script: Path, *args: str) -> int:
