@@ -24,14 +24,19 @@ Triggers: /aitmpl-search, "buscar en aitmpl", "templates de AI", "buscar templat
 python3 .agentic/scripts/aitmpl-search.py "<query>" --limit 10
 ```
 
-Para filtrar por categoría:
+Para ver la lista curada (sin llamadas a GitHub):
 ```bash
-python3 .agentic/scripts/aitmpl-search.py "<query>" --category "<cat>"
+python3 .agentic/scripts/aitmpl-search.py --curated
 ```
 
 Para salida estructurada (integración CI o análisis):
 ```bash
 python3 .agentic/scripts/aitmpl-search.py "<query>" --json
+```
+
+Para aumentar el límite de la API de GitHub (de 60 a 5000 req/h):
+```bash
+export GITHUB_TOKEN=ghp_...
 ```
 
 ### Paso 2 — Analizar resultados

@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+"""
+aitmpl-search.py — Busca templates de agentes IA en GitHub.
+
+Busca repositorios etiquetados con topics relevantes (claude-code, ai-agent,
+llm-agent, etc.) y filtra por el query del usuario.
+
+Usage:
+  python3 .agentic/scripts/aitmpl-search.py "fastapi backend"
+  python3 .agentic/scripts/aitmpl-search.py "nextjs" --limit 5
+  python3 .agentic/scripts/aitmpl-search.py "rails" --json
+  python3 .agentic/scripts/aitmpl-search.py --curated
+"""
 from __future__ import annotations
 
 import argparse
@@ -9,15 +21,86 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from html.parser import HTMLParser
 from pathlib import Path
 from typing import Optional
 
-BASE_URL = "https://www.aitmpl.com"
-CACHE_FILE = Path.home() / ".forge" / "aitmpl-cache.json"
-CACHE_TTL = 3600
-TIMEOUT = 10
+CACHE_FILE = Path.home() / ".forge" / "template-search-cache.json"
+CACHE_TTL  = 1800   # 30 minutos
+TIMEOUT    = 10
 
+# Topics que identifican repos de templates de agentes IA
+SEARCH_TOPICS = [
+    "claude-code",
+    "ai-agent",
+    "llm-agent",
+    "claude-agent",
+    "mcp",
+]
+
+# Lista curada de templates/profiles conocidos — siempre disponible offline
+CURATED: list[dict] = [
+    {
+        "name":        "anthropics/anthropic-quickstarts",
+        "description": "Quickstarts oficiales de Anthropic para Claude — incluye agents, computer use y más",
+        "topics":      ["claude", "anthropic", "ai-agent"],
+        "stars":       0,
+        "url":         "https://github.com/anthropics/anthropic-quickstarts",
+        "source":      "curated",
+    },
+    {
+        "name":        "anthropics/claude-code-action",
+        "description": "GitHub Action oficial para usar Claude Code en CI/CD",
+        "topics":      ["claude-code", "github-actions"],
+        "stars":       0,
+        "url":         "https://github.com/anthropics/claude-code-action",
+        "source":      "curated",
+    },
+    {
+        "name":        "modelcontextprotocol/servers",
+        "description": "Servidores MCP oficiales — filesystem, git, postgres, fetch, github y más",
+        "topics":      ["mcp", "claude", "llm"],
+        "stars":       0,
+        "url":         "https://github.com/modelcontextprotocol/servers",
+        "source":      "curated",
+    },
+    {
+        "name":        "socialwebcl/forge",
+        "description": "forge — Framework de desarrollo con agentes IA. Profiles para Next.js, Astro, FastAPI, Rails y más",
+        "topics":      ["claude-code", "ai-agent", "llm-agent"],
+        "stars":       0,
+        "url":         "https://github.com/socialwebcl/forge",
+        "source":      "curated",
+    },
+    {
+        "name":        "BuilderIO/micro-agent",
+        "description": "Agente IA para generar código que pase tests — TDD automático",
+        "topics":      ["ai-agent", "llm"],
+        "stars":       0,
+        "url":         "https://github.com/BuilderIO/micro-agent",
+        "source":      "curated",
+    },
+    {
+        "name":        "paul-gauthier/aider",
+        "description": "Pair programming con LLMs en la terminal — soporta Claude, GPT-4 y más",
+        "topics":      ["ai-agent", "llm", "claude"],
+        "stars":       0,
+        "url":         "https://github.com/paul-gauthier/aider",
+        "source":      "curated",
+    },
+    {
+        "name":        "assislucas/awesome-claude-code",
+        "description": "Lista curada de recursos, templates y herramientas para Claude Code",
+        "topics":      ["claude-code", "awesome"],
+        "stars":       0,
+        "url":         "https://github.com/heshengtao/comfyui_LLM_party",
+        "source":      "curated",
+    },
+]
+
+
+# ---------------------------------------------------------------------------
+# Cache
+# ---------------------------------------------------------------------------
 
 def _cache_load() -> dict:
     if not CACHE_FILE.exists():
@@ -35,166 +118,125 @@ def _cache_load() -> dict:
 def _cache_save(data: dict) -> None:
     CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
     data["_ts"] = time.time()
-    with open(CACHE_FILE, "w") as f:
-        json.dump(data, f)
+    try:
+        with open(CACHE_FILE, "w") as f:
+            json.dump(data, f)
+    except OSError:
+        pass
 
 
-def _fetch(url: str, referer: Optional[str] = None) -> str:
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": "forge-aitmpl-search/1.0 (github.com/forge-framework)",
-            "Accept": "text/html,application/json",
-            **({"Referer": referer} if referer else {}),
-        },
-    )
+# ---------------------------------------------------------------------------
+# GitHub API
+# ---------------------------------------------------------------------------
+
+GITHUB_API = "https://api.github.com"
+
+def _github_request(url: str) -> Optional[dict]:
+    headers = {
+        "Accept":     "application/vnd.github+json",
+        "User-Agent": "forge-template-search/2.0",
+    }
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    req = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
-            charset = "utf-8"
-            ct = resp.headers.get_content_charset()
-            if ct:
-                charset = ct
-            return resp.read().decode(charset, errors="replace")
+            return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
-        raise RuntimeError(f"HTTP {e.code}: {url}") from e
-    except urllib.error.URLError as e:
-        raise RuntimeError(f"Error de red: {e.reason}") from e
+        if e.code == 403:
+            print(
+                "  Límite de rate de GitHub alcanzado. "
+                "Exporta GITHUB_TOKEN para aumentar el límite (5000 req/h).",
+                file=sys.stderr,
+            )
+        return None
+    except (urllib.error.URLError, json.JSONDecodeError):
+        return None
 
 
-class _CardParser(HTMLParser):
-    """Extrae template cards del HTML de aitmpl.com."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.templates: list[dict] = []
-        self._current: Optional[dict] = None
-        self._in_title = False
-        self._in_desc = False
-        self._in_cat = False
-        self._stack: list[tuple[str, dict]] = []
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]) -> None:
-        amap = dict(attrs)
-        cls = amap.get("class", "") or ""
-        href = amap.get("href", "") or ""
-
-        if tag == "a" and href and ("/template/" in href or "/templates/" in href):
-            url = href if href.startswith("http") else BASE_URL + href
-            self._current = {"name": "", "description": "", "category": "", "url": url}
-            self._stack.append((tag, amap))
-            return
-
-        if self._current is not None:
-            if tag in ("h2", "h3") or any(k in cls for k in ("title", "name", "heading")):
-                self._in_title = True
-            elif any(k in cls for k in ("desc", "description", "summary", "excerpt")):
-                self._in_desc = True
-            elif any(k in cls for k in ("category", "tag", "badge", "label")):
-                self._in_cat = True
-            self._stack.append((tag, amap))
-
-    def handle_endtag(self, tag: str) -> None:
-        self._in_title = False
-        self._in_desc = False
-        self._in_cat = False
-        if self._stack:
-            self._stack.pop()
-        if not self._stack and self._current:
-            if self._current.get("name"):
-                self.templates.append(self._current)
-            self._current = None
-
-    def handle_data(self, data: str) -> None:
-        text = data.strip()
-        if not text or self._current is None:
-            return
-        if self._in_title and not self._current["name"]:
-            self._current["name"] = text
-        elif self._in_desc and not self._current["description"]:
-            self._current["description"] = text
-        elif self._in_cat and not self._current["category"]:
-            self._current["category"] = text
-
-
-def _extract_templates(html: str) -> list[dict]:
-    parser = _CardParser()
-    parser.feed(html)
-    results = parser.templates
-
-    if not results:
-        results = _fallback_extract(html)
-
-    seen: set[str] = set()
-    unique = []
-    for t in results:
-        if t["url"] not in seen:
-            seen.add(t["url"])
-            unique.append(t)
-    return unique
-
-
-def _fallback_extract(html: str) -> list[dict]:
-    """Extracción básica por href cuando el parser de cards no encuentra nada."""
-    results = []
-    lower = html.lower()
-    idx = 0
-    while True:
-        pos = lower.find('href="', idx)
-        if pos == -1:
-            break
-        end = html.find('"', pos + 6)
-        href = html[pos + 6:end]
-        if "/template" in href and href not in [r["url"] for r in results]:
-            url = href if href.startswith("http") else BASE_URL + href
-            slug = href.rstrip("/").split("/")[-1].replace("-", " ").title()
-            results.append({"name": slug, "description": "", "category": "", "url": url})
-        idx = end + 1
-    return results
-
-
-def _fetch_templates(category: Optional[str] = None) -> list[dict]:
+def _fetch_github(query: str, limit: int) -> list[dict]:
+    """Busca repos en GitHub que contengan el query y topics de AI agents."""
     cache = _cache_load()
-    cache_key = f"templates_{category or 'all'}"
+    cache_key = f"gh_{query}_{limit}"
     if cache_key in cache:
         return cache[cache_key]
 
-    urls_to_try = [BASE_URL]
-    if category:
-        urls_to_try = [
-            f"{BASE_URL}/category/{urllib.parse.quote(category)}",
-            f"{BASE_URL}/templates?category={urllib.parse.quote(category)}",
-            BASE_URL,
-        ]
+    # Construir query con topics relevantes
+    topic_filter = " OR ".join(f"topic:{t}" for t in SEARCH_TOPICS)
+    full_query = f"{query} ({topic_filter})"
+    params = urllib.parse.urlencode({
+        "q":        full_query,
+        "sort":     "stars",
+        "order":    "desc",
+        "per_page": min(limit * 2, 30),
+    })
+    url  = f"{GITHUB_API}/search/repositories?{params}"
+    data = _github_request(url)
 
-    templates: list[dict] = []
-    for url in urls_to_try:
-        try:
-            html = _fetch(url)
-            templates = _extract_templates(html)
-            if templates:
-                break
-        except RuntimeError:
-            continue
+    if not data or "items" not in data:
+        return []
 
-    if not templates:
-        print("Advertencia: no se pudieron obtener templates del sitio.", file=sys.stderr)
-
-    cache[cache_key] = templates
+    results = [_normalize_github(item) for item in data["items"]]
+    cache[cache_key] = results
     _cache_save(cache)
-    return templates
+    return results
 
 
-def _search(query: str, templates: list[dict]) -> list[dict]:
+def _normalize_github(item: dict) -> dict:
+    return {
+        "name":        item.get("full_name", ""),
+        "description": item.get("description") or "",
+        "topics":      item.get("topics", []),
+        "stars":       item.get("stargazers_count", 0),
+        "url":         item.get("html_url", ""),
+        "language":    item.get("language") or "",
+        "source":      "github",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Búsqueda local sobre la lista curada
+# ---------------------------------------------------------------------------
+
+def _search_curated(query: str) -> list[dict]:
     terms = query.lower().split()
     scored = []
-    for t in templates:
-        haystack = f"{t['name']} {t['description']} {t['category']}".lower()
-        score = sum(1 for term in terms if term in haystack)
+    for item in CURATED:
+        haystack = f"{item['name']} {item['description']} {' '.join(item['topics'])}".lower()
+        score = sum(1 for t in terms if t in haystack)
         if score > 0:
-            scored.append((score, t))
+            scored.append((score, item))
     scored.sort(key=lambda x: x[0], reverse=True)
-    return [t for _, t in scored]
+    return [x[1] for x in scored]
 
+
+# ---------------------------------------------------------------------------
+# Combinación y deduplicación
+# ---------------------------------------------------------------------------
+
+def _search(query: str, limit: int) -> list[dict]:
+    curated  = _search_curated(query)
+    github   = _fetch_github(query, limit)
+
+    seen: set[str] = set()
+    combined: list[dict] = []
+    for item in curated + github:
+        key = item["url"]
+        if key not in seen:
+            seen.add(key)
+            combined.append(item)
+        if len(combined) >= limit:
+            break
+    return combined
+
+
+# ---------------------------------------------------------------------------
+# Output
+# ---------------------------------------------------------------------------
+
+STARS_BAR = "★"
 
 def _print_results(results: list[dict], as_json: bool) -> None:
     if as_json:
@@ -206,97 +248,80 @@ def _print_results(results: list[dict], as_json: bool) -> None:
         return
 
     for i, t in enumerate(results, 1):
-        name = t.get("name") or "(sin nombre)"
-        desc = t.get("description") or ""
-        cat = t.get("category") or ""
-        url = t.get("url") or ""
+        name   = t.get("name", "")
+        desc   = t.get("description", "") or ""
+        topics = t.get("topics", [])
+        stars  = t.get("stars", 0)
+        url    = t.get("url", "")
+        lang   = t.get("language", "")
+        source = t.get("source", "github")
+
+        star_str  = f"{STARS_BAR} {stars:,}" if stars else ""
+        lang_str  = f"  {lang}" if lang else ""
+        badge     = "[curado]" if source == "curated" else ""
+        meta      = "  ".join(filter(None, [star_str, lang_str, badge]))
+
         print(f"{i:>2}. {name}")
-        if cat:
-            print(f"    Categoría : {cat}")
         if desc:
-            print(f"    Descripción: {desc}")
-        print(f"    URL       : {url}")
+            print(f"     {desc}")
+        if topics:
+            print(f"     Topics : {', '.join(topics[:6])}")
+        if meta:
+            print(f"     {meta}")
+        print(f"     {url}")
         print()
 
 
-def _install(identifier: str) -> None:
-    url = identifier if identifier.startswith("http") else None
-
-    if url is None:
-        cache = _cache_load()
-        for key, val in cache.items():
-            if key.startswith("templates_") and isinstance(val, list):
-                for t in val:
-                    if identifier.lower() in t.get("name", "").lower():
-                        url = t["url"]
-                        print(f"Template encontrado: {t['name']}")
-                        break
-            if url:
-                break
-
-    if url is None:
-        print(f"No se encontró el template '{identifier}'. Buscar primero con el query.", file=sys.stderr)
-        sys.exit(1)
-
-    print(f"Descargando desde: {url}")
-    try:
-        content = _fetch(url)
-    except RuntimeError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    slug = url.rstrip("/").split("/")[-1]
-    out_dir = Path.cwd() / ".forge" / "templates" / slug
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    raw_file = out_dir / "template.html"
-    with open(raw_file, "w") as f:
-        f.write(content)
-
-    print(f"Guardado en: {raw_file}")
-    print()
-    print("Para integrar con forge:")
-    print(f"  1. Revisar el contenido en {raw_file}")
-    print(f"  2. Extraer el template relevante a forge/templates/<nombre>.yaml.tpl")
-    print(f"  3. Ejecutar: python3 .agentic/scripts/forge-init.py --tool claude-code")
-
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Busca templates en aitmpl.com para integrar con forge."
+        description="Busca templates de agentes IA en GitHub.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent("""\
+            Ejemplos:
+              %(prog)s "fastapi backend"
+              %(prog)s "nextjs" --limit 5
+              %(prog)s "rails" --json
+              %(prog)s --curated
+
+            Para aumentar el límite de la API de GitHub:
+              export GITHUB_TOKEN=ghp_...
+        """),
     )
-    parser.add_argument("query", nargs="?", default="", help="Término de búsqueda")
-    parser.add_argument("--limit", type=int, default=10, metavar="N", help="Máximo de resultados (default: 10)")
-    parser.add_argument("--json", dest="as_json", action="store_true", help="Salida en JSON")
-    parser.add_argument("--category", metavar="CAT", help="Filtrar por categoría")
-    parser.add_argument("--install", metavar="URL_O_NOMBRE", help="Descargar e instalar un template")
+    parser.add_argument("query", nargs="?", default="",
+                        help="Término de búsqueda")
+    parser.add_argument("--limit",   type=int, default=10, metavar="N",
+                        help="Máximo de resultados (default: 10)")
+    parser.add_argument("--json",    dest="as_json", action="store_true",
+                        help="Salida en JSON")
+    parser.add_argument("--curated", action="store_true",
+                        help="Mostrar solo la lista curada (sin llamadas a GitHub)")
 
     args = parser.parse_args()
 
-    if args.install:
-        _install(args.install)
+    if args.curated:
+        print(f"Templates curados ({len(CURATED)}):\n", file=sys.stderr)
+        _print_results(CURATED, args.as_json)
         return
 
     if not args.query:
         parser.print_help()
         sys.exit(1)
 
-    print(f"Buscando '{args.query}' en aitmpl.com...", file=sys.stderr)
+    print(f"Buscando '{args.query}' en GitHub...", file=sys.stderr)
 
-    try:
-        templates = _fetch_templates(category=args.category)
-    except Exception as e:
-        print(f"Error al obtener templates: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    results = _search(args.query, templates)
-    results = results[: args.limit]
+    results = _search(args.query, args.limit)
 
     if not args.as_json:
-        print(f"Resultados: {len(results)} de {len(templates)} templates\n", file=sys.stderr)
+        print(f"Resultados: {len(results)}\n", file=sys.stderr)
 
     _print_results(results, args.as_json)
 
+
+import textwrap  # noqa: E402 — necesario para el epilog del argparser
 
 if __name__ == "__main__":
     main()
