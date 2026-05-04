@@ -1,18 +1,20 @@
 # Skill: aitmpl-search
 
-Busca templates de AI en aitmpl.com para explorar patrones de agentes, prompts
-y arquitecturas reutilizables que se puedan integrar en el proyecto.
+Busca en el catálogo curado de forge: frameworks de agentes IA, MCP servers instalables,
+profiles de stack y herramientas. La búsqueda es offline (catálogo local); opcionalmente
+puede extenderse a GitHub con `--github`.
 
-Triggers: /aitmpl-search, "buscar en aitmpl", "templates de AI", "buscar template",
-"aitmpl", "templates aitmpl".
+Triggers: /aitmpl-search, "buscar templates", "buscar en catálogo", "templates de AI",
+"buscar template", "buscar MCP", "buscar profile".
 
 ---
 
 ## Cuándo usar este skill
 
-- Cuando el usuario quiere explorar templates de agentes IA para un stack específico
-- Antes de diseñar un agente Tier 2 nuevo, para ver si hay patrones establecidos
-- Cuando se necesita inspiración para estructurar un workflow de agentes
+- Cuando el usuario quiere explorar frameworks o herramientas de agentes IA
+- Antes de diseñar un agente Tier 2 nuevo, para ver si ya existe un profile en forge
+- Cuando se necesita instalar un MCP server y se quiere ver qué hay disponible
+- Para explorar patrones de arquitectura de agentes reutilizables
 
 ---
 
@@ -20,46 +22,53 @@ Triggers: /aitmpl-search, "buscar en aitmpl", "templates de AI", "buscar templat
 
 ### Paso 1 — Ejecutar la búsqueda
 
+Búsqueda por texto en el catálogo local:
 ```bash
 python3 .agentic/scripts/aitmpl-search.py "<query>" --limit 10
 ```
 
-Para ver la lista curada (sin llamadas a GitHub):
+Filtrar por categoría (`framework`, `mcp-server`, `profile`, `tool`, `resource`):
 ```bash
-python3 .agentic/scripts/aitmpl-search.py --curated
+python3 .agentic/scripts/aitmpl-search.py "<query>" --category mcp-server
 ```
 
-Para salida estructurada (integración CI o análisis):
+Ver todas las categorías disponibles:
+```bash
+python3 .agentic/scripts/aitmpl-search.py --list-categories
+```
+
+Salida JSON (para integración o análisis):
 ```bash
 python3 .agentic/scripts/aitmpl-search.py "<query>" --json
 ```
 
-Para aumentar el límite de la API de GitHub (de 60 a 5000 req/h):
+Extender con búsqueda en GitHub (requiere red; límite 60 req/h sin token):
 ```bash
-export GITHUB_TOKEN=ghp_...
+python3 .agentic/scripts/aitmpl-search.py "<query>" --github
+export GITHUB_TOKEN=ghp_...   # aumenta a 5000 req/h
+```
+
+Desde el CLI interactivo:
+```bash
+python3 .agentic/forge.py   # → "Buscar templates" → buscar o filtrar por categoría
 ```
 
 ### Paso 2 — Analizar resultados
 
-- Revisar los templates más relevantes a la necesidad del proyecto
-- Identificar patrones de instrucciones reutilizables
-- Comparar con los agentes existentes en `core/agents/` y `profiles/`
+- Revisar los items más relevantes a la necesidad del proyecto
+- Para MCP servers: verificar el campo `install` del resultado JSON para el comando exacto
+- Para profiles: comparar con los profiles activos en `agents.profiles` de `project.yaml`
+- Para frameworks: comparar con el stack del proyecto antes de sugerir adopción
 
-### Paso 3 — Integrar (opcional)
+### Paso 3 — Instalar (opcional)
 
-Para descargar un template específico:
-```bash
-python3 .agentic/scripts/aitmpl-search.py --install "<url-o-nombre>"
-```
-
-El template se guarda en `.forge/templates/<slug>/template.html`.
-Extraer las instrucciones relevantes y adaptarlas al formato de agente forge
-(ver `docs/agent-standard.md` para la estructura correcta).
+Para MCP servers, el CLI interactivo ofrece instalación directa que escribe en `.claude/settings.json`.
+Para profiles, ofrece agregar el profile a `project.yaml` directamente.
 
 ---
 
 ## No hagas
 
-- No copiar templates directamente sin adaptarlos al formato forge
+- No asumir que un resultado del catálogo está actualizado — verificar el repositorio antes de recomendar
 - No crear agentes Tier 2 sin revisar si el stack ya tiene un profile en `profiles/`
-- No omitir las secciones "No hagas" y "Reglas" al adaptar templates externos
+- No instalar MCP servers sin verificar que el usuario tiene Python 3.9+ y las dependencias requeridas

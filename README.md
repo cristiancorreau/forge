@@ -70,7 +70,7 @@ python3 .agentic/forge.py
   ▶ Nuevo proyecto         wizard interactivo
     Inicializar agentes    forge-init
     Auditar proyecto       forge-audit
-    Buscar templates       aitmpl.com
+    Buscar templates       catálogo curado
     Nuevo profile Tier 2   scaffold
     Teardown               revertir instalación
     ──────────────────────────────────────
@@ -187,7 +187,7 @@ Un solo archivo configura agentes, stack, compliance y sprint para todos los run
 | `scripts/forge-wizard.py` | Wizard de configuración (standalone) |
 | `scripts/forge-scaffold-profile.py` | Crea un profile Tier 2 nuevo |
 | `scripts/forge-teardown.py` | Revierte la instalación |
-| `scripts/aitmpl-search.py` | Busca templates en aitmpl.com |
+| `scripts/aitmpl-search.py` | Busca en catálogo curado de templates, MCP servers y profiles |
 | `scripts/token-stats.py` | Estadísticas de tokens por agente |
 
 ---
