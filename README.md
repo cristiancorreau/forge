@@ -9,6 +9,8 @@ Un único `project.yaml` genera la configuración correcta para cada herramienta
 
 ## Inicio rápido
 
+### Proyecto nuevo
+
 ```bash
 # 1. Agregar forge al proyecto como submodule
 git submodule add https://github.com/socialwebcl/forge .agentic
@@ -21,6 +23,26 @@ python3 .agentic/forge.py
 ```
 
 El CLI guía el resto: genera `project.yaml`, instala agentes y configura el runtime elegido.
+
+### Unirse a un proyecto que ya usa forge
+
+Cuando alguien clona un repositorio que tiene forge como submodule, el directorio `.agentic/` aparece vacío por defecto. Ejecutar:
+
+```bash
+git clone <url-del-repositorio>
+cd <repositorio>
+git submodule update --init --recursive
+pip3 install -r .agentic/requirements.txt
+python3 .agentic/forge.py
+```
+
+Alternativa: clonar con submodules en un solo paso:
+
+```bash
+git clone --recurse-submodules <url-del-repositorio>
+```
+
+> **Síntoma de submodule no inicializado:** si `.agentic/` está vacío o Python lanza `No such file or directory: '.agentic/forge.py'`, ejecutar `git submodule update --init --recursive` desde la raíz del repositorio.
 
 ---
 
