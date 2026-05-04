@@ -11,6 +11,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 import sys
 import subprocess
 import textwrap
@@ -42,8 +43,22 @@ CYAN        = "\033[36m"
 GREEN       = "\033[32m"
 YELLOW      = "\033[33m"
 RED         = "\033[31m"
-BG_SEL      = "\033[48;5;236m"
-FG_DESC     = "\033[38;5;252m"
+MAGENTA     = "\033[35m"
+BG_SEL      = "\033[48;5;235m"   # selección: fondo gris oscuro
+FG_DESC     = "\033[38;5;252m"   # descripción: gris claro
+ACCENT      = "\033[38;5;75m"    # acento: azul claro (key hints)
+FG_MUTED    = "\033[38;5;240m"   # separadores y texto secundario
+
+# Pills de categoría: (bg_color, fg_color, label_4chars)
+_CAT_PILL: dict[str, tuple[str, str, str]] = {
+    "framework":  ("\033[48;5;55m",  "\033[97m", " FW "),
+    "mcp-server": ("\033[48;5;23m",  "\033[97m", "MCP "),
+    "profile":    ("\033[48;5;22m",  "\033[97m", "PRF "),
+    "tool":       ("\033[48;5;130m", "\033[97m", " TL "),
+    "resource":   ("\033[48;5;17m",  "\033[97m", "DOC "),
+}
+
+_ANSI_ESC = re.compile(r'\x1b\[[0-9;?]*[a-zA-Z]')
 
 
 def clr() -> None:
@@ -59,6 +74,20 @@ def c(t: str) -> str:  return f"{CYAN}{t}{RESET}"
 def g(t: str) -> str:  return f"{GREEN}{t}{RESET}"
 def y(t: str) -> str:  return f"{YELLOW}{t}{RESET}"
 def r(t: str) -> str:  return f"{RED}{t}{RESET}"
+
+def _strip_ansi(s: str) -> str:
+    return _ANSI_ESC.sub("", s)
+
+def _padded(s: str, width: int) -> str:
+    """Pad s to visible width, ignorando códigos ANSI."""
+    return s + " " * max(0, width - len(_strip_ansi(s)))
+
+def _hint(key: str, action: str) -> str:
+    return f"{ACCENT}{key}{RESET} {DIM}{action}{RESET}"
+
+def _cat_pill(category: str) -> str:
+    bg, fg, label = _CAT_PILL.get(category, ("\033[48;5;238m", "\033[97m", " ?? "))
+    return f"{bg}{fg}{label}{RESET}"
 
 
 def getch() -> str:
@@ -107,19 +136,18 @@ class MenuItem:
 DESC_WIDTH = 50  # ancho interior del panel
 
 def _draw_description(text: str) -> None:
-    """Dibuja un panel con la descripción del ítem actualmente seleccionado."""
     if not text:
         print()
         return
 
-    border = "─" * DESC_WIDTH
+    border  = "─" * DESC_WIDTH
     wrapped = textwrap.wrap(text, width=DESC_WIDTH - 2)
 
-    print(f"  {DIM}┌{border}┐{RESET}")
+    print(f"  {FG_MUTED}╭{border}╮{RESET}")
     for line in wrapped:
         padding = DESC_WIDTH - 2 - len(line)
-        print(f"  {DIM}│{RESET} {FG_DESC}{line}{' ' * padding}{RESET} {DIM}│{RESET}")
-    print(f"  {DIM}└{border}┘{RESET}")
+        print(f"  {FG_MUTED}│{RESET} {FG_DESC}{line}{' ' * padding}{RESET} {FG_MUTED}│{RESET}")
+    print(f"  {FG_MUTED}╰{border}╯{RESET}")
 
 # ---------------------------------------------------------------------------
 # Menú genérico con flechas + panel de descripción
@@ -155,11 +183,11 @@ def show_menu(
 
             for idx, item in enumerate(items):
                 if item.separator:
-                    print(f"  {d('─' * 40)}")
+                    print(f"  {FG_MUTED}{'─' * 40}{RESET}")
                     continue
                 if idx == cursor:
-                    marker = c("▶")
-                    label  = f"{BG_SEL} {item.label:<44}{RESET}"
+                    marker = f"{ACCENT}❯{RESET}"
+                    label  = f"{BG_SEL} {_padded(item.label, 43)}{RESET}"
                 else:
                     marker = " "
                     label  = f" {item.label}"
@@ -169,7 +197,7 @@ def show_menu(
             current_desc = items[cursor].description if not items[cursor].separator else ""
             _draw_description(current_desc)
             print()
-            print(f"  {d('↑↓ navegar   Enter seleccionar   q salir')}")
+            print(f"  {_hint('↑↓', 'navegar')}    {_hint('⏎', 'seleccionar')}    {_hint('q', 'salir')}")
 
             ch = getch()
 
@@ -191,13 +219,16 @@ def show_menu(
 # ---------------------------------------------------------------------------
 
 def _draw_header() -> None:
-    width  = 50
-    border = "─" * width
-    title  = f"forge v{VERSION}  —  Agentic Development Framework"
-    pad    = width - len(title)
-    print(f"  {CYAN}┌{border}┐{RESET}")
-    print(f"  {CYAN}│{RESET} {b(title)}{' ' * pad}{CYAN}│{RESET}")
-    print(f"  {CYAN}└{border}┘{RESET}")
+    W       = 54
+    inner   = "─" * W
+    badge   = f"\033[48;5;238m\033[97m v{VERSION} {RESET}"   # pill de versión
+    name    = f"{CYAN}{BOLD}forge{RESET}"
+    dot     = f" {FG_MUTED}·{RESET} "
+    tag     = f"{DIM}Agentic Development Framework{RESET}"
+    content = f" {name} {badge}{dot}{tag}"
+    print(f"  {CYAN}╭{inner}╮{RESET}")
+    print(f"  {CYAN}│{RESET}{_padded(content, W)}{CYAN}│{RESET}")
+    print(f"  {CYAN}╰{inner}╯{RESET}")
 
 # ---------------------------------------------------------------------------
 # Utilidades
@@ -271,14 +302,6 @@ def _load_aitmpl_mod():
     _AITMPL_MOD = mod
     return mod
 
-
-CATEGORY_ICONS = {
-    "framework":  "◆",
-    "mcp-server": "⬡",
-    "profile":    "◈",
-    "tool":       "⚙",
-    "resource":   "◉",
-}
 
 CATEGORY_LABELS_MENU = {
     "framework":  "Framework",
@@ -467,12 +490,13 @@ def _add_profile_to_project(slug: str) -> None:
 def _build_result_menu(results: list[dict]) -> list[MenuItem]:
     items = []
     for i, r in enumerate(results):
-        cat   = r.get("category", "")
-        icon  = CATEGORY_ICONS.get(cat, "·")
-        name  = r.get("name", "")
-        label = f"{icon} {name}"
-        if len(label) > 48:
-            label = label[:45] + "…"
+        cat     = r.get("category", "")
+        pill    = _cat_pill(cat)          # 4 visible chars
+        name    = r.get("name", "")
+        display = name.split("—", 1)[1].strip() if "—" in name else name
+        if len(display) > 37:
+            display = display[:34] + "…"
+        label = f"{pill} {display}"      # pill(4) + space(1) + display(≤37) = ≤42 visible
         items.append(MenuItem(label, key=str(i), description=r.get("description", "")))
     items.append(MenuItem("", separator=True))
     items.append(MenuItem("← Volver", key="back", description="Regresa al menú de búsqueda."))
@@ -490,16 +514,12 @@ def _action_menu_item(item: dict) -> None:
     if category == "mcp-server" and item.get("install"):
         slug    = _mcp_slug(item)
         already = _is_mcp_installed(slug)
-        label   = (
-            f"Reinstalar  ({slug} ya instalado)"
-            if already else
-            "Instalar en proyecto  (.claude/settings.json)"
-        )
-        desc = (
-            f"'{slug}' ya está en .claude/settings.json. Reinstalar sobreescribirá la configuración."
-            if already else
-            "Agrega este MCP server a .claude/settings.json con los parámetros que indiques."
-        )
+        if already:
+            label = f"{g('✓')} Instalado — reinstalar  ({slug})"
+            desc  = f"'{slug}' ya está en .claude/settings.json. Reinstalar sobreescribirá la config."
+        else:
+            label = f"+ Instalar en proyecto  (.claude/settings.json)"
+            desc  = "Agrega este MCP server a .claude/settings.json con los parámetros que indiques."
         actions.append(MenuItem(label, key="install", description=desc))
 
     # Profile: agregar a project.yaml
@@ -508,23 +528,23 @@ def _action_menu_item(item: dict) -> None:
         already = _is_profile_in_project(slug)
         if already:
             actions.append(MenuItem(
-                f"Ya en project.yaml  ({slug})", key="noop",
+                f"{g('✓')} En project.yaml  ({slug})", key="noop",
                 description=f"El profile '{slug}' ya está en agents.profiles de project.yaml.",
             ))
         else:
             actions.append(MenuItem(
-                f"Agregar a project.yaml  ({slug})", key="add-profile",
+                f"+ Agregar a project.yaml  ({slug})", key="add-profile",
                 description=f"Añade '{slug}' a agents.profiles en project.yaml. Luego ejecuta 'Inicializar agentes'.",
             ))
 
     # Abrir en browser / copiar URL
     if url:
         actions.append(MenuItem(
-            "Abrir en browser", key="open",
+            "↗ Abrir en browser", key="open",
             description=f"Abre {url[:60]} en el navegador predeterminado.",
         ))
         actions.append(MenuItem(
-            "Copiar URL al portapapeles", key="copy",
+            "⎘ Copiar URL", key="copy",
             description=url,
         ))
 
