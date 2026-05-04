@@ -504,6 +504,22 @@ CATALOG: list[dict] = [
         "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/sveltekit",
         "language":    "TypeScript",
     },
+    {
+        "name":        "forge profile — laravel",
+        "description": "Tres agentes para proyectos Laravel: api-engineer (Sanctum + Eloquent + Form Requests), fullstack-engineer (Blade + Livewire 3 o Inertia) y migration-specialist (upgrade L6→L13 paso a paso con breaking changes por versión).",
+        "category":    "profile",
+        "tags":        ["laravel", "php", "eloquent", "sanctum", "livewire", "blade", "inertia", "migration", "upgrade"],
+        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/laravel",
+        "language":    "PHP",
+    },
+    {
+        "name":        "forge profile — wordpress",
+        "description": "Tres agentes para proyectos WordPress: wp-engineer (FSE + bloques Gutenberg + Interactivity API + WP REST API), divi-engineer (Divi Theme Builder + módulos ET_Builder_Module + Dynamic Content) y elementor-engineer (Elementor Pro + widgets personalizados + Dynamic Tags + Loop Grid).",
+        "category":    "profile",
+        "tags":        ["wordpress", "php", "gutenberg", "fse", "divi", "elementor", "page-builder", "blocks", "theme-builder"],
+        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/wordpress",
+        "language":    "PHP",
+    },
 
     # ── Tools ────────────────────────────────────────────────────────────────
 

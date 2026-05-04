@@ -56,6 +56,8 @@ herramientas diferentes? Si la respuesta es sí → Tier 2.
 | `go-gin` | `api-engineer` — Go + Gin + sqlc |
 | `sveltekit` | `frontend-engineer` — SvelteKit 2 + Svelte 5 runes |
 | `vuenuxt` | `frontend-engineer` — Nuxt 3 + Vue 3 + Pinia |
+| `laravel` | `api-engineer` — Laravel 10+ + Sanctum + Eloquent · `fullstack-engineer` — Blade + Livewire 3 · `migration-specialist` — upgrade L6→L13 paso a paso |
+| `wordpress` | `wp-engineer` — WP moderno: FSE + bloques Gutenberg + REST API · `divi-engineer` — Divi Theme Builder + módulos personalizados · `elementor-engineer` — Elementor Pro + Theme Builder + Dynamic Tags |
 
 ### Tier 3 — Dominio
 

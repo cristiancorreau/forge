@@ -103,8 +103,18 @@ def test_suggest_profiles_no_duplicates(wizard_mod):
 
 
 def test_suggest_profiles_unknown_stack_returns_empty(wizard_mod):
-    profiles = wizard_mod.suggest_profiles("api", "none", "laravel")
+    profiles = wizard_mod.suggest_profiles("api", "none", "spring-boot")
     assert profiles == []
+
+
+def test_suggest_profiles_laravel(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("api", "none", "laravel")
+    assert "laravel" in profiles
+
+
+def test_suggest_profiles_wordpress(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("wordpress", "none", "wordpress")
+    assert "wordpress" in profiles
 
 
 # ---------------------------------------------------------------------------

@@ -221,6 +221,7 @@ PROJECT_TYPES = [
     ("webapp",      "Web app dinámica               Next.js, Nuxt, SvelteKit, Remix"),
     ("api",         "API / Backend                  FastAPI, Express, NestJS, Rails, Hono"),
     ("fullstack",   "Full-stack                     Frontend + Backend en el mismo repo"),
+    ("wordpress",   "WordPress                      CMS · Divi · Elementor · FSE · plugins"),
     ("mobile",      "App móvil                      React Native / Expo"),
     ("saas",        "SaaS                           Full-stack con auth, billing y multi-tenant"),
     ("crawler",     "Crawler / Scraper              Playwright, Puppeteer"),
@@ -246,9 +247,16 @@ BACKEND_FRAMEWORKS = [
     ("fastapi",     "FastAPI           Python · async · Pydantic"),
     ("django",      "Django            Python · batteries-included · DRF"),
     ("rails",       "Ruby on Rails     Ruby · convención sobre config"),
-    ("laravel",     "Laravel           PHP · Eloquent ORM"),
+    ("laravel",     "Laravel           PHP · Eloquent ORM · Sanctum"),
     ("gin",         "Gin               Go · alta performance"),
     ("none",        "Sin framework backend"),
+]
+
+WORDPRESS_PAGE_BUILDERS = [
+    ("divi",        "Divi              Elegant Themes · Theme Builder · módulos custom"),
+    ("elementor",   "Elementor Pro     Page Builder · Dynamic Tags · Loop Grid"),
+    ("gutenberg",   "Gutenberg / FSE   Block Editor nativo · Full Site Editing"),
+    ("none",        "Sin page builder   desarrollo de plugins o themes puros"),
 ]
 
 DATABASES = [
@@ -307,7 +315,8 @@ LANGUAGES = [
 # Lógica de perfil sugerido
 # ---------------------------------------------------------------------------
 
-def suggest_profiles(ptype: str, frontend: str, backend: str) -> List[str]:
+def suggest_profiles(ptype: str, frontend: str, backend: str,
+                     page_builder: str = "none") -> List[str]:
     """Retorna los profiles de forge más adecuados según el tipo y stack."""
     profiles: List[str] = []
 
@@ -324,6 +333,7 @@ def suggest_profiles(ptype: str, frontend: str, backend: str) -> List[str]:
         "fastapi":   "fastapi",
         "rails":     "rails",
         "django":    "django",
+        "laravel":   "laravel",
         "gin":       "go-gin",
     }
 
@@ -331,6 +341,8 @@ def suggest_profiles(ptype: str, frontend: str, backend: str) -> List[str]:
         return ["expo"]
     if ptype == "crawler":
         return ["playwright-crawler"]
+    if ptype == "wordpress":
+        return ["wordpress"]
 
     if frontend in frontend_map:
         profiles.append(frontend_map[frontend])
@@ -342,13 +354,16 @@ def suggest_profiles(ptype: str, frontend: str, backend: str) -> List[str]:
     return profiles
 
 
-def detect_language(frontend: str, backend: str) -> str:
+def detect_language(frontend: str, backend: str, ptype: str = "") -> str:
     ts = {"nextjs", "astro", "sveltekit", "remix", "react-vite", "vue-vite",
           "angular", "nuxt", "hono", "express", "nestjs"}
     py  = {"fastapi", "django"}
     rb  = {"rails"}
-    php = {"laravel"}
+    php = {"laravel", "wordpress"}
     go  = {"gin"}
+
+    if ptype == "wordpress":
+        return "php"
 
     langs: set[str] = set()
     if frontend in ts or backend in ts:
@@ -618,8 +633,19 @@ def main() -> None:
         sys.exit(0)
 
     # 4 — Frontend (si aplica)
-    frontend = "none"
-    if ptype_key not in ("api", "cli"):
+    frontend     = "none"
+    page_builder = "none"
+
+    if ptype_key == "wordpress":
+        # WordPress: preguntar page builder en vez de frontend/backend
+        pb = pick(
+            "¿Qué page builder / entorno usa el proyecto?",
+            WORDPRESS_PAGE_BUILDERS,
+            subtitle="Determina qué agente especializado se instalará.",
+        )
+        page_builder = pb if pb else "none"
+        frontend = "none"
+    elif ptype_key not in ("api", "cli"):
         if ptype_key == "mobile":
             frontend = "expo"
         elif ptype_key == "crawler":
@@ -633,7 +659,9 @@ def main() -> None:
 
     # 5 — Backend (si aplica)
     backend = "none"
-    if ptype_key not in ("static", "mobile", "crawler"):
+    if ptype_key == "wordpress":
+        backend = "wordpress"
+    elif ptype_key not in ("static", "mobile", "crawler"):
         if ptype_key == "api":
             bk = pick("Framework backend", [o for o in BACKEND_FRAMEWORKS if o[0] != "none"])
             backend = bk if bk else "none"
@@ -651,7 +679,7 @@ def main() -> None:
         backend  = "none"
 
     # Aviso temprano: stack seleccionado sin profile Tier 2
-    _early_profiles = suggest_profiles(ptype_key, frontend, backend)
+    _early_profiles = suggest_profiles(ptype_key, frontend, backend, page_builder)
     _stack_specified = backend not in ("none", "") or frontend not in ("none", "")
     if not _early_profiles and _stack_specified and ptype_key not in ("cli",):
         clr()
@@ -661,8 +689,9 @@ def main() -> None:
         print()
         print(f"  forge instalará agentes genéricos que funcionan con cualquier stack.")
         print(f"  Los stacks con agente especializado (profile) son:")
-        print(f"  {dim('  API/Backend:  hono · express · nestjs · fastapi · django · rails · gin')}")
+        print(f"  {dim('  API/Backend:  hono · express · nestjs · fastapi · django · rails · laravel · gin')}")
         print(f"  {dim('  Frontend:     nextjs · astro · nuxt · sveltekit')}")
+        print(f"  {dim('  CMS:          wordpress (Divi · Elementor · FSE)')}")
         print(f"  {dim('  Otros:        expo (mobile) · playwright (crawler)')}")
         print()
         print(f"  {dim('Puedes crear un agente propio después con forge-scaffold-profile.py')}")
@@ -702,24 +731,28 @@ def main() -> None:
     )
 
     # 10 — Lenguaje y profiles detectados
-    lang     = detect_language(frontend, backend)
-    profiles = suggest_profiles(ptype_key, frontend, backend)
+    lang     = detect_language(frontend, backend, ptype_key)
+    profiles = suggest_profiles(ptype_key, frontend, backend, page_builder)
 
     # Mostrar resumen antes de escribir
     clr()
     _draw_section("Resumen de configuración")
     rows = [
-        ("Modo",       mode_label[mode]),
-        ("Proyecto",   f"{name}  ({slug})"),
-        ("Tipo",       ptype_key),
-        ("Frontend",   frontend),
-        ("Backend",    backend),
-        ("Base datos", database),
-        ("Deploy",     deploy),
-        ("Runtime",    runtime),
-        ("Compliance", ", ".join(compliance) if compliance else "ninguno"),
-        ("Profiles",   ", ".join(profiles) if profiles else "ninguno (ver nota)"),
-        ("Lenguaje",   lang),
+        ("Modo",          mode_label[mode]),
+        ("Proyecto",      f"{name}  ({slug})"),
+        ("Tipo",          ptype_key),
+        ("Frontend",      frontend),
+        ("Backend",       backend),
+    ]
+    if ptype_key == "wordpress":
+        rows.append(("Page Builder", page_builder))
+    rows += [
+        ("Base datos",    database),
+        ("Deploy",        deploy),
+        ("Runtime",       runtime),
+        ("Compliance",    ", ".join(compliance) if compliance else "ninguno"),
+        ("Profiles",      ", ".join(profiles) if profiles else "ninguno (ver nota)"),
+        ("Lenguaje",      lang),
     ]
     for label, value in rows:
         print(f"  {dim(f'{label:<12}')} {bold(value)}")
@@ -729,9 +762,11 @@ def main() -> None:
         print(f"  {yellow('Nota:')} No hay profile Tier 2 para esta combinación de stack.")
         print(f"  Los profiles disponibles son:")
         print(f"  {dim('  API/Backend:')}")
-        print(f"  {dim('    hono-drizzle · express · nestjs · fastapi · django · rails · go-gin')}")
+        print(f"  {dim('    hono-drizzle · express · nestjs · fastapi · django · rails · go-gin · laravel')}")
         print(f"  {dim('  Frontend:')}")
         print(f"  {dim('    nextjs-admin · astro · vuenuxt · sveltekit')}")
+        print(f"  {dim('  CMS:')}")
+        print(f"  {dim('    wordpress (Divi · Elementor · FSE)')}")
         print(f"  {dim('  Otros:')}")
         print(f"  {dim('    expo (mobile) · playwright-crawler (scraping)')}")
         print()

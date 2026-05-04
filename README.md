@@ -134,6 +134,8 @@ Tier 3 — Dominio       proyecto/.claude/agents/   (no está en forge)
 | `vuenuxt` | `frontend-engineer` — Nuxt 3 + Vue 3 + Pinia |
 | `go-gin` | `api-engineer` — Go + Gin + sqlc |
 | `sveltekit` | `frontend-engineer` — SvelteKit 2 + Svelte 5 runes |
+| `laravel` | `api-engineer` + `fullstack-engineer` + `migration-specialist` (upgrade L6→L13) |
+| `wordpress` | `wp-engineer` (FSE + Gutenberg) + `divi-engineer` + `elementor-engineer` |
 
 Para stacks no cubiertos, el CLI ofrece scaffoldear un profile Tier 2 nuevo.
 

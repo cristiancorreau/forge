@@ -747,7 +747,7 @@ def menu_aitmpl() -> None:
                 "Ver por categoría        framework · mcp-server · profile · tool", key="category",
                 description=(
                     "Muestra todos los items de una categoría: frameworks de agentes, "
-                    "MCP servers (20 disponibles), profiles de forge (13), herramientas y recursos."
+                    "MCP servers (20 disponibles), profiles de forge (15), herramientas y recursos."
                 ),
             ),
             MenuItem("", separator=True),
@@ -767,7 +767,7 @@ def menu_aitmpl() -> None:
                 MenuItem("mcp-server   Servidores MCP instalables",   key="mcp-server",
                          description="20 servers con instalación directa: filesystem, git, github, postgres, slack, playwright, docker, cloudflare, vercel y más."),
                 MenuItem("profile      Profiles de stack para forge", key="profile",
-                         description="13 profiles: hono-drizzle, nextjs-admin, astro, fastapi, rails, nestjs, express, expo, playwright-crawler, django, vuenuxt, go-gin, sveltekit."),
+                         description="15 profiles: hono-drizzle, nextjs-admin, astro, fastapi, rails, nestjs, express, expo, playwright-crawler, django, vuenuxt, go-gin, sveltekit, laravel, wordpress."),
                 MenuItem("tool         Herramientas CLI",             key="tool",
                          description="Claude Code CLI, MCP Inspector."),
                 MenuItem("resource     Documentación y listas",       key="resource",
@@ -820,8 +820,9 @@ def menu_scaffold() -> None:
         width=60, initial_indent="  ", subsequent_indent="  ",
     ))
     print()
-    print(f"  {d('Profiles disponibles hoy: hono-drizzle · nextjs-admin · astro · expo')}")
-    print(f"  {d('  playwright-crawler · fastapi · express · rails · nestjs')}\n")
+    print(f"  {d('Profiles disponibles: hono-drizzle · nextjs-admin · astro · expo · playwright-crawler')}")
+    print(f"  {d('  fastapi · express · rails · nestjs · django · go-gin · sveltekit · vuenuxt')}")
+    print(f"  {d('  laravel · wordpress')}\n")
 
     name = _ask_input("Nombre del stack nuevo  (ej: django, laravel, gin)")
     if not name:
