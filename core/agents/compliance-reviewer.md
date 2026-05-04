@@ -4,6 +4,7 @@ description: Revisa cada PR contra los marcos de compliance activos del proyecto
 model: opus
 tools: Read, Grep, Glob, Bash
 tier: 1
+standard_version: "1.0"
 ---
 
 # Compliance Reviewer

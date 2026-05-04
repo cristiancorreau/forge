@@ -4,6 +4,7 @@ description: Mantiene specs, ADRs, READMEs y documentación pública. NO modific
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
 tier: 1
+standard_version: "1.0"
 ---
 
 # Docs Writer

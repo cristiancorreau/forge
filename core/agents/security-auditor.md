@@ -4,6 +4,7 @@ description: Audita el código por vulnerabilidades de seguridad. Foco en autent
 model: opus
 tools: Read, Grep, Glob, Bash
 tier: 1
+standard_version: "1.0"
 ---
 
 # Security Auditor

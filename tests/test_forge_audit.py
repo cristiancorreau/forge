@@ -291,6 +291,29 @@ def test_similitud_entre_50_y_80_incluye_nota_reescritura(mod):
     assert any(i.get("may_be_intentional") is True for i in warn_issues)
 
 
+# ── ISS-013: standard_version ────────────────────────────────────────────────
+
+def test_audit_detecta_ausencia_standard_version(mod):
+    """Agente sin standard_version debe generar un issue info con field == 'standard_version'."""
+    content = "---\nname: test-agent\ndescription: d. NO scope.\nmodel: sonnet\ntools: Read\ntier: 1\n---\n"
+    agent = _make_agent(content)
+    agent["frontmatter"] = mod.parse_frontmatter(content)
+    issues = mod.check_frontmatter(agent)
+    sv_issues = [i for i in issues if i.get("field") == "standard_version"]
+    assert sv_issues, "Esperaba un issue de standard_version"
+    assert sv_issues[0]["level"] == "info"
+
+
+def test_audit_ignora_standard_version_correcto(mod):
+    """Agente con standard_version: '1.0' no debe generar issue de standard_version."""
+    content = '---\nname: test-agent\ndescription: d. NO scope.\nmodel: sonnet\ntools: Read\ntier: 1\nstandard_version: "1.0"\n---\n'
+    agent = _make_agent(content)
+    agent["frontmatter"] = mod.parse_frontmatter(content)
+    issues = mod.check_frontmatter(agent)
+    sv_issues = [i for i in issues if i.get("field") == "standard_version"]
+    assert not sv_issues, f"No esperaba issues de standard_version: {sv_issues}"
+
+
 def test_similitud_menor_50_incluye_nota_version(mod):
     """Similitud < 0.50 debe indicar diferencia mayor al 50% y sugerir verificar versión."""
     # Contenidos completamente distintos

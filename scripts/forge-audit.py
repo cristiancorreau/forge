@@ -44,6 +44,8 @@ OPTIONAL_SECTIONS = ["## Workflow", "## Stack", "## Tu trabajo", "## Anti-patter
 
 REQUIRED_FRONTMATTER = ["name", "description", "model", "tools", "tier"]
 
+STANDARD_VERSION = "1.0"
+
 VALID_MODELS = {"opus", "sonnet", "haiku"}
 # Tier 1 reviewers deben usar opus
 OPUS_ROLES = {"compliance-reviewer", "security-auditor", "orchestrator"}
@@ -154,6 +156,19 @@ def check_frontmatter(agent):
             issues.append({"level": "warn", "msg": f"'{name}' debería usar model: opus (toma decisiones complejas)"})
         if name not in OPUS_ROLES and model == "opus":
             issues.append({"level": "warn", "msg": "model: opus en agente de implementación — sonnet es suficiente y más económico"})
+
+    if "standard_version" not in fm:
+        issues.append({
+            "field": "standard_version",
+            "level": "info",
+            "msg": "Campo 'standard_version' no presente — agente generado antes de standard v1.0",
+        })
+    elif fm.get("standard_version") != STANDARD_VERSION:
+        issues.append({
+            "field": "standard_version",
+            "level": "info",
+            "msg": f"standard_version '{fm['standard_version']}' difiere de la actual '{STANDARD_VERSION}'",
+        })
 
     return issues
 

@@ -4,6 +4,7 @@ description: Implementa el backend del proyecto. API, base de datos, lógica de 
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
 tier: 1
+standard_version: "1.0"
 ---
 
 # Backend Engineer

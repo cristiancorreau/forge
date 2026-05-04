@@ -4,6 +4,7 @@ description: Implementa el frontend del proyecto. UI, componentes, páginas. NO 
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
 tier: 1
+standard_version: "1.0"
 ---
 
 # Frontend Engineer

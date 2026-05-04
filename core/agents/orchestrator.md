@@ -4,6 +4,7 @@ description: Agente lead que coordina al team. Descompone tareas, delega y sinte
 model: opus
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, WebFetch
 tier: 1
+standard_version: "1.0"
 ---
 
 # Orchestrator

@@ -944,6 +944,7 @@ def main() -> None:
             Uso:
               python3 .agentic/forge.py          Abre el CLI interactivo
               python3 .agentic/forge.py --help   Muestra esta ayuda
+              python3 .agentic/forge.py --batch  Muestra scripts para CI/no-interactivo
 
             Scripts disponibles directamente:
               scripts/forge-wizard.py            Wizard de nuevo proyecto
@@ -955,8 +956,28 @@ def main() -> None:
         """))
         return
 
+    if "--batch" in sys.argv:
+        print(textwrap.dedent(f"""\
+            forge v{VERSION} — modo no-interactivo
+
+            Usa los scripts directamente:
+              python3 .agentic/scripts/forge-wizard.py --mode=startup     Crear project.yaml
+              python3 .agentic/scripts/forge-init.py --tool=claude-code   Instalar agentes
+              python3 .agentic/scripts/forge-audit.py --json              Auditar (JSON para CI)
+              python3 .agentic/scripts/forge-audit.py --json | jq '.summary.errors'
+              python3 .agentic/scripts/forge-teardown.py --confirm        Teardown
+        """))
+        return
+
     if not IS_TTY:
         print("forge: terminal interactivo requerido. Usar --help para ver opciones.", file=sys.stderr)
+        print("Tip: usa --batch para ver los scripts equivalentes para CI.", file=sys.stderr)
+        sys.exit(1)
+
+    cols = os.get_terminal_size(fallback=(80, 24)).columns
+    if cols < 58:
+        print(f"forge: terminal demasiado estrecha ({cols} cols, mínimo 58).", file=sys.stderr)
+        print(f"  Amplía la ventana o usa --batch para ver scripts directos.", file=sys.stderr)
         sys.exit(1)
 
     while True:

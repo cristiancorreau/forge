@@ -4,6 +4,7 @@ description: Escribe y mantiene tests unitarios, integración y E2E. NO escribe 
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
 tier: 1
+standard_version: "1.0"
 ---
 
 # Test Engineer

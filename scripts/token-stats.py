@@ -37,6 +37,10 @@ if "--project-dir" in sys.argv:
 else:
     PROJECT_DIR = detect_project_dir()
 
+# NOTA: precios actualizados a 2026-05. Verificar en https://www.anthropic.com/pricing
+# si los precios cambiaron antes de confiar en estos reportes.
+_PRICING_DATE = "2026-05"
+
 # Precios por millón de tokens (USD) — actualizar si cambian
 PRICING = {
     "claude-sonnet-4-6": {"input": 3.00,  "output": 15.00, "cache_write": 3.75,  "cache_read": 0.30},
@@ -167,6 +171,7 @@ def main():
     print(f"{'TOTAL':<56} {fmt(grand['output']):>9} {fmt(grand['cache_read']):>12} {fmt(grand['cache_write']):>10} {grand['msgs']:>5,} ${grand['cost_usd']:>8.2f}")
     print(f"\nGenerado: {output['generated_at']}")
     print(f"Nota: {output['pricing_note']}")
+    print(f"Nota: precios al {_PRICING_DATE} — verificar anthropic.com/pricing si el reporte parece incorrecto.")
 
 
 def patch_html(html_path: str, data: dict) -> None:

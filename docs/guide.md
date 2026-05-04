@@ -317,6 +317,31 @@ agent-browser screenshot
 
 ---
 
+## Uso en CI/CD (sin terminal interactiva)
+
+forge.py requiere terminal interactiva. Para pipelines de CI, usa los scripts directamente:
+
+| Acción | Comando |
+|--------|---------|
+| Crear project.yaml | `python3 .agentic/scripts/forge-wizard.py --mode=startup` |
+| Instalar agentes (Claude Code) | `python3 .agentic/scripts/forge-init.py --tool=claude-code` |
+| Instalar agentes (todos los runtimes) | `python3 .agentic/scripts/forge-init.py --tool=all` |
+| Instalar (sobreescribir) | `python3 .agentic/scripts/forge-init.py --tool=claude-code --force` |
+| Auditar (legible) | `python3 .agentic/scripts/forge-audit.py` |
+| Auditar (JSON para CI) | `python3 .agentic/scripts/forge-audit.py --json` |
+| Falla si hay errores críticos | `python3 .agentic/scripts/forge-audit.py --json \| jq -e '.summary.errors == 0'` |
+| Teardown (preview) | `python3 .agentic/scripts/forge-teardown.py` |
+| Teardown (ejecutar) | `python3 .agentic/scripts/forge-teardown.py --confirm` |
+
+### Ejemplo GitHub Actions
+
+```yaml
+- name: Audit forge agents
+  run: python3 .agentic/scripts/forge-audit.py --json | jq -e '.summary.errors == 0'
+```
+
+---
+
 ## Estructura del repo forge (referencia)
 
 ```

@@ -1,5 +1,8 @@
 # Estándar de Agentes — forge
 
+> **Versión del estándar:** `1.0`  
+> Cambios breaking incrementan la versión mayor. forge-audit detecta la versión de cada agente.
+
 Referencia para crear, clasificar y mantener agentes en el framework forge.
 
 ## Los 3 tiers
