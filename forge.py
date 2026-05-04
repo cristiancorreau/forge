@@ -15,8 +15,17 @@ import re
 import sys
 import subprocess
 import textwrap
-import termios
-import tty
+try:
+    import termios
+    import tty
+except ImportError:
+    print(
+        "ERROR: forge requiere Unix o macOS.\n"
+        "  Los módulos 'termios' y 'tty' no están disponibles en Windows.\n"
+        "  Alternativas: WSL (Windows Subsystem for Linux) o ejecutar en macOS/Linux.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 from pathlib import Path
 from typing import Optional
 
@@ -331,7 +340,13 @@ def _profile_slug(item: dict) -> str:
 
 def _copy_to_clipboard(text: str) -> None:
     try:
-        subprocess.run(["pbcopy"], input=text.encode(), check=True, timeout=3)
+        if sys.platform == "darwin":
+            subprocess.run(["pbcopy"], input=text.encode(), check=True, timeout=3)
+        else:
+            try:
+                subprocess.run(["xclip", "-selection", "clipboard"], input=text.encode(), check=True, timeout=3)
+            except (FileNotFoundError, subprocess.CalledProcessError):
+                subprocess.run(["xsel", "--clipboard", "--input"], input=text.encode(), check=True, timeout=3)
         clr()
         _draw_header()
         print(f"\n  {g('Copiado al portapapeles.')}\n  {d(text)}")
@@ -559,7 +574,8 @@ def _action_menu_item(item: dict) -> None:
     elif key == "add-profile":
         _add_profile_to_project(_profile_slug(item))
     elif key == "open":
-        subprocess.Popen(["open", url])
+        opener = "open" if sys.platform == "darwin" else "xdg-open"
+        subprocess.Popen([opener, url])
     elif key == "copy":
         _copy_to_clipboard(url)
 

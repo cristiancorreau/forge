@@ -7,6 +7,14 @@ Un único `project.yaml` genera la configuración correcta para cada herramienta
 
 ---
 
+## Requisitos
+
+- **Sistema operativo:** macOS o Linux (el CLI interactivo usa `termios`/`tty`). En Windows, usar WSL.
+- **Python:** 3.9+
+- **Dependencia:** `pyyaml` (`pip3 install -r .agentic/requirements.txt`)
+
+---
+
 ## Inicio rápido
 
 ### Proyecto nuevo

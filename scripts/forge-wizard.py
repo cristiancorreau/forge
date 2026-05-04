@@ -13,8 +13,17 @@ from __future__ import annotations
 import os
 import sys
 import textwrap
-import termios
-import tty
+try:
+    import termios
+    import tty
+except ImportError:
+    print(
+        "ERROR: forge-wizard requiere Unix o macOS.\n"
+        "  Los módulos 'termios' y 'tty' no están disponibles en Windows.\n"
+        "  Alternativas: WSL (Windows Subsystem for Linux) o ejecutar en macOS/Linux.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 import yaml
 from pathlib import Path
 from typing import List, Optional, Tuple
