@@ -5,8 +5,6 @@ from pathlib import Path
 
 import pytest
 
-# conftest.py expone load_module y forge_root como fixtures
-
 
 @pytest.fixture(scope="module")
 def wizard_mod(forge_root):
@@ -38,198 +36,226 @@ def test_team_size_enterprise(wizard_mod):
 
 
 # ---------------------------------------------------------------------------
+# detect_language
+# ---------------------------------------------------------------------------
+
+def test_detect_language_typescript_from_nextjs(wizard_mod):
+    assert wizard_mod.detect_language("nextjs", "none") == "typescript"
+
+
+def test_detect_language_python_from_fastapi(wizard_mod):
+    assert wizard_mod.detect_language("none", "fastapi") == "python"
+
+
+def test_detect_language_ruby_from_rails(wizard_mod):
+    assert wizard_mod.detect_language("none", "rails") == "ruby"
+
+
+def test_detect_language_mixed_when_both(wizard_mod):
+    assert wizard_mod.detect_language("nextjs", "fastapi") == "mixed"
+
+
+def test_detect_language_defaults_to_typescript(wizard_mod):
+    assert wizard_mod.detect_language("none", "none") == "typescript"
+
+
+# ---------------------------------------------------------------------------
+# suggest_profiles
+# ---------------------------------------------------------------------------
+
+def test_suggest_profiles_expo_for_mobile(wizard_mod):
+    assert wizard_mod.suggest_profiles("mobile", "expo", "none") == ["expo"]
+
+
+def test_suggest_profiles_crawler(wizard_mod):
+    assert wizard_mod.suggest_profiles("crawler", "none", "none") == ["playwright-crawler"]
+
+
+def test_suggest_profiles_nextjs_admin(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("webapp", "nextjs", "none")
+    assert "nextjs-admin" in profiles
+
+
+def test_suggest_profiles_astro(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("static", "astro", "none")
+    assert "astro" in profiles
+
+
+def test_suggest_profiles_hono_drizzle(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("api", "none", "hono")
+    assert "hono-drizzle" in profiles
+
+
+def test_suggest_profiles_fastapi(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("api", "none", "fastapi")
+    assert "fastapi" in profiles
+
+
+def test_suggest_profiles_rails(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("fullstack", "none", "rails")
+    assert "rails" in profiles
+
+
+def test_suggest_profiles_no_duplicates(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("fullstack", "nextjs", "hono")
+    assert len(profiles) == len(set(profiles))
+
+
+def test_suggest_profiles_unknown_stack_returns_empty(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("api", "none", "django")
+    assert profiles == []
+
+
+# ---------------------------------------------------------------------------
 # primary_engineer
 # ---------------------------------------------------------------------------
 
-def test_primary_engineer_backend_only(wizard_mod):
-    assert wizard_mod.primary_engineer("hono", "null") == "backend-engineer"
+def test_primary_engineer_backend(wizard_mod):
+    assert wizard_mod.primary_engineer("none", "fastapi") == "backend-engineer"
 
 
 def test_primary_engineer_frontend_only(wizard_mod):
-    assert wizard_mod.primary_engineer("null", "nextjs") == "frontend-engineer"
+    assert wizard_mod.primary_engineer("nextjs", "none") == "frontend-engineer"
 
 
 def test_primary_engineer_both_prefers_backend(wizard_mod):
-    assert wizard_mod.primary_engineer("fastapi", "nextjs") == "backend-engineer"
-
-
-def test_primary_engineer_neither_defaults_backend(wizard_mod):
-    assert wizard_mod.primary_engineer("null", "null") == "backend-engineer"
+    assert wizard_mod.primary_engineer("nextjs", "hono") == "backend-engineer"
 
 
 # ---------------------------------------------------------------------------
-# build_yaml_startup
+# build_yaml — startup
 # ---------------------------------------------------------------------------
 
-DATA_STARTUP = {
-    "name": "Test Project",
-    "slug": "test-project",
-    "description": "Una descripción",
-    "language": "python",
-    "backend": "fastapi",
-    "frontend": "null",
-    "profile": "fastapi",
-    "compliance": [],
+BASE = {
+    "mode":         "startup",
+    "name":         "Test",
+    "slug":         "test",
+    "description":  "desc",
+    "language":     "typescript",
+    "project_type": "webapp",
+    "frontend":     "nextjs",
+    "backend":      "hono",
+    "database":     "postgresql",
+    "deploy":       "vercel",
+    "profiles":     ["hono-drizzle", "nextjs-admin"],
+    "runtime":      "claude-code",
+    "compliance":   [],
 }
 
 
-def test_startup_yaml_contains_mode(wizard_mod):
-    yaml = wizard_mod.build_yaml_startup(DATA_STARTUP)
-    assert 'mode: "startup"' in yaml
+def test_startup_yaml_has_mode(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "startup"})
+    assert 'mode: "startup"' in y
 
 
 def test_startup_yaml_has_orchestrator(wizard_mod):
-    yaml = wizard_mod.build_yaml_startup(DATA_STARTUP)
-    assert "orchestrator" in yaml
+    y = wizard_mod.build_yaml({**BASE, "mode": "startup"})
+    assert "orchestrator" in y
 
 
-def test_startup_yaml_has_backend_engineer_for_fastapi(wizard_mod):
-    yaml = wizard_mod.build_yaml_startup(DATA_STARTUP)
-    assert "backend-engineer" in yaml
-
-
-def test_startup_yaml_has_profile(wizard_mod):
-    yaml = wizard_mod.build_yaml_startup(DATA_STARTUP)
-    assert '"fastapi"' in yaml
+def test_startup_yaml_no_phases(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "startup"})
+    assert "phases:" not in y
 
 
 def test_startup_yaml_no_compliance_when_empty(wizard_mod):
-    yaml = wizard_mod.build_yaml_startup(DATA_STARTUP)
-    assert "frameworks: []" in yaml
-
-
-def test_startup_yaml_with_compliance(wizard_mod):
-    data = {**DATA_STARTUP, "compliance": ["gdpr", "lgpd"]}
-    yaml = wizard_mod.build_yaml_startup(data)
-    assert '"gdpr"' in yaml
-    assert '"lgpd"' in yaml
-
-
-def test_startup_yaml_frontend_engineer_when_frontend_only(wizard_mod):
-    data = {**DATA_STARTUP, "backend": "null", "frontend": "nextjs", "profile": "nextjs-admin"}
-    yaml = wizard_mod.build_yaml_startup(data)
-    assert "frontend-engineer" in yaml
-
-
-def test_startup_yaml_no_sprint_phases(wizard_mod):
-    yaml = wizard_mod.build_yaml_startup(DATA_STARTUP)
-    assert "phases:" not in yaml
-
-
-def test_startup_yaml_otro_profile_gives_empty_profiles(wizard_mod):
-    data = {**DATA_STARTUP, "profile": "otro"}
-    yaml = wizard_mod.build_yaml_startup(data)
-    assert "profiles: []" in yaml
+    y = wizard_mod.build_yaml({**BASE, "mode": "startup"})
+    assert "frameworks: []" in y
 
 
 # ---------------------------------------------------------------------------
-# build_yaml_standard
+# build_yaml — standard
 # ---------------------------------------------------------------------------
-
-DATA_STANDARD = {
-    "name": "Standard Project",
-    "slug": "standard-project",
-    "description": "Proyecto estándar",
-    "language": "typescript",
-    "backend": "hono",
-    "frontend": "nextjs",
-    "profile": "hono-drizzle",
-    "compliance": ["gdpr"],
-}
-
-
-def test_standard_yaml_contains_mode(wizard_mod):
-    yaml = wizard_mod.build_yaml_standard(DATA_STANDARD)
-    assert 'mode: "standard"' in yaml
-
 
 def test_standard_yaml_has_phases(wizard_mod):
-    yaml = wizard_mod.build_yaml_standard(DATA_STANDARD)
-    assert "phases:" in yaml
+    y = wizard_mod.build_yaml({**BASE, "mode": "standard"})
+    assert "phases:" in y
 
 
-def test_standard_yaml_has_compliance_reviewer_when_compliance(wizard_mod):
-    yaml = wizard_mod.build_yaml_standard(DATA_STANDARD)
-    assert "compliance-reviewer" in yaml
+def test_standard_yaml_compliance_reviewer_when_compliance(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "standard", "compliance": ["gdpr"]})
+    assert "compliance-reviewer" in y
 
 
-def test_standard_yaml_no_compliance_reviewer_when_no_compliance(wizard_mod):
-    data = {**DATA_STANDARD, "compliance": []}
-    yaml = wizard_mod.build_yaml_standard(data)
-    assert "compliance-reviewer" not in yaml
+def test_standard_yaml_no_compliance_reviewer_without_compliance(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "standard", "compliance": []})
+    assert "compliance-reviewer" not in y
 
 
-def test_standard_yaml_has_skills(wizard_mod):
-    yaml = wizard_mod.build_yaml_standard(DATA_STANDARD)
-    assert "security-audit" in yaml
+def test_standard_yaml_has_deploy_field(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "standard"})
+    assert '"vercel"' in y
 
 
-def test_standard_yaml_has_full_agent_roster(wizard_mod):
-    yaml = wizard_mod.build_yaml_standard(DATA_STANDARD)
-    for agent in ("orchestrator", "backend-engineer", "frontend-engineer", "test-engineer", "docs-writer"):
-        assert agent in yaml
+def test_standard_yaml_has_database_field(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "standard"})
+    assert '"postgresql"' in y
+
+
+def test_standard_yaml_db_migrate_when_database(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "standard"})
+    assert "db-migrate" in y
+
+
+def test_standard_yaml_no_db_migrate_without_database(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "standard", "database": "none"})
+    assert "# - db-migrate" in y
 
 
 # ---------------------------------------------------------------------------
-# build_yaml_enterprise
+# build_yaml — enterprise
 # ---------------------------------------------------------------------------
-
-DATA_ENTERPRISE = {
-    "name": "Enterprise Project",
-    "slug": "enterprise-project",
-    "description": "Proyecto enterprise",
-    "language": "typescript",
-    "backend": "nestjs",
-    "frontend": "nextjs",
-    "profile": "nestjs",
-    "compliance": ["gdpr", "ley-21719"],
-}
-
-
-def test_enterprise_yaml_contains_mode(wizard_mod):
-    yaml = wizard_mod.build_yaml_enterprise(DATA_ENTERPRISE)
-    assert 'mode: "enterprise"' in yaml
-
 
 def test_enterprise_yaml_has_four_phases(wizard_mod):
-    yaml = wizard_mod.build_yaml_enterprise(DATA_ENTERPRISE)
-    assert yaml.count('id: "') >= 4
-
-
-def test_enterprise_yaml_has_compliance_agents_when_compliance(wizard_mod):
-    yaml = wizard_mod.build_yaml_enterprise(DATA_ENTERPRISE)
-    assert "compliance-reviewer" in yaml
-    assert "security-auditor" in yaml
+    y = wizard_mod.build_yaml({**BASE, "mode": "enterprise"})
+    assert y.count('id: "') >= 4
 
 
 def test_enterprise_yaml_audit_logs_true_when_compliance(wizard_mod):
-    yaml = wizard_mod.build_yaml_enterprise(DATA_ENTERPRISE)
-    assert "audit_logs: true" in yaml
+    y = wizard_mod.build_yaml({**BASE, "mode": "enterprise", "compliance": ["gdpr"]})
+    assert "audit_logs: true" in y
+
+
+def test_enterprise_yaml_audit_logs_false_without_compliance(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "enterprise", "compliance": []})
+    assert "audit_logs: false" in y
 
 
 def test_enterprise_yaml_pii_true_when_compliance(wizard_mod):
-    yaml = wizard_mod.build_yaml_enterprise(DATA_ENTERPRISE)
-    assert "pii_handling: true" in yaml
+    y = wizard_mod.build_yaml({**BASE, "mode": "enterprise", "compliance": ["ley-21719"]})
+    assert "pii_handling: true" in y
 
 
-def test_enterprise_yaml_no_audit_logs_when_no_compliance(wizard_mod):
-    data = {**DATA_ENTERPRISE, "compliance": []}
-    yaml = wizard_mod.build_yaml_enterprise(data)
-    assert "audit_logs: false" in yaml
+def test_enterprise_has_security_auditor_when_compliance(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "enterprise", "compliance": ["gdpr"]})
+    assert "security-auditor" in y
 
 
-def test_enterprise_yaml_has_frameworks(wizard_mod):
-    yaml = wizard_mod.build_yaml_enterprise(DATA_ENTERPRISE)
-    assert '"gdpr"' in yaml
-    assert '"ley-21719"' in yaml
+# ---------------------------------------------------------------------------
+# Profiles en YAML
+# ---------------------------------------------------------------------------
+
+def test_yaml_profiles_listed(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "standard", "profiles": ["hono-drizzle", "nextjs-admin"]})
+    assert '"hono-drizzle"' in y
+    assert '"nextjs-admin"' in y
 
 
-def test_enterprise_yaml_has_obsidian_section(wizard_mod):
-    yaml = wizard_mod.build_yaml_enterprise(DATA_ENTERPRISE)
-    assert "obsidian" in yaml
+def test_yaml_empty_profiles(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "standard", "profiles": []})
+    assert "profiles: []" in y
 
 
-def test_enterprise_yaml_otro_profile_gives_empty_profiles(wizard_mod):
-    data = {**DATA_ENTERPRISE, "profile": "otro"}
-    yaml = wizard_mod.build_yaml_enterprise(data)
-    assert "profiles: []" in yaml
+# ---------------------------------------------------------------------------
+# Stack fields
+# ---------------------------------------------------------------------------
+
+def test_yaml_has_project_type_field(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "standard"})
+    assert 'type: "webapp"' in y
+
+
+def test_yaml_null_when_none(wizard_mod):
+    y = wizard_mod.build_yaml({**BASE, "mode": "standard", "database": "none", "deploy": "none"})
+    assert "database: null" in y
+    assert "deploy: null" in y

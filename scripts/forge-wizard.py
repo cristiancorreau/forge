@@ -13,15 +13,17 @@ from __future__ import annotations
 import os
 import sys
 import textwrap
+import termios
+import tty
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 # ---------------------------------------------------------------------------
 # Flags
 # ---------------------------------------------------------------------------
 
-DRY_RUN = "--dry-run" in sys.argv
-NO_INIT = "--no-init" in sys.argv
+DRY_RUN  = "--dry-run"  in sys.argv
+NO_INIT  = "--no-init"  in sys.argv
 
 MODE_OVERRIDE: Optional[str] = None
 for _arg in sys.argv[1:]:
@@ -34,158 +36,331 @@ if MODE_OVERRIDE is None and "--mode" in sys.argv:
         MODE_OVERRIDE = sys.argv[_idx + 1].strip()
 
 if MODE_OVERRIDE and MODE_OVERRIDE not in ("startup", "standard", "enterprise"):
-    print(f"ERROR: --mode debe ser startup, standard o enterprise (recibido: {MODE_OVERRIDE})", file=sys.stderr)
+    print(f"ERROR: --mode debe ser startup, standard o enterprise", file=sys.stderr)
     sys.exit(1)
 
+IS_TTY = sys.stdin.isatty() and sys.stdout.isatty()
+
 # ---------------------------------------------------------------------------
-# Color helpers
+# ANSI helpers
 # ---------------------------------------------------------------------------
 
-USE_COLOR = sys.stdout.isatty()
+USE_COLOR = IS_TTY
 
 def _c(code: str, text: str) -> str:
-    if not USE_COLOR:
-        return text
-    return f"\033[{code}m{text}\033[0m"
+    return f"\033[{code}m{text}\033[0m" if USE_COLOR else text
 
-def bold(t: str) -> str:
-    return _c("1", t)
+def bold(t: str)  -> str: return _c("1", t)
+def cyan(t: str)  -> str: return _c("36", t)
+def green(t: str) -> str: return _c("32", t)
+def yellow(t: str)-> str: return _c("33", t)
+def dim(t: str)   -> str: return _c("2", t)
 
-def cyan(t: str) -> str:
-    return _c("36", t)
+HIDE_CURSOR = "\033[?25l" if USE_COLOR else ""
+SHOW_CURSOR = "\033[?25h" if USE_COLOR else ""
 
-def green(t: str) -> str:
-    return _c("32", t)
+def clr() -> None:
+    if IS_TTY:
+        os.system("clear")
 
-def yellow(t: str) -> str:
-    return _c("33", t)
-
-def dim(t: str) -> str:
-    return _c("2", t)
+def write(text: str) -> None:
+    sys.stdout.write(text)
+    sys.stdout.flush()
 
 # ---------------------------------------------------------------------------
-# Input helpers
+# Raw key reading
 # ---------------------------------------------------------------------------
 
-def ask(prompt: str, default: Optional[str] = None) -> str:
+KEY_UP    = "\x1b[A"
+KEY_DOWN  = "\x1b[B"
+KEY_ENTER = "\r"
+KEY_SPACE = " "
+KEY_Q     = "q"
+KEY_CTRL_C = "\x03"
+KEY_ESC   = "\x1b"
+
+
+def getch() -> str:
+    if not IS_TTY:
+        return KEY_ENTER
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = sys.stdin.read(1)
+        if ch == "\x1b":
+            ch2 = sys.stdin.read(1)
+            ch3 = sys.stdin.read(1)
+            return f"\x1b{ch2}{ch3}"
+        return ch
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+# ---------------------------------------------------------------------------
+# Menú de selección única con flechas
+# ---------------------------------------------------------------------------
+
+def pick(title: str, options: List[Tuple[str, str]], subtitle: str = "") -> Optional[str]:
+    """
+    Muestra un menú de selección con ↑↓ Enter.
+    options: lista de (key, label). Retorna key seleccionado o None si ESC/q.
+    """
+    if not options:
+        return None
+    cursor = 0
+    write(HIDE_CURSOR)
+    try:
+        while True:
+            clr()
+            _draw_section(title, subtitle)
+            for i, (key, label) in enumerate(options):
+                if i == cursor:
+                    mark = cyan("▶")
+                    line = f"\033[48;5;236m {label:<44}\033[0m" if USE_COLOR else f"[{label}]"
+                else:
+                    mark = " "
+                    line = f" {label}"
+                print(f"  {mark}{line}")
+            print()
+            print(f"  {dim('↑↓ navegar   Enter seleccionar   q salir')}")
+
+            ch = getch()
+            if ch in (KEY_CTRL_C, KEY_Q, KEY_ESC):
+                return None
+            if ch == KEY_UP:
+                cursor = (cursor - 1) % len(options)
+            elif ch == KEY_DOWN:
+                cursor = (cursor + 1) % len(options)
+            elif ch == KEY_ENTER:
+                return options[cursor][0]
+    finally:
+        write(SHOW_CURSOR)
+
+
+def pick_multi(title: str, options: List[Tuple[str, str]], subtitle: str = "") -> List[str]:
+    """
+    Menú de selección múltiple con Space para marcar, Enter para confirmar.
+    Retorna lista de keys seleccionados.
+    """
+    if not options:
+        return []
+    cursor  = 0
+    selected: set[int] = set()
+    write(HIDE_CURSOR)
+    try:
+        while True:
+            clr()
+            _draw_section(title, subtitle)
+            for i, (key, label) in enumerate(options):
+                check  = green("✓") if i in selected else dim("○")
+                arrow  = cyan("▶") if i == cursor else " "
+                if i == cursor:
+                    line = f"\033[48;5;236m {check} {label:<40}\033[0m" if USE_COLOR else f"[{check}] {label}"
+                else:
+                    line = f" {check} {label}"
+                print(f"  {arrow}{line}")
+            print()
+            count = len(selected)
+            print(f"  {dim('Space marcar/desmarcar   Enter confirmar')}  {cyan(str(count))} seleccionado{'s' if count != 1 else ''}")
+
+            ch = getch()
+            if ch in (KEY_CTRL_C, KEY_ESC):
+                return []
+            if ch == KEY_UP:
+                cursor = (cursor - 1) % len(options)
+            elif ch == KEY_DOWN:
+                cursor = (cursor + 1) % len(options)
+            elif ch == KEY_SPACE:
+                if cursor in selected:
+                    selected.discard(cursor)
+                else:
+                    selected.add(cursor)
+            elif ch == KEY_ENTER:
+                return [options[i][0] for i in sorted(selected)]
+    finally:
+        write(SHOW_CURSOR)
+
+
+def ask_text(prompt: str, default: str = "") -> str:
+    """Input de texto libre — solo para nombre y descripción."""
+    write(SHOW_CURSOR)
     hint = f" {dim(f'[{default}]')}" if default else ""
     try:
-        value = input(f"{cyan('?')} {prompt}{hint}: ").strip()
+        val = input(f"  {cyan('?')} {prompt}{hint}: ").strip()
     except (KeyboardInterrupt, EOFError):
         print("\n\nInterrumpido.")
         sys.exit(0)
-    return value if value else (default or "")
+    finally:
+        write(HIDE_CURSOR)
+    return val if val else default
 
 
-def ask_choice(prompt: str, options: List[str], default: Optional[str] = None) -> str:
-    opts_display = "  ".join(
-        bold(f"[{o}]") if o == default else f"[{o}]"
-        for o in options
-    )
-    print(f"{cyan('?')} {prompt}")
-    print(f"  {opts_display}")
-    while True:
-        try:
-            value = input(f"  Opción: ").strip().lower()
-        except (KeyboardInterrupt, EOFError):
-            print("\n\nInterrumpido.")
-            sys.exit(0)
-        if not value and default:
-            return default
-        if value in options:
-            return value
-        print(f"  {yellow('!')} Elige una de: {', '.join(options)}")
-
-
-def ask_multiselect(prompt: str, options: List[str]) -> List[str]:
-    print(f"{cyan('?')} {prompt}")
-    for i, opt in enumerate(options, 1):
-        print(f"  {dim(str(i))}) {opt}")
-    print(f"  {dim('0')} ninguno")
-    print(f"  {dim('Ejemplo: 1 3  o  ninguno')}")
-    while True:
-        try:
-            raw = input(f"  Selección: ").strip().lower()
-        except (KeyboardInterrupt, EOFError):
-            print("\n\nInterrumpido.")
-            sys.exit(0)
-        if raw in ("0", "ninguno", "none", ""):
-            return []
-        parts = raw.replace(",", " ").split()
-        try:
-            indices = [int(p) for p in parts]
-            if all(1 <= i <= len(options) for i in indices):
-                return [options[i - 1] for i in indices]
-        except ValueError:
-            pass
-        print(f"  {yellow('!')} Ingresa números separados por espacio (ej: 1 3) o 0 para ninguno")
-
-
-def ask_yes_no(prompt: str, default: bool = True) -> bool:
-    hint = "S/n" if default else "s/N"
-    while True:
-        try:
-            raw = input(f"{cyan('?')} {prompt} {dim(f'[{hint}]')}: ").strip().lower()
-        except (KeyboardInterrupt, EOFError):
-            print("\n\nInterrumpido.")
-            sys.exit(0)
-        if not raw:
-            return default
-        if raw in ("s", "si", "sí", "y", "yes"):
-            return True
-        if raw in ("n", "no"):
-            return False
-
-
-def divider() -> None:
-    width = min(os.get_terminal_size().columns if USE_COLOR else 60, 72)
-    print(dim("─" * width))
+def _draw_section(title: str, subtitle: str = "") -> None:
+    print()
+    print(f"  {bold(title)}")
+    if subtitle:
+        print(f"  {dim(subtitle)}")
+    print()
 
 # ---------------------------------------------------------------------------
-# Data
+# Catálogo de opciones
 # ---------------------------------------------------------------------------
 
-PROFILES = [
-    "hono-drizzle",
-    "nextjs-admin",
-    "expo",
-    "playwright-crawler",
-    "fastapi",
-    "express",
-    "rails",
-    "nestjs",
-    "otro",
+PROJECT_TYPES = [
+    ("static",      "Sitio estático / SSG          Astro, Hugo, 11ty"),
+    ("webapp",      "Web app dinámica               Next.js, Nuxt, SvelteKit, Remix"),
+    ("api",         "API / Backend                  FastAPI, Express, NestJS, Rails, Hono"),
+    ("fullstack",   "Full-stack                     Frontend + Backend en el mismo repo"),
+    ("mobile",      "App móvil                      React Native / Expo"),
+    ("saas",        "SaaS                           Full-stack con auth, billing y multi-tenant"),
+    ("crawler",     "Crawler / Scraper              Playwright, Puppeteer"),
+    ("cli",         "Herramienta CLI                Python, Go, Node"),
 ]
 
-STACK_HINTS = {
-    "hono-drizzle":      ("hono",    "null",    "typescript"),
-    "nextjs-admin":      ("null",    "nextjs",  "typescript"),
-    "expo":              ("null",    "expo",    "typescript"),
-    "playwright-crawler":("null",    "null",    "typescript"),
-    "fastapi":           ("fastapi", "null",    "python"),
-    "express":           ("express", "null",    "typescript"),
-    "rails":             ("rails",   "rails-views", "ruby"),
-    "nestjs":            ("nestjs",  "null",    "typescript"),
-    "otro":              ("null",    "null",    "mixed"),
-}
+FRONTEND_FRAMEWORKS = [
+    ("nextjs",      "Next.js           React + SSR/SSG · TypeScript"),
+    ("astro",       "Astro             SSG/SSR · islands · TypeScript"),
+    ("nuxt",        "Nuxt              Vue 3 + SSR/SSG · TypeScript"),
+    ("sveltekit",   "SvelteKit         Svelte + SSR/SSG · TypeScript"),
+    ("remix",       "Remix             React + SSR · TypeScript"),
+    ("react-vite",  "React + Vite      SPA · TypeScript"),
+    ("vue-vite",    "Vue + Vite        SPA · TypeScript"),
+    ("angular",     "Angular           SPA · TypeScript"),
+    ("none",        "Sin framework frontend"),
+]
 
-COMPLIANCE_OPTIONS = ["gdpr", "lgpd", "ley-21719", "ccpa"]
+BACKEND_FRAMEWORKS = [
+    ("hono",        "Hono              TypeScript · edge-ready · Drizzle ORM"),
+    ("express",     "Express           Node.js · TypeScript"),
+    ("nestjs",      "NestJS            Node.js · TypeScript · arquitectura modular"),
+    ("fastapi",     "FastAPI           Python · async · Pydantic"),
+    ("django",      "Django            Python · batteries-included · DRF"),
+    ("rails",       "Ruby on Rails     Ruby · convención sobre config"),
+    ("laravel",     "Laravel           PHP · Eloquent ORM"),
+    ("gin",         "Gin               Go · alta performance"),
+    ("none",        "Sin framework backend"),
+]
 
-RUNTIMES = ["claude-code", "opencode", "kiro", "todos"]
+DATABASES = [
+    ("postgresql",  "PostgreSQL        Relacional · producción"),
+    ("mysql",       "MySQL / MariaDB   Relacional · hosting compartido"),
+    ("sqlite",      "SQLite            Relacional · local / edge"),
+    ("mongodb",     "MongoDB           Documento · NoSQL"),
+    ("supabase",    "Supabase          PostgreSQL as a Service + Auth"),
+    ("planetscale", "PlanetScale       MySQL serverless · branching"),
+    ("turso",       "Turso             SQLite edge · libSQL"),
+    ("redis",       "Redis             Cache / pub-sub"),
+    ("none",        "Sin base de datos"),
+]
 
-CORE_AGENTS = [
-    "orchestrator",
-    "backend-engineer",
-    "frontend-engineer",
-    "test-engineer",
-    "docs-writer",
-    "compliance-reviewer",
-    "security-auditor",
+DEPLOY_TARGETS = [
+    ("vercel",      "Vercel            Serverless · Edge · integración Git"),
+    ("netlify",     "Netlify           Serverless · Edge · forms"),
+    ("cloudflare",  "Cloudflare        Workers · Pages · R2 · D1"),
+    ("railway",     "Railway           PaaS · containers · DB managed"),
+    ("fly",         "Fly.io            VMs · Docker · multi-región"),
+    ("aws",         "AWS               EC2 / Lambda / ECS / S3"),
+    ("gcp",         "GCP               Cloud Run / GKE / Firebase"),
+    ("digitalocean","DigitalOcean      Droplets · App Platform"),
+    ("shared",      "Hosting compartido cPanel / FTP / PHP"),
+    ("selfhosted",  "Self-hosted / VPS  Docker Compose · Nginx"),
+    ("none",        "Sin deploy configurado aún"),
+]
+
+RUNTIMES = [
+    ("claude-code", "Claude Code       .claude/agents/  (recomendado)"),
+    ("opencode",    "OpenCode          AGENTS.md"),
+    ("kiro",        "Kiro              .kiro/steering/"),
+    ("all",         "Todos             genera los tres formatos"),
+]
+
+COMPLIANCE_OPTIONS = [
+    ("gdpr",        "GDPR              Unión Europea"),
+    ("lgpd",        "LGPD              Brasil"),
+    ("ley-21719",   "Ley 21.719        Chile"),
+    ("ccpa",        "CCPA              California, EE.UU."),
+    ("hipaa",       "HIPAA             Salud · EE.UU."),
+    ("pci-dss",     "PCI-DSS           Pagos con tarjeta"),
+]
+
+LANGUAGES = [
+    ("typescript",  "TypeScript"),
+    ("python",      "Python"),
+    ("ruby",        "Ruby"),
+    ("php",         "PHP"),
+    ("go",          "Go"),
+    ("mixed",       "Mixto  (varios lenguajes)"),
 ]
 
 # ---------------------------------------------------------------------------
-# Mode detection
+# Lógica de perfil sugerido
 # ---------------------------------------------------------------------------
+
+def suggest_profiles(ptype: str, frontend: str, backend: str) -> List[str]:
+    """Retorna los profiles de forge más adecuados según el tipo y stack."""
+    profiles: List[str] = []
+
+    frontend_map = {
+        "nextjs":    "nextjs-admin",
+        "astro":     "astro",
+    }
+    backend_map = {
+        "hono":      "hono-drizzle",
+        "express":   "express",
+        "nestjs":    "nestjs",
+        "fastapi":   "fastapi",
+        "rails":     "rails",
+    }
+
+    if ptype == "mobile":
+        return ["expo"]
+    if ptype == "crawler":
+        return ["playwright-crawler"]
+
+    if frontend in frontend_map:
+        profiles.append(frontend_map[frontend])
+    if backend in backend_map:
+        p = backend_map[backend]
+        if p not in profiles:
+            profiles.append(p)
+
+    return profiles
+
+
+def detect_language(frontend: str, backend: str) -> str:
+    ts = {"nextjs", "astro", "sveltekit", "remix", "react-vite", "vue-vite",
+          "angular", "nuxt", "hono", "express", "nestjs"}
+    py  = {"fastapi", "django"}
+    rb  = {"rails"}
+    php = {"laravel"}
+    go  = {"gin"}
+
+    langs: set[str] = set()
+    if frontend in ts or backend in ts:
+        langs.add("typescript")
+    if backend in py:
+        langs.add("python")
+    if backend in rb:
+        langs.add("ruby")
+    if backend in php:
+        langs.add("php")
+    if backend in go:
+        langs.add("go")
+
+    if not langs:
+        return "typescript"
+    if len(langs) == 1:
+        return langs.pop()
+    return "mixed"
+
+
+def primary_engineer(frontend: str, backend: str) -> str:
+    if backend not in ("none", ""):
+        return "backend-engineer"
+    if frontend not in ("none", ""):
+        return "frontend-engineer"
+    return "backend-engineer"
+
 
 def team_size_to_mode(size: int) -> str:
     if size <= 2:
@@ -194,73 +369,97 @@ def team_size_to_mode(size: int) -> str:
         return "standard"
     return "enterprise"
 
-
-def detect_mode() -> str:
-    if MODE_OVERRIDE:
-        return MODE_OVERRIDE
-    print(f"{cyan('?')} ¿Cuántas personas hay en el equipo de desarrollo?")
-    while True:
-        try:
-            raw = input(f"  Número de personas: ").strip()
-        except (KeyboardInterrupt, EOFError):
-            print("\n\nInterrumpido.")
-            sys.exit(0)
-        try:
-            n = int(raw)
-            if n > 0:
-                return team_size_to_mode(n)
-        except ValueError:
-            pass
-        print(f"  {yellow('!')} Ingresa un número mayor a 0")
-
 # ---------------------------------------------------------------------------
-# Primary engineer heuristic for startup mode
-# ---------------------------------------------------------------------------
-
-def primary_engineer(backend: str, frontend: str) -> str:
-    if backend != "null" and frontend != "null":
-        return "backend-engineer"
-    if backend != "null":
-        return "backend-engineer"
-    if frontend != "null":
-        return "frontend-engineer"
-    return "backend-engineer"
-
-# ---------------------------------------------------------------------------
-# YAML generators
+# YAML builders
 # ---------------------------------------------------------------------------
 
 def _null(v: str) -> str:
-    return "null" if not v or v == "null" else f'"{v}"'
+    return "null" if not v or v in ("none", "null") else f'"{v}"'
+
+def _profiles_yaml(profiles: List[str]) -> str:
+    if not profiles:
+        return "[]"
+    return "[" + ", ".join(f'"{p}"' for p in profiles) + "]"
+
+def _compliance_yaml(frameworks: List[str]) -> str:
+    if not frameworks:
+        return "[]"
+    return "[" + ", ".join(f'"{f}"' for f in frameworks) + "]"
 
 
-def build_yaml_startup(data: dict) -> str:
-    name = data["name"]
-    slug = data["slug"]
-    desc = data["description"]
-    lang = data["language"]
-    backend = data["backend"]
-    frontend = data["frontend"]
-    profile = data["profile"]
+def build_yaml(data: dict) -> str:
+    mode       = data["mode"]
+    name       = data["name"]
+    slug       = data["slug"]
+    desc       = data["description"]
+    lang       = data["language"]
+    ptype      = data["project_type"]
+    frontend   = data["frontend"]
+    backend    = data["backend"]
+    database   = data["database"]
+    deploy     = data["deploy"]
+    profiles   = data["profiles"]
+    runtime    = data["runtime"]
     compliance = data["compliance"]
 
-    engineer = primary_engineer(backend, frontend)
-    profiles_line = f'["{profile}"]' if profile and profile != "otro" else "[]"
-    compliance_line = (
-        "[" + ", ".join(f'"{c}"' for c in compliance) + "]"
-        if compliance else "[]"
-    )
+    pii        = "true" if compliance else "false"
+    audit      = "true" if any(f in compliance for f in ("gdpr", "lgpd", "ley-21719", "ccpa", "hipaa")) else "false"
+
+    if mode == "startup":
+        eng = primary_engineer(frontend, backend)
+        return textwrap.dedent(f"""\
+            # forge — project.yaml (modo startup)
+            project:
+              name: "{name}"
+              slug: "{slug}"
+              description: "{desc}"
+              language: "{lang}"
+              type: "{ptype}"
+              mode: "startup"
+              status: "active"
+
+            team:
+              name: "Equipo"
+              members: []
+
+            stack:
+              frontend: {_null(frontend)}
+              backend: {_null(backend)}
+              database: {_null(database)}
+              deploy: {_null(deploy)}
+
+            agents:
+              active:
+                - orchestrator
+                - {eng}
+              compliance: []
+              profiles: {_profiles_yaml(profiles)}
+
+            sprint:
+              current: 1
+
+            compliance:
+              frameworks: {_compliance_yaml(compliance)}
+              pii_handling: false
+              audit_logs: false
+
+            paths:
+              specs: "docs/specs"
+              progress: "docs/progress.html"
+        """)
+
+    compliance_agents = "    - compliance-reviewer\n    - security-auditor" if compliance else "    []"
+    phases_block = _phases_for_mode(mode)
 
     return textwrap.dedent(f"""\
-        # forge — modo startup (1-2 personas)
-        # Overhead mínimo: no requiere SDD estricto ni compliance
-        # Para equipos pequeños en fase de exploración
+        # forge — project.yaml (modo {mode})
         project:
           name: "{name}"
           slug: "{slug}"
           description: "{desc}"
           language: "{lang}"
-          mode: "startup"    # startup | standard | enterprise
+          type: "{ptype}"
+          mode: "{mode}"
           status: "active"
 
         team:
@@ -268,161 +467,10 @@ def build_yaml_startup(data: dict) -> str:
           members: []
 
         stack:
-          backend: {_null(backend)}
           frontend: {_null(frontend)}
-          database: null
-
-        agents:
-          active:
-            - orchestrator
-            - {engineer}
-          compliance: []
-          profiles: {profiles_line}
-
-        sprint:
-          current: 1
-
-        compliance:
-          frameworks: {compliance_line}
-          pii_handling: false
-          audit_logs: false
-    """)
-
-
-def build_yaml_standard(data: dict) -> str:
-    name = data["name"]
-    slug = data["slug"]
-    desc = data["description"]
-    lang = data["language"]
-    backend = data["backend"]
-    frontend = data["frontend"]
-    profile = data["profile"]
-    compliance = data["compliance"]
-
-    profiles_line = f'["{profile}"]' if profile and profile != "otro" else "[]"
-    compliance_agents = '    - compliance-reviewer' if compliance else ''
-    compliance_line = (
-        "[" + ", ".join(f'"{c}"' for c in compliance) + "]"
-        if compliance else "[]"
-    )
-    pii = "true" if compliance else "false"
-
-    agents_block = textwrap.dedent(f"""\
-        agents:
-          active:
-            - orchestrator
-            - backend-engineer
-            - frontend-engineer
-            - test-engineer
-            - docs-writer
-          compliance:
-    """)
-    if compliance:
-        agents_block += "    - compliance-reviewer\n"
-    else:
-        agents_block += "    []\n"
-    agents_block += f"  profiles: {profiles_line}\n"
-
-    return textwrap.dedent(f"""\
-        # forge — project.yaml
-        project:
-          name: "{name}"
-          slug: "{slug}"
-          description: "{desc}"
-          language: "{lang}"
-          mode: "standard"
-          status: "active"
-
-        team:
-          name: "Equipo"
-          members: []
-
-        stack:
           backend: {_null(backend)}
-          frontend: {_null(frontend)}
-          database: null
-          cache: null
-          testing: []
-
-        {agents_block}
-        sprint:
-          current: 1
-          length_days: 14
-          phases:
-            - id: "A"
-              name: "Core"
-              specs: []
-            - id: "B"
-              name: "Features"
-              specs: []
-
-        skills:
-          active:
-            - security-audit
-            - new-feature
-          integrations: []
-
-        deploy:
-          provider: null
-          branch: "main"
-
-        compliance:
-          frameworks: {compliance_line}
-          pii_handling: {pii}
-          audit_logs: false
-
-        paths:
-          specs: "docs/specs"
-          progress: "docs/progress.html"
-          migrations: null
-          tests: null
-    """)
-
-
-def build_yaml_enterprise(data: dict) -> str:
-    name = data["name"]
-    slug = data["slug"]
-    desc = data["description"]
-    lang = data["language"]
-    backend = data["backend"]
-    frontend = data["frontend"]
-    profile = data["profile"]
-    compliance = data["compliance"]
-
-    profiles_line = f'["{profile}"]' if profile and profile != "otro" else "[]"
-    compliance_line = (
-        "[" + ", ".join(f'"{c}"' for c in compliance) + "]"
-        if compliance else "[]"
-    )
-    pii = "true" if compliance else "false"
-    audit = "true" if compliance else "false"
-
-    compliance_agents_block = ""
-    if compliance:
-        compliance_agents_block = "    - compliance-reviewer\n    - security-auditor"
-    else:
-        compliance_agents_block = "    []"
-
-    return textwrap.dedent(f"""\
-        # forge — project.yaml (enterprise)
-        project:
-          name: "{name}"
-          slug: "{slug}"
-          description: "{desc}"
-          language: "{lang}"
-          mode: "enterprise"
-          status: "active"
-
-        team:
-          name: "Equipo"
-          members: []
-
-        stack:
-          backend: {_null(backend)}
-          frontend: {_null(frontend)}
-          database: null
-          cache: null
-          testing: []
+          database: {_null(database)}
+          deploy: {_null(deploy)}
 
         agents:
           active:
@@ -432,40 +480,28 @@ def build_yaml_enterprise(data: dict) -> str:
             - test-engineer
             - docs-writer
           compliance:
-        {compliance_agents_block}
-          profiles: {profiles_line}
+        {compliance_agents}
+          profiles: {_profiles_yaml(profiles)}
 
         sprint:
           current: 1
           length_days: 14
           phases:
-            - id: "A"
-              name: "Arquitectura y SDD"
-              specs: []
-            - id: "B"
-              name: "Core"
-              specs: []
-            - id: "C"
-              name: "Features"
-              specs: []
-            - id: "D"
-              name: "Compliance & Auditoría"
-              specs: []
+        {phases_block}
 
         skills:
           active:
             - security-audit
-            - db-migrate
-            - local2prod
             - new-feature
+            {('- db-migrate' if database not in ('none', '') else '# - db-migrate')}
           integrations: []
 
         deploy:
-          provider: null
+          provider: {_null(deploy)}
           branch: "main"
 
         compliance:
-          frameworks: {compliance_line}
+          frameworks: {_compliance_yaml(compliance)}
           pii_handling: {pii}
           audit_logs: {audit}
 
@@ -474,211 +510,270 @@ def build_yaml_enterprise(data: dict) -> str:
           progress: "docs/progress.html"
           migrations: null
           tests: null
-
-        integrations:
-          obsidian:
-            vault_path: null
-            map:
-              api: null
-              database: null
-              frontend: null
-              deploy: null
-              decisions: null
     """)
 
+
+def _phases_for_mode(mode: str) -> str:
+    if mode == "enterprise":
+        return textwrap.dedent("""\
+                - id: "A"
+                  name: "Arquitectura y SDD"
+                  specs: []
+                - id: "B"
+                  name: "Core"
+                  specs: []
+                - id: "C"
+                  name: "Features"
+                  specs: []
+                - id: "D"
+                  name: "Compliance y Auditoría"
+                  specs: []""")
+    return textwrap.dedent("""\
+            - id: "A"
+              name: "Core"
+              specs: []
+            - id: "B"
+              name: "Features"
+              specs: []""")
+
 # ---------------------------------------------------------------------------
-# Main wizard
+# Wizard principal
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    clr()
     print()
-    print(bold("forge — Wizard de configuración de proyecto"))
-    print(dim("Genera project.yaml adaptado a tu equipo y stack."))
+    print(f"  {bold('forge — Wizard de proyecto nuevo')}")
+    print(f"  {dim('Configura tu proyecto con selección de tecnologías')}")
     if DRY_RUN:
-        print(yellow("  Modo --dry-run activo: no se escribirá ningún archivo."))
-    divider()
+        print(f"  {yellow('  --dry-run activo: no se escribirá ningún archivo')}")
+    print()
 
-    # 1. Mode
-    mode = detect_mode()
-    mode_labels = {"startup": "Startup (1-2 personas)", "standard": "Standard (3-8)", "enterprise": "Enterprise (9+)"}
-    print(f"  Modo detectado: {bold(mode_labels[mode])}")
-    divider()
+    # 1 — Modo / tamaño de equipo
+    if MODE_OVERRIDE:
+        mode = MODE_OVERRIDE
+    else:
+        size_key = pick(
+            "¿Cuántas personas hay en el equipo de desarrollo?",
+            [
+                ("1",  "Solo yo / 1 persona"),
+                ("2",  "2 personas"),
+                ("4",  "3-8 personas"),
+                ("9",  "9 o más personas"),
+            ],
+        )
+        if size_key is None:
+            sys.exit(0)
+        mode = team_size_to_mode(int(size_key))
 
-    # 2. Project metadata
-    print(bold("Datos del proyecto"))
-    name = ask("Nombre del proyecto", "Mi Proyecto")
-    slug_default = name.lower().replace(" ", "-")
-    slug = ask("Slug (lowercase, sin espacios)", slug_default)
-    desc = ask("Descripción breve")
-    divider()
+    mode_label = {"startup": "Startup (1-2)", "standard": "Standard (3-8)", "enterprise": "Enterprise (9+)"}
+    print(f"  Modo: {bold(mode_label[mode])}\n")
 
-    # 3. Stack / profile
-    print(bold("Stack"))
-    print(f"  Perfiles disponibles:")
-    for p in PROFILES:
-        if p == "otro":
-            print(f"    {dim('otro')}  — stack no cubierto, crear perfil nuevo")
-        else:
-            print(f"    {p}")
-    profile = ask_choice("¿Qué perfil describe mejor tu stack?", PROFILES, default="hono-drizzle")
-    backend, frontend, lang_default = STACK_HINTS.get(profile, ("null", "null", "mixed"))
-    lang = ask("Lenguaje principal del proyecto", lang_default)
-    divider()
+    # 2 — Nombre del proyecto (único campo de texto libre)
+    clr()
+    _draw_section("Datos del proyecto")
+    name = ask_text("Nombre del proyecto", "Mi Proyecto")
+    slug = name.lower().replace(" ", "-").replace("_", "-")
+    slug = ask_text("Slug (lowercase, sin espacios)", slug)
+    desc = ask_text("Descripción breve", "")
 
-    # 4. Runtime
-    print(bold("Runtime"))
-    runtime = ask_choice("¿Qué herramienta usas para los agentes?", RUNTIMES, default="claude-code")
-    divider()
-
-    # 5. Compliance
-    print(bold("Compliance"))
-    compliance = ask_multiselect(
-        "¿Qué frameworks de compliance aplican? (0 = ninguno)",
-        COMPLIANCE_OPTIONS,
+    # 3 — Tipo de proyecto
+    ptype_key = pick(
+        "¿Qué tipo de proyecto es?",
+        PROJECT_TYPES,
     )
-    divider()
+    if ptype_key is None:
+        sys.exit(0)
 
-    # 6. Output path
-    print(bold("Destino"))
+    # 4 — Frontend (si aplica)
+    frontend = "none"
+    if ptype_key not in ("api", "cli"):
+        if ptype_key == "mobile":
+            frontend = "expo"
+        elif ptype_key == "crawler":
+            frontend = "none"
+        else:
+            opts = FRONTEND_FRAMEWORKS
+            if ptype_key == "static":
+                opts = [o for o in opts if o[0] in ("astro", "nextjs", "nuxt", "sveltekit", "none")]
+            fk = pick("Framework frontend", opts)
+            frontend = fk if fk else "none"
+
+    # 5 — Backend (si aplica)
+    backend = "none"
+    if ptype_key not in ("static", "mobile", "crawler"):
+        if ptype_key == "api":
+            bk = pick("Framework backend", [o for o in BACKEND_FRAMEWORKS if o[0] != "none"])
+            backend = bk if bk else "none"
+        else:
+            bk = pick("Framework backend", BACKEND_FRAMEWORKS)
+            backend = bk if bk else "none"
+        if ptype_key == "crawler":
+            backend = "none"
+
+    if ptype_key in ("mobile", "expo"):
+        frontend = "expo"
+        backend  = "none"
+    if ptype_key == "crawler":
+        frontend = "none"
+        backend  = "none"
+
+    # 6 — Base de datos
+    database = "none"
+    if ptype_key not in ("static", "mobile", "cli", "crawler"):
+        db_opts = DATABASES
+        if ptype_key == "api" and backend in ("fastapi", "django", "rails"):
+            db_opts = [o for o in DATABASES if o[0] not in ("none",)]
+        dk = pick("Base de datos", db_opts)
+        database = dk if dk else "none"
+
+    # 7 — Deploy
+    deploy_key = pick(
+        "¿Dónde se va a desplegar?",
+        DEPLOY_TARGETS,
+        subtitle="Elige la infraestructura principal",
+    )
+    deploy = deploy_key if deploy_key else "none"
+
+    # 8 — Runtime
+    runtime_key = pick("Runtime de agentes IA", RUNTIMES)
+    runtime = runtime_key if runtime_key else "claude-code"
+
+    # 9 — Compliance (multi-select)
+    compliance = pick_multi(
+        "Frameworks de compliance aplicables",
+        COMPLIANCE_OPTIONS,
+        subtitle="Space para marcar, Enter para confirmar — 0 seleccionados = ninguno",
+    )
+
+    # 10 — Lenguaje y profiles detectados
+    lang     = detect_language(frontend, backend)
+    profiles = suggest_profiles(ptype_key, frontend, backend)
+
+    # Mostrar resumen antes de escribir
+    clr()
+    _draw_section("Resumen de configuración")
+    rows = [
+        ("Modo",       mode_label[mode]),
+        ("Proyecto",   f"{name}  ({slug})"),
+        ("Tipo",       ptype_key),
+        ("Frontend",   frontend),
+        ("Backend",    backend),
+        ("Base datos", database),
+        ("Deploy",     deploy),
+        ("Runtime",    runtime),
+        ("Compliance", ", ".join(compliance) if compliance else "ninguno"),
+        ("Profiles",   ", ".join(profiles) if profiles else "ninguno (ver nota)"),
+        ("Lenguaje",   lang),
+    ]
+    for label, value in rows:
+        print(f"  {dim(f'{label:<12}')} {bold(value)}")
+
+    if not profiles:
+        print()
+        print(f"  {yellow('Nota:')} No hay profile Tier 2 para esta combinación de stack.")
+        print(f"  Puedes crear uno con:")
+        print(f"  {dim('python3 .agentic/scripts/forge-scaffold-profile.py --name <stack> --engineer <agente>')}")
+
+    # 11 — Destino del project.yaml
+    print()
+    write(SHOW_CURSOR)
     out_default = str(Path.cwd() / "project.yaml")
-    out_path_str = ask("Ruta donde guardar project.yaml", out_default)
-    out_path = Path(out_path_str).expanduser().resolve()
-    divider()
+    out_str = ask_text("Ruta para guardar project.yaml", out_default)
+    out_path = Path(out_str).expanduser().resolve()
+    write(HIDE_CURSOR)
 
     # Build YAML
     data = {
-        "name": name,
-        "slug": slug,
-        "description": desc,
-        "language": lang,
-        "backend": backend,
-        "frontend": frontend,
-        "profile": profile,
-        "compliance": compliance,
+        "mode":         mode,
+        "name":         name,
+        "slug":         slug,
+        "description":  desc,
+        "language":     lang,
+        "project_type": ptype_key,
+        "frontend":     frontend,
+        "backend":      backend,
+        "database":     database,
+        "deploy":       deploy,
+        "profiles":     profiles,
+        "runtime":      runtime,
+        "compliance":   compliance,
     }
+    yaml_content = build_yaml(data)
 
-    if mode == "startup":
-        yaml_content = build_yaml_startup(data)
-    elif mode == "enterprise":
-        yaml_content = build_yaml_enterprise(data)
-    else:
-        yaml_content = build_yaml_standard(data)
-
-    # Write
     if DRY_RUN:
-        print(bold("--- project.yaml (dry-run) ---"))
+        print()
+        print(f"  {bold('--- project.yaml (dry-run) ---')}")
+        print()
         print(yaml_content)
-        print(bold("--- fin ---"))
+        print(f"  {bold('--- fin ---')}")
     else:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(yaml_content, encoding="utf-8")
-        print(green(f"  project.yaml escrito en: {out_path}"))
+        print(f"\n  {green('✓')} project.yaml escrito en: {bold(str(out_path))}")
 
-    divider()
-
-    # 7. Scaffold hint for "otro"
-    if profile == "otro":
-        print(yellow("Stack no cubierto por perfiles existentes."))
-        print(textwrap.dedent("""\
-            Para crear un perfil Tier 2 nuevo:
-
-              1. Crea el directorio:  .agentic/profiles/<tu-stack>/
-              2. Agrega un AGENTS.md describiendo los agentes especializados
-              3. Agrega los archivos de agente en  .agentic/profiles/<tu-stack>/agents/
-              4. Registra el perfil en  .agentic/profiles/<tu-stack>/profile.yaml
-
-        """))
-        scaffold_script = Path(__file__).parent / "forge-scaffold-profile.py"
-        if scaffold_script.exists():
-            run_scaffold = ask_yes_no("¿Ejecutar forge-scaffold-profile.py para iniciar el scaffolding?", default=False)
-            if run_scaffold and not DRY_RUN:
-                import subprocess
-                subprocess.run([sys.executable, str(scaffold_script)], check=False)
-        else:
-            print(dim("  (forge-scaffold-profile.py no encontrado — crea el perfil manualmente)"))
-        divider()
-
-    # 8. Run forge-init
-    if not NO_INIT:
+    # 12 — Ejecutar forge-init
+    if not NO_INIT and not DRY_RUN:
+        print()
+        write(SHOW_CURSOR)
         tool_arg = runtime if runtime != "todos" else "all"
-        run_init = ask_yes_no(
-            f"¿Ejecutar forge-init.py --tool {tool_arg} ahora?",
-            default=True,
-        )
-        if run_init and not DRY_RUN:
+        try:
+            raw = input(f"  {cyan('?')} ¿Ejecutar forge-init --tool {tool_arg} ahora? {dim('[S/n]')}: ").strip().lower()
+        except (KeyboardInterrupt, EOFError):
+            raw = "n"
+        write(HIDE_CURSOR)
+        run_init = raw in ("", "s", "si", "sí", "y", "yes")
+
+        if run_init:
             forge_init = _find_forge_init()
             if forge_init:
                 import subprocess
                 cmd = [sys.executable, str(forge_init), f"--tool={tool_arg}"]
-                print(dim(f"  $ {' '.join(cmd)}"))
+                print(f"  {dim('$ ' + ' '.join(cmd))}\n")
                 subprocess.run(cmd, check=False)
             else:
-                print(yellow("  No se encontró forge-init.py. Ejecútalo manualmente:"))
+                print(f"  {yellow('!')} forge-init.py no encontrado. Ejecutar manualmente:")
                 print(f"  python3 .agentic/scripts/forge-init.py --tool {tool_arg}")
-        elif run_init and DRY_RUN:
-            print(dim(f"  [dry-run] ejecutaría: forge-init.py --tool {tool_arg}"))
-    divider()
 
-    # 9. Próximos pasos
-    print(bold("Próximos pasos"))
-    steps = _build_next_steps(mode, out_path, runtime, compliance, profile, DRY_RUN, NO_INIT)
+    # 13 — Próximos pasos
+    print()
+    print(f"  {bold('Próximos pasos')}")
+    steps = _next_steps(mode, out_path, runtime, compliance, profiles, DRY_RUN)
     for step in steps:
         print(f"  {step}")
     print()
+    write(SHOW_CURSOR)
 
 
 def _find_forge_init() -> Optional[Path]:
-    candidates = [
-        Path(__file__).parent / "forge-init.py",
-        Path.cwd() / ".agentic" / "scripts" / "forge-init.py",
-    ]
-    for c in candidates:
+    for c in [Path(__file__).parent / "forge-init.py",
+              Path.cwd() / ".agentic" / "scripts" / "forge-init.py"]:
         if c.exists():
             return c
     return None
 
 
-def _build_next_steps(
-    mode: str,
-    out_path: Path,
-    runtime: str,
-    compliance: List[str],
-    profile: str,
-    dry_run: bool,
-    no_init: bool,
-) -> List[str]:
-    steps = []
-    if dry_run:
-        steps.append(f"Quita --dry-run y vuelve a ejecutar para escribir los archivos.")
+def _next_steps(mode: str, out: Path, runtime: str, compliance: List[str],
+                profiles: List[str], dry: bool) -> List[str]:
+    steps: List[str] = []
+    if dry:
+        steps.append("Quita --dry-run y vuelve a ejecutar para escribir los archivos.")
         return steps
 
-    steps.append(f"Revisa {bold(str(out_path))} y ajusta las secciones que necesites.")
-
+    steps.append(f"Revisar {bold(str(out))} y ajustar lo que necesites.")
     tool_arg = runtime if runtime != "todos" else "all"
-    if no_init:
-        steps.append(f"Ejecuta:  {bold(f'python3 .agentic/scripts/forge-init.py --tool {tool_arg}')}")
+    steps.append(f"Ejecutar: {bold(f'python3 .agentic/scripts/forge-init.py --tool {tool_arg}')}")
 
-    if profile == "otro":
-        steps.append("Crea el perfil Tier 2 en  .agentic/profiles/<tu-stack>/")
+    if not profiles:
+        steps.append(f"Crear un profile Tier 2 con forge-scaffold-profile.py para tu stack.")
 
     if mode == "startup":
-        steps.append("Cuando el equipo crezca, cambia  mode: startup → standard  en project.yaml.")
-
-    if mode == "enterprise" and compliance:
-        steps.append("Revisa la sección compliance:  pii_handling y audit_logs ya están en true.")
-        steps.append("Configura las integraciones de auditoría según los frameworks seleccionados.")
-
+        steps.append("Cuando el equipo crezca: cambiar  mode: startup → standard.")
     if compliance:
-        steps.append(
-            "Compliance activo: "
-            + ", ".join(bold(c) for c in compliance)
-            + " — el compliance-reviewer estará disponible."
-        )
+        steps.append("Compliance activo — compliance-reviewer incluido en el roster.")
+    if mode == "enterprise":
+        steps.append("Integrar forge-audit --json en el pipeline de CI.")
 
-    steps.append(
-        "Documentación de forge: "
-        + bold("https://github.com/socialweb-cl/forge")
-    )
     return steps
 
 
