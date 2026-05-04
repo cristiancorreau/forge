@@ -2,9 +2,12 @@
 Tests para forge-audit.py.
 Verifica parsing de frontmatter, checks de secciones, similitud y detección de problemas.
 """
+import json
+import subprocess
+import sys
 import pytest
 from pathlib import Path
-from conftest import load_module
+from conftest import load_module, make_project_yaml
 
 FORGE_ROOT = Path(__file__).parent.parent
 SCRIPT = FORGE_ROOT / "scripts" / "forge-audit.py"
@@ -344,3 +347,77 @@ def test_similitud_menor_50_incluye_nota_version(mod):
     msgs = " ".join(i["msg"] for i in relevant)
     assert "50%" in msgs or "versión de forge" in msgs, \
         f"Esperaba nota sobre versión en: {msgs}"
+
+
+# ── Contrato JSON de --json ───────────────────────────────────────────────────
+
+FORGE_ROOT_PATH = Path(__file__).parent.parent
+AUDIT_SCRIPT = FORGE_ROOT_PATH / "scripts" / "forge-audit.py"
+
+
+def run_audit_json(project_root: Path) -> dict:
+    result = subprocess.run(
+        [sys.executable, str(AUDIT_SCRIPT), "--json"],
+        capture_output=True,
+        text=True,
+        cwd=str(project_root),
+    )
+    assert result.returncode == 0, f"forge-audit --json falló: {result.stderr}"
+    return json.loads(result.stdout)
+
+
+class TestAuditJsonContract:
+    def test_json_tiene_campo_project(self, tmp_path):
+        make_project_yaml(tmp_path)
+        data = run_audit_json(tmp_path)
+        assert "project" in data
+
+    def test_json_tiene_campo_agents(self, tmp_path):
+        make_project_yaml(tmp_path)
+        data = run_audit_json(tmp_path)
+        assert "agents" in data
+
+    def test_json_tiene_campo_opportunities(self, tmp_path):
+        make_project_yaml(tmp_path)
+        data = run_audit_json(tmp_path)
+        assert "opportunities" in data
+
+    def test_json_tiene_campo_orphans(self, tmp_path):
+        make_project_yaml(tmp_path)
+        data = run_audit_json(tmp_path)
+        assert "orphans" in data
+
+    def test_json_tiene_campo_summary(self, tmp_path):
+        """Contrato CI: jq '.summary.errors == 0' debe funcionar."""
+        make_project_yaml(tmp_path)
+        data = run_audit_json(tmp_path)
+        assert "summary" in data, "Falta campo 'summary' — rompe integración CI"
+
+    def test_summary_tiene_subcampos_requeridos(self, tmp_path):
+        make_project_yaml(tmp_path)
+        summary = run_audit_json(tmp_path)["summary"]
+        for field in ("ok", "info", "warnings", "errors", "orphans",
+                      "agents_total", "agents_declared"):
+            assert field in summary, f"summary.{field} faltante"
+
+    def test_summary_errors_es_entero(self, tmp_path):
+        make_project_yaml(tmp_path)
+        summary = run_audit_json(tmp_path)["summary"]
+        assert isinstance(summary["errors"], int)
+
+    def test_summary_warnings_es_entero(self, tmp_path):
+        make_project_yaml(tmp_path)
+        summary = run_audit_json(tmp_path)["summary"]
+        assert isinstance(summary["warnings"], int)
+
+    def test_json_es_parseable(self, tmp_path):
+        make_project_yaml(tmp_path)
+        result = subprocess.run(
+            [sys.executable, str(AUDIT_SCRIPT), "--json"],
+            capture_output=True,
+            text=True,
+            cwd=str(tmp_path),
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)  # no debe lanzar excepción
+        assert isinstance(data, dict)
