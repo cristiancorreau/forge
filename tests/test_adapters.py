@@ -159,3 +159,93 @@ class TestKiroAdapter:
     def test_falla_sin_project_yaml(self, tmp_path):
         result = run_adapter(self.SCRIPT, tmp_path)
         assert result.returncode != 0
+
+
+# ── Codex adapter ─────────────────────────────────────────────────────────────
+
+class TestCodexAdapter:
+    SCRIPT = FORGE_ROOT / "adapters" / "codex" / "generate-codex-config.py"
+
+    def test_script_existe(self):
+        assert self.SCRIPT.exists()
+
+    def test_genera_agents_md(self, tmp_path):
+        make_project_yaml(tmp_path)
+        result = run_adapter(self.SCRIPT, tmp_path)
+        assert result.returncode == 0, result.stderr
+        assert (tmp_path / "AGENTS.md").exists()
+
+    def test_no_genera_codex_md(self, tmp_path):
+        make_project_yaml(tmp_path)
+        run_adapter(self.SCRIPT, tmp_path)
+        assert not (tmp_path / "codex.md").exists()
+
+    def test_agents_md_contiene_roster(self, tmp_path):
+        make_project_yaml(tmp_path, {
+            "agents": {
+                "active": ["orchestrator", "backend-engineer"],
+                "compliance": [],
+                "specialized": [],
+                "profiles": [],
+            }
+        })
+        run_adapter(self.SCRIPT, tmp_path)
+        content = (tmp_path / "AGENTS.md").read_text()
+        assert "orchestrator" in content
+        assert "backend-engineer" in content
+
+    def test_agents_md_incluye_sdd_workflow(self, tmp_path):
+        make_project_yaml(tmp_path)
+        run_adapter(self.SCRIPT, tmp_path)
+        content = (tmp_path / "AGENTS.md").read_text()
+        assert "Spec-Driven" in content or "spec" in content.lower()
+
+    def test_agents_md_incluye_security_rules(self, tmp_path):
+        make_project_yaml(tmp_path)
+        run_adapter(self.SCRIPT, tmp_path)
+        content = (tmp_path / "AGENTS.md").read_text()
+        assert "seguridad" in content.lower() or "security" in content.lower()
+        assert "secrets" in content.lower() or "tokens" in content.lower()
+
+    def test_agents_md_incluye_autonomy_limits(self, tmp_path):
+        make_project_yaml(tmp_path)
+        run_adapter(self.SCRIPT, tmp_path)
+        content = (tmp_path / "AGENTS.md").read_text()
+        assert "autonomía" in content.lower() or "autonomy" in content.lower()
+
+    def test_agents_md_incluye_stack(self, tmp_path):
+        make_project_yaml(tmp_path, {"stack": {"backend": "fastapi", "frontend": "nextjs", "database": "postgresql", "testing": ["pytest"]}})
+        run_adapter(self.SCRIPT, tmp_path)
+        content = (tmp_path / "AGENTS.md").read_text()
+        assert "fastapi" in content
+        assert "nextjs" in content
+
+    def test_compliance_reviewer_auto_con_frameworks(self, tmp_path):
+        make_project_yaml(tmp_path, {
+            "compliance": {"frameworks": ["gdpr"]},
+            "agents": {"active": ["orchestrator"], "compliance": [], "specialized": [], "profiles": []},
+        })
+        run_adapter(self.SCRIPT, tmp_path)
+        content = (tmp_path / "AGENTS.md").read_text()
+        assert "compliance-reviewer" in content
+
+    def test_agents_md_compliance_section_con_frameworks(self, tmp_path):
+        make_project_yaml(tmp_path, {"compliance": {"frameworks": ["gdpr", "ley-21719"]}})
+        run_adapter(self.SCRIPT, tmp_path)
+        content = (tmp_path / "AGENTS.md").read_text()
+        assert "GDPR" in content
+        assert "LEY-21719" in content
+
+    def test_distinto_de_opencode_agents_md(self, tmp_path):
+        """El AGENTS.md de Codex debe ser diferente al de OpenCode."""
+        make_project_yaml(tmp_path)
+        opencode_script = FORGE_ROOT / "adapters" / "opencode" / "generate-agents-md.py"
+        run_adapter(opencode_script, tmp_path)
+        opencode_content = (tmp_path / "AGENTS.md").read_text()
+        run_adapter(self.SCRIPT, tmp_path)
+        codex_content = (tmp_path / "AGENTS.md").read_text()
+        assert codex_content != opencode_content
+
+    def test_falla_sin_project_yaml(self, tmp_path):
+        result = run_adapter(self.SCRIPT, tmp_path)
+        assert result.returncode != 0

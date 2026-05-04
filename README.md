@@ -146,7 +146,7 @@ Para stacks no cubiertos, el CLI ofrece scaffoldear un profile Tier 2 nuevo.
 | Claude Code | `.claude/agents/` + `CLAUDE.md` | `--tool claude-code` |
 | OpenCode | `AGENTS.md` | `--tool opencode` |
 | Kiro | `.kiro/steering/` | `--tool kiro` |
-| Codex CLI | `AGENTS.md` + `codex.md` | `--tool codex` |
+| Codex CLI | `AGENTS.md` (enriquecido) | `--tool codex` |
 | Todos | Los cuatro anteriores | `--tool all` |
 
 ---
