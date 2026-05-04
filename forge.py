@@ -731,7 +731,7 @@ def menu_aitmpl() -> None:
                 "Ver por categoría        framework · mcp-server · profile · tool", key="category",
                 description=(
                     "Muestra todos los items de una categoría: frameworks de agentes, "
-                    "MCP servers (20 disponibles), profiles de forge (9), herramientas y recursos."
+                    "MCP servers (20 disponibles), profiles de forge (13), herramientas y recursos."
                 ),
             ),
             MenuItem("", separator=True),
@@ -751,7 +751,7 @@ def menu_aitmpl() -> None:
                 MenuItem("mcp-server   Servidores MCP instalables",   key="mcp-server",
                          description="20 servers con instalación directa: filesystem, git, github, postgres, slack, playwright, docker, cloudflare, vercel y más."),
                 MenuItem("profile      Profiles de stack para forge", key="profile",
-                         description="9 profiles: hono-drizzle, nextjs-admin, astro, fastapi, rails, nestjs, express, expo, playwright-crawler."),
+                         description="13 profiles: hono-drizzle, nextjs-admin, astro, fastapi, rails, nestjs, express, expo, playwright-crawler, django, vuenuxt, go-gin, sveltekit."),
                 MenuItem("tool         Herramientas CLI",             key="tool",
                          description="Claude Code CLI, MCP Inspector."),
                 MenuItem("resource     Documentación y listas",       key="resource",

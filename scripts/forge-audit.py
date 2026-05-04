@@ -351,10 +351,16 @@ def level_icon(level: str) -> str:
     return {"ok": OK("✓"), "warn": WARN("⚠"), "error": ERR("✗"), "info": INFO("→")}.get(level, " ")
 
 
-def run_audit(as_json: bool = False):
+def run_audit(as_json: bool = False, forge_override=None, only=None):
     try:
         root = find_project_root()
-        forge = find_forge_dir()
+        if forge_override is not None:
+            forge = Path(forge_override)
+            if not forge.exists():
+                print(ERR(f"ERROR: forge dir no existe: {forge}"), file=sys.stderr)
+                sys.exit(1)
+        else:
+            forge = find_forge_dir()
         config = load_project(root)
         config["_root"] = str(root)  # pass root for wiki path resolution
     except FileNotFoundError as e:
@@ -381,6 +387,13 @@ def run_audit(as_json: bool = False):
     if agents_dir.exists():
         for f in sorted(agents_dir.glob("*.md")):
             installed[f.stem] = read_agent(f)
+
+    # Filtrar por --only
+    if only:
+        if only not in installed:
+            print(ERR(f"ERROR: agente '{only}' no encontrado en .claude/agents/"), file=sys.stderr)
+            sys.exit(1)
+        installed = {only: installed[only]}
 
     # ── Audit por agente ──────────────────────────────────────────────────────
     agent_results = {}
@@ -414,20 +427,29 @@ def run_audit(as_json: bool = False):
     orphans = [n for n in installed if n not in declared]
 
     # ── Output ────────────────────────────────────────────────────────────────
-    if as_json:
-        print(json.dumps({
-            "project": config.get("project", {}).get("name"),
-            "agents": {k: {**v, "path": str(v.get("path", ""))} for k, v in agent_results.items()},
-            "opportunities": opps,
-            "orphans": orphans,
-        }, indent=2, default=str))
-        return
-
     proj_name = config.get("project", {}).get("name", "?")
     n_ok   = sum(1 for r in agent_results.values() if r["status"] == "ok")
     n_info = sum(1 for r in agent_results.values() if r["status"] == "info")
     n_warn = sum(1 for r in agent_results.values() if r["status"] == "warn")
     n_err  = sum(1 for r in agent_results.values() if r["status"] == "error")
+
+    if as_json:
+        print(json.dumps({
+            "project": config.get("project", {}).get("name"),
+            "summary": {
+                "agents_total": len(installed),
+                "agents_declared": len(declared),
+                "ok": n_ok,
+                "info": n_info,
+                "warnings": n_warn,
+                "errors": n_err,
+                "orphans": len(orphans),
+            },
+            "agents": {k: {**v, "path": str(v.get("path", ""))} for k, v in agent_results.items()},
+            "opportunities": opps,
+            "orphans": orphans,
+        }, indent=2, default=str))
+        return
 
     print()
     print(BOLD(f"forge audit — {proj_name}"))
@@ -513,7 +535,21 @@ def run_audit(as_json: bool = False):
 
 def main():
     as_json = "--json" in sys.argv
-    run_audit(as_json=as_json)
+    forge_override = None
+    only = None
+    args = sys.argv[1:]
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg.startswith("--forge="):
+            forge_override = arg[len("--forge="):]
+        elif arg == "--forge" and i + 1 < len(args):
+            i += 1
+            forge_override = args[i]
+        elif arg.startswith("--only="):
+            only = arg[len("--only="):]
+        i += 1
+    run_audit(as_json=as_json, forge_override=forge_override, only=only)
 
 
 if __name__ == "__main__":
