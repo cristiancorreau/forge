@@ -231,3 +231,93 @@ def test_find_opportunities_no_reporta_profiles_activos(mod):
     opps = mod.find_opportunities(FORGE_ROOT, config, set())
     profile_opps = [o for o in opps if o["type"] == "profile" and "hono-drizzle" in o["msg"]]
     assert not profile_opps
+
+
+# ── ISS-010: mensajes de similitud ────────────────────────────────────────────
+
+def _make_forge_tmp(tmp_path, forge_content: str, project_content: str, name: str = "test-agent"):
+    """Crea una estructura mínima de forge + proyecto para check_vs_forge."""
+    forge = tmp_path / "forge"
+    (forge / "core" / "agents").mkdir(parents=True)
+    (forge / "core" / "agents" / f"{name}.md").write_text(forge_content)
+
+    agent_path = tmp_path / f"{name}.md"
+    agent_path.write_text(project_content)
+    fm = mod  # se pisa en cada test — se pasa explícitamente
+    return forge, agent_path
+
+
+def test_similitud_entre_50_y_80_incluye_nota_reescritura(mod):
+    """Rango 0.50-0.80 (warn, no comparable): mensaje debe incluir nota de reescritura intencional."""
+    import tempfile, pathlib
+
+    # forge tiene muchas líneas; proyecto tiene pocas → no comparable, no extended.
+    # Comparten el mismo encabezado para que la similitud quede en rango medio.
+    shared_header = "---\nname: test-agent\ndescription: d\nmodel: sonnet\ntools: Read\ntier: 1\n---\n## Reglas\n"
+    unique_lines = "".join(f"- Regla core {i}\n" for i in range(80))
+    forge_content = shared_header + unique_lines           # ~90 líneas
+    project_content = shared_header + "- Regla custom.\n"  # ~10 líneas — no comparable
+
+    forge_lines = len(forge_content.splitlines())
+    project_lines = len(project_content.splitlines())
+    comparable = forge_lines * 0.7 <= project_lines <= forge_lines * 1.2
+
+    # Monkeypatch similarity para forzar el rango 0.50-0.80
+    original_similarity = mod.similarity
+    mod.similarity = lambda a, b: 0.65  # forzar ratio en rango medio
+
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            tdp = pathlib.Path(td)
+            forge = tdp / "forge"
+            (forge / "core" / "agents").mkdir(parents=True)
+            (forge / "core" / "agents" / "test-agent.md").write_text(forge_content)
+
+            agent = {
+                "name": "test-agent",
+                "content": project_content,
+                "frontmatter": {"tier": 1},
+                "lines": project_lines,
+                "path": tdp / "test-agent.md",
+            }
+            issues = mod.check_vs_forge(agent, forge, [])
+    finally:
+        mod.similarity = original_similarity
+
+    warn_issues = [i for i in issues if i["level"] == "warn"]
+    assert warn_issues, "Esperaba al menos un warn con ratio 0.65 y proyecto no comparable"
+    assert any("reescritura intencional" in i["msg"] for i in warn_issues), \
+        f"Esperaba 'reescritura intencional' en: {[i['msg'] for i in warn_issues]}"
+    assert any(i.get("may_be_intentional") is True for i in warn_issues)
+
+
+def test_similitud_menor_50_incluye_nota_version(mod):
+    """Similitud < 0.50 debe indicar diferencia mayor al 50% y sugerir verificar versión."""
+    # Contenidos completamente distintos
+    forge_content = "## Reglas\n" + ("- Texto completamente diferente A.\n" * 40)
+    project_content = "## Reglas\n" + ("- Contenido radicalmente distinto B.\n" * 5)  # mucho más corto → error path
+    ratio = mod.similarity(forge_content, project_content)
+    assert ratio < mod.SIMILARITY_OUTDATED, f"ratio={ratio:.2f} debería ser < {mod.SIMILARITY_OUTDATED}"
+
+    import tempfile, pathlib
+    with tempfile.TemporaryDirectory() as td:
+        tdp = pathlib.Path(td)
+        forge = tdp / "forge"
+        (forge / "core" / "agents").mkdir(parents=True)
+        (forge / "core" / "agents" / "test-agent.md").write_text(forge_content)
+
+        agent = {
+            "name": "test-agent",
+            "content": project_content,
+            "frontmatter": {"tier": 1},
+            "lines": len(project_content.splitlines()),
+            "path": tdp / "test-agent.md",
+        }
+        issues = mod.check_vs_forge(agent, forge, [])
+
+    # Algún issue con nivel error o warn debe mencionar la nota de versión
+    relevant = [i for i in issues if i["level"] in ("error", "warn", "info")]
+    assert relevant, "Esperaba al menos un issue para similitud baja"
+    msgs = " ".join(i["msg"] for i in relevant)
+    assert "50%" in msgs or "versión de forge" in msgs, \
+        f"Esperaba nota sobre versión en: {msgs}"

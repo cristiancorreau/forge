@@ -207,3 +207,40 @@ def test_wiki_commands_no_se_instalan_sin_skills(tmp_path):
     run_init(tmp_path)
     commands_dir = tmp_path / ".claude" / "commands"
     assert not (commands_dir / "wiki-ingest.md").exists()
+
+
+# ── ISS-003: Conflictos Tier 2 vs Tier 1 ─────────────────────────────────────
+
+def test_tier2_vs_tier1_emite_info_en_stdout(tmp_path):
+    """Cuando un profile Tier 2 provee un agente con el mismo nombre que uno Tier 1,
+    debe aparecer un mensaje INFO en stdout indicando el descarte."""
+    make_project_yaml(tmp_path, {
+        "agents": {
+            "active": ["orchestrator", "api-engineer"],  # api-engineer también en Tier 1
+            "compliance": [],
+            "specialized": [],
+            "profiles": ["hono-drizzle"],  # hono-drizzle provee api-engineer (Tier 2)
+        },
+    })
+    result = run_init(tmp_path)
+    assert result.returncode == 0, result.stderr
+    # Debe emitir INFO sobre el descarte del agente core
+    assert "INFO:" in result.stdout
+    assert "api-engineer" in result.stdout
+    assert "descartado" in result.stdout
+    assert "hono-drizzle" in result.stdout
+
+
+def test_tier2_vs_tier1_emite_resumen_de_conflictos(tmp_path):
+    """El resumen al final debe indicar cuántos agentes core fueron descartados."""
+    make_project_yaml(tmp_path, {
+        "agents": {
+            "active": ["orchestrator", "api-engineer"],
+            "compliance": [],
+            "specialized": [],
+            "profiles": ["hono-drizzle"],
+        },
+    })
+    result = run_init(tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "Conflictos resueltos" in result.stdout

@@ -219,7 +219,8 @@ def check_vs_forge(agent, forge, profiles):
             diff_lines = forge_lines - project_lines
             issues.append({
                 "level": "warn",
-                "msg": f"Posibles mejoras disponibles en forge ({source}) — similitud {ratio:.0%}, forge tiene +{diff_lines} líneas",
+                "msg": f"Posibles mejoras disponibles en forge ({source}) — similitud {ratio:.0%}, forge tiene +{diff_lines} líneas (puede ser reescritura intencional — verificar manualmente)",
+                "may_be_intentional": True,
                 "fix": f"python3 .agentic/scripts/forge-init.py --tool claude-code --force --only={agent['name']}"
             })
     else:
@@ -238,7 +239,7 @@ def check_vs_forge(agent, forge, profiles):
         else:
             issues.append({
                 "level": "error",
-                "msg": f"Muy diferente a forge ({source}) — similitud {ratio:.0%}. Probablemente desactualizado",
+                "msg": f"Muy diferente a forge ({source}) — similitud {ratio:.0%}. Probablemente desactualizado (diferencia mayor al 50% — verificar si coincide con cambio de versión de forge)",
                 "fix": f"python3 .agentic/scripts/forge-init.py --tool claude-code --force --only={agent['name']}"
             })
 
@@ -491,6 +492,7 @@ def run_audit(as_json: bool = False):
         print(WARN(f"  {n_warn} advertencia(s). El proyecto funciona pero puede mejorar."))
     else:
         print(OK("  Todo conforme al estándar forge."))
+    print(DIM("  Nota: similitud < 0.80 puede indicar personalización intencional, no solo desactualización."))
     print()
 
 

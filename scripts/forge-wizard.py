@@ -15,6 +15,7 @@ import sys
 import textwrap
 import termios
 import tty
+import yaml
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -303,6 +304,8 @@ def suggest_profiles(ptype: str, frontend: str, backend: str) -> List[str]:
     frontend_map = {
         "nextjs":    "nextjs-admin",
         "astro":     "astro",
+        "nuxt":      "vuenuxt",
+        "sveltekit": "sveltekit",
     }
     backend_map = {
         "hono":      "hono-drizzle",
@@ -310,6 +313,8 @@ def suggest_profiles(ptype: str, frontend: str, backend: str) -> List[str]:
         "nestjs":    "nestjs",
         "fastapi":   "fastapi",
         "rails":     "rails",
+        "django":    "django",
+        "gin":       "go-gin",
     }
 
     if ptype == "mobile":
@@ -373,6 +378,12 @@ def team_size_to_mode(size: int) -> str:
 # YAML builders
 # ---------------------------------------------------------------------------
 
+def _yaml_str(value: str) -> str:
+    """Serializa un string de input del usuario como valor YAML seguro entre comillas dobles."""
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
 def _null(v: str) -> str:
     return "null" if not v or v in ("none", "null") else f'"{v}"'
 
@@ -410,9 +421,9 @@ def build_yaml(data: dict) -> str:
         return textwrap.dedent(f"""\
             # forge — project.yaml (modo startup)
             project:
-              name: "{name}"
-              slug: "{slug}"
-              description: "{desc}"
+              name: {_yaml_str(name)}
+              slug: {_yaml_str(slug)}
+              description: {_yaml_str(desc)}
               language: "{lang}"
               type: "{ptype}"
               mode: "startup"
@@ -454,9 +465,9 @@ def build_yaml(data: dict) -> str:
     return textwrap.dedent(f"""\
         # forge — project.yaml (modo {mode})
         project:
-          name: "{name}"
-          slug: "{slug}"
-          description: "{desc}"
+          name: {_yaml_str(name)}
+          slug: {_yaml_str(slug)}
+          description: {_yaml_str(desc)}
           language: "{lang}"
           type: "{ptype}"
           mode: "{mode}"
@@ -710,6 +721,13 @@ def main() -> None:
     else:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(yaml_content, encoding="utf-8")
+        with open(out_path, encoding="utf-8") as _f:
+            try:
+                yaml.safe_load(_f)
+            except yaml.YAMLError as _e:
+                print(f"\n  ERROR: el YAML generado no es válido: {_e}", file=sys.stderr)
+                out_path.unlink(missing_ok=True)
+                sys.exit(1)
         print(f"\n  {green('✓')} project.yaml escrito en: {bold(str(out_path))}")
 
     # 12 — Ejecutar forge-init

@@ -21,6 +21,7 @@ Qué NO elimina:
 
 Requiere: pyyaml
 """
+import subprocess
 import sys
 import shutil
 from pathlib import Path
@@ -96,6 +97,37 @@ def action(label: str, path: Path, is_dir: bool = False):
         print(f"  [SKIP] no existe: {rel}")
 
 
+def _remove_submodule(dry_run: bool) -> bool:
+    """Remueve .agentic como git submodule. Retorna True si éxito."""
+    cmds = [
+        ["git", "rm", "--cached", ".agentic"],
+        ["git", "config", "--remove-section", "submodule..agentic"],
+    ]
+    dirs_to_remove = [Path(".agentic"), Path(".git/modules/.agentic")]
+
+    if dry_run:
+        print("  [DRY] ejecutaría:")
+        for cmd in cmds:
+            print(f"         $ {' '.join(cmd)}")
+        for d in dirs_to_remove:
+            print(f"         $ rm -rf {d}")
+        return True
+
+    success = True
+    for cmd in cmds:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            # Puede fallar si ya fue removido — no es error fatal
+            pass
+
+    for d in dirs_to_remove:
+        if d.exists():
+            shutil.rmtree(d, ignore_errors=True)
+
+    print("  [OK] Submodule .agentic removido")
+    return success
+
+
 def main():
     try:
         root = find_project_root()
@@ -142,10 +174,7 @@ def main():
         content = gitmodules.read_text()
         if ".agentic" in content or "forge" in content:
             print("\nSubmodule forge detectado:")
-            print("  [INFO] Para eliminar el submodule ejecutar manualmente:")
-            print("         git submodule deinit -f .agentic")
-            print("         git rm -f .agentic")
-            print("         rm -rf .git/modules/.agentic")
+            _remove_submodule(DRY_RUN)
 
     print("\nHook pre-commit:")
     print("  [INFO] Si instalaste el hook, desactivarlo con:")

@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 
 @pytest.fixture(scope="module")
@@ -102,7 +103,7 @@ def test_suggest_profiles_no_duplicates(wizard_mod):
 
 
 def test_suggest_profiles_unknown_stack_returns_empty(wizard_mod):
-    profiles = wizard_mod.suggest_profiles("api", "none", "django")
+    profiles = wizard_mod.suggest_profiles("api", "none", "laravel")
     assert profiles == []
 
 
@@ -259,3 +260,48 @@ def test_yaml_null_when_none(wizard_mod):
     y = wizard_mod.build_yaml({**BASE, "mode": "standard", "database": "none", "deploy": "none"})
     assert "database: null" in y
     assert "deploy: null" in y
+
+
+# ---------------------------------------------------------------------------
+# build_yaml — caracteres especiales en inputs del usuario (ISS-001)
+# ---------------------------------------------------------------------------
+
+def test_build_yaml_name_with_double_quotes(wizard_mod):
+    """Un nombre con comillas dobles debe generar YAML válido."""
+    y = wizard_mod.build_yaml({**BASE, "mode": "startup", "name": 'My "Awesome" App'})
+    parsed = yaml.safe_load(y)
+    assert parsed["project"]["name"] == 'My "Awesome" App'
+
+
+def test_build_yaml_name_with_colon(wizard_mod):
+    """Un nombre con dos puntos debe generar YAML válido."""
+    y = wizard_mod.build_yaml({**BASE, "mode": "startup", "name": "Project: Alpha"})
+    parsed = yaml.safe_load(y)
+    assert parsed["project"]["name"] == "Project: Alpha"
+
+
+def test_build_yaml_name_with_special_chars(wizard_mod):
+    """Un nombre con &, # y . debe generar YAML válido."""
+    y = wizard_mod.build_yaml({**BASE, "mode": "startup", "name": "App & Co. #1"})
+    parsed = yaml.safe_load(y)
+    assert parsed["project"]["name"] == "App & Co. #1"
+
+
+def test_suggest_profiles_django(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("api", "none", "django")
+    assert "django" in profiles
+
+
+def test_suggest_profiles_nuxt(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("webapp", "nuxt", "none")
+    assert "vuenuxt" in profiles
+
+
+def test_suggest_profiles_go_gin(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("api", "none", "gin")
+    assert "go-gin" in profiles
+
+
+def test_suggest_profiles_sveltekit(wizard_mod):
+    profiles = wizard_mod.suggest_profiles("webapp", "sveltekit", "none")
+    assert "sveltekit" in profiles

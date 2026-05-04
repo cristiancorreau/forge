@@ -7,6 +7,7 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch, call
 from conftest import make_project_yaml
 
 FORGE_ROOT = Path(__file__).parent.parent
@@ -141,3 +142,88 @@ def test_retorna_exit_0_sin_project_yaml(tmp_path):
     result = run_teardown(tmp_path, confirm=False)
     assert result.returncode != 0
     assert "ERROR" in result.stderr or "error" in result.stderr.lower()
+
+
+# ── _remove_submodule ─────────────────────────────────────────────────────────
+
+def _import_remove_submodule():
+    """Importa _remove_submodule desde el script directamente."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("forge_teardown", str(SCRIPT))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod._remove_submodule
+
+
+def test_remove_submodule_dryrun_no_ejecuta_subprocess(tmp_path):
+    """En dry-run, _remove_submodule no debe llamar a subprocess.run."""
+    _remove_submodule = _import_remove_submodule()
+    with patch("subprocess.run") as mock_run:
+        _remove_submodule(dry_run=True)
+        mock_run.assert_not_called()
+
+
+def test_remove_submodule_dryrun_imprime_comandos(tmp_path, capsys):
+    """En dry-run, _remove_submodule debe imprimir los comandos que ejecutaría."""
+    _remove_submodule = _import_remove_submodule()
+    _remove_submodule(dry_run=True)
+    captured = capsys.readouterr()
+    assert "git rm --cached .agentic" in captured.out
+    assert "git config --remove-section submodule..agentic" in captured.out
+
+
+def test_remove_submodule_confirm_llama_git_rm(tmp_path):
+    """Con dry_run=False, _remove_submodule debe ejecutar git rm --cached .agentic."""
+    _remove_submodule = _import_remove_submodule()
+    mock_result = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        _remove_submodule(dry_run=False)
+        calls = [c.args[0] for c in mock_run.call_args_list]
+        assert ["git", "rm", "--cached", ".agentic"] in calls
+
+
+def test_remove_submodule_confirm_llama_git_config(tmp_path):
+    """Con dry_run=False, _remove_submodule debe ejecutar git config --remove-section."""
+    _remove_submodule = _import_remove_submodule()
+    mock_result = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        _remove_submodule(dry_run=False)
+        calls = [c.args[0] for c in mock_run.call_args_list]
+        assert ["git", "config", "--remove-section", "submodule..agentic"] in calls
+
+
+def test_remove_submodule_confirm_tolera_fallos_git(tmp_path):
+    """Si git rm falla (ya removido), _remove_submodule no debe lanzar excepción."""
+    _remove_submodule = _import_remove_submodule()
+    mock_result = subprocess.CompletedProcess(args=[], returncode=1, stdout="", stderr="error")
+    with patch("subprocess.run", return_value=mock_result):
+        # No debe lanzar excepción
+        result = _remove_submodule(dry_run=False)
+        assert result is True
+
+
+def test_dryrun_con_gitmodules_muestra_comandos(tmp_path):
+    """Dry-run con .gitmodules que menciona .agentic debe mostrar comandos, no ejecutarlos."""
+    project = setup_project_with_agents(tmp_path)
+    gitmodules = project / ".gitmodules"
+    gitmodules.write_text('[submodule ".agentic"]\n\tpath = .agentic\n\turl = https://github.com/example/forge\n')
+
+    result = run_teardown(project, confirm=False)
+
+    assert result.returncode == 0
+    assert "git rm --cached .agentic" in result.stdout
+    # Verificar que .gitmodules sigue existiendo (dry-run no modifica nada)
+    assert gitmodules.exists()
+
+
+def test_confirm_con_gitmodules_ejecuta_remocion(tmp_path):
+    """Con --confirm y .gitmodules que menciona .agentic, debe ejecutar los comandos git."""
+    project = setup_project_with_agents(tmp_path)
+    gitmodules = project / ".gitmodules"
+    gitmodules.write_text('[submodule ".agentic"]\n\tpath = .agentic\n\turl = https://github.com/example/forge\n')
+
+    # git rm fallará porque no hay repo git real, pero no debe crashear
+    result = run_teardown(project, confirm=True)
+
+    assert result.returncode == 0
+    assert "Submodule" in result.stdout

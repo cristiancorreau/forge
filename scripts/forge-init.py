@@ -41,7 +41,8 @@ except ImportError:
     )
     sys.exit(1)
 
-FORCE = "--force" in sys.argv
+FORCE   = "--force"   in sys.argv
+VERBOSE = "--verbose" in sys.argv
 
 # --only=<nombre> o --only <nombre>
 ONLY_AGENT: str | None = None
@@ -200,6 +201,20 @@ def init_claude_code(root: Path, forge: Path, config: dict):
     # 2. Tier 1 — core (solo agentes que no fueron cubiertos por profiles)
     all_from_core = list(set(active + compliance))
     core_only = [a for a in all_from_core if a not in profile_provided]
+
+    # Detectar y reportar conflictos Tier 1 vs Tier 2
+    tier1_discarded = [a for a in all_from_core if a in profile_provided]
+    profile_by_agent: dict[str, str] = {}
+    for profile in profiles:
+        profile_agents_dir = forge / "profiles" / profile / "agents"
+        if not profile_agents_dir.exists():
+            continue
+        for src in profile_agents_dir.glob("*.md"):
+            profile_by_agent[src.stem] = profile
+    for discarded in sorted(tier1_discarded):
+        profile_name = profile_by_agent.get(discarded, "profile")
+        print(f"  INFO: '{discarded}' del core descartado — profile '{profile_name}' provee su propia versión (Tier 2 tiene prioridad)")
+
     if core_only:
         print(f"\n  Tier 1 — core:")
     for agent_name in sorted(core_only):
@@ -220,6 +235,9 @@ def init_claude_code(root: Path, forge: Path, config: dict):
 
     # AGENTS.md siempre se regenera
     _write_agents_md(root, config, active, compliance, specialized, profiles)
+
+    if tier1_discarded and (VERBOSE or len(tier1_discarded) > 0):
+        print(f"\n  Conflictos resueltos: {len(tier1_discarded)} agente(s) core descartado(s) por profiles activos.")
 
     i, k, m = len(stats["installed"]), len(stats["kept"]), len(stats["missing"])
     print(f"\n  Instalados: {i} | Preservados: {k} | Sin archivo en forge: {m}")

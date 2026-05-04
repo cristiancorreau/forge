@@ -49,7 +49,7 @@ def test_profiles_directorio_existe():
 
 @pytest.mark.parametrize("profile_name", [
     "expo", "hono-drizzle", "nextjs-admin", "playwright-crawler",
-    "fastapi", "express", "rails", "nestjs",
+    "fastapi", "express", "rails", "nestjs", "django", "vuenuxt", "go-gin", "sveltekit",
 ])
 def test_profile_existe(profile_name):
     profile_dir = PROFILES_DIR / profile_name
@@ -58,7 +58,7 @@ def test_profile_existe(profile_name):
 
 @pytest.mark.parametrize("profile_name", [
     "expo", "hono-drizzle", "nextjs-admin", "playwright-crawler",
-    "fastapi", "express", "rails", "nestjs",
+    "fastapi", "express", "rails", "nestjs", "django", "vuenuxt", "go-gin", "sveltekit",
 ])
 def test_profile_tiene_al_menos_un_agente(profile_name):
     agents_dir = PROFILES_DIR / profile_name / "agents"

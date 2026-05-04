@@ -472,6 +472,38 @@ CATALOG: list[dict] = [
         "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/playwright-crawler",
         "language":    "TypeScript",
     },
+    {
+        "name":        "forge profile — django",
+        "description": "Agente api-engineer para Django 4.x + DRF + PostgreSQL + pytest-django. Modelos, migraciones, serializers, viewsets y tests.",
+        "category":    "profile",
+        "tags":        ["django", "python", "drf", "postgresql", "rest-api", "pytest"],
+        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/django",
+        "language":    "Python",
+    },
+    {
+        "name":        "forge profile — vuenuxt",
+        "description": "Agente frontend-engineer para Nuxt 3 + Vue 3 + Pinia + TypeScript. Pages, componentes, composables y SSR.",
+        "category":    "profile",
+        "tags":        ["nuxt", "vue", "typescript", "pinia", "ssr", "tailwind"],
+        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/vuenuxt",
+        "language":    "TypeScript",
+    },
+    {
+        "name":        "forge profile — go-gin",
+        "description": "Agente api-engineer para Go + Gin/Echo + sqlc + PostgreSQL + testify. Handlers, services, repositories e migrations.",
+        "category":    "profile",
+        "tags":        ["go", "golang", "gin", "echo", "sqlc", "postgresql", "rest-api"],
+        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/go-gin",
+        "language":    "Go",
+    },
+    {
+        "name":        "forge profile — sveltekit",
+        "description": "Agente frontend-engineer para SvelteKit 2 + Svelte 5 + TypeScript + Tailwind. Routes, components, load functions y form actions.",
+        "category":    "profile",
+        "tags":        ["sveltekit", "svelte", "typescript", "tailwind", "ssr", "vite"],
+        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/sveltekit",
+        "language":    "TypeScript",
+    },
 
     # ── Tools ────────────────────────────────────────────────────────────────
 
