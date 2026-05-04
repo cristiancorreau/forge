@@ -974,7 +974,8 @@ def main() -> None:
         print("Tip: usa --batch para ver los scripts equivalentes para CI.", file=sys.stderr)
         sys.exit(1)
 
-    cols = os.get_terminal_size(fallback=(80, 24)).columns
+    import shutil as _shutil
+    cols = _shutil.get_terminal_size(fallback=(80, 24)).columns
     if cols < 58:
         print(f"forge: terminal demasiado estrecha ({cols} cols, mínimo 58).", file=sys.stderr)
         print(f"  Amplía la ventana o usa --batch para ver scripts directos.", file=sys.stderr)
