@@ -62,7 +62,11 @@ def find_project_root() -> Path:
     for p in [here] + list(here.parents):
         if (p / "project.yaml").exists():
             return p
-    raise FileNotFoundError("No se encontró project.yaml. Crearlo desde .agentic/templates/project.yaml.tpl")
+    raise FileNotFoundError(
+        "No se encontró project.yaml.\n"
+        "  → Primer uso: python3 .agentic/scripts/forge-wizard.py  (wizard interactivo)\n"
+        "  → O copiar la plantilla: cp .agentic/templates/project.yaml.tpl project.yaml"
+    )
 
 
 def find_forge_dir() -> Path:

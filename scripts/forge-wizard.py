@@ -278,10 +278,11 @@ DEPLOY_TARGETS = [
 ]
 
 RUNTIMES = [
-    ("claude-code", "Claude Code       .claude/agents/  (recomendado)"),
-    ("opencode",    "OpenCode          AGENTS.md"),
-    ("kiro",        "Kiro              .kiro/steering/"),
-    ("all",         "Todos             genera los tres formatos"),
+    ("claude-code", "Claude Code  — CLI de Anthropic · .claude/agents/   (recomendado)"),
+    ("opencode",    "OpenCode     — editor alternativo open source · AGENTS.md"),
+    ("kiro",        "Kiro         — IDE de AWS con IA integrada · .kiro/steering/"),
+    ("codex",       "Codex CLI    — CLI de OpenAI · AGENTS.md"),
+    ("all",         "Todos        — genera los cuatro formatos (para migrar después)"),
 ]
 
 COMPLIANCE_OPTIONS = [
@@ -564,10 +565,21 @@ def main() -> None:
     clr()
     print()
     print(f"  {bold('forge — Wizard de proyecto nuevo')}")
-    print(f"  {dim('Configura tu proyecto con selección de tecnologías')}")
-    if DRY_RUN:
-        print(f"  {yellow('  --dry-run activo: no se escribirá ningún archivo')}")
     print()
+    print(f"  forge organiza tu proyecto con un equipo de agentes IA.")
+    print(f"  {dim('Cada agente tiene un rol fijo: backend, frontend, tests, documentación.')}")
+    print()
+    print(f"  Al terminar tendrás un {bold('project.yaml')} que:")
+    print(f"  {dim('  · instala los agentes correctos para tu stack tecnológico')}")
+    print(f"  {dim('  · configura Claude Code (u otro runtime) automáticamente')}")
+    print(f"  {dim('  · adapta el nivel de proceso al tamaño de tu equipo')}")
+    print()
+    if DRY_RUN:
+        print(f"  {yellow('--dry-run activo: no se escribirá ningún archivo')}")
+        print()
+    print(f"  {dim('↑↓ navegar   Enter seleccionar   q salir')}")
+    print()
+    input(f"  Presiona Enter para comenzar... ")
 
     # 1 — Modo / tamaño de equipo
     if MODE_OVERRIDE:
@@ -638,6 +650,25 @@ def main() -> None:
         frontend = "none"
         backend  = "none"
 
+    # Aviso temprano: stack seleccionado sin profile Tier 2
+    _early_profiles = suggest_profiles(ptype_key, frontend, backend)
+    _stack_specified = backend not in ("none", "") or frontend not in ("none", "")
+    if not _early_profiles and _stack_specified and ptype_key not in ("cli",):
+        clr()
+        _draw_section("Nota sobre tu stack")
+        _stack_label = " + ".join(x for x in (frontend, backend) if x and x != "none")
+        print(f"  {yellow('Sin agente especializado para:')} {bold(_stack_label)}")
+        print()
+        print(f"  forge instalará agentes genéricos que funcionan con cualquier stack.")
+        print(f"  Los stacks con agente especializado (profile) son:")
+        print(f"  {dim('  API/Backend:  hono · express · nestjs · fastapi · django · rails · gin')}")
+        print(f"  {dim('  Frontend:     nextjs · astro · nuxt · sveltekit')}")
+        print(f"  {dim('  Otros:        expo (mobile) · playwright (crawler)')}")
+        print()
+        print(f"  {dim('Puedes crear un agente propio después con forge-scaffold-profile.py')}")
+        print()
+        input(f"  Presiona Enter para continuar... ")
+
     # 6 — Base de datos
     database = "none"
     if ptype_key not in ("static", "mobile", "cli", "crawler"):
@@ -656,14 +687,18 @@ def main() -> None:
     deploy = deploy_key if deploy_key else "none"
 
     # 8 — Runtime
-    runtime_key = pick("Runtime de agentes IA", RUNTIMES)
+    runtime_key = pick(
+        "¿Qué herramienta de IA usas?",
+        RUNTIMES,
+        subtitle="Elige la que ya tienes instalada. Si empiezas ahora, Claude Code es la más completa.",
+    )
     runtime = runtime_key if runtime_key else "claude-code"
 
     # 9 — Compliance (multi-select)
     compliance = pick_multi(
-        "Frameworks de compliance aplicables",
+        "¿Tu proyecto debe cumplir alguna regulación de privacidad?",
         COMPLIANCE_OPTIONS,
-        subtitle="Space para marcar, Enter para confirmar — 0 seleccionados = ninguno",
+        subtitle="Activa los que aplican a tu mercado. Si no sabes, deja todos sin marcar.",
     )
 
     # 10 — Lenguaje y profiles detectados
