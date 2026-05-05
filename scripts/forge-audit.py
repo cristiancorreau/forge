@@ -157,6 +157,25 @@ def check_frontmatter(agent):
         if name not in OPUS_ROLES and model == "opus":
             issues.append({"level": "warn", "msg": "model: opus en agente de implementación — sonnet es suficiente y más económico"})
 
+    if "last_verified" in fm:
+        try:
+            import datetime as _dt
+            lv = str(fm["last_verified"])  # formato "YYYY-MM"
+            year, month = int(lv[:4]), int(lv[5:7])
+            verified_date = _dt.date(year, month, 1)
+            months_old = (
+                (_dt.date.today().year - verified_date.year) * 12
+                + _dt.date.today().month - verified_date.month
+            )
+            if months_old >= 6:
+                issues.append({
+                    "level": "warn",
+                    "msg": f"last_verified hace {months_old} meses — verificar que las APIs de terceros siguen vigentes",
+                    "fix": f"Actualizar last_verified en frontmatter tras revisar la documentación del proveedor",
+                })
+        except Exception:
+            pass
+
     if "standard_version" not in fm:
         issues.append({
             "field": "standard_version",

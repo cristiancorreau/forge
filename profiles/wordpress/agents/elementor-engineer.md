@@ -5,6 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
 tier: 2
 profile: wordpress
+last_verified: "2026-05"
 ---
 
 # Elementor Engineer — Elementor Page Builder

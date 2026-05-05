@@ -1,8 +1,9 @@
 {
   "name": "forge-agent-framework",
+  "publisher": "socialwebcl",
   "displayName": "forge — Agent Framework",
   "description": "Manage forge agent projects from VS Code",
-  "version": "0.1.2",
+  "version": "2.0.2",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -45,6 +46,11 @@
         "command": "forge.showStatus",
         "title": "forge: Show Project Status",
         "icon": "$(info)"
+      },
+      {
+        "command": "forge.install",
+        "title": "forge: Install",
+        "icon": "$(cloud-download)"
       }
     ],
     "viewsContainers": {
@@ -74,9 +80,19 @@
     },
     "viewsWelcome": [
       {
+        "view": "forgeActionsView",
+        "contents": "forge no está instalado en este proyecto.\n\nInstálalo como git submodule en .agentic/:\n[$(cloud-download) Install forge](command:forge.install)",
+        "when": "!forge.installed"
+      },
+      {
+        "view": "forgeProjectView",
+        "contents": "forge no está instalado en este proyecto.\n\nInstálalo como git submodule en .agentic/:\n[$(cloud-download) Install forge](command:forge.install)",
+        "when": "!forge.installed"
+      },
+      {
         "view": "forgeProjectView",
         "contents": "No se encontró project.yaml en este workspace.\n\nEjecuta el wizard para configurar forge:\n[$(wand) Setup Wizard](command:forge.openWizard)\n\nO si ya tenés forge instalado como submodule:\n[$(tools) Initialize Agents](command:forge.init)",
-        "when": "!forge.active"
+        "when": "forge.installed && !forge.active"
       },
       {
         "view": "forgeAgentsView",

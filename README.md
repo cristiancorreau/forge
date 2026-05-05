@@ -1,9 +1,13 @@
 # forge
 
+[![tests](https://github.com/socialwebcl/forge/actions/workflows/tests.yml/badge.svg)](https://github.com/socialwebcl/forge/actions/workflows/tests.yml)
+
 Framework de desarrollo con agentes de IA para equipos de software.
 
 Agnóstico al runtime (Claude Code, OpenCode, Kiro) y al stack tecnológico.
 Un único `project.yaml` genera la configuración correcta para cada herramienta.
+
+Ver [CHANGELOG.md](CHANGELOG.md) para el historial de versiones.
 
 ---
 
@@ -77,8 +81,9 @@ En `Settings > forge`:
 ### Proyecto nuevo
 
 ```bash
-# 1. Agregar forge al proyecto como submodule
+# 1. Agregar forge al proyecto como submodule (fijar a tag estable recomendado)
 git submodule add https://github.com/socialwebcl/forge .agentic
+git -C .agentic checkout v2.0.2   # fijar a versión estable, no seguir main
 
 # 2. Instalar dependencias (solo pyyaml)
 pip3 install -r .agentic/requirements.txt
