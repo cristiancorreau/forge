@@ -51,6 +51,11 @@
         "command": "forge.install",
         "title": "forge: Install",
         "icon": "$(cloud-download)"
+      },
+      {
+        "command": "forge.generateClaudeMd",
+        "title": "forge: Regenerate CLAUDE.md",
+        "icon": "$(file-text)"
       }
     ],
     "viewsContainers": {

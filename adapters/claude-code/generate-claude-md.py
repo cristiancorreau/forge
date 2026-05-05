@@ -14,6 +14,8 @@ import os
 import sys
 from pathlib import Path
 
+FORCE = "--force" in sys.argv
+
 try:
     import yaml
 except ImportError:
@@ -244,7 +246,7 @@ def main():
     content = generate_claude_md(config)
     output_path = root / "CLAUDE.md"
 
-    if output_path.exists():
+    if output_path.exists() and not FORCE:
         print(f"CLAUDE.md ya existe en {root}. Sobreescribir? [s/N] ", end="")
         resp = input().strip().lower()
         if resp not in ("s", "si", "sí", "y", "yes"):

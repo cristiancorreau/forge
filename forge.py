@@ -637,9 +637,10 @@ def menu_init() -> None:
         MenuItem(
             "Claude Code   →  .claude/agents/  +  CLAUDE.md", key="claude-code",
             description=(
-                "Instala los agentes de forge en .claude/agents/ y genera CLAUDE.md "
-                "con el contexto del proyecto. Es el runtime principal y el más completo. "
-                "Los agentes existentes se preservan salvo que uses --force."
+                "Instala los agentes de forge en .claude/agents/ con scope inyectado "
+                "en el frontmatter. Genera también: CLAUDE.md (tabla agente/scope/trigger), "
+                ".claude/settings.json (permisos según el stack) y slash commands "
+                "/new-feature, /deploy-check, /review en .claude/commands/."
             ),
         ),
         MenuItem(
@@ -667,6 +668,14 @@ def menu_init() -> None:
             ),
         ),
         MenuItem("", separator=True),
+        MenuItem(
+            "Regenerar CLAUDE.md  — sin reinstalar agentes", key="claude-md",
+            description=(
+                "Regenera solo el CLAUDE.md desde project.yaml (tabla de agentes con scope, "
+                "comandos del stack, fases del sprint). Útil cuando actualizaste project.yaml "
+                "y quieres refrescar el contexto sin re-instalar todos los agentes."
+            ),
+        ),
         MenuItem("← Volver", key="back", description="Regresa al menú principal."),
     ]
     key = show_menu(
@@ -675,6 +684,10 @@ def menu_init() -> None:
         subtitle="Lee project.yaml e instala los agentes del proyecto",
     )
     if not key or key == "back":
+        return
+    if key == "claude-md":
+        run_script(FORGE_DIR / "adapters" / "claude-code" / "generate-claude-md.py", "--force")
+        pause()
         return
     clr()
     _draw_header()
@@ -899,7 +912,8 @@ MAIN_ITEMS = [
         "Inicializar agentes    forge-init", key="init",
         description=(
             "Lee el project.yaml existente e instala los agentes de forge "
-            "en el runtime elegido (Claude Code, OpenCode o Kiro). "
+            "en el runtime elegido. Para Claude Code también genera CLAUDE.md, "
+            ".claude/settings.json y slash commands /new-feature /deploy-check /review. "
             "Por defecto no sobreescribe agentes ya existentes."
         ),
     ),

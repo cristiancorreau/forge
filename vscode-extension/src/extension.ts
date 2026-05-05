@@ -313,12 +313,13 @@ class ForgeActionsProvider implements vscode.TreeDataProvider<ForgeActionItem> {
   getChildren(): ForgeActionItem[] {
     if (!this.installed) { return []; }
     return [
-      new ForgeActionItem('Setup Wizard',   'forge.openWizard',    'wand',   'create / update project.yaml'),
-      new ForgeActionItem('Initialize',     'forge.init',          'tools',  'sync agents from project.yaml'),
-      new ForgeActionItem('Run Audit',      'forge.audit',         'check',  'verify agent conformance'),
-      new ForgeActionItem('Audit Agent…',   'forge.auditAgent',    'person', 'audit a single agent'),
-      new ForgeActionItem('Search Catalog', 'forge.searchCatalog', 'search', 'MCP servers & profiles'),
-      new ForgeActionItem('Show Status',    'forge.showStatus',    'info',   'audit summary'),
+      new ForgeActionItem('Setup Wizard',     'forge.openWizard',       'wand',         'create / update project.yaml'),
+      new ForgeActionItem('Initialize',       'forge.init',             'tools',         'agents + CLAUDE.md + settings.json'),
+      new ForgeActionItem('Regenerate CLAUDE.md', 'forge.generateClaudeMd', 'file-text', 'refresh CLAUDE.md from project.yaml'),
+      new ForgeActionItem('Run Audit',        'forge.audit',            'check',        'verify agent conformance'),
+      new ForgeActionItem('Audit Agent…',     'forge.auditAgent',       'person',       'audit a single agent'),
+      new ForgeActionItem('Search Catalog',   'forge.searchCatalog',    'search',       'MCP servers & profiles'),
+      new ForgeActionItem('Show Status',      'forge.showStatus',       'info',         'audit summary'),
     ];
   }
 }
@@ -932,6 +933,56 @@ export function activate(context: vscode.ExtensionContext): void {
       vscode.window.showInformationMessage(
         'forge: Instalando en .agentic/ — el panel se actualizará automáticamente al terminar.'
       );
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.generateClaudeMd
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.generateClaudeMd', async () => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('forge: No workspace open.');
+        return;
+      }
+      const forgeDir = await requireForgeDir(workspaceRoot);
+      if (!forgeDir) { return; }
+
+      if (!findProjectYaml(workspaceRoot)) {
+        const choice = await vscode.window.showWarningMessage(
+          'forge: No hay project.yaml. ¿Quieres ejecutar el wizard primero?',
+          'Run Wizard', 'Cancelar'
+        );
+        if (choice === 'Run Wizard') {
+          await vscode.commands.executeCommand('forge.openWizard');
+        }
+        return;
+      }
+
+      const channel = getInitChannel();
+      channel.clear();
+      channel.show(true);
+      channel.appendLine('Generating CLAUDE.md from project.yaml...\n');
+
+      const generatorScript = path.join(forgeDir, 'adapters', 'claude-code', 'generate-claude-md.py');
+      const result = await runForgeCommand(
+        ['python3', generatorScript, '--force'],
+        workspaceRoot
+      );
+
+      channel.appendLine(result.stdout);
+      if (result.stderr) {
+        channel.appendLine('--- stderr ---');
+        channel.appendLine(result.stderr);
+      }
+
+      if (result.code !== 0) {
+        vscode.window.showErrorMessage('forge: Error al generar CLAUDE.md. Ver output channel.');
+      } else {
+        vscode.window.showInformationMessage('forge: CLAUDE.md generado correctamente.');
+        projectProvider.refresh();
+      }
     })
   );
 
