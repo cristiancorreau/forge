@@ -43,7 +43,7 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 - Extensión VS Code: 624 → 1071 líneas (opportunity picker, estados gestionados)
 - `forge-audit.py`: 557 → 855 líneas (filtrado, catálogos, UI)
 - Tests: 358 → 464 casos (contratos JSON, platform compat, VS Code extension, profiles nuevos)
-- Versión de extensión VS Code alineada con forge: `0.1.2` → `2.0.2`
+- Extensión VS Code: `0.1.2` → `0.2.1`
 
 ---
 
