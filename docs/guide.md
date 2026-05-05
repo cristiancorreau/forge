@@ -1,6 +1,6 @@
 # forge — Guía de uso
 
-> Última actualización: 2026-05-03
+> Última actualización: 2026-05-04
 
 ---
 
@@ -19,6 +19,75 @@ proyecto/
     ├── agents/        ← agentes instalados por forge
     └── commands/      ← slash commands instalados por forge
 ```
+
+---
+
+## Extensión VS Code
+
+forge tiene una extensión oficial para VS Code que reemplaza el CLI interactivo cuando trabajás desde el editor.
+
+### Instalación
+
+```bash
+# Desde la raíz del repo forge
+cd vscode-extension
+npx vsce package --no-dependencies
+code --install-extension forge-agent-framework-0.1.2.vsix
+```
+
+Una vez instalada, aparece el ícono **forge** (robot) en la barra de actividad izquierda.
+
+### Panel lateral
+
+La extensión agrega tres vistas bajo el ícono forge:
+
+**Actions** — botones de acceso rápido a todas las operaciones:
+- Setup Wizard
+- Initialize Agents
+- Run Audit
+- Search Catalog (MCP / Profiles)
+- Show Project Status
+
+**Project** — información del `project.yaml` activo: nombre del proyecto, stack, profiles activados.
+
+**Agents** — lista de agentes instalados en `.claude/agents/` con un botón de audit inline por agente.
+
+### Comandos (Cmd+Shift+P)
+
+| Comando | Equivalente CLI |
+|---------|-----------------|
+| `forge: Setup Wizard` | `python3 .agentic/forge.py` → Nuevo proyecto |
+| `forge: Initialize Agents` | `forge-init.py --tool claude-code` |
+| `forge: Run Audit` | `forge-audit.py` |
+| `forge: Audit Specific Agent` | `forge-audit.py --only=<agent>` |
+| `forge: Search Catalog` | `aitmpl-search.py <query>` |
+| `forge: Install` | `git submodule add ...` |
+
+### Flujo de audit con selector de oportunidades
+
+Cuando el audit detecta profiles o skills disponibles que el proyecto no usa, la extensión muestra un **QuickPick multi-select** con descripción de cada ítem. Al confirmar la selección:
+
+1. Llama a `scripts/forge-add-opportunities.py` para actualizar `project.yaml`
+2. Ofrece "Initialize Agents" para instalar los nuevos agentes inmediatamente
+
+### Configuración
+
+En `Settings > forge`:
+
+| Setting | Por defecto | Descripción |
+|---------|-------------|-------------|
+| `forge.forgePath` | `.agentic` | Ruta a la instalación de forge (relativa al workspace) |
+| `forge.tool` | `claude-code` | Runtime target (`claude-code`, `opencode`, `kiro`, `codex`, `all`) |
+| `forge.autoAuditOnSave` | `false` | Auditar automáticamente al guardar un archivo de agente |
+
+### Estados de la extensión
+
+| Condición | Comportamiento |
+|-----------|----------------|
+| forge no instalado (`!forge.installed`) | Muestra botón "Install forge" en el panel |
+| forge instalado pero sin `project.yaml` | Muestra botón "Setup Wizard" |
+| Proyecto activo pero sin agentes | Muestra botón "Initialize Agents" |
+| Proyecto completo | Muestra lista de agentes + botón de audit |
 
 ---
 
@@ -354,11 +423,15 @@ forge/
 │                           wiki-ingest, wiki-query, wiki-lint,
 │                           new-feature, spec, phase-kickoff,
 │                           local2prod, obsidian-sync
-├── profiles/
-│   ├── hono-drizzle/    ← api-engineer
-│   ├── nextjs-admin/    ← admin-engineer
-│   ├── expo/            ← mobile-engineer
-│   └── playwright-crawler/ ← scanner-engineer
+├── profiles/            ← 15 stacks soportados
+│   ├── hono-drizzle/    ← api-engineer (Hono + Drizzle + TypeScript)
+│   ├── nextjs-admin/    ← admin-engineer (Next.js + shadcn/ui)
+│   ├── expo/            ← mobile-engineer (React Native / Expo)
+│   ├── playwright-crawler/ ← scanner-engineer
+│   ├── laravel/         ← api-engineer + fullstack-engineer + migration-specialist
+│   ├── wordpress/       ← wp-engineer + divi-engineer + elementor-engineer
+│   └── ...              ← fastapi, django, rails, express, nestjs,
+│                           go-gin, vuenuxt, sveltekit, astro
 ├── adapters/
 │   └── claude-code/
 │       └── commands/    ← wiki-ingest.md, wiki-query.md, wiki-lint.md
@@ -368,7 +441,15 @@ forge/
 ├── scripts/
 │   ├── forge-init.py
 │   ├── forge-audit.py
+│   ├── forge-wizard.py
+│   ├── forge-scaffold-profile.py
+│   ├── forge-teardown.py
+│   ├── forge-add-opportunities.py  ← aplica profiles/skills seleccionados
+│   ├── aitmpl-search.py            ← catálogo curado (MCP, profiles, tools)
 │   └── token-stats.py
+├── vscode-extension/    ← extensión oficial para VS Code
+│   ├── src/extension.ts
+│   └── package.json
 └── docs/
     ├── agent-standard.md
     └── guide.md         ← estás aquí

@@ -7,6 +7,63 @@ Un único `project.yaml` genera la configuración correcta para cada herramienta
 
 ---
 
+## Extensión VS Code
+
+forge tiene una extensión oficial para VS Code que provee un panel lateral con todas las acciones disponibles sin necesidad de abrir la terminal.
+
+### Instalación
+
+```bash
+# Desde la raíz del repo forge
+cd vscode-extension
+npx vsce package --no-dependencies
+code --install-extension forge-agent-framework-0.1.2.vsix
+```
+
+Después de instalar, aparece el ícono **forge** (robot) en la barra de actividad izquierda.
+
+### Panel lateral — 3 vistas
+
+| Vista | Qué muestra |
+|-------|-------------|
+| **Actions** | Botones de acceso rápido: Wizard, Init, Audit, Buscar catálogo, Estado |
+| **Project** | Información del `project.yaml` activo (nombre, stack, profiles) |
+| **Agents** | Lista de agentes instalados en `.claude/agents/` con botón de audit inline |
+
+### Comandos disponibles
+
+Todos accesibles desde `Ctrl+Shift+P` / `Cmd+Shift+P`:
+
+| Comando | Descripción |
+|---------|-------------|
+| `forge: Setup Wizard` | Inicia el wizard interactivo de configuración |
+| `forge: Initialize Agents` | Instala o actualiza agentes en el proyecto |
+| `forge: Run Audit` | Audita coherencia de agentes con opción de agregar oportunidades |
+| `forge: Audit Specific Agent` | Audita un agente puntual |
+| `forge: Search Catalog (MCP / Profiles)` | Busca en el catálogo de templates y MCP servers |
+| `forge: Show Project Status` | Muestra resumen del estado en el output channel |
+| `forge: Install` | Agrega forge como submodule en proyectos nuevos |
+
+### Flujo de audit en VS Code
+
+Al correr **Run Audit**, la extensión:
+1. Ejecuta `forge-audit.py --json` en background
+2. Muestra el resultado en una notificación con botones de acción
+3. Si hay oportunidades (profiles/skills disponibles), ofrece un selector multi-item para agregarlos a `project.yaml` directamente desde VS Code
+4. Después de aplicar, ofrece "Initialize Agents" para instalar los nuevos agentes
+
+### Configuración
+
+En `Settings > forge`:
+
+| Setting | Por defecto | Descripción |
+|---------|-------------|-------------|
+| `forge.forgePath` | `.agentic` | Ruta a la instalación de forge relativa al workspace |
+| `forge.tool` | `claude-code` | Runtime target (`claude-code`, `opencode`, `kiro`, `codex`, `all`) |
+| `forge.autoAuditOnSave` | `false` | Auditar automáticamente al guardar un archivo de agente |
+
+---
+
 ## Requisitos
 
 - **Sistema operativo:** macOS o Linux (el CLI interactivo usa `termios`/`tty`). En Windows, usar WSL.
@@ -62,7 +119,7 @@ python3 .agentic/forge.py
 
 ```
   ┌──────────────────────────────────────────────┐
-  │ forge v2.0  —  Agentic Development Framework │
+  │ forge v2.0.2  —  Agentic Development Framework │
   └──────────────────────────────────────────────┘
 
   ¿Qué quieres hacer?
@@ -189,6 +246,7 @@ Un solo archivo configura agentes, stack, compliance y sprint para todos los run
 | `scripts/forge-wizard.py` | Wizard de configuración (standalone) |
 | `scripts/forge-scaffold-profile.py` | Crea un profile Tier 2 nuevo |
 | `scripts/forge-teardown.py` | Revierte la instalación |
+| `scripts/forge-add-opportunities.py` | Aplica profiles/skills seleccionados a `project.yaml` |
 | `scripts/aitmpl-search.py` | Busca en catálogo curado de templates, MCP servers y profiles |
 | `scripts/token-stats.py` | Estadísticas de tokens por agente |
 
