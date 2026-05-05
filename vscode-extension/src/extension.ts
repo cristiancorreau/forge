@@ -119,38 +119,133 @@ function runForgeCommand(
 
 // ---------------------------------------------------------------------------
 // Simple YAML field extractor (no external dependencies)
+// Handles nested structure: section.key, inline arrays, and block lists.
 // ---------------------------------------------------------------------------
 
 function parseSimpleYaml(content: string): Record<string, string> {
-  const result: Record<string, string> = {};
-  const patterns: Record<string, RegExp> = {
-    projectName: /^\s{2}name:\s*["']?(.+?)["']?\s*$/m,
-    mode: /^mode:\s*["']?(.+?)["']?\s*$/m,
-    stack: /^stack:\s*["']?(.+?)["']?\s*$/m,
-    backend: /^backend:\s*["']?(.+?)["']?\s*$/m,
-    frontend: /^frontend:\s*["']?(.+?)["']?\s*$/m,
-    runtime: /^runtime:\s*["']?(.+?)["']?\s*$/m,
-    language: /^language:\s*["']?(.+?)["']?\s*$/m,
-    deploy: /^deploy:\s*["']?(.+?)["']?\s*$/m,
+  // Build a flat map of "section.key" → "value" by walking lines
+  const flat: Record<string, string> = {};
+  const lines = content.split('\n');
+
+  let section = '';
+  let subsection = '';
+  let listKey = '';
+  let listItems: string[] = [];
+
+  const flushList = () => {
+    if (listKey && listItems.length > 0) {
+      flat[listKey] = listItems.join(', ');
+    }
+    listKey = '';
+    listItems = [];
   };
-  for (const [key, re] of Object.entries(patterns)) {
-    const m = content.match(re);
-    if (m) {
-      result[key] = m[1].trim();
+
+  const stripInlineComment = (s: string) => s.replace(/#.*$/, '').trim();
+  const unquote = (s: string) => s.replace(/^["']|["']$/g, '').trim();
+
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\s+$/, '');
+    if (!line) { continue; }
+
+    const trimmed = line.trimStart();
+    if (trimmed.startsWith('#')) { continue; }
+
+    const indent = line.length - trimmed.length;
+
+    // List item
+    if (trimmed.startsWith('- ')) {
+      const val = unquote(stripInlineComment(trimmed.slice(2)));
+      if (val) { listItems.push(val); }
+      continue;
+    }
+
+    // Key line — flush any pending list first
+    flushList();
+
+    const colonIdx = trimmed.indexOf(':');
+    if (colonIdx === -1) { continue; }
+
+    const key = trimmed.slice(0, colonIdx).trim();
+    const rest = stripInlineComment(trimmed.slice(colonIdx + 1).trim());
+
+    if (indent === 0) {
+      section = key;
+      subsection = '';
+      // Top-level scalar (uncommon but possible)
+      if (rest && rest !== 'null') { flat[section] = unquote(rest); }
+    } else if (indent === 2) {
+      subsection = key;
+      const fullKey = `${section}.${key}`;
+      if (rest) {
+        // Inline array: [a, b, c]
+        const arrMatch = rest.match(/^\[([^\]]*)\]/);
+        if (arrMatch) {
+          const items = arrMatch[1].split(',').map(s => unquote(s)).filter(Boolean);
+          if (items.length > 0) { flat[fullKey] = items.join(', '); }
+        } else if (rest !== 'null') {
+          flat[fullKey] = unquote(rest);
+        }
+      } else {
+        // Block content follows — set up list collection
+        listKey = fullKey;
+      }
+    } else if (indent === 4) {
+      const fullKey = `${section}.${subsection}.${key}`;
+      if (rest) {
+        const arrMatch = rest.match(/^\[([^\]]*)\]/);
+        if (arrMatch) {
+          const items = arrMatch[1].split(',').map(s => unquote(s)).filter(Boolean);
+          if (items.length > 0) { flat[fullKey] = items.join(', '); }
+        } else if (rest !== 'null') {
+          flat[fullKey] = unquote(rest);
+        }
+      } else {
+        listKey = fullKey;
+      }
     }
   }
-  const projectBlock = content.match(/^project:\s*\n((?:[ \t]+.+\n?)*)/m);
-  if (projectBlock) {
-    const nameInBlock = projectBlock[1].match(/^\s+name:\s*["']?(.+?)["']?\s*$/m);
-    if (nameInBlock) {
-      result['projectName'] = nameInBlock[1].trim();
-    }
+
+  flushList();
+
+  // Map flat keys to the display keys expected by ForgeProjectProvider
+  const get = (k: string) => flat[k] || '';
+  const result: Record<string, string> = {};
+
+  const name = get('project.name');
+  if (name)               { result['projectName']  = name; }
+
+  const mode = get('project.mode') || get('project.type');
+  if (mode)               { result['mode']         = mode; }
+
+  const language = get('project.language');
+  if (language)           { result['language']     = language; }
+
+  const status = get('project.status');
+  if (status)             { result['status']       = status; }
+
+  const description = get('project.description');
+  if (description && description !== '""' && description !== "''") {
+    result['description'] = description.length > 60 ? description.slice(0, 57) + '…' : description;
   }
-  const profilesMatch = content.match(/^profiles:\s*\n((?:\s+-\s+.+\n?)+)/m);
-  if (profilesMatch) {
-    const items = profilesMatch[1].match(/^\s+-\s+(.+)$/gm) ?? [];
-    result['profiles'] = items.map((l) => l.replace(/^\s+-\s+/, '').trim()).join(', ');
-  }
+
+  const frontend = get('stack.frontend');
+  if (frontend)           { result['frontend']     = frontend; }
+
+  const backend = get('stack.backend');
+  if (backend)            { result['backend']      = backend; }
+
+  const database = get('stack.database');
+  if (database)           { result['database']     = database; }
+
+  const deploy = get('stack.deploy') || get('deploy.provider');
+  if (deploy)             { result['deploy']       = deploy; }
+
+  const team = get('team.name');
+  if (team)               { result['team']         = team; }
+
+  const profiles = get('agents.profiles');
+  if (profiles)           { result['profiles']     = profiles; }
+
   return result;
 }
 
@@ -200,12 +295,23 @@ class ForgeActionItem extends vscode.TreeItem {
 class ForgeActionsProvider implements vscode.TreeDataProvider<ForgeActionItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+  private installed: boolean;
+
+  constructor(installed: boolean) {
+    this.installed = installed;
+  }
+
+  setInstalled(val: boolean): void {
+    this.installed = val;
+    this.refresh();
+  }
 
   refresh(): void { this._onDidChangeTreeData.fire(); }
 
   getTreeItem(el: ForgeActionItem): vscode.TreeItem { return el; }
 
   getChildren(): ForgeActionItem[] {
+    if (!this.installed) { return []; }
     return [
       new ForgeActionItem('Setup Wizard',   'forge.openWizard',    'wand',   'create / update project.yaml'),
       new ForgeActionItem('Initialize',     'forge.init',          'tools',  'sync agents from project.yaml'),
@@ -250,14 +356,17 @@ class ForgeProjectProvider implements vscode.TreeDataProvider<ForgeProjectItem> 
     const data = parseSimpleYaml(content);
     const items: ForgeProjectItem[] = [];
 
-    if (data['projectName']) { items.push(new ForgeProjectItem('Name',     data['projectName'], 'tag')); }
-    if (data['mode'])        { items.push(new ForgeProjectItem('Mode',     data['mode'],        'symbol-enum')); }
-    if (data['runtime'])     { items.push(new ForgeProjectItem('Runtime',  data['runtime'],     'server')); }
-    if (data['backend'])     { items.push(new ForgeProjectItem('Backend',  data['backend'],     'database')); }
-    if (data['frontend'])    { items.push(new ForgeProjectItem('Frontend', data['frontend'],    'browser')); }
-    if (data['deploy'])      { items.push(new ForgeProjectItem('Deploy',   data['deploy'],      'cloud')); }
-    if (data['language'])    { items.push(new ForgeProjectItem('Language', data['language'],    'symbol-namespace')); }
-    if (data['profiles'])    { items.push(new ForgeProjectItem('Profiles', data['profiles'],   'extensions')); }
+    if (data['projectName'])  { items.push(new ForgeProjectItem('Name',        data['projectName'],  'tag')); }
+    if (data['description'])  { items.push(new ForgeProjectItem('Description', data['description'], 'info')); }
+    if (data['mode'])         { items.push(new ForgeProjectItem('Mode',        data['mode'],         'symbol-enum')); }
+    if (data['status'])       { items.push(new ForgeProjectItem('Status',      data['status'],       'circle-filled')); }
+    if (data['language'])     { items.push(new ForgeProjectItem('Language',    data['language'],     'symbol-namespace')); }
+    if (data['team'])         { items.push(new ForgeProjectItem('Team',        data['team'],         'organization')); }
+    if (data['frontend'])     { items.push(new ForgeProjectItem('Frontend',    data['frontend'],     'browser')); }
+    if (data['backend'])      { items.push(new ForgeProjectItem('Backend',     data['backend'],      'database')); }
+    if (data['database'])     { items.push(new ForgeProjectItem('Database',    data['database'],     'database')); }
+    if (data['deploy'])       { items.push(new ForgeProjectItem('Deploy',      data['deploy'],       'cloud')); }
+    if (data['profiles'])     { items.push(new ForgeProjectItem('Profiles',    data['profiles'],     'extensions')); }
 
     if (items.length === 0) {
       items.push(new ForgeProjectItem('project.yaml loaded', undefined, 'check'));
@@ -352,18 +461,15 @@ export function activate(context: vscode.ExtensionContext): void {
   statusBarItem.show();
 
   const root = getWorkspaceRoot();
-  const isForgeProject = root ? (findProjectYaml(root) || findForgeDir(root) !== null) : false;
+  const forgeInstalled = root ? resolveForgeDir(root) !== null : false;
+  const hasProjectYaml = root ? findProjectYaml(root) : false;
 
-  if (isForgeProject) {
-    updateStatusBar('idle');
-    vscode.commands.executeCommand('setContext', 'forge.active', true);
-  } else {
-    updateStatusBar('idle');
-    vscode.commands.executeCommand('setContext', 'forge.active', false);
-  }
+  updateStatusBar('idle');
+  vscode.commands.executeCommand('setContext', 'forge.installed', forgeInstalled);
+  vscode.commands.executeCommand('setContext', 'forge.active', hasProjectYaml);
 
   // Providers
-  const actionsProvider = new ForgeActionsProvider();
+  const actionsProvider = new ForgeActionsProvider(forgeInstalled);
   const projectProvider = new ForgeProjectProvider();
   const agentsProvider  = new ForgeAgentsProvider();
 
@@ -391,6 +497,23 @@ export function activate(context: vscode.ExtensionContext): void {
       statusBarItem.show();
     });
     context.subscriptions.push(watcher);
+
+    // Watch for forge installation (submodule add)
+    const forgeMarkerWatcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(root, '.agentic/scripts/forge-wizard.py')
+    );
+    forgeMarkerWatcher.onDidCreate(async () => {
+      vscode.commands.executeCommand('setContext', 'forge.installed', true);
+      actionsProvider.setInstalled(true);
+      const choice = await vscode.window.showInformationMessage(
+        'forge instalado correctamente. Ejecuta Setup Wizard para configurar el proyecto.',
+        'Setup Wizard'
+      );
+      if (choice === 'Setup Wizard') {
+        vscode.commands.executeCommand('forge.openWizard');
+      }
+    });
+    context.subscriptions.push(forgeMarkerWatcher);
   }
 
   // -------------------------------------------------------------------------
@@ -774,6 +897,40 @@ export function activate(context: vscode.ExtensionContext): void {
             }
           }
         }
+      );
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.install
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.install', async () => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('forge: No workspace open.');
+        return;
+      }
+
+      const gitDir = path.join(workspaceRoot, '.git');
+      if (!fs.existsSync(gitDir)) {
+        const choice = await vscode.window.showErrorMessage(
+          'forge: Este directorio no es un repositorio git. forge se instala como git submodule.',
+          'Inicializar git repo primero'
+        );
+        if (choice === 'Inicializar git repo primero') {
+          const terminal = vscode.window.createTerminal({ name: 'forge install', cwd: workspaceRoot });
+          terminal.show();
+          terminal.sendText('git init && git submodule add https://github.com/socialwebcl/forge .agentic && git submodule update --init --recursive');
+        }
+        return;
+      }
+
+      const terminal = vscode.window.createTerminal({ name: 'forge install', cwd: workspaceRoot });
+      terminal.show();
+      terminal.sendText('git submodule add https://github.com/socialwebcl/forge .agentic && git submodule update --init --recursive');
+      vscode.window.showInformationMessage(
+        'forge: Instalando en .agentic/ — el panel se actualizará automáticamente al terminar.'
       );
     })
   );
