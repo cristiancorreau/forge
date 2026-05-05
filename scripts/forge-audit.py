@@ -266,6 +266,79 @@ def check_vs_forge(agent, forge, profiles):
 # Mapeo profile → condiciones que lo hacen relevante.
 # Una condición es un dict {campo: conjunto_de_valores_match}.
 # El profile es relevante si CUALQUIER condición se cumple.
+import textwrap as _textwrap
+
+# ── Catálogos de descripción para UI ─────────────────────────────────────────
+
+# (qué hace, qué ganás, trigger)
+_SKILL_INFO: dict[str, tuple[str, str, str]] = {
+    "security-audit": (
+        "Checklist de seguridad para endpoints, auth y datos sensibles.",
+        "Detecta vulnerabilidades antes de cada PR. Agnóstico al stack.",
+        "/security-audit",
+    ),
+    "db-migrate": (
+        "Flujo seguro de migraciones (Prisma, Drizzle, Rails, Alembic, Goose).",
+        "Evita pérdida de datos y conflictos al cambiar el schema.",
+        "/db-migrate",
+    ),
+    "local2prod": (
+        "Deploy completo a producción (Vercel, Railway, Fly.io, GitHub Actions).",
+        "Garantiza que el build y el runtime estén ok antes de cerrar la tarea.",
+        "/local2prod",
+    ),
+    "new-feature": (
+        "Orquesta planificación, implementación y deploy de una feature completa.",
+        "Mantiene el flujo consistente desde spec hasta producción.",
+        "/new-feature",
+    ),
+    "browser-test": (
+        "Automatización de navegador: screenshots y flujos visuales vía CDP.",
+        "Verifica el UI en el browser antes de dar cualquier tarea por terminada.",
+        "/browser-test",
+    ),
+    "wiki-ingest": (
+        "Ingesta documentos y fuentes en el wiki del proyecto.",
+        "Construye base de conocimiento persistente entre sesiones de trabajo.",
+        "/wiki-ingest",
+    ),
+    "wiki-query": (
+        "Responde preguntas usando el wiki como base de conocimiento.",
+        "El agente recuerda decisiones, convenciones y contexto del proyecto.",
+        "/wiki-query",
+    ),
+    "wiki-lint": (
+        "Verifica integridad del wiki: índice, links, páginas huérfanas.",
+        "Mantiene el wiki saludable y navegable con auto-reparación.",
+        "/wiki-lint",
+    ),
+}
+
+# (descripción, agentes que provee)
+_PROFILE_INFO: dict[str, tuple[str, str]] = {
+    "hono-drizzle":       ("API TypeScript con Hono + Drizzle ORM.", "api-engineer"),
+    "nextjs-admin":       ("Panel admin con Next.js + React.", "admin-engineer"),
+    "astro":              ("Sitios estáticos/híbridos con Astro.", "frontend-engineer"),
+    "vuenuxt":            ("Aplicaciones Vue 3 / Nuxt 3.", "frontend-engineer"),
+    "sveltekit":          ("Aplicaciones SvelteKit.", "frontend-engineer"),
+    "fastapi":            ("API Python con FastAPI + Pydantic.", "api-engineer"),
+    "django":             ("Full-stack Python con Django.", "api-engineer"),
+    "rails":              ("Full-stack Ruby on Rails.", "api-engineer"),
+    "express":            ("API Node.js con Express.", "api-engineer"),
+    "nestjs":             ("API Node.js modular con NestJS.", "api-engineer"),
+    "go-gin":             ("API Go de alta performance con Gin.", "api-engineer"),
+    "laravel":            (
+        "PHP con Laravel — API Sanctum, Blade+Livewire y migraciones L6→L13.",
+        "api-engineer · fullstack-engineer · migration-specialist",
+    ),
+    "wordpress":          (
+        "WordPress moderno: FSE, Gutenberg, Divi y Elementor.",
+        "wp-engineer · divi-engineer · elementor-engineer",
+    ),
+    "expo":               ("Apps móviles con Expo / React Native.", "mobile-engineer"),
+    "playwright-crawler": ("Web scraping y crawling con Playwright.", "scanner-engineer"),
+}
+
 _PROFILE_RELEVANCE: dict[str, list[dict]] = {
     "hono-drizzle":       [{"backend": {"hono"}}, {"language": {"typescript"}}],
     "nextjs-admin":       [{"frontend": {"nextjs"}}],
@@ -553,32 +626,79 @@ def run_audit(as_json: bool = False, forge_override=None, only=None):
 
     for tier_key in sorted(by_tier.keys()):
         print(f"\n  {DIM(tier_labels.get(tier_key, f'Tier {tier_key}'))}")
-        for name, result in sorted(by_tier[tier_key]):
+        ok_names   = [n for n, r in sorted(by_tier[tier_key]) if r["status"] == "ok"]
+        prob_items = [(n, r) for n, r in sorted(by_tier[tier_key]) if r["status"] != "ok"]
+        if ok_names:
+            print(f"  {OK('✓')}  {DIM('  ·  '.join(ok_names))}")
+        for name, result in prob_items:
             icon = level_icon(result["status"])
             print(f"  {icon}  {BOLD(name)}")
             for check in result["checks"]:
                 if check["level"] == "ok":
-                    continue  # no imprimir los OK a menos que sea el único
+                    continue
                 sub_icon = level_icon(check["level"])
                 print(f"       {sub_icon} {check['msg']}")
                 if "fix" in check:
                     print(f"         {DIM('→ ' + check['fix'])}")
-            # Si el agente está ok, mostrar el mensaje positivo (el loop no imprime "ok")
-            if result["status"] == "ok":
-                good = [c for c in result["checks"] if c["level"] == "ok"]
-                if good:
-                    print(f"       {level_icon(good[0]['level'])} {DIM(good[0]['msg'])}")
 
     # Oportunidades
+    selectable     = [o for o in opps if o.get("type") in ("profile", "skill") and o.get("slug")]
+    non_selectable = [o for o in opps if o not in selectable]
+    items_indexed: list[dict] = []
+
     if opps:
-        print(f"\n{BOLD('OPORTUNIDADES DE MEJORA')}")
+        can_pick = selectable and sys.stdout.isatty() and not as_json and not only
+        hint = "  ingresá números para agregar" if can_pick else ""
+        print(f"\n{BOLD('OPORTUNIDADES')} {DIM(f'({len(opps)} disponibles{hint})')}")
         print("─" * 60)
-        type_labels = {"profile": "Profile", "skill": "Skill", "integration": "Integración", "config": "Config", "wiki": "Wiki"}
-        for opp in opps:
-            label = DIM(f"[{type_labels.get(opp['type'], opp['type'])}]")
-            print(f"  {INFO('→')}  {label} {opp['msg']}")
-            if "fix" in opp:
-                print(f"       {DIM('→ ' + opp['fix'])}")
+
+        profile_opps = [o for o in selectable if o["type"] == "profile"]
+        skill_opps   = [o for o in selectable if o["type"] == "skill"]
+
+        def _wrap(text: str) -> str:
+            lines = _textwrap.wrap(text, width=66)
+            return ("\n" + " " * 7).join(lines)
+
+        if profile_opps:
+            print(f"\n  {DIM('─── Profiles de stack ───────────────────────────────────')}")
+            for o in profile_opps:
+                idx = len(items_indexed) + 1
+                items_indexed.append(o)
+                slug = o["slug"]
+                info = _PROFILE_INFO.get(slug)
+                desc     = info[0] if info else ""
+                agents_l = info[1] if info else (o.get("msg", "").split("→ provee:")[-1].strip())
+                tag = DIM("[Profile]")
+                print(f"\n  {BOLD(f'[{idx}]')} {BOLD(slug):<28} {tag}")
+                if desc:
+                    print(f"       {_wrap(desc)}")
+                if agents_l:
+                    print(f"       {DIM('Agentes: ' + agents_l)}")
+
+        if skill_opps:
+            print(f"\n  {DIM('─── Skills disponibles ──────────────────────────────────')}")
+            for o in skill_opps:
+                idx = len(items_indexed) + 1
+                items_indexed.append(o)
+                slug = o["slug"]
+                info = _SKILL_INFO.get(slug)
+                what    = info[0] if info else o.get("msg", "")
+                benefit = info[1] if info else ""
+                trigger = info[2] if info else ""
+                tag = DIM(f"[Skill  {trigger}]") if trigger else DIM("[Skill]")
+                print(f"\n  {BOLD(f'[{idx}]')} {BOLD(slug):<28} {tag}")
+                print(f"       {_wrap(what)}")
+                if benefit:
+                    print(f"       {DIM(_wrap(benefit))}")
+
+        if non_selectable:
+            print(f"\n  {DIM('─── Otras sugerencias ───────────────────────────────────')}")
+            type_labels_ns = {"integration": "Integración", "config": "Config", "wiki": "Wiki"}
+            for opp in non_selectable:
+                label = DIM(f"[{type_labels_ns.get(opp['type'], opp['type'])}]")
+                print(f"  {INFO('→')}  {label} {opp['msg']}")
+                if "fix" in opp:
+                    print(f"       {DIM('→ ' + opp['fix'])}")
 
     # Huérfanos
     if orphans:
@@ -610,51 +730,26 @@ def run_audit(as_json: bool = False, forge_override=None, only=None):
     print(DIM("  Nota: similitud < 0.80 puede indicar personalización intencional, no solo desactualización."))
     print()
 
-    # Selector interactivo de oportunidades (solo en TTY, sin --json, sin --only)
-    selectable = [o for o in opps if o.get("type") in ("profile", "skill") and o.get("slug")]
-    if selectable and sys.stdout.isatty() and not as_json and not only:
-        _interactive_opp_picker(selectable, root)
+    # Picker integrado en la sección de oportunidades (ya mostrada arriba)
+    if items_indexed and sys.stdout.isatty() and not as_json and not only:
+        _interactive_opp_picker(items_indexed, root)
 
 
-def _interactive_opp_picker(opps: list, root: Path) -> None:
-    """Muestra un picker numerado y aplica las selecciones a project.yaml."""
-    print(BOLD("¿Querés agregar alguna oportunidad a project.yaml?"))
-    print()
-    profiles_opps = [o for o in opps if o["type"] == "profile"]
-    skills_opps   = [o for o in opps if o["type"] == "skill"]
-
-    items_indexed: list[dict] = []
-
-    if profiles_opps:
-        print(f"  {DIM('Profiles de stack:')}")
-        for o in profiles_opps:
-            idx = len(items_indexed) + 1
-            items_indexed.append(o)
-            print(f"  {BOLD(f'[{idx}]')} {o['slug']:<22} {DIM(o['msg'].split('→ provee:')[1].strip() if '→ provee:' in o['msg'] else '')}")
-
-    if skills_opps:
-        print()
-        print(f"  {DIM('Skills disponibles:')}")
-        for o in skills_opps:
-            idx = len(items_indexed) + 1
-            items_indexed.append(o)
-            print(f"  {BOLD(f'[{idx}]')} {o['slug']}")
-
-    print()
-    print(f"  {DIM('Ingresá números separados por coma, a=todos, Enter=saltear')}")
-    print(f"  {DIM('Ej: 1,3  o  a')}")
-    print()
+def _interactive_opp_picker(items_indexed: list, root: Path) -> None:
+    """Lee la selección del usuario y aplica a project.yaml (lista ya visible arriba)."""
+    total = len(items_indexed)
+    hint  = f"1-{total}" if total > 1 else "1"
+    print(f"  {DIM(f'Seleccioná [{hint}], separados por coma  ·  a=todos  ·  Enter=saltear')}")
 
     try:
-        import sys as _sys
-        _sys.stdout.write("  > ")
-        _sys.stdout.flush()
+        sys.stdout.write("  > ")
+        sys.stdout.flush()
         raw = input().strip()
     except (EOFError, KeyboardInterrupt):
         print()
         return
 
-    if not raw or raw.lower() == "n":
+    if not raw or raw.lower() in ("n", ""):
         return
 
     if raw.lower() == "a":
@@ -674,7 +769,6 @@ def _interactive_opp_picker(opps: list, root: Path) -> None:
 
     profiles_to_add = [o["slug"] for o in selected if o["type"] == "profile"]
     skills_to_add   = [o["slug"] for o in selected if o["type"] == "skill"]
-
     _apply_to_project_yaml(root, profiles_to_add, skills_to_add)
 
 

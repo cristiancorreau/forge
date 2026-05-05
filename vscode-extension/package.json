@@ -2,7 +2,7 @@
   "name": "forge-agent-framework",
   "displayName": "forge — Agent Framework",
   "description": "Manage forge agent projects from VS Code",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "engines": {
     "vscode": "^1.85.0"
   },
