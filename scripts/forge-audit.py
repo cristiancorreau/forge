@@ -261,6 +261,51 @@ def check_vs_forge(agent, forge, profiles):
     return issues
 
 
+# ── Relevancia de profiles por stack ─────────────────────────────────────────
+
+# Mapeo profile → condiciones que lo hacen relevante.
+# Una condición es un dict {campo: conjunto_de_valores_match}.
+# El profile es relevante si CUALQUIER condición se cumple.
+_PROFILE_RELEVANCE: dict[str, list[dict]] = {
+    "hono-drizzle":       [{"backend": {"hono"}}, {"language": {"typescript"}}],
+    "nextjs-admin":       [{"frontend": {"nextjs"}}],
+    "astro":              [{"frontend": {"astro"}}],
+    "vuenuxt":            [{"frontend": {"nuxt"}}],
+    "sveltekit":          [{"frontend": {"sveltekit"}}],
+    "fastapi":            [{"backend": {"fastapi"}}, {"language": {"python"}}],
+    "django":             [{"backend": {"django"}}, {"language": {"python"}}],
+    "rails":              [{"backend": {"rails"}}, {"language": {"ruby"}}],
+    "express":            [{"backend": {"express"}}],
+    "nestjs":             [{"backend": {"nestjs"}}],
+    "go-gin":             [{"backend": {"gin"}}, {"language": {"go"}}],
+    "laravel":            [{"backend": {"laravel"}}, {"language": {"php"}}],
+    "wordpress":          [{"type": {"wordpress"}}, {"language": {"php"}}],
+    "expo":               [{"type": {"mobile"}}],
+    "playwright-crawler": [{"type": {"crawler"}}],
+}
+
+
+def _profile_is_relevant(profile_name: str, config: dict) -> bool:
+    """Retorna True si el profile coincide con el stack del proyecto."""
+    conditions = _PROFILE_RELEVANCE.get(profile_name)
+    if not conditions:
+        return True  # profile sin mapeo conocido → siempre mostrar
+
+    stack = config.get("stack", {}) or {}
+    project = config.get("project", {}) or {}
+    values = {
+        "backend":  str(stack.get("backend") or "").lower(),
+        "frontend": str(stack.get("frontend") or "").lower(),
+        "language": str(project.get("language") or "").lower(),
+        "type":     str(project.get("type") or "").lower(),
+    }
+
+    for cond in conditions:
+        if all(values.get(field, "") in allowed for field, allowed in cond.items()):
+            return True
+    return False
+
+
 # ── Oportunidades ─────────────────────────────────────────────────────────────
 
 def find_opportunities(forge, config, installed_names):
@@ -271,8 +316,15 @@ def find_opportunities(forge, config, installed_names):
     active_skills = skills_cfg.get("active", [])
     integrations = skills_cfg.get("integrations", [])
 
-    # Profiles disponibles en forge que el proyecto no usa
+    # Profiles disponibles en forge que el proyecto no usa Y son relevantes para su stack
     profiles_dir = forge / "profiles"
+    has_stack_info = bool(
+        (config.get("stack", {}) or {}).get("backend") or
+        (config.get("stack", {}) or {}).get("frontend") or
+        (config.get("project", {}) or {}).get("language") or
+        (config.get("project", {}) or {}).get("type")
+    )
+
     if profiles_dir.exists():
         for profile_dir in sorted(profiles_dir.iterdir()):
             if not profile_dir.is_dir():
@@ -280,11 +332,15 @@ def find_opportunities(forge, config, installed_names):
             profile_name = profile_dir.name
             if profile_name in active_profiles:
                 continue
+            # Filtrar por relevancia solo si el proyecto declara info de stack
+            if has_stack_info and not _profile_is_relevant(profile_name, config):
+                continue
             agents_in_profile = list((profile_dir / "agents").glob("*.md"))
             if agents_in_profile:
                 agent_names = [a.stem for a in agents_in_profile]
                 opps.append({
                     "type": "profile",
+                    "slug": profile_name,
                     "msg": f"Profile '{profile_name}' disponible en forge → provee: {', '.join(agent_names)}",
                     "fix": f"Agregar '{profile_name}' a agents.profiles en project.yaml"
                 })
@@ -300,6 +356,7 @@ def find_opportunities(forge, config, installed_names):
         if skill_path.exists():
             opps.append({
                 "type": "skill",
+                "slug": skill,
                 "msg": f"Skill '{skill}' disponible pero no activo en project.yaml",
                 "fix": f"Agregar '{skill}' a skills.active en project.yaml"
             })
@@ -551,6 +608,133 @@ def run_audit(as_json: bool = False, forge_override=None, only=None):
     else:
         print(OK("  Todo conforme al estándar forge."))
     print(DIM("  Nota: similitud < 0.80 puede indicar personalización intencional, no solo desactualización."))
+    print()
+
+    # Selector interactivo de oportunidades (solo en TTY, sin --json, sin --only)
+    selectable = [o for o in opps if o.get("type") in ("profile", "skill") and o.get("slug")]
+    if selectable and sys.stdout.isatty() and not as_json and not only:
+        _interactive_opp_picker(selectable, root)
+
+
+def _interactive_opp_picker(opps: list, root: Path) -> None:
+    """Muestra un picker numerado y aplica las selecciones a project.yaml."""
+    print(BOLD("¿Querés agregar alguna oportunidad a project.yaml?"))
+    print()
+    profiles_opps = [o for o in opps if o["type"] == "profile"]
+    skills_opps   = [o for o in opps if o["type"] == "skill"]
+
+    items_indexed: list[dict] = []
+
+    if profiles_opps:
+        print(f"  {DIM('Profiles de stack:')}")
+        for o in profiles_opps:
+            idx = len(items_indexed) + 1
+            items_indexed.append(o)
+            print(f"  {BOLD(f'[{idx}]')} {o['slug']:<22} {DIM(o['msg'].split('→ provee:')[1].strip() if '→ provee:' in o['msg'] else '')}")
+
+    if skills_opps:
+        print()
+        print(f"  {DIM('Skills disponibles:')}")
+        for o in skills_opps:
+            idx = len(items_indexed) + 1
+            items_indexed.append(o)
+            print(f"  {BOLD(f'[{idx}]')} {o['slug']}")
+
+    print()
+    print(f"  {DIM('Ingresá números separados por coma, a=todos, Enter=saltear')}")
+    print(f"  {DIM('Ej: 1,3  o  a')}")
+    print()
+
+    try:
+        import sys as _sys
+        _sys.stdout.write("  > ")
+        _sys.stdout.flush()
+        raw = input().strip()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return
+
+    if not raw or raw.lower() == "n":
+        return
+
+    if raw.lower() == "a":
+        selected = items_indexed
+    else:
+        selected = []
+        for part in raw.split(","):
+            part = part.strip()
+            if part.isdigit():
+                idx = int(part)
+                if 1 <= idx <= len(items_indexed):
+                    selected.append(items_indexed[idx - 1])
+
+    if not selected:
+        print(DIM("  Sin cambios."))
+        return
+
+    profiles_to_add = [o["slug"] for o in selected if o["type"] == "profile"]
+    skills_to_add   = [o["slug"] for o in selected if o["type"] == "skill"]
+
+    _apply_to_project_yaml(root, profiles_to_add, skills_to_add)
+
+
+def _apply_to_project_yaml(root: Path, profiles: list[str], skills: list[str]) -> None:
+    """Agrega profiles y skills a project.yaml de forma segura."""
+    yaml_path = root / "project.yaml"
+    if not yaml_path.exists():
+        print(ERR("  ERROR: project.yaml no encontrado."))
+        return
+
+    try:
+        with open(yaml_path) as f:
+            content = yaml.safe_load(f)
+    except Exception as e:
+        print(ERR(f"  ERROR al leer project.yaml: {e}"))
+        return
+
+    changed = False
+
+    if profiles:
+        agents = content.setdefault("agents", {})
+        current_profiles = agents.get("profiles", []) or []
+        added = []
+        for p in profiles:
+            if p not in current_profiles:
+                current_profiles.append(p)
+                added.append(p)
+        agents["profiles"] = current_profiles
+        if added:
+            print(OK(f"  Profiles agregados: {', '.join(added)}"))
+            changed = True
+
+    if skills:
+        skill_cfg = content.setdefault("skills", {})
+        current_skills = skill_cfg.get("active", []) or []
+        added = []
+        for s in skills:
+            if s not in current_skills:
+                current_skills.append(s)
+                added.append(s)
+        skill_cfg["active"] = current_skills
+        if added:
+            print(OK(f"  Skills agregados: {', '.join(added)}"))
+            changed = True
+
+    if not changed:
+        print(DIM("  Sin cambios (ya estaban configurados)."))
+        return
+
+    try:
+        with open(yaml_path, "w") as f:
+            yaml.dump(content, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        print(OK(f"  project.yaml actualizado."))
+    except Exception as e:
+        print(ERR(f"  ERROR al escribir project.yaml: {e}"))
+        return
+
+    print()
+    print(DIM("  Para instalar los agentes:"))
+    print(DIM("    python3 .agentic/scripts/forge-init.py --tool claude-code"))
     print()
 
 

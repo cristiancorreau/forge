@@ -504,11 +504,13 @@ export function activate(context: vscode.ExtensionContext): void {
         channel.appendLine(textResult.stderr);
       }
 
-      // Parsear resumen y ofrecer acciones contextuales
-      let parsed: { error?: string; error_code?: string; hint?: string; summary?: AuditSummary } = {};
-      try {
-        parsed = JSON.parse(jsonResult.stdout);
-      } catch { /* sin JSON */ }
+      // Parsear resumen y oportunidades del JSON
+      let parsed: {
+        error?: string; error_code?: string; hint?: string;
+        summary?: AuditSummary;
+        opportunities?: AuditOpportunity[];
+      } = {};
+      try { parsed = JSON.parse(jsonResult.stdout); } catch { /* sin JSON */ }
 
       await refreshStatusBar(workspaceRoot, forgeDir);
       agentsProvider.refresh();
@@ -517,8 +519,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (parsed.error_code === 'NO_PROJECT_YAML') {
         const choice = await vscode.window.showWarningMessage(
           'forge: No hay project.yaml en este proyecto. Configura forge primero.',
-          'Run Setup Wizard',
-          'Ver output'
+          'Run Setup Wizard', 'Ver output'
         );
         if (choice === 'Run Setup Wizard') { await vscode.commands.executeCommand('forge.openWizard'); }
         if (choice === 'Ver output')       { channel.show(false); }
@@ -529,36 +530,54 @@ export function activate(context: vscode.ExtensionContext): void {
       if (!summary) { return; }
 
       const { errors = 0, warnings = 0, orphans = 0, agents_total = 0 } = summary;
+      const opportunities = (parsed.opportunities ?? []).filter(
+        (o: AuditOpportunity) => (o.type === 'profile' || o.type === 'skill') && o.slug
+      );
 
       // Sin agentes instalados → ofrecer inicializar
       if (agents_total === 0) {
         const choice = await vscode.window.showWarningMessage(
           'forge: No hay agentes instalados en este proyecto.',
-          'Initialize Agents',
-          'Run Setup Wizard'
+          'Initialize Agents', 'Run Setup Wizard'
         );
         if (choice === 'Initialize Agents') { await vscode.commands.executeCommand('forge.init'); }
         if (choice === 'Run Setup Wizard')  { await vscode.commands.executeCommand('forge.openWizard'); }
         return;
       }
 
-      // Hay errores o warnings → ofrecer acciones concretas
+      // Hay errores/warnings → ofrecer fix
       if (errors > 0 || warnings > 0 || orphans > 0) {
         const actions: string[] = [];
-        if (errors > 0 || warnings > 0) { actions.push('Re-initialize Agents (fix drift)'); }
-        if (orphans > 0)                { actions.push('Run Setup Wizard (add missing agents)'); }
-        actions.push('Ver audit completo');
+        if (errors > 0 || warnings > 0) { actions.push('Re-initialize Agents'); }
+        if (orphans > 0)                { actions.push('Run Setup Wizard'); }
+        if (opportunities.length > 0)  { actions.push('Agregar profiles/skills…'); }
+        actions.push('Ver output');
 
         const label = errors > 0
-          ? `forge: ${errors} error(s) y ${warnings} warning(s) en los agentes.`
+          ? `forge: ${errors} error(s) y ${warnings} warning(s).`
           : `forge: ${warnings} warning(s) en los agentes.`;
 
         const choice = await vscode.window.showWarningMessage(label, ...actions);
-        if (choice === 'Re-initialize Agents (fix drift)')      { await vscode.commands.executeCommand('forge.init'); }
-        if (choice === 'Run Setup Wizard (add missing agents)') { await vscode.commands.executeCommand('forge.openWizard'); }
-        if (choice === 'Ver audit completo')                    { channel.show(false); }
+        if (choice === 'Re-initialize Agents')  { await vscode.commands.executeCommand('forge.init'); }
+        if (choice === 'Run Setup Wizard')       { await vscode.commands.executeCommand('forge.openWizard'); }
+        if (choice === 'Ver output')             { channel.show(false); }
+        if (choice === 'Agregar profiles/skills…') {
+          await showOpportunitiesPicker(opportunities, workspaceRoot, forgeDir);
+        }
+        return;
+      }
+
+      // Todo OK — si hay oportunidades, ofrecer seleccionarlas
+      if (opportunities.length > 0) {
+        const choice = await vscode.window.showInformationMessage(
+          `forge: Audit OK — ${opportunities.length} oportunidad(es) disponible(s).`,
+          'Ver y agregar…', 'Cerrar'
+        );
+        if (choice === 'Ver y agregar…') {
+          await showOpportunitiesPicker(opportunities, workspaceRoot, forgeDir);
+        }
       } else {
-        vscode.window.showInformationMessage(`forge: Audit OK — todos los agentes conformes.`);
+        vscode.window.showInformationMessage('forge: Audit OK — todo conforme.');
       }
     })
   );
@@ -780,7 +799,7 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 // ---------------------------------------------------------------------------
-// Refresh status bar from JSON audit
+// Opportunities picker (multi-select QuickPick → apply to project.yaml)
 // ---------------------------------------------------------------------------
 
 interface AuditSummary {
@@ -793,6 +812,81 @@ interface AuditSummary {
   conforming: number;
   orphans: number;
 }
+
+interface AuditOpportunity {
+  type: 'profile' | 'skill' | 'integration' | 'config' | 'wiki';
+  slug?: string;
+  msg: string;
+  fix?: string;
+}
+
+async function showOpportunitiesPicker(
+  opportunities: AuditOpportunity[],
+  workspaceRoot: string,
+  forgeDir: string
+): Promise<void> {
+  const profileOpps = opportunities.filter(o => o.type === 'profile');
+  const skillOpps   = opportunities.filter(o => o.type === 'skill');
+
+  const items: (vscode.QuickPickItem & { opp: AuditOpportunity })[] = [];
+
+  if (profileOpps.length > 0) {
+    items.push({ label: 'Profiles de stack', kind: vscode.QuickPickItemKind.Separator, opp: null! });
+    for (const o of profileOpps) {
+      const detail = o.msg.includes('→ provee:') ? o.msg.split('→ provee:')[1].trim() : o.msg;
+      items.push({ label: o.slug!, description: 'profile', detail, opp: o, picked: false });
+    }
+  }
+
+  if (skillOpps.length > 0) {
+    items.push({ label: 'Skills disponibles', kind: vscode.QuickPickItemKind.Separator, opp: null! });
+    for (const o of skillOpps) {
+      items.push({ label: o.slug!, description: 'skill', detail: o.msg, opp: o, picked: false });
+    }
+  }
+
+  const selected = await vscode.window.showQuickPick(
+    items.filter(i => i.kind !== vscode.QuickPickItemKind.Separator),
+    {
+      title: `forge — Oportunidades disponibles (${opportunities.length})`,
+      placeHolder: 'Seleccioná los profiles/skills a agregar a project.yaml',
+      canPickMany: true,
+      matchOnDescription: true,
+      matchOnDetail: true,
+    }
+  );
+
+  if (!selected || selected.length === 0) { return; }
+
+  const profilesToAdd = selected.filter(i => i.opp.type === 'profile').map(i => i.opp.slug!);
+  const skillsToAdd   = selected.filter(i => i.opp.type === 'skill').map(i => i.opp.slug!);
+
+  // Aplicar cambios a project.yaml via script Python auxiliar
+  const applyScript = path.join(forgeDir, 'scripts', 'forge-add-opportunities.py');
+  const args = ['python3', applyScript];
+  if (profilesToAdd.length > 0) { args.push('--profiles', ...profilesToAdd); }
+  if (skillsToAdd.length > 0)   { args.push('--skills',   ...skillsToAdd); }
+
+  const result = await runForgeCommand(args, workspaceRoot);
+
+  if (result.code !== 0) {
+    vscode.window.showErrorMessage(`forge: Error al actualizar project.yaml.\n${result.stderr}`);
+    return;
+  }
+
+  const added = [...profilesToAdd, ...skillsToAdd].join(', ');
+  const choice = await vscode.window.showInformationMessage(
+    `forge: Agregado a project.yaml: ${added}`,
+    'Initialize Agents', 'Cerrar'
+  );
+  if (choice === 'Initialize Agents') {
+    await vscode.commands.executeCommand('forge.init');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Refresh status bar from JSON audit
+// ---------------------------------------------------------------------------
 
 async function refreshStatusBar(workspaceRoot: string, forgeDir: string): Promise<void> {
   const auditScript = path.join(forgeDir, 'scripts', 'forge-audit.py');
