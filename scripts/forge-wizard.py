@@ -2,11 +2,33 @@
 """
 forge-wizard.py — Wizard interactivo para configurar un proyecto nuevo con forge.
 
-Usage:
+Usage interactivo:
   python3 .agentic/scripts/forge-wizard.py
   python3 .agentic/scripts/forge-wizard.py --dry-run
   python3 .agentic/scripts/forge-wizard.py --mode startup
   python3 .agentic/scripts/forge-wizard.py --mode enterprise --no-init
+
+Modo batch (no interactivo, para CI y scripts de onboarding):
+  python3 .agentic/scripts/forge-wizard.py \\
+    --name "Mi Proyecto" --backend laravel --frontend none \\
+    --database postgresql --deploy vercel \\
+    --mode standard --tool claude-code --output project.yaml
+
+Flags batch disponibles:
+  --name NAME         Nombre del proyecto
+  --slug SLUG         Slug (se auto-genera desde --name si no se especifica)
+  --desc DESC         Descripción breve del proyecto
+  --type TYPE         Tipo: webapp|api|fullstack|saas|mobile|static|cli|crawler|wordpress
+  --backend BACKEND   Framework backend (hono|fastapi|django|rails|express|nestjs|laravel|gin|none)
+  --frontend FRONTEND Framework frontend (nextjs|nuxt|sveltekit|astro|react|vue|angular|none)
+  --database DB       Base de datos (postgresql|mysql|sqlite|mongodb|redis|none)
+  --deploy TARGET     Deploy target (vercel|railway|fly|aws|gcp|azure|vps|none)
+  --tool TOOL         Runtime (claude-code|opencode|kiro|codex|all)
+  --compliance LIST   Frameworks de compliance separados por coma (gdpr,ley-21719,...)
+  --page-builder PB   Page builder WordPress (divi|elementor|gutenberg|none)
+  --output PATH       Ruta de salida (default: project.yaml en CWD)
+  --no-init           No ejecutar forge-init después de generar project.yaml
+  --dry-run           Mostrar el YAML sin escribirlo
 """
 from __future__ import annotations
 
@@ -48,6 +70,40 @@ if MODE_OVERRIDE is None and "--mode" in sys.argv:
 if MODE_OVERRIDE and MODE_OVERRIDE not in ("startup", "standard", "enterprise"):
     print(f"ERROR: --mode debe ser startup, standard o enterprise", file=sys.stderr)
     sys.exit(1)
+
+
+def _flag(name: str) -> Optional[str]:
+    """Extrae el valor de --flag=value o --flag value de sys.argv."""
+    prefix = f"--{name}="
+    for i, arg in enumerate(sys.argv[1:], 1):
+        if arg.startswith(prefix):
+            return arg[len(prefix):]
+        if arg == f"--{name}" and i < len(sys.argv) - 1:
+            return sys.argv[i + 1]
+    return None
+
+
+# Flags batch — si --name está presente, se activa el modo no-interactivo
+BATCH_NAME     = _flag("name")
+BATCH_MODE     = (
+    {
+        "startup": "startup", "standard": "standard", "enterprise": "enterprise",
+        "1": "startup", "2": "startup", "4": "standard", "9": "enterprise",
+    }.get(_flag("mode") or MODE_OVERRIDE or "", None)
+    or MODE_OVERRIDE
+)
+BATCH_SLUG     = _flag("slug")
+BATCH_DESC     = _flag("desc") or _flag("description") or ""
+BATCH_TYPE     = _flag("type")
+BATCH_BACKEND  = _flag("backend")
+BATCH_FRONTEND = _flag("frontend")
+BATCH_DATABASE = _flag("database") or _flag("db")
+BATCH_DEPLOY   = _flag("deploy")
+BATCH_TOOL     = _flag("tool")
+BATCH_COMPLIANCE = [c.strip() for c in (_flag("compliance") or "").split(",") if c.strip()]
+BATCH_PAGE_BUILDER = _flag("page-builder")
+BATCH_OUTPUT   = _flag("output")
+BATCH_MODE_ON  = BATCH_NAME is not None  # modo batch activo si --name está presente
 
 IS_TTY = sys.stdin.isatty() and sys.stdout.isatty()
 
@@ -576,7 +632,68 @@ def _phases_for_mode(mode: str) -> str:
 # Wizard principal
 # ---------------------------------------------------------------------------
 
+def _run_batch() -> None:
+    """Modo no-interactivo: construye project.yaml desde flags CLI sin prompts."""
+    name    = BATCH_NAME or "Mi Proyecto"
+    slug    = BATCH_SLUG or name.lower().replace(" ", "-").replace("_", "-")
+    desc    = BATCH_DESC
+    ptype   = BATCH_TYPE or "webapp"
+    backend = BATCH_BACKEND or "none"
+    frontend= BATCH_FRONTEND or "none"
+    database= BATCH_DATABASE or "none"
+    deploy  = BATCH_DEPLOY or "none"
+    runtime = BATCH_TOOL or "claude-code"
+    compliance = BATCH_COMPLIANCE
+    page_builder = BATCH_PAGE_BUILDER or "none"
+    mode    = BATCH_MODE or MODE_OVERRIDE or "standard"
+    if mode not in ("startup", "standard", "enterprise"):
+        mode = "standard"
+    out_path = Path(BATCH_OUTPUT or "project.yaml").expanduser().resolve()
+
+    lang     = detect_language(frontend, backend, ptype)
+    profiles = suggest_profiles(ptype, frontend, backend, page_builder)
+
+    data = {
+        "mode": mode, "name": name, "slug": slug, "description": desc,
+        "language": lang, "project_type": ptype,
+        "frontend": frontend, "backend": backend, "database": database,
+        "deploy": deploy, "profiles": profiles, "runtime": runtime,
+        "compliance": compliance,
+    }
+    yaml_content = build_yaml(data)
+
+    if DRY_RUN:
+        print(yaml_content)
+        return
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(yaml_content, encoding="utf-8")
+    try:
+        yaml.safe_load(out_path.read_text())
+    except yaml.YAMLError as e:
+        print(f"ERROR: el YAML generado no es válido: {e}", file=sys.stderr)
+        out_path.unlink(missing_ok=True)
+        sys.exit(1)
+
+    print(f"forge: project.yaml escrito en {out_path}")
+    if profiles:
+        print(f"  Profiles detectados: {', '.join(profiles)}")
+
+    if not NO_INIT:
+        forge_init = _find_forge_init()
+        if forge_init:
+            import subprocess
+            tool_arg = runtime if runtime != "todos" else "all"
+            cmd = [sys.executable, str(forge_init), f"--tool={tool_arg}"]
+            print(f"  $ {' '.join(cmd)}")
+            subprocess.run(cmd, check=False)
+
+
 def main() -> None:
+    if BATCH_MODE_ON:
+        _run_batch()
+        return
+
     clr()
     print()
     print(f"  {bold('forge — Wizard de proyecto nuevo')}")
