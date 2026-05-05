@@ -51,14 +51,17 @@ def test_activation_events_declarados(package_json):
     assert len(events) > 0, "No hay activationEvents declarados"
 
 
-def test_activation_detecta_project_yaml(package_json):
+def test_activation_siempre_activa(package_json):
+    """onStartupFinished garantiza que la extensión esté siempre disponible."""
     events = package_json.get("activationEvents", [])
-    assert any("project.yaml" in e for e in events)
+    assert "onStartupFinished" in events
 
 
-def test_activation_detecta_agentic(package_json):
-    events = package_json.get("activationEvents", [])
-    assert any(".agentic" in e for e in events)
+def test_views_welcome_declarado(package_json):
+    """viewsWelcome muestra instrucciones cuando no hay project.yaml."""
+    welcome = package_json.get("contributes", {}).get("viewsWelcome", [])
+    assert len(welcome) > 0, "Debe haber al menos un viewsWelcome"
+    assert any("forge.openWizard" in w.get("contents", "") for w in welcome)
 
 
 def test_commands_declarados(package_json):

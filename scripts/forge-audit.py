@@ -351,12 +351,23 @@ def level_icon(level: str) -> str:
     return {"ok": OK("✓"), "warn": WARN("⚠"), "error": ERR("✗"), "info": INFO("→")}.get(level, " ")
 
 
+_EMPTY_SUMMARY = {
+    "agents_total": 0, "agents_declared": 0,
+    "ok": 0, "info": 0, "warnings": 0, "errors": 0, "orphans": 0,
+}
+
+
 def run_audit(as_json: bool = False, forge_override=None, only=None):
     try:
         root = find_project_root()
         if forge_override is not None:
             forge = Path(forge_override)
             if not forge.exists():
+                if as_json:
+                    print(json.dumps({"error": f"forge dir no existe: {forge_override}",
+                                      "error_code": "FORGE_NOT_FOUND",
+                                      "summary": {**_EMPTY_SUMMARY, "errors": 1}}))
+                    sys.exit(0)
                 print(ERR(f"ERROR: forge dir no existe: {forge}"), file=sys.stderr)
                 sys.exit(1)
         else:
@@ -364,7 +375,17 @@ def run_audit(as_json: bool = False, forge_override=None, only=None):
         config = load_project(root)
         config["_root"] = str(root)  # pass root for wiki path resolution
     except FileNotFoundError as e:
+        if as_json:
+            code = "NO_PROJECT_YAML" if "project.yaml" in str(e) else "FORGE_NOT_FOUND"
+            print(json.dumps({
+                "error": str(e),
+                "error_code": code,
+                "hint": "Ejecuta el wizard: python3 .agentic/scripts/forge-wizard.py" if code == "NO_PROJECT_YAML" else "",
+                "summary": {**_EMPTY_SUMMARY, "errors": 1},
+            }))
+            sys.exit(0)
         print(ERR(f"ERROR: {e}"), file=sys.stderr)
+        print(ERR("  → Primer uso: python3 .agentic/scripts/forge-wizard.py"), file=sys.stderr)
         sys.exit(1)
 
     agents_dir = root / ".claude" / "agents"

@@ -406,18 +406,34 @@ def init_codex(root: Path, forge: Path, config: dict):
 
 def main():
     if "--tool" not in sys.argv:
-        print("Uso: forge-init.py --tool <claude-code|opencode|kiro|codex|all> [--force] [--only=<agente>]")
+        print("Uso: forge-init.py --tool <claude-code|opencode|kiro|codex|all> [--force] [--only=<agente>] [--forge <dir>]")
         sys.exit(1)
 
     idx = sys.argv.index("--tool")
     tool = sys.argv[idx + 1] if idx + 1 < len(sys.argv) else "claude-code"
 
+    # --forge <dir> o --forge=<dir> — permite a la extensión VS Code indicar la ruta explícita
+    forge_override: str | None = None
+    args = sys.argv[1:]
+    for i, arg in enumerate(args):
+        if arg.startswith("--forge="):
+            forge_override = arg[len("--forge="):]
+        elif arg == "--forge" and i + 1 < len(args):
+            forge_override = args[i + 1]
+
     try:
         root = find_project_root()
-        forge = find_forge_dir()
+        if forge_override:
+            forge = Path(forge_override)
+            if not forge.exists():
+                print(f"ERROR: forge dir no existe: {forge_override}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            forge = find_forge_dir()
         config = load_project(root)
     except FileNotFoundError as e:
         print(f"ERROR: {e}", file=sys.stderr)
+        print("  → Primer uso: python3 .agentic/scripts/forge-wizard.py  (wizard interactivo)", file=sys.stderr)
         sys.exit(1)
 
     print(f"Proyecto : {config.get('project', {}).get('name', '?')}")

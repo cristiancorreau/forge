@@ -450,7 +450,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       const initScript = path.join(forgeDir, 'scripts', 'forge-init.py');
       const result = await runForgeCommand(
-        ['python3', initScript, '--tool', tool],
+        ['python3', initScript, '--tool', tool, '--forge', forgeDir],
         workspaceRoot
       );
 
@@ -494,8 +494,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
       // Ejecutar audit normal (output legible) y JSON (para parsear acciones)
       const [textResult, jsonResult] = await Promise.all([
-        runForgeCommand(['python3', auditScript], workspaceRoot),
-        runForgeCommand(['python3', auditScript, '--json'], workspaceRoot),
+        runForgeCommand(['python3', auditScript, '--forge', forgeDir], workspaceRoot),
+        runForgeCommand(['python3', auditScript, '--json', '--forge', forgeDir], workspaceRoot),
       ]);
 
       channel.appendLine(textResult.stdout);
@@ -505,17 +505,30 @@ export function activate(context: vscode.ExtensionContext): void {
       }
 
       // Parsear resumen y ofrecer acciones contextuales
-      let summary: AuditSummary | null = null;
+      let parsed: { error?: string; error_code?: string; hint?: string; summary?: AuditSummary } = {};
       try {
-        summary = JSON.parse(jsonResult.stdout).summary as AuditSummary;
-      } catch { /* sin JSON, no mostramos acciones */ }
+        parsed = JSON.parse(jsonResult.stdout);
+      } catch { /* sin JSON */ }
 
       await refreshStatusBar(workspaceRoot, forgeDir);
       agentsProvider.refresh();
 
+      // Error estructurado del script
+      if (parsed.error_code === 'NO_PROJECT_YAML') {
+        const choice = await vscode.window.showWarningMessage(
+          'forge: No hay project.yaml en este proyecto. Configura forge primero.',
+          'Run Setup Wizard',
+          'Ver output'
+        );
+        if (choice === 'Run Setup Wizard') { await vscode.commands.executeCommand('forge.openWizard'); }
+        if (choice === 'Ver output')       { channel.show(false); }
+        return;
+      }
+
+      const summary = parsed.summary;
       if (!summary) { return; }
 
-      const { errors = 0, warnings = 0, orphans = 0, agents_total = 0 } = summary as AuditSummary;
+      const { errors = 0, warnings = 0, orphans = 0, agents_total = 0 } = summary;
 
       // Sin agentes instalados → ofrecer inicializar
       if (agents_total === 0) {
@@ -541,9 +554,9 @@ export function activate(context: vscode.ExtensionContext): void {
           : `forge: ${warnings} warning(s) en los agentes.`;
 
         const choice = await vscode.window.showWarningMessage(label, ...actions);
-        if (choice === 'Re-initialize Agents (fix drift)')    { await vscode.commands.executeCommand('forge.init'); }
+        if (choice === 'Re-initialize Agents (fix drift)')      { await vscode.commands.executeCommand('forge.init'); }
         if (choice === 'Run Setup Wizard (add missing agents)') { await vscode.commands.executeCommand('forge.openWizard'); }
-        if (choice === 'Ver audit completo')                  { channel.show(false); }
+        if (choice === 'Ver audit completo')                    { channel.show(false); }
       } else {
         vscode.window.showInformationMessage(`forge: Audit OK — todos los agentes conformes.`);
       }
@@ -592,7 +605,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       const auditScript = path.join(forgeDir, 'scripts', 'forge-audit.py');
       const result = await runForgeCommand(
-        ['python3', auditScript, `--only=${selected.label}`],
+        ['python3', auditScript, `--only=${selected.label}`, '--forge', forgeDir],
         workspaceRoot
       );
 
@@ -670,13 +683,79 @@ export function activate(context: vscode.ExtensionContext): void {
       const forgeDir = await requireForgeDir(workspaceRoot);
       if (!forgeDir) { return; }
 
-      const forgePy = path.join(forgeDir, 'forge.py');
-      const terminal = vscode.window.createTerminal({
-        name: 'forge catalog',
-        cwd: workspaceRoot,
+      // Pedir query al usuario
+      const query = await vscode.window.showInputBox({
+        prompt: 'Buscar en el catálogo forge (MCP servers, profiles, frameworks, tools)',
+        placeHolder: 'ej: postgres, nextjs, laravel, playwright…',
       });
-      terminal.show();
-      terminal.sendText(`python3 "${forgePy}"`);
+      if (query === undefined) { return; }
+
+      const searchScript = path.join(forgeDir, 'scripts', 'aitmpl-search.py');
+
+      await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: 'forge: buscando…', cancellable: false },
+        async () => {
+          const args = query.trim() ? ['python3', searchScript, query.trim()]
+                                    : ['python3', searchScript, '--list-categories'];
+          const result = await runForgeCommand(args, workspaceRoot);
+
+          if (result.code !== 0 || !result.stdout.trim()) {
+            vscode.window.showWarningMessage(`forge: Sin resultados para "${query}".`);
+            return;
+          }
+
+          // Parsear resultados de texto → QuickPick items
+          const lines = result.stdout.split('\n');
+          const items: vscode.QuickPickItem[] = [];
+          let current: { label: string; detail: string; url: string } | null = null;
+
+          for (const line of lines) {
+            // Línea de título: " 1. nombre del item"
+            const titleMatch = line.match(/^\s+\d+\.\s+(.+)$/);
+            if (titleMatch) {
+              if (current) { items.push({ label: current.label, detail: current.detail, description: current.url }); }
+              current = { label: titleMatch[1].trim(), detail: '', url: '' };
+              continue;
+            }
+            if (!current) { continue; }
+            // URL
+            if (line.trim().startsWith('http')) { current.url = line.trim(); continue; }
+            // Descripción / tags (acumular en detail)
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('#')) {
+              current.detail += (current.detail ? ' ' : '') + trimmed;
+            }
+          }
+          if (current) { items.push({ label: current.label, detail: current.detail, description: current.url }); }
+
+          if (items.length === 0) {
+            vscode.window.showInformationMessage(`forge: Sin resultados para "${query}".`);
+            return;
+          }
+
+          const picked = await vscode.window.showQuickPick(items, {
+            title: `forge catalog — "${query}" (${items.length} resultados)`,
+            placeHolder: 'Selecciona para abrir la URL',
+            matchOnDetail: true,
+            matchOnDescription: true,
+          });
+
+          if (picked?.description) {
+            const openChoice = await vscode.window.showInformationMessage(
+              `${picked.label}`,
+              { modal: false },
+              'Abrir URL',
+              'Copiar URL'
+            );
+            if (openChoice === 'Abrir URL') {
+              vscode.env.openExternal(vscode.Uri.parse(picked.description));
+            } else if (openChoice === 'Copiar URL') {
+              vscode.env.clipboard.writeText(picked.description);
+              vscode.window.showInformationMessage('URL copiada al portapapeles.');
+            }
+          }
+        }
+      );
     })
   );
 
@@ -717,7 +796,7 @@ interface AuditSummary {
 
 async function refreshStatusBar(workspaceRoot: string, forgeDir: string): Promise<void> {
   const auditScript = path.join(forgeDir, 'scripts', 'forge-audit.py');
-  const result = await runForgeCommand(['python3', auditScript, '--json'], workspaceRoot);
+  const result = await runForgeCommand(['python3', auditScript, '--json', '--forge', forgeDir], workspaceRoot);
   try {
     const parsed = JSON.parse(result.stdout);
     const summary = parsed.summary as AuditSummary;
