@@ -11,35 +11,40 @@
     "Programming Languages"
   ],
   "activationEvents": [
-    "workspaceContains:project.yaml",
-    "workspaceContains:.agentic"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "forge.audit",
-        "title": "forge: Run Audit"
-      },
-      {
-        "command": "forge.auditAgent",
-        "title": "forge: Audit Specific Agent"
+        "command": "forge.openWizard",
+        "title": "forge: Setup Wizard",
+        "icon": "$(wand)"
       },
       {
         "command": "forge.init",
-        "title": "forge: Initialize Project"
+        "title": "forge: Initialize Agents",
+        "icon": "$(tools)"
       },
       {
-        "command": "forge.openWizard",
-        "title": "forge: Open Setup Wizard"
+        "command": "forge.audit",
+        "title": "forge: Run Audit",
+        "icon": "$(check)"
+      },
+      {
+        "command": "forge.auditAgent",
+        "title": "forge: Audit Specific Agent",
+        "icon": "$(person)"
       },
       {
         "command": "forge.searchCatalog",
-        "title": "forge: Search Catalog (MCP / Profiles)"
+        "title": "forge: Search Catalog (MCP / Profiles)",
+        "icon": "$(search)"
       },
       {
         "command": "forge.showStatus",
-        "title": "forge: Show Project Status"
+        "title": "forge: Show Project Status",
+        "icon": "$(info)"
       }
     ],
     "viewsContainers": {
@@ -54,14 +59,42 @@
     "views": {
       "forgeExplorer": [
         {
+          "id": "forgeActionsView",
+          "name": "Actions"
+        },
+        {
           "id": "forgeProjectView",
-          "name": "Project",
-          "when": "forge.active"
+          "name": "Project"
         },
         {
           "id": "forgeAgentsView",
-          "name": "Agents",
-          "when": "forge.active"
+          "name": "Agents"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "forgeProjectView",
+        "contents": "No se encontró project.yaml en este workspace.\n\nEjecuta el wizard para configurar forge:\n[$(wand) Setup Wizard](command:forge.openWizard)\n\nO si ya tenés forge instalado como submodule:\n[$(tools) Initialize Agents](command:forge.init)",
+        "when": "!forge.active"
+      },
+      {
+        "view": "forgeAgentsView",
+        "contents": "No hay agentes instalados en .claude/agents/.\n\nPrimero inicializa el proyecto:\n[$(tools) Initialize Agents](command:forge.init)",
+        "when": "forge.active"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "forge.audit",
+          "when": "view == forgeAgentsView",
+          "group": "navigation"
+        },
+        {
+          "command": "forge.openWizard",
+          "when": "view == forgeProjectView",
+          "group": "navigation"
         }
       ]
     },
