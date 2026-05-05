@@ -666,58 +666,74 @@ def run_audit(as_json: bool = False, forge_override=None, only=None):
     items_indexed: list[dict] = []
 
     if opps:
-        can_pick = selectable and sys.stdout.isatty() and not as_json and not only
-        hint = "  ingresá números para agregar" if can_pick else ""
-        print(f"\n{BOLD('OPORTUNIDADES')} {DIM(f'({len(opps)} disponibles{hint})')}")
-        print("─" * 60)
+        can_pick = bool(selectable) and sys.stdout.isatty() and not as_json and not only
 
-        profile_opps = [o for o in selectable if o["type"] == "profile"]
-        skill_opps   = [o for o in selectable if o["type"] == "skill"]
+        if can_pick:
+            # Sugerencias no-seleccionables: mostrar antes del TUI
+            if non_selectable:
+                print(f"\n{BOLD('OPORTUNIDADES')} {DIM(f'({len(opps)} disponibles)')}")
+                print("─" * 60)
+                print(f"\n  {DIM('─── Otras sugerencias ───────────────────────────────────')}")
+                type_labels_ns = {"integration": "Integración", "config": "Config", "wiki": "Wiki"}
+                for opp in non_selectable:
+                    label = DIM(f"[{type_labels_ns.get(opp['type'], opp['type'])}]")
+                    print(f"  {INFO('→')}  {label} {opp['msg']}")
+                    if "fix" in opp:
+                        print(f"       {DIM('→ ' + opp['fix'])}")
+            items_indexed = selectable
+            _two_panel_opp_picker(items_indexed, root)
+        else:
+            # Modo estático — CI, JSON, --only, no-TTY
+            print(f"\n{BOLD('OPORTUNIDADES')} {DIM(f'({len(opps)} disponibles)')}")
+            print("─" * 60)
 
-        def _wrap(text: str) -> str:
-            lines = _textwrap.wrap(text, width=66)
-            return ("\n" + " " * 7).join(lines)
+            profile_opps = [o for o in selectable if o["type"] == "profile"]
+            skill_opps   = [o for o in selectable if o["type"] == "skill"]
 
-        if profile_opps:
-            print(f"\n  {DIM('─── Profiles de stack ───────────────────────────────────')}")
-            for o in profile_opps:
-                idx = len(items_indexed) + 1
-                items_indexed.append(o)
-                slug = o["slug"]
-                info = _PROFILE_INFO.get(slug)
-                desc     = info[0] if info else ""
-                agents_l = info[1] if info else (o.get("msg", "").split("→ provee:")[-1].strip())
-                tag = DIM("[Profile]")
-                print(f"\n  {BOLD(f'[{idx}]')} {BOLD(slug):<28} {tag}")
-                if desc:
-                    print(f"       {_wrap(desc)}")
-                if agents_l:
-                    print(f"       {DIM('Agentes: ' + agents_l)}")
+            def _wrap(text: str) -> str:
+                lines = _textwrap.wrap(text, width=66)
+                return ("\n" + " " * 7).join(lines)
 
-        if skill_opps:
-            print(f"\n  {DIM('─── Skills disponibles ──────────────────────────────────')}")
-            for o in skill_opps:
-                idx = len(items_indexed) + 1
-                items_indexed.append(o)
-                slug = o["slug"]
-                info = _SKILL_INFO.get(slug)
-                what    = info[0] if info else o.get("msg", "")
-                benefit = info[1] if info else ""
-                trigger = info[2] if info else ""
-                tag = DIM(f"[Skill  {trigger}]") if trigger else DIM("[Skill]")
-                print(f"\n  {BOLD(f'[{idx}]')} {BOLD(slug):<28} {tag}")
-                print(f"       {_wrap(what)}")
-                if benefit:
-                    print(f"       {DIM(_wrap(benefit))}")
+            if profile_opps:
+                print(f"\n  {DIM('─── Profiles de stack ───────────────────────────────────')}")
+                for o in profile_opps:
+                    idx = len(items_indexed) + 1
+                    items_indexed.append(o)
+                    slug = o["slug"]
+                    info = _PROFILE_INFO.get(slug)
+                    desc     = info[0] if info else ""
+                    agents_l = info[1] if info else (o.get("msg", "").split("→ provee:")[-1].strip())
+                    tag = DIM("[Profile]")
+                    print(f"\n  {BOLD(f'[{idx}]')} {BOLD(slug):<28} {tag}")
+                    if desc:
+                        print(f"       {_wrap(desc)}")
+                    if agents_l:
+                        print(f"       {DIM('Agentes: ' + agents_l)}")
 
-        if non_selectable:
-            print(f"\n  {DIM('─── Otras sugerencias ───────────────────────────────────')}")
-            type_labels_ns = {"integration": "Integración", "config": "Config", "wiki": "Wiki"}
-            for opp in non_selectable:
-                label = DIM(f"[{type_labels_ns.get(opp['type'], opp['type'])}]")
-                print(f"  {INFO('→')}  {label} {opp['msg']}")
-                if "fix" in opp:
-                    print(f"       {DIM('→ ' + opp['fix'])}")
+            if skill_opps:
+                print(f"\n  {DIM('─── Skills disponibles ──────────────────────────────────')}")
+                for o in skill_opps:
+                    idx = len(items_indexed) + 1
+                    items_indexed.append(o)
+                    slug = o["slug"]
+                    info = _SKILL_INFO.get(slug)
+                    what    = info[0] if info else o.get("msg", "")
+                    benefit = info[1] if info else ""
+                    trigger = info[2] if info else ""
+                    tag = DIM(f"[Skill  {trigger}]") if trigger else DIM("[Skill]")
+                    print(f"\n  {BOLD(f'[{idx}]')} {BOLD(slug):<28} {tag}")
+                    print(f"       {_wrap(what)}")
+                    if benefit:
+                        print(f"       {DIM(_wrap(benefit))}")
+
+            if non_selectable:
+                print(f"\n  {DIM('─── Otras sugerencias ───────────────────────────────────')}")
+                type_labels_ns = {"integration": "Integración", "config": "Config", "wiki": "Wiki"}
+                for opp in non_selectable:
+                    label = DIM(f"[{type_labels_ns.get(opp['type'], opp['type'])}]")
+                    print(f"  {INFO('→')}  {label} {opp['msg']}")
+                    if "fix" in opp:
+                        print(f"       {DIM('→ ' + opp['fix'])}")
 
     # Huérfanos
     if orphans:
@@ -749,17 +765,13 @@ def run_audit(as_json: bool = False, forge_override=None, only=None):
     print(DIM("  Nota: similitud < 0.80 puede indicar personalización intencional, no solo desactualización."))
     print()
 
-    # Picker integrado en la sección de oportunidades (ya mostrada arriba)
-    if items_indexed and sys.stdout.isatty() and not as_json and not only:
-        _interactive_opp_picker(items_indexed, root)
 
 
-def _interactive_opp_picker(items_indexed: list, root: Path) -> None:
-    """Lee la selección del usuario y aplica a project.yaml (lista ya visible arriba)."""
+def _simple_opp_picker(items_indexed: list, root: Path) -> None:
+    """Fallback picker lineal cuando no hay termios (Windows / no-TTY)."""
     total = len(items_indexed)
     hint  = f"1-{total}" if total > 1 else "1"
     print(f"  {DIM(f'Seleccioná [{hint}], separados por coma  ·  a=todos  ·  Enter=saltear')}")
-
     try:
         sys.stdout.write("  > ")
         sys.stdout.flush()
@@ -767,10 +779,8 @@ def _interactive_opp_picker(items_indexed: list, root: Path) -> None:
     except (EOFError, KeyboardInterrupt):
         print()
         return
-
     if not raw or raw.lower() in ("n", ""):
         return
-
     if raw.lower() == "a":
         selected = items_indexed
     else:
@@ -781,14 +791,189 @@ def _interactive_opp_picker(items_indexed: list, root: Path) -> None:
                 idx = int(part)
                 if 1 <= idx <= len(items_indexed):
                     selected.append(items_indexed[idx - 1])
-
     if not selected:
         print(DIM("  Sin cambios."))
         return
-
     profiles_to_add = [o["slug"] for o in selected if o["type"] == "profile"]
     skills_to_add   = [o["slug"] for o in selected if o["type"] == "skill"]
     _apply_to_project_yaml(root, profiles_to_add, skills_to_add)
+
+
+def _two_panel_opp_picker(items_indexed: list, root: Path) -> None:
+    """Picker TUI de dos paneles: lista izquierda | detalle derecho."""
+    import shutil as _shutil
+
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        _simple_opp_picker(items_indexed, root)
+        return
+    try:
+        import termios as _termios
+        import tty as _tty
+    except ImportError:
+        _simple_opp_picker(items_indexed, root)
+        return
+
+    cols = _shutil.get_terminal_size(fallback=(80, 24)).columns
+    if cols < 60:
+        _simple_opp_picker(items_indexed, root)
+        return
+
+    # Dimensiones
+    left_inner  = min(36, max(28, (cols - 3) * 4 // 10))
+    right_inner = cols - left_inner - 5   # │ + sp + │ + sp + left border
+    panel_rows  = min(len(items_indexed) + 1, max(6, 14))
+
+    # Estado
+    selected: set[int] = set()
+    cursor = 0
+
+    _HIDE = "\033[?25l"
+    _SHOW = "\033[?25h"
+    _CY   = "\033[36m"
+    _BD   = "\033[1m"
+    _DM   = "\033[2m"
+    _GN   = "\033[32m"
+    _RST  = "\033[0m"
+
+    def _vlen(s: str) -> int:
+        return len(re.sub(r'\033\[[0-9;]*m', '', s))
+
+    def _pad(s: str, w: int) -> str:
+        v = _vlen(s)
+        if v > w:
+            plain = re.sub(r'\033\[[0-9;]*m', '', s)
+            return plain[:w - 1] + "…"
+        return s + " " * (w - v)
+
+    def _detail(item: dict) -> list:
+        lines: list[str] = []
+        itype = item.get("type", "")
+        slug  = item.get("slug", "")
+        w     = right_inner - 2
+        if itype == "skill":
+            info = _SKILL_INFO.get(slug)
+            if info:
+                what, benefit, trigger = info
+                lines.append(f"{_DM}Skill  {trigger}{_RST}")
+                lines.append("")
+                lines += [f"  {ln}" for ln in _textwrap.wrap(what, w - 2)]
+                lines.append("")
+                lines.append(f"{_DM}Qué ganás:{_RST}")
+                lines += [f"  {ln}" for ln in _textwrap.wrap(benefit, w - 2)]
+            else:
+                lines += _textwrap.wrap(item.get("msg", ""), w)
+        elif itype == "profile":
+            info = _PROFILE_INFO.get(slug)
+            if info:
+                desc, agents_l = info
+                lines.append(f"{_DM}Profile{_RST}")
+                lines.append("")
+                lines += _textwrap.wrap(desc, w)
+                lines.append("")
+                lines.append(f"{_DM}Agentes:{_RST}")
+                for a in agents_l.split(" · "):
+                    lines.append(f"  · {a.strip()}")
+            else:
+                lines += _textwrap.wrap(item.get("msg", ""), w)
+        return lines
+
+    def _draw() -> None:
+        sys.stdout.write("\033[2J\033[H")
+
+        n_sel     = len(selected)
+        n_prof    = sum(1 for o in items_indexed if o.get("type") == "profile")
+        n_skill   = sum(1 for o in items_indexed if o.get("type") == "skill")
+        hdr       = f"Oportunidades — {n_prof} profile(s)  ·  {n_skill} skill(s)"
+        sys.stdout.write(f"\n  {_BD}{hdr}{_RST}\n\n")
+
+        l_border = "─" * left_inner
+        r_border = "─" * right_inner
+        cur_item = items_indexed[cursor]
+        cur_slug = cur_item.get("slug", "?")
+        sys.stdout.write(f"  ╭{l_border}╮ ╭─ {_BD}{_pad(cur_slug, right_inner - 4)}{_RST} ─╮\n")
+
+        vis_start = max(0, cursor - panel_rows // 2)
+        vis_start = min(vis_start, max(0, len(items_indexed) - panel_rows))
+        detail    = (_detail(cur_item) + [""] * panel_rows)[:panel_rows]
+
+        for row in range(panel_rows):
+            item_idx = vis_start + row
+            if item_idx < len(items_indexed):
+                item  = items_indexed[item_idx]
+                slug  = item.get("slug", "")
+                itype = item.get("type", "")
+                tag   = "PRF" if itype == "profile" else "SKL"
+                chk   = f"{_GN}☑{_RST}" if item_idx in selected else "☐"
+                if item_idx == cursor:
+                    left_raw = f"{_CY}❯{_RST} {chk} {_DM}{tag}{_RST} {_BD}{slug}{_RST}"
+                else:
+                    left_raw = f"  {chk} {_DM}{tag}{_RST} {slug}"
+            else:
+                left_raw = ""
+
+            right_raw  = detail[row] if row < len(detail) else ""
+            sys.stdout.write(f"  │{_pad(left_raw, left_inner)}│ │{_pad(right_raw, right_inner)}│\n")
+
+        sys.stdout.write(f"  ╰{l_border}╯ ╰{r_border}╯\n")
+
+        sel_slugs   = [items_indexed[i].get("slug", "") for i in sorted(selected)]
+        sel_display = ", ".join(sel_slugs) if sel_slugs else "ninguno"
+        sel_label   = f"{n_sel} seleccionado(s)" if n_sel else "Ninguno seleccionado"
+        sys.stdout.write(f"\n  {_DM}{sel_label}:{_RST} {_DM}{sel_display}{_RST}\n")
+        sys.stdout.write(f"  {_DM}↑↓ navegar   Space seleccionar   a todos   Enter aplicar   q saltear{_RST}\n")
+        sys.stdout.flush()
+
+    def _getch() -> str:
+        fd  = sys.stdin.fileno()
+        old = _termios.tcgetattr(fd)
+        try:
+            _tty.setraw(fd)
+            ch = sys.stdin.read(1)
+            if ch == "\x1b":
+                ch2 = sys.stdin.read(1)
+                ch3 = sys.stdin.read(1)
+                return f"\x1b{ch2}{ch3}"
+            return ch
+        finally:
+            _termios.tcsetattr(fd, _termios.TCSADRAIN, old)
+
+    sys.stdout.write(_HIDE)
+    confirmed = False
+    try:
+        while True:
+            _draw()
+            ch = _getch()
+            if ch in ("\x03", "q"):
+                break
+            elif ch == "\x1b[A":
+                cursor = max(0, cursor - 1)
+            elif ch == "\x1b[B":
+                cursor = min(len(items_indexed) - 1, cursor + 1)
+            elif ch == " ":
+                if cursor in selected:
+                    selected.discard(cursor)
+                else:
+                    selected.add(cursor)
+            elif ch.lower() == "a":
+                if len(selected) == len(items_indexed):
+                    selected.clear()
+                else:
+                    selected = set(range(len(items_indexed)))
+            elif ch in ("\r", "\n"):
+                confirmed = True
+                break
+    finally:
+        sys.stdout.write(_SHOW)
+        sys.stdout.write("\033[2J\033[H")
+        sys.stdout.flush()
+
+    if confirmed and selected:
+        sel_items = [items_indexed[i] for i in sorted(selected)]
+        profiles_to_add = [o["slug"] for o in sel_items if o["type"] == "profile"]
+        skills_to_add   = [o["slug"] for o in sel_items if o["type"] == "skill"]
+        _apply_to_project_yaml(root, profiles_to_add, skills_to_add)
+    else:
+        print(DIM("  Sin cambios."))
 
 
 def _apply_to_project_yaml(root: Path, profiles: list[str], skills: list[str]) -> None:
