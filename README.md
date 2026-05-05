@@ -9,6 +9,8 @@ Un único `project.yaml` genera la configuración correcta para cada herramienta
 
 Ver [CHANGELOG.md](CHANGELOG.md) para el historial de versiones.
 
+![forge CLI](docs/assets/cli-preview.png)
+
 ---
 
 ## Extensión VS Code
