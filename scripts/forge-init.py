@@ -56,6 +56,46 @@ if ONLY_AGENT is None and "--only" in sys.argv:
     if _idx + 1 < len(sys.argv):
         ONLY_AGENT = sys.argv[_idx + 1].strip()
 
+# Mapeo agente → clave en paths/agent_paths del project.yaml
+_AGENT_SCOPE_KEY = {
+    "api-engineer":         "api",
+    "backend-engineer":     "api",
+    "frontend-engineer":    "frontend",
+    "admin-engineer":       "admin",
+    "mobile-engineer":      "mobile",
+    "scanner-engineer":     "scanner",
+    "test-engineer":        "tests",
+    "docs-writer":          "specs",
+    "migration-specialist": "migrations",
+    "wp-engineer":          "frontend",
+    "divi-engineer":        "frontend",
+    "elementor-engineer":   "frontend",
+}
+
+
+def _get_agent_scope(name: str, config: dict) -> str | None:
+    """Retorna el path de scope para el agente según project.yaml, o None si no aplica."""
+    key = _AGENT_SCOPE_KEY.get(name)
+    if not key:
+        return None
+    agent_paths = config.get("agent_paths", {})
+    paths = config.get("paths", {})
+    return (agent_paths or {}).get(key) or (paths or {}).get(key) or None
+
+
+def _inject_scope(content: str, scope_path: str) -> str:
+    """Inyecta scope: en el frontmatter YAML del agente si no está presente."""
+    lines = content.split("\n")
+    if not lines or lines[0].strip() != "---":
+        return content
+    end = next((i for i, ln in enumerate(lines[1:], 1) if ln.strip() == "---"), -1)
+    if end == -1:
+        return content
+    if any(ln.startswith("scope:") for ln in lines[1:end]):
+        return content
+    lines.insert(end, f'scope: "{scope_path}"')
+    return "\n".join(lines)
+
 
 def find_project_root() -> Path:
     here = Path.cwd()
@@ -98,8 +138,8 @@ def get_all_agent_names(config: dict) -> tuple[list[str], list[str], list[str], 
     return active, compliance, specialized, profiles
 
 
-def install_agent(src: Path, dst: Path, name: str, source_label: str) -> str:
-    """Copia un agente de src a dst. Respeta --force y --only. Retorna el status."""
+def install_agent(src: Path, dst: Path, name: str, source_label: str, scope_path: str | None = None) -> str:
+    """Copia un agente de src a dst, inyectando scope si corresponde. Respeta --force y --only."""
     if not src.exists():
         return "MISS"
     if ONLY_AGENT and name != ONLY_AGENT:
@@ -107,7 +147,10 @@ def install_agent(src: Path, dst: Path, name: str, source_label: str) -> str:
     already_existed = dst.exists()
     if already_existed and not FORCE:
         return "KEEP"
-    shutil.copy2(src, dst)
+    content = src.read_text(encoding="utf-8")
+    if scope_path:
+        content = _inject_scope(content, scope_path)
+    dst.write_text(content, encoding="utf-8")
     return "UPDATE" if already_existed else "OK"
 
 
@@ -153,9 +196,12 @@ def install_claude_commands(root: Path, forge: Path, config: dict):
 
     # Mapeo skill → comando(s) que provee
     skill_commands = {
-        "wiki-ingest": ["wiki-ingest.md"],
-        "wiki-query":  ["wiki-query.md"],
-        "wiki-lint":   ["wiki-lint.md"],
+        "new-feature":    ["new-feature.md"],
+        "local2prod":     ["deploy-check.md"],
+        "security-audit": ["review.md"],
+        "wiki-ingest":    ["wiki-ingest.md"],
+        "wiki-query":     ["wiki-query.md"],
+        "wiki-lint":      ["wiki-lint.md"],
     }
 
     installed = []
@@ -178,6 +224,70 @@ def install_claude_commands(root: Path, forge: Path, config: dict):
         print(f"  Slash commands instalados: {', '.join(f'/{f[:-3]}' for f in installed)}")
 
 
+def _generate_claude_md(root: Path, forge: Path, config: dict):
+    """Genera CLAUDE.md en la raíz usando el adapter de claude-code."""
+    import importlib.util
+    generator_path = forge / "adapters" / "claude-code" / "generate-claude-md.py"
+    if not generator_path.exists():
+        print(f"  [MISS] adapters/claude-code/generate-claude-md.py no encontrado en forge")
+        return
+    spec = importlib.util.spec_from_file_location("_gen_claude_md", generator_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    output_path = root / "CLAUDE.md"
+    already_existed = output_path.exists()
+    if already_existed and not FORCE:
+        print(f"  [KEEP] CLAUDE.md — ya existe (--force para regenerar)")
+        return
+    content = mod.generate_claude_md(config)
+    output_path.write_text(content, encoding="utf-8")
+    action = "UPD" if already_existed else "OK"
+    print(f"  [{action}]   CLAUDE.md — generado desde project.yaml")
+
+
+def _generate_settings_json(root: Path, config: dict):
+    """Genera .claude/settings.json con permisos según el stack del proyecto."""
+    import json
+    settings_path = root / ".claude" / "settings.json"
+    if settings_path.exists() and not FORCE:
+        print(f"  [KEEP] .claude/settings.json — ya existe (--force para regenerar)")
+        return
+    language = config.get("project", {}).get("language", "typescript")
+    stack = config.get("stack", {})
+    backend = (stack.get("backend") or "").lower()
+    database = (stack.get("database") or "").lower()
+    profiles = config.get("agents", {}).get("profiles", [])
+    allow: list[str] = []
+    if language in ("typescript", "javascript"):
+        allow += ["Bash(pnpm *)", "Bash(npm *)", "Bash(npx *)", "Bash(node *)"]
+        if "prisma" in backend or any("prisma" in p for p in profiles):
+            allow.append("Bash(npx prisma *)")
+        if "drizzle" in backend or any("drizzle" in p for p in profiles):
+            allow.append("Bash(npx drizzle-kit *)")
+    elif language == "python":
+        allow += ["Bash(python3 *)", "Bash(pip3 *)", "Bash(uv *)", "Bash(pytest *)", "Bash(ruff *)"]
+        if "django" in backend or any("django" in p for p in profiles):
+            allow.append("Bash(python3 manage.py *)")
+        if "fastapi" in backend:
+            allow.append("Bash(uvicorn *)")
+    elif language == "ruby":
+        allow += ["Bash(bundle *)", "Bash(rails *)", "Bash(rake *)", "Bash(rspec *)"]
+    elif language == "go":
+        allow += ["Bash(go *)", "Bash(golangci-lint *)"]
+    elif language == "php":
+        allow += ["Bash(composer *)", "Bash(php *)", "Bash(php artisan *)"]
+    if database == "postgresql":
+        allow += ["Bash(psql *)", "Bash(pg_dump *)"]
+    allow += ["Bash(git status)", "Bash(git diff *)", "Bash(git log *)", "Bash(git branch *)"]
+    settings = {"permissions": {"allow": sorted(set(allow))}}
+    already_existed = settings_path.exists()
+    with open(settings_path, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    action = "UPD" if already_existed else "OK"
+    print(f"  [{action}]   .claude/settings.json ({len(settings['permissions']['allow'])} permisos)")
+
+
 def init_claude_code(root: Path, forge: Path, config: dict):
     """Instala agentes de forge en .claude/agents/ (sin sobreescribir por defecto) y genera AGENTS.md."""
     agents_dir = root / ".claude" / "agents"
@@ -198,7 +308,8 @@ def init_claude_code(root: Path, forge: Path, config: dict):
         for src in sorted(profile_agents_dir.glob("*.md")):
             name = src.stem
             dst = agents_dir / src.name
-            status = install_agent(src, dst, name, f"profile:{profile}")
+            scope = _get_agent_scope(name, config)
+            status = install_agent(src, dst, name, f"profile:{profile}", scope)
             profile_provided.add(name)
             _print_agent_status(status, name, f"profiles/{profile}/agents/")
             _record_status(stats, status, name)
@@ -225,7 +336,8 @@ def init_claude_code(root: Path, forge: Path, config: dict):
     for agent_name in sorted(core_only):
         src = forge / "core" / "agents" / f"{agent_name}.md"
         dst = agents_dir / f"{agent_name}.md"
-        status = install_agent(src, dst, agent_name, "core")
+        scope = _get_agent_scope(agent_name, config)
+        status = install_agent(src, dst, agent_name, "core", scope)
         _print_agent_status(status, agent_name, "core/agents/")
         _record_status(stats, status, agent_name)
 
@@ -452,6 +564,10 @@ def main():
         install_claude_commands(root, forge, config)
         print("\n  Wiki:")
         init_wiki(root, forge, config)
+        print("\n  CLAUDE.md:")
+        _generate_claude_md(root, forge, config)
+        print("\n  settings.json:")
+        _generate_settings_json(root, config)
 
     if tool in ("opencode", "all"):
         print(f"\n--- OpenCode ---")

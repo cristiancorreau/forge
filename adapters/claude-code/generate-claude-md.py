@@ -51,6 +51,46 @@ def _render_phases(config: dict) -> str:
     return "\n".join(lines)
 
 
+_AGENT_TRIGGER = {
+    "orchestrator":        ("tareas multi-agente, análisis de >3 archivos, descomposición de features completas", None),
+    "backend-engineer":    ("endpoints, middleware, validaciones, lógica de negocio", "api"),
+    "api-engineer":        ("endpoints REST, middleware, validaciones, migraciones de BD", "api"),
+    "frontend-engineer":   ("componentes UI, páginas, estilos, integración con API", "frontend"),
+    "admin-engineer":      ("UI de gestión interna, dashboards de admin", "admin"),
+    "mobile-engineer":     ("pantallas móviles, navegación, stores de estado", "mobile"),
+    "fullstack-engineer":  ("features full-stack end-to-end que abarcan backend y frontend", None),
+    "test-engineer":       ("tests unitarios, integración, E2E — nunca código de producción", "tests"),
+    "docs-writer":         ("specs, ADRs, READMEs, documentación — nunca código de producción", "specs"),
+    "compliance-reviewer": ("revisión de PRs con PII, consentimientos, logs de auditoría", None),
+    "security-auditor":    ("auditoría de vulnerabilidades, revisión de dependencias, pentest", None),
+    "migration-specialist": ("migraciones de versión de framework (ej: L6→L13)", "migrations"),
+    "wp-engineer":         ("temas WordPress, FSE, Gutenberg, child themes", "frontend"),
+    "divi-engineer":       ("layouts Divi 5, módulos custom, Divi Builder", "frontend"),
+    "elementor-engineer":  ("templates Elementor Pro, widgets custom", "frontend"),
+    "scanner-engineer":    ("scraping, crawling, extracción estructurada de datos", "scanner"),
+}
+
+
+def _build_agent_scope_table(agents_cfg: dict, paths: dict) -> str:
+    active = agents_cfg.get("active", [])
+    compliance = agents_cfg.get("compliance", [])
+    agent_paths = {**(paths or {})}
+    rows = []
+    for agent in active + compliance:
+        trigger, path_key = _AGENT_TRIGGER.get(agent, ("implementación", None))
+        scope = agent_paths.get(path_key) if path_key else None
+        scope_str = f"`{scope}`" if scope else "`/`"
+        rows.append(f"| `{agent}` | {scope_str} | {trigger} |")
+    if not rows:
+        return ""
+    header = (
+        "## Agentes y su scope\n\n"
+        "| Agente | Scope | Cuándo usarlo |\n"
+        "|--------|-------|---------------|\n"
+    )
+    return header + "\n".join(rows) + "\n\n> Invocar el agente del scope correcto, no el orchestrator, para tareas acotadas.\n\n"
+
+
 def generate_claude_md(config: dict) -> str:
     proj = config.get("project", {})
     stack = config.get("stack", {})
@@ -68,6 +108,7 @@ def generate_claude_md(config: dict) -> str:
     frameworks = compliance_cfg.get("frameworks", [])
     specs_path = paths.get("specs", "docs/specs")
     progress_path = paths.get("progress", "docs/progress.html")
+    agent_scope_section = _build_agent_scope_table(agents_cfg, paths)
 
     # Agentes activos
     active = agents_cfg.get("active", [])
@@ -141,7 +182,7 @@ Reglas no-negociables:
 - **Base de datos**: {database}
 - **Testing**: {", ".join(stack.get("testing", []))}
 
-## Estructura
+{agent_scope_section}## Estructura
 
 ```
 {proj.get("slug", "proyecto")}/

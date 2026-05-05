@@ -92,6 +92,15 @@ paths:
   migrations: null               # "packages/api/migrations" | "db/migrate" | null
   tests: null                    # "tests/" | "__tests__/" | null
 
+# Paths de scope por agente — se inyectan en el frontmatter de cada agente al hacer forge-init
+# Permite que Claude Code sepa exactamente qué directorio le corresponde a cada agente
+agent_paths:
+  api: null                      # "src/api" | "packages/api" | "app/Http" | null
+  frontend: null                 # "src/app" | "packages/web" | "resources/js" | null
+  admin: null                    # "packages/admin" | "src/admin" | null
+  mobile: null                   # "apps/mobile" | null
+  scanner: null                  # "packages/scanner" | "src/crawlers" | null
+
 # Integraciones (solo configurar si están activas en skills.integrations)
 integrations:
   obsidian:
