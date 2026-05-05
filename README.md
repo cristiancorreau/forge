@@ -21,7 +21,7 @@ forge tiene una extensión oficial para VS Code que provee un panel lateral con 
 # Desde la raíz del repo forge
 cd vscode-extension
 npx vsce package --no-dependencies
-code --install-extension forge-agent-framework-0.1.2.vsix
+code --install-extension forge-agent-framework-0.2.1.vsix
 ```
 
 Después de instalar, aparece el ícono **forge** (robot) en la barra de actividad izquierda.
@@ -83,7 +83,7 @@ En `Settings > forge`:
 ```bash
 # 1. Agregar forge al proyecto como submodule (fijar a tag estable recomendado)
 git submodule add https://github.com/socialwebcl/forge .agentic
-git -C .agentic checkout v2.0.2   # fijar a versión estable, no seguir main
+git -C .agentic checkout v0.2.2   # fijar a versión estable, no seguir main
 
 # 2. Instalar dependencias (solo pyyaml)
 pip3 install -r .agentic/requirements.txt
@@ -124,7 +124,7 @@ python3 .agentic/forge.py
 
 ```
   ┌──────────────────────────────────────────────┐
-  │ forge v2.0.2  —  Agentic Development Framework │
+  │ forge v0.2.2  —  Agentic Development Framework │
   └──────────────────────────────────────────────┘
 
   ¿Qué quieres hacer?

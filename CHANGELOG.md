@@ -7,7 +7,32 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
-## [2.0.2] — 2026-05-04
+## [0.2.2] — 2026-05-05
+
+### Agregado
+- Picker TUI de dos paneles en audit: lista navegable (izquierda) + detalle del ítem (derecha)
+- `forge-init.py`: genera CLAUDE.md automáticamente desde el adapter de claude-code
+- `forge-init.py`: inyecta `scope:` en el frontmatter de cada agente desde `agent_paths` en project.yaml
+- `forge-init.py`: genera `.claude/settings.json` con `permissions.allow` según el stack del proyecto
+- Slash commands nuevos: `/new-feature`, `/deploy-check`, `/review` instalados automáticamente por forge-init
+- CLI: opción "Regenerar CLAUDE.md — sin reinstalar agentes" en el submenú de init
+- Extensión VS Code: comando `forge: Regenerate CLAUDE.md` con icono en el panel lateral
+- `generate-claude-md.py`: tabla "Agentes y su scope" en el CLAUDE.md generado
+- `generate-claude-md.py`: soporte a `--force` para bypass del prompt interactivo
+- `project.yaml.tpl`: sección `agent_paths` con keys api, frontend, admin, mobile, scanner
+- Extensión VS Code: `showOpportunitiesPicker()` multi-select QuickPick con `canPickMany: true`
+- Extensión VS Code: context states `forge.installed` / `forge.active` vía `setContext`
+- Extensión VS Code: `AuditOpportunity` interface para parseo estructurado del JSON de audit
+
+### Cambiado
+- Picker de oportunidades: reemplaza lista estática + prompt de texto por TUI de dos paneles
+- CLI `menu_init()`: descripciones actualizadas mencionando settings.json y slash commands
+- `ForgeActionsProvider`: incluye "Regenerate CLAUDE.md" en el panel de acciones
+- Fallback a `_simple_opp_picker` en Windows, terminal <60 cols o modo no-TTY/CI
+
+---
+
+## [0.2.1] — 2026-05-04
 
 ### Agregado
 - Profile `laravel`: agentes `api-engineer`, `fullstack-engineer`, `migration-specialist` con ruta completa L6→L13
@@ -47,7 +72,7 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
-## [2.0.0] — 2026-05-03
+## [0.2.0] — 2026-05-03
 
 ### Agregado
 - Profiles: `django`, `go-gin`, `sveltekit`, `vuenuxt`, `astro`
@@ -62,6 +87,6 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ## Convenciones de versioning
 
-- **MAJOR** (`X.0.0`): breaking changes en `project.yaml`, estructura de agentes, o adapters
-- **MINOR** (`2.X.0`): profiles nuevos, skills nuevos, features de CLI o extensión
-- **PATCH** (`2.0.X`): bugfixes, documentación, mejoras de UX sin cambios de estructura
+- **MAJOR** (`1.0.0`): breaking changes en `project.yaml`, estructura de agentes, o adapters
+- **MINOR** (`0.X.0`): profiles nuevos, skills nuevos, features de CLI o extensión
+- **PATCH** (`0.2.X`): bugfixes, documentación, mejoras de UX sin cambios de estructura
