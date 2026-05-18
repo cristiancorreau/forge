@@ -1,0 +1,274 @@
+{
+  "name": "forge",
+  "version": "0.2.2",
+  "description": "Agentic development framework for Claude Code",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/socialwebcl/forge",
+  "layers": {
+    "memory": {
+      "description": "Project knowledge base — project.yaml as single source of truth",
+      "files": ["templates/project.yaml.tpl"]
+    },
+    "knowledge": {
+      "description": "Agent definitions and stack-specific profiles",
+      "files": [
+        "core/agents/",
+        "profiles/"
+      ]
+    },
+    "guardrail": {
+      "description": "Compliance, security and quality enforcement agents",
+      "files": [
+        "core/agents/compliance-reviewer.md",
+        "core/agents/security-auditor.md"
+      ]
+    },
+    "delegation": {
+      "description": "Orchestration and skill dispatch",
+      "files": [
+        "core/agents/orchestrator.md",
+        "core/skills/"
+      ]
+    },
+    "distribution": {
+      "description": "Adapter layer — runtime-specific command and config generation",
+      "files": [
+        "adapters/claude-code/",
+        "adapters/opencode/",
+        "adapters/kiro/",
+        "adapters/codex/"
+      ]
+    }
+  },
+  "agents": [
+    {
+      "id": "orchestrator",
+      "tier": 1,
+      "file": "core/agents/orchestrator.md",
+      "description": "Coordinates agents and decomposes tasks"
+    },
+    {
+      "id": "backend-engineer",
+      "tier": 1,
+      "file": "core/agents/backend-engineer.md",
+      "description": "API, database, business logic"
+    },
+    {
+      "id": "frontend-engineer",
+      "tier": 1,
+      "file": "core/agents/frontend-engineer.md",
+      "description": "UI, components, API integration"
+    },
+    {
+      "id": "test-engineer",
+      "tier": 1,
+      "file": "core/agents/test-engineer.md",
+      "description": "Unit, integration and E2E testing"
+    },
+    {
+      "id": "docs-writer",
+      "tier": 1,
+      "file": "core/agents/docs-writer.md",
+      "description": "Documentation, specs, ADRs"
+    },
+    {
+      "id": "compliance-reviewer",
+      "tier": 1,
+      "file": "core/agents/compliance-reviewer.md",
+      "description": "Regulatory framework review (GDPR, LGPD, CCPA)"
+    },
+    {
+      "id": "security-auditor",
+      "tier": 1,
+      "file": "core/agents/security-auditor.md",
+      "description": "Vulnerability auditing"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "astro",
+      "stack": "Astro + Tailwind + TypeScript",
+      "agents": ["frontend-engineer"]
+    },
+    {
+      "id": "django",
+      "stack": "Django 4.x + Django REST Framework",
+      "agents": ["api-engineer"]
+    },
+    {
+      "id": "expo",
+      "stack": "React Native / Expo",
+      "agents": ["mobile-engineer"]
+    },
+    {
+      "id": "express",
+      "stack": "Express + Node.js",
+      "agents": ["api-engineer"]
+    },
+    {
+      "id": "fastapi",
+      "stack": "FastAPI + Python",
+      "agents": ["api-engineer"]
+    },
+    {
+      "id": "go-gin",
+      "stack": "Go + Gin + sqlc",
+      "agents": ["api-engineer"]
+    },
+    {
+      "id": "hono-drizzle",
+      "stack": "Hono + Drizzle + TypeScript",
+      "agents": ["api-engineer"]
+    },
+    {
+      "id": "laravel",
+      "stack": "Laravel + PHP",
+      "agents": ["api-engineer", "fullstack-engineer", "migration-specialist"]
+    },
+    {
+      "id": "nestjs",
+      "stack": "NestJS + TypeScript",
+      "agents": ["api-engineer"]
+    },
+    {
+      "id": "nextjs-admin",
+      "stack": "Next.js 15 + shadcn/ui",
+      "agents": ["admin-engineer"]
+    },
+    {
+      "id": "playwright-crawler",
+      "stack": "Playwright + scraping/crawling",
+      "agents": ["scanner-engineer"]
+    },
+    {
+      "id": "rails",
+      "stack": "Ruby on Rails",
+      "agents": ["fullstack-engineer"]
+    },
+    {
+      "id": "sveltekit",
+      "stack": "SvelteKit",
+      "agents": ["frontend-engineer"]
+    },
+    {
+      "id": "vuenuxt",
+      "stack": "Nuxt 3 + Vue 3 + Pinia",
+      "agents": ["frontend-engineer"]
+    },
+    {
+      "id": "wordpress",
+      "stack": "WordPress + Divi/Elementor",
+      "agents": ["wp-engineer", "divi-engineer", "elementor-engineer"]
+    }
+  ],
+  "skills": [
+    {
+      "id": "aitmpl-search",
+      "dir": "core/skills/aitmpl-search",
+      "description": "Search curated MCP and agent template catalog"
+    },
+    {
+      "id": "browser-test",
+      "dir": "core/skills/browser-test",
+      "description": "Browser-based E2E testing via agent-browser"
+    },
+    {
+      "id": "db-migrate",
+      "dir": "core/skills/db-migrate",
+      "description": "Database migration orchestration"
+    },
+    {
+      "id": "local2prod",
+      "dir": "core/skills/local2prod",
+      "description": "Automated deploy pipeline validation"
+    },
+    {
+      "id": "new-feature",
+      "dir": "core/skills/new-feature",
+      "description": "Feature implementation orchestration"
+    },
+    {
+      "id": "obsidian-sync",
+      "dir": "core/skills/obsidian-sync",
+      "description": "Obsidian vault sync via Local REST API"
+    },
+    {
+      "id": "phase-kickoff",
+      "dir": "core/skills/phase-kickoff",
+      "description": "Sprint phase kickoff and spec distribution"
+    },
+    {
+      "id": "security-audit",
+      "dir": "core/skills/security-audit",
+      "description": "Security vulnerability auditing"
+    },
+    {
+      "id": "spec",
+      "dir": "core/skills/spec",
+      "description": "Spec generation and management"
+    },
+    {
+      "id": "wiki-ingest",
+      "dir": "core/skills/wiki-ingest",
+      "description": "Ingest documents into project wiki"
+    },
+    {
+      "id": "wiki-lint",
+      "dir": "core/skills/wiki-lint",
+      "description": "Lint and validate wiki documents"
+    },
+    {
+      "id": "wiki-query",
+      "dir": "core/skills/wiki-query",
+      "description": "Query the project knowledge base"
+    }
+  ],
+  "commands": [
+    {
+      "id": "deploy-check",
+      "file": "adapters/claude-code/commands/deploy-check.md",
+      "slash": "/deploy-check"
+    },
+    {
+      "id": "new-feature",
+      "file": "adapters/claude-code/commands/new-feature.md",
+      "slash": "/new-feature"
+    },
+    {
+      "id": "review",
+      "file": "adapters/claude-code/commands/review.md",
+      "slash": "/review"
+    },
+    {
+      "id": "wiki-ingest",
+      "file": "adapters/claude-code/commands/wiki-ingest.md",
+      "slash": "/wiki-ingest"
+    },
+    {
+      "id": "wiki-lint",
+      "file": "adapters/claude-code/commands/wiki-lint.md",
+      "slash": "/wiki-lint"
+    },
+    {
+      "id": "wiki-query",
+      "file": "adapters/claude-code/commands/wiki-query.md",
+      "slash": "/wiki-query"
+    }
+  ],
+  "hooks": [
+    {
+      "id": "pre-commit",
+      "file": "hooks/pre-commit",
+      "trigger": "pre-commit",
+      "mode": "universal",
+      "description": "Injects token usage stats into docs/progress.html before every commit"
+    }
+  ],
+  "schemas": [
+    {
+      "id": "project.yaml",
+      "file": "templates/project.yaml.tpl",
+      "description": "Project configuration — single source of truth for forge"
+    }
+  ]
+}
