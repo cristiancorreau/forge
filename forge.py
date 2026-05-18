@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright 2026 SocialWeb — Apache License 2.0
+# https://github.com/socialwebcl/forge
 """
 forge — CLI principal del framework de desarrollo con agentes IA.
 
@@ -854,6 +856,188 @@ def menu_scaffold() -> None:
     pause()
 
 
+def wiki_status() -> None:
+    clr()
+    _draw_header()
+    print(f"\n  {b('Wiki — estado actual')}\n")
+
+    wiki_root = Path.cwd() / "docs" / "wiki"
+    if not wiki_root.exists():
+        print(f"  {y('docs/wiki/ no existe.')} Ejecuta 'forge wiki ingest' para inicializarlo.")
+        pause()
+        return
+
+    subdirs = ["raw", "concepts", "entities", "sources", "synthesis"]
+    W_DIR   = 14
+    W_COUNT = 8
+    W_MOD   = 22
+
+    header = (
+        f"  {b(_padded('Directorio', W_DIR))}"
+        f"  {b(_padded('Archivos', W_COUNT))}"
+        f"  {b('Última modificación')}"
+    )
+    print(header)
+    print(f"  {FG_MUTED}{'─' * (W_DIR + W_COUNT + W_MOD + 4)}{RESET}")
+
+    for sub in subdirs:
+        d_path = wiki_root / sub
+        if d_path.exists():
+            files    = list(d_path.iterdir())
+            count    = len(files)
+            if files:
+                latest   = max(f.stat().st_mtime for f in files)
+                import datetime
+                mod_str  = datetime.datetime.fromtimestamp(latest).strftime("%Y-%m-%d %H:%M")
+            else:
+                mod_str  = "—"
+        else:
+            count   = 0
+            mod_str = "—"
+        print(
+            f"  {_padded(sub, W_DIR)}"
+            f"  {_padded(str(count), W_COUNT)}"
+            f"  {d(mod_str)}"
+        )
+
+    print(f"\n  {b('Archivos de control:')}")
+    for fname in ("index.md", "log.md"):
+        fpath = wiki_root / fname
+        mark  = g("ok") if fpath.exists() else r("falta")
+        print(f"    docs/wiki/{fname}  [{mark}]")
+
+    pause()
+
+
+def wiki_ingest(source: Optional[str] = None) -> None:
+    clr()
+    _draw_header()
+    print(f"\n  {b('Wiki — ingestar fuente')}\n")
+
+    wiki_root = Path.cwd() / "docs" / "wiki"
+    if not wiki_root.exists():
+        print(f"  Inicializando estructura docs/wiki/ …")
+        for sub in ["raw", "concepts", "entities", "sources", "synthesis"]:
+            (wiki_root / sub).mkdir(parents=True, exist_ok=True)
+        for fname, content in [
+            ("index.md", "# Wiki Index\n\n<!-- generado por forge wiki ingest -->\n"),
+            ("log.md",   "# Wiki Log\n\n<!-- ingesta registrada aquí -->\n"),
+        ]:
+            fpath = wiki_root / fname
+            if not fpath.exists():
+                fpath.write_text(content, encoding="utf-8")
+        print(f"  {g('Estructura creada.')} docs/wiki/ inicializado con index.md y log.md.")
+        print()
+
+    if source:
+        print(f"  Fuente:  {c(source)}")
+    else:
+        print(f"  {d('No se especificó fuente. En el slash command puedes pasar URL, ruta o texto.')}")
+
+    print()
+    print(f"  {b('Siguiente paso:')}")
+    print(f"    En Claude Code ejecuta el slash command:")
+    print(f"    {c('/wiki-ingest')}{' ' + source if source else ''}")
+    print()
+    print(f"  El skill procesa la fuente y actualiza raw/, pages, index.md y log.md.")
+    pause()
+
+
+def wiki_query(question: Optional[str] = None) -> None:
+    clr()
+    _draw_header()
+    print(f"\n  {b('Wiki — consultar')}\n")
+
+    if question:
+        print(f"  Pregunta:  {c(question)}")
+        print()
+
+    print(f"  {b('Siguiente paso:')}")
+    print(f"    En Claude Code ejecuta el slash command:")
+    if question:
+        print(f"    {c('/wiki-query')} {question}")
+    else:
+        print(f"    {c('/wiki-query')} <tu pregunta>")
+    print()
+    print(f"  El skill busca en docs/wiki/ y responde con citas a las páginas fuente.")
+    pause()
+
+
+def wiki_lint() -> None:
+    clr()
+    _draw_header()
+    print(f"\n  {b('Wiki — health check')}\n")
+    print(f"  {b('Siguiente paso:')}")
+    print(f"    En Claude Code ejecuta el slash command:")
+    print(f"    {c('/wiki-lint')}")
+    print()
+    print(f"  El skill verifica integridad del wiki: links, huérfanos, frontmatter, log.")
+    print(f"  Repara automáticamente lo que es seguro; lista el resto para revisión manual.")
+    pause()
+
+
+def menu_wiki() -> None:
+    items = [
+        MenuItem(
+            "status   — resumen de la estructura del wiki", key="status",
+            description=(
+                "Muestra el estado actual de docs/wiki/: subdirectorios (raw, concepts, "
+                "entities, sources, synthesis), cantidad de archivos en cada uno, "
+                "última modificación, y si existen index.md y log.md."
+            ),
+        ),
+        MenuItem(
+            "ingest   — indexar una fuente en el wiki", key="ingest",
+            description=(
+                "Inicializa docs/wiki/ si no existe (crea subdirectorios, index.md y log.md). "
+                "Luego guía para ejecutar el slash command /wiki-ingest con la fuente "
+                "(URL, ruta de archivo o texto libre). El skill AI hace el trabajo de ingesta."
+            ),
+        ),
+        MenuItem(
+            "query    — consultar el wiki", key="query",
+            description=(
+                "Guía para ejecutar /wiki-query con tu pregunta. "
+                "El skill busca en docs/wiki/ y responde citando las páginas fuente."
+            ),
+        ),
+        MenuItem(
+            "lint     — verificar integridad del wiki", key="lint",
+            description=(
+                "Guía para ejecutar /wiki-lint. El skill verifica links rotos, "
+                "páginas huérfanas, frontmatter inválido y consistencia del log. "
+                "Repara automáticamente lo seguro y lista el resto."
+            ),
+        ),
+        MenuItem("", separator=True),
+        MenuItem("← Volver", key="back", description="Regresa al menú principal."),
+    ]
+    while True:
+        key = show_menu(
+            "Wiki — gestión del knowledge base",
+            items,
+            subtitle="docs/wiki/  ·  /wiki-ingest  /wiki-query  /wiki-lint",
+        )
+        if not key or key == "back":
+            return
+        if key == "status":
+            wiki_status()
+        elif key == "ingest":
+            clr()
+            _draw_header()
+            print()
+            src = _ask_input("Fuente a ingestar (URL, ruta o Enter para omitir)")
+            wiki_ingest(src if src else None)
+        elif key == "query":
+            clr()
+            _draw_header()
+            print()
+            q = _ask_input("Pregunta para el wiki (Enter para omitir)")
+            wiki_query(q if q else None)
+        elif key == "lint":
+            wiki_lint()
+
+
 def menu_teardown() -> None:
     items = [
         MenuItem(
@@ -926,6 +1110,15 @@ MAIN_ITEMS = [
         ),
     ),
     MenuItem(
+        "Wiki                   knowledge base del proyecto", key="wiki",
+        description=(
+            "Gestiona el wiki del proyecto en docs/wiki/. "
+            "Opciones: status (resumen de estructura), ingest (indexar fuentes), "
+            "query (consultar con citas) y lint (verificar integridad). "
+            "La ingesta y consulta usan los slash commands /wiki-ingest y /wiki-query de Claude Code."
+        ),
+    ),
+    MenuItem(
         "Buscar templates       frameworks · MCP · profiles", key="aitmpl",
         description=(
             "Catálogo curado de 40+ recursos: frameworks (forge, aider), "
@@ -961,10 +1154,38 @@ ACTIONS = {
     "wizard":   menu_wizard,
     "init":     menu_init,
     "audit":    menu_audit,
+    "wiki":     menu_wiki,
     "aitmpl":   menu_aitmpl,
     "scaffold": menu_scaffold,
     "teardown": menu_teardown,
 }
+
+
+def _dispatch_wiki_cli(args: list[str]) -> None:
+    """Dispatch `forge wiki <subcommand>` from CLI (non-interactive)."""
+    sub = args[0] if args else "status"
+    if sub == "status":
+        wiki_status()
+    elif sub == "ingest":
+        source_flag = next((a for a in args[1:] if not a.startswith("--")), None)
+        if not source_flag:
+            # look for --source <path>
+            for i, a in enumerate(args[1:], 1):
+                if a == "--source" and i + 1 < len(args):
+                    source_flag = args[i + 1]
+                    break
+                if a.startswith("--source="):
+                    source_flag = a.split("=", 1)[1]
+                    break
+        wiki_ingest(source_flag)
+    elif sub == "query":
+        question = " ".join(a for a in args[1:] if not a.startswith("--")) or None
+        wiki_query(question)
+    elif sub == "lint":
+        wiki_lint()
+    else:
+        print(f"forge wiki: subcomando desconocido '{sub}'. Usa: status | ingest | query | lint", file=sys.stderr)
+        sys.exit(1)
 
 
 def main() -> None:
@@ -976,6 +1197,12 @@ def main() -> None:
               python3 .agentic/forge.py          Abre el CLI interactivo
               python3 .agentic/forge.py --help   Muestra esta ayuda
               python3 .agentic/forge.py --batch  Muestra scripts para CI/no-interactivo
+
+            Subcomandos:
+              python3 .agentic/forge.py wiki status              Estado del wiki
+              python3 .agentic/forge.py wiki ingest [--source <ruta>]  Ingestar fuente
+              python3 .agentic/forge.py wiki query "<pregunta>"  Consultar el wiki
+              python3 .agentic/forge.py wiki lint                Health check del wiki
 
             Scripts disponibles directamente:
               scripts/forge-wizard.py            Wizard de nuevo proyecto
@@ -997,7 +1224,18 @@ def main() -> None:
               python3 .agentic/scripts/forge-audit.py --json              Auditar (JSON para CI)
               python3 .agentic/scripts/forge-audit.py --json | jq '.summary.errors'
               python3 .agentic/scripts/forge-teardown.py --confirm        Teardown
+
+            Wiki (no-interactivo):
+              python3 .agentic/forge.py wiki status
+              python3 .agentic/forge.py wiki ingest --source <ruta>
+              python3 .agentic/forge.py wiki query "<pregunta>"
+              python3 .agentic/forge.py wiki lint
         """))
+        return
+
+    # Subcomando wiki — funciona en modo non-TTY también
+    if len(sys.argv) > 1 and sys.argv[1] == "wiki":
+        _dispatch_wiki_cli(sys.argv[2:])
         return
 
     if not IS_TTY:

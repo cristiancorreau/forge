@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright 2026 SocialWeb — Apache License 2.0
+# https://github.com/socialwebcl/forge
 """
 forge-init.py — Setup de un proyecto nuevo con el framework forge.
 
