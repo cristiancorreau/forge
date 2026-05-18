@@ -233,6 +233,42 @@ Cuando recibás una tarea:
 """
 
 
+def _generate_architecture_rules(root: Path, forge: Path, config: dict):
+    """Crea .claude/architecture.rules desde el template si no existe. Nunca sobreescribe."""
+    dst = root / ".claude" / "architecture.rules"
+    if dst.exists():
+        return
+
+    # Buscar el template en forge
+    tpl_path = forge / "core" / "templates" / "claude-md" / "architecture.rules"
+    if not tpl_path.exists():
+        return
+
+    project_name = config.get("project", {}).get("name", "Mi Proyecto")
+    content = tpl_path.read_text(encoding="utf-8")
+    content = content.replace("<NOMBRE_PROYECTO>", project_name)
+
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(content, encoding="utf-8")
+    print(f"[OK] .claude/architecture.rules — creado desde template")
+
+
+def _find_forge_dir(root: Path) -> Path:
+    """Localiza el directorio de forge relativo a este script."""
+    # Este script está en forge/adapters/claude-code/generate-claude-md.py
+    script_dir = Path(__file__).parent
+    # forge_dir = forge/
+    candidate = script_dir.parent.parent
+    if (candidate / "core").exists():
+        return candidate
+    # Fallback: buscar .agentic o forge en la raíz del proyecto
+    for name in (".agentic", "forge"):
+        c = root / name
+        if (c / "core").exists():
+            return c
+    return candidate
+
+
 def main():
     try:
         root = find_project_root()
@@ -257,6 +293,9 @@ def main():
         f.write(content)
 
     print(f"CLAUDE.md generado en {output_path}")
+
+    forge = _find_forge_dir(root)
+    _generate_architecture_rules(root, forge, config)
 
 
 if __name__ == "__main__":
