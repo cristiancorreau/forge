@@ -194,6 +194,9 @@ def install_claude_commands(root: Path, forge: Path, config: dict):
     commands_dir = root / ".claude" / "commands"
     commands_dir.mkdir(parents=True, exist_ok=True)
 
+    # Comandos de ciclo de sesión — siempre instalados (v2)
+    session_commands = ["session-start.md", "session-close.md"]
+
     # Mapeo skill → comando(s) que provee
     skill_commands = {
         "new-feature":    ["new-feature.md"],
@@ -205,6 +208,20 @@ def install_claude_commands(root: Path, forge: Path, config: dict):
     }
 
     installed = []
+    # 1. Session commands — siempre
+    for cmd_file in session_commands:
+        src = commands_src / cmd_file
+        dst = commands_dir / cmd_file
+        if not src.exists():
+            continue
+        if dst.exists() and not FORCE:
+            print(f"  [KEEP] .claude/commands/{cmd_file}")
+            continue
+        shutil.copy2(src, dst)
+        installed.append(cmd_file)
+        print(f"  [OK]   .claude/commands/{cmd_file}")
+
+    # 2. Skill-based commands
     for skill, cmd_files in skill_commands.items():
         if skill not in skills_active:
             continue
@@ -245,8 +262,55 @@ def _generate_claude_md(root: Path, forge: Path, config: dict):
     print(f"  [{action}]   CLAUDE.md — generado desde project.yaml")
 
 
+def install_hooks(root: Path, forge: Path, config: dict):
+    """Copia hooks de forge/core/hooks/ a .claude/hooks/ del proyecto."""
+    hooks_src = forge / "core" / "hooks"
+    if not hooks_src.exists():
+        return
+
+    hooks_dir = root / ".claude" / "hooks"
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+
+    mode = config.get("project", {}).get("mode", "startup")
+    stack = config.get("stack", {})
+    database = (stack.get("database") or "").lower()
+
+    # Hooks universales — todos los proyectos
+    universal_hooks = ["pre-edit-check.py", "post-turn-check.sh"]
+
+    # Hooks de modo production (standard + enterprise)
+    production_hooks: list[str] = []
+    if mode in ("standard", "enterprise"):
+        production_hooks.append("pre-bash-check.py")
+
+    # Hooks por stack
+    stack_hooks: list[str] = []
+    if "supabase" in database:
+        stack_hooks.append("check-destructive-sql.py")
+
+    all_hooks = universal_hooks + production_hooks + stack_hooks
+    installed = []
+    for hook_file in all_hooks:
+        src = hooks_src / hook_file
+        dst = hooks_dir / hook_file
+        if not src.exists():
+            continue
+        if dst.exists() and not FORCE:
+            print(f"  [KEEP] .claude/hooks/{hook_file}")
+            continue
+        shutil.copy2(src, dst)
+        # Mantener permisos de ejecución en scripts shell
+        if hook_file.endswith(".sh"):
+            dst.chmod(dst.stat().st_mode | 0o111)
+        installed.append(hook_file)
+        print(f"  [OK]   .claude/hooks/{hook_file}")
+
+    if installed:
+        print(f"  Hooks instalados: {', '.join(installed)}")
+
+
 def _generate_settings_json(root: Path, config: dict):
-    """Genera .claude/settings.json con permisos según el stack del proyecto."""
+    """Genera .claude/settings.json con permisos y hooks según el stack del proyecto."""
     import json
     settings_path = root / ".claude" / "settings.json"
     if settings_path.exists() and not FORCE:
@@ -279,13 +343,36 @@ def _generate_settings_json(root: Path, config: dict):
     if database == "postgresql":
         allow += ["Bash(psql *)", "Bash(pg_dump *)"]
     allow += ["Bash(git status)", "Bash(git diff *)", "Bash(git log *)", "Bash(git branch *)"]
-    settings = {"permissions": {"allow": sorted(set(allow))}}
+
+    # Configuración de hooks (Forge v2)
+    hooks_config = {
+        "PreToolUse": [
+            {
+                "matcher": "Edit|Write",
+                "hooks": [
+                    {"type": "command", "command": "python3 .claude/hooks/pre-edit-check.py"}
+                ],
+            }
+        ],
+        "Stop": [
+            {
+                "hooks": [
+                    {"type": "command", "command": "bash .claude/hooks/post-turn-check.sh"}
+                ]
+            }
+        ],
+    }
+
+    settings = {
+        "permissions": {"allow": sorted(set(allow))},
+        "hooks": hooks_config,
+    }
     already_existed = settings_path.exists()
     with open(settings_path, "w", encoding="utf-8") as f:
         json.dump(settings, f, indent=2, ensure_ascii=False)
         f.write("\n")
     action = "UPD" if already_existed else "OK"
-    print(f"  [{action}]   .claude/settings.json ({len(settings['permissions']['allow'])} permisos)")
+    print(f"  [{action}]   .claude/settings.json ({len(settings['permissions']['allow'])} permisos + hooks)")
 
 
 def init_claude_code(root: Path, forge: Path, config: dict):
@@ -562,6 +649,8 @@ def main():
         init_claude_code(root, forge, config)
         print("\n  Slash commands:")
         install_claude_commands(root, forge, config)
+        print("\n  Hooks:")
+        install_hooks(root, forge, config)
         print("\n  Wiki:")
         init_wiki(root, forge, config)
         print("\n  CLAUDE.md:")

@@ -7,6 +7,24 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [0.3.0] — 2026-05-17
+
+### Agregado — Forge v2 Fase 0 (session lifecycle + hooks)
+- Slash commands de ciclo de sesión: `/session-start` (3 escenarios, detección automática de branch) y `/session-close` (pipeline de 8 pasos: commit, changeset, GitHub Projects, daily-note, RELEASE-NOTES, rebase + PR)
+- Hook `pre-edit-check.py` (PreToolUse): branch guard en main, detección de debug statements multi-stack (TS/PHP/Python/Ruby), detección de credenciales hardcodeadas
+- Hook `post-turn-check.sh` (Stop): typecheck automático sobre archivos modificados, auto-detección de package manager, soporte `scripts.check` en project.yaml
+- `forge-init.py`: instala hooks en `.claude/hooks/` del proyecto (función `install_hooks()`)
+- `forge-init.py`: `session-start.md` y `session-close.md` se instalan siempre (sin requerir skill activa)
+- `settings.json` ahora incluye configuración de hooks (`PreToolUse`, `Stop`) además de `permissions.allow`
+- Documentación del plan v2: `docs/plan/forge-v2-plan.md`, `docs/plan/forge-v2-implementation.md`
+- Bitácora de fricción: `docs/feedback/friction-log.md` con template y formato estándar
+- Guía de migración: `docs/migration/v1-to-v1.5.md`
+
+### Convenciones
+- Versión "Forge v1.5" del plan de arquitectura = `0.3.0` en semver
+
+---
+
 ## [0.2.2] — 2026-05-05
 
 ### Agregado
