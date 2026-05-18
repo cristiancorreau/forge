@@ -54,6 +54,92 @@ def read_agent_description(forge: Path, name: str, profiles: list[str]) -> str:
     return "Agente de implementación"
 
 
+def _guardrail_section(config: dict) -> list[str]:
+    """Genera la sección de guardrails embebidos (equivalente a hooks de Claude Code)."""
+    proj = config.get("project", {})
+    mode = proj.get("mode", "startup")
+
+    lines = [
+        "## Guardrails (comportamiento no-negociable)",
+        "",
+        "Estas reglas se aplican siempre, en cualquier tarea, sin excepción.",
+        "",
+        "### Branch guard",
+        "",
+        "NUNCA editar código cuando la rama actual sea `main`, `master` o `develop`.",
+        "Antes de cualquier edición de archivo, verificar la rama con `git branch --show-current`.",
+        "Si la rama es main/master/develop: detener y pedir al usuario que cree una rama de feature.",
+        "Excepción: archivos de documentación (*.md) pueden editarse en main si el usuario lo indica explícitamente.",
+        "",
+        "### Detección de debug",
+        "",
+        "Antes de hacer commit, verificar que no haya en el código a commitear:",
+        "- `console.log(` en JS/TS (excepto archivos de logging)",
+        "- `print(` en Python que no sea logging de producción",
+        "- `debugger;` en JS/TS",
+        "- `binding.pry` en Ruby",
+        "- `dd(` o `dump(` en PHP",
+        "",
+        "Si se detectan estos patrones: reportar la línea exacta y pedir confirmación antes de continuar.",
+        "",
+        "### Producción safety",
+        "",
+        "Nunca ejecutar sin confirmación explícita del usuario:",
+        "- `DROP TABLE`, `DROP DATABASE`, `TRUNCATE` en bases de datos de producción",
+        "- `rm -rf` en directorios que no sean temporales o de build",
+        "- `git push --force` a main/master",
+        "- Deploy a producción sin haber ejecutado `/review` primero",
+        "",
+        "### SQL injection",
+        "",
+        "Nunca concatenar input del usuario en strings SQL.",
+        "Siempre usar parámetros preparados o el ORM del proyecto.",
+        "",
+        "### Secrets",
+        "",
+        "Nunca hardcodear tokens, passwords, API keys o certificados en archivos que van a git.",
+        "Usar variables de entorno y documentarlas en `.env.example`.",
+        "",
+    ]
+
+    if mode in ("standard", "enterprise"):
+        lines += [
+            "### Compliance (mode: " + mode + ")",
+            "",
+            "Verificar en cada PR que toque datos de usuarios:",
+            "- PII nunca en logs de stdout sin enmascarar",
+            "- Consentimiento explícito antes de cualquier tracker no esencial",
+            "- Logs de auditoría append-only (sin UPDATE/DELETE sobre eventos ya registrados)",
+            "",
+        ]
+
+    return lines
+
+
+def _forge_v2_commands_section() -> list[str]:
+    """Genera la sección de comandos Forge v2 SDD para OpenCode."""
+    return [
+        "## Comandos Forge v2 (flujo SDD)",
+        "",
+        "Este proyecto usa el flujo Spec-Driven Development de Forge v2.",
+        "Los comandos disponibles en `.opencode/commands/` son:",
+        "",
+        "| Comando | Cuándo usarlo |",
+        "|---------|--------------|",
+        "| `/session-start` | Al comenzar una sesión de trabajo — detecta branch, PRs abiertos y estado del repo |",
+        "| `/plan` | Para crear o revisar una spec en `docs/specs/` antes de implementar |",
+        "| `/work` | Para implementar una spec en estado `ready` — ejecuta en serie en la sesión actual |",
+        "| `/review` | Para hacer code review con veredicto APPROVED/CHANGES_REQUESTED/BLOCKED |",
+        "| `/ship` | Para hacer deploy a producción — requiere review aprobado y git limpio |",
+        "| `/session-close` | Al terminar una sesión — commit, daily note, RELEASE-NOTES y PR |",
+        "",
+        "**Flujo estándar:** `/session-start` → `/plan` → `/work` → `/review` → `/ship` → `/session-close`",
+        "",
+        "**Regla fundamental:** Sin spec en `docs/specs/` con estado `ready`, no se ejecuta `/work`.",
+        "",
+    ]
+
+
 def generate_agents_md(config: dict, forge: Path) -> str:
     proj = config.get("project", {})
     agents_cfg = config.get("agents", {})
@@ -79,6 +165,12 @@ def generate_agents_md(config: dict, forge: Path) -> str:
         f"> Generado por forge (adapter OpenCode/Codex).",
         f"> Fuente de verdad: `project.yaml`. Re-ejecutar `generate-agents-md.py` al cambiar agentes.",
         "",
+    ]
+
+    # Sección de comandos Forge v2 al inicio
+    lines += _forge_v2_commands_section()
+
+    lines += [
         "## Stack del proyecto",
         "",
         f"- **Backend:** {stack.get('backend') or 'N/A'}",
@@ -94,6 +186,12 @@ def generate_agents_md(config: dict, forge: Path) -> str:
         "- Parámetros preparados en todas las queries SQL.",
         "- PII nunca en logs de stdout.",
         "",
+    ]
+
+    # Guardrails embebidos (equivalente a hooks de Claude Code)
+    lines += _guardrail_section(config)
+
+    lines += [
         "## Roster de agentes",
         "",
     ]
