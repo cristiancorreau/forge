@@ -7,6 +7,18 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.0.1] — 2026-05-18
+
+### Agregado
+- `forge wiki` subcomando: `status`, `ingest`, `query`, `lint` (F1-F01)
+- 45 tests nuevos: validador de project.yaml, migrador v1→v2, forge-generate-all, pre-bash-check
+- Copyright headers en 7 scripts principales (Apache 2.0, SocialWeb 2026)
+- `vscode-extension/forge-agent-framework-0.5.0.vsix` empaquetada y lista para instalar
+
+### Total: 509 tests pasando
+
+---
+
 ## [2.0.0] — 2026-05-18
 
 ### Agregado — Forge v2 Fase 3 (liberación pública)
