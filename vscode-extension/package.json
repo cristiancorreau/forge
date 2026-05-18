@@ -2,8 +2,8 @@
   "name": "forge-agent-framework",
   "publisher": "socialwebcl",
   "displayName": "forge — Agent Framework",
-  "description": "Manage forge agent projects from VS Code",
-  "version": "0.2.1",
+  "description": "Manage Forge v2 agent projects from VS Code — multi-runtime support (Claude Code, OpenCode, Kiro, Codex)",
+  "version": "0.5.0",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -56,6 +56,21 @@
         "command": "forge.generateClaudeMd",
         "title": "forge: Regenerate CLAUDE.md",
         "icon": "$(file-text)"
+      },
+      {
+        "command": "forge.generateAll",
+        "title": "forge: Generate All Runtimes",
+        "icon": "$(layers)"
+      },
+      {
+        "command": "forge.validateProjectYaml",
+        "title": "forge: Validate project.yaml",
+        "icon": "$(pass)"
+      },
+      {
+        "command": "forge.migrateProjectYaml",
+        "title": "forge: Migrate project.yaml to v2",
+        "icon": "$(arrow-up)"
       }
     ],
     "viewsContainers": {
@@ -146,6 +161,11 @@
         }
       }
     }
+  },
+  "keywords": ["forge", "agents", "claude", "agentic", "development"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/socialwebcl/forge"
   },
   "scripts": {
     "compile": "tsc -p ./",
