@@ -7,6 +7,46 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [0.4.0] — 2026-05-17
+
+### Agregado — Forge v2 Fase 1 (core commands + full stack)
+
+#### Memory Layer (Capa 1)
+- Templates `core/templates/claude-md/`: `global.md`, `project.md`, `architecture.rules` (separación 3 capas de CLAUDE.md)
+- Template `core/templates/daily-note.md` con placeholders para `/session-close`
+- Template `core/templates/spec-template.md` con secciones obligatorias (Problem, Non-goals, Acceptance, Compliance, Edge cases)
+- `forge-init.py`: `_install_templates()` crea `docs/daily-notes/`, `docs/specs/_template.md`, `.claude/architecture.rules` automáticamente
+- `generate-claude-md.py`: genera `.claude/architecture.rules` al crear CLAUDE.md si no existe
+- Schema JSON Draft-07: `core/schemas/project.schema.json` para validar `project.yaml` v2
+- Validador: `scripts/forge-validate-project-yaml.py` con flag `--json`, exit 1 en errores
+- Migrador: `scripts/forge-migrate-project-yaml.py` de v1 → v2, soporta `--dry-run` y `--backup`
+- Referencia completa: `docs/project-yaml-v2-reference.md` con tablas por sección
+
+#### Knowledge Layer (Capa 2)
+- Slash command `/plan` (3 modos): crear spec, listar specs, revisar con Planner-Critic
+- Slash command `/work`: lee spec aprobada, propone team según mode, spawna teammates en paralelo
+- Slash command `/review` (F1-B03): multi-agente en standard/enterprise; veredicto APPROVED/CHANGES_REQUESTED/BLOCKED; escribe `.claude/review-status.json` para `/ship`
+- Slash command `/ship`: pipeline 10 pasos, polling max 1/min a Vercel, smoke tests, logs en tiempo real
+
+#### Guardrail Layer (Capa 3)
+- `core/hooks/hooks-registry.yaml`: declarativo por mode (universal/standard/enterprise) y stack
+- `core/hooks/pre-bash-check.py`: bloquea comandos destructivos basado en incidente 2026-04-28
+- `core/hooks/session-start.sh`: verificaciones determinísticas al inicio de sesión (tools, branch, env)
+- `forge-init.py`: lee `hooks-registry.yaml` para instalar hooks según mode del proyecto
+- Nuevas entradas en hooks-registry.yaml para stacks `nextjs-admin` (prisma-safety) y `laravel` (composer-check)
+
+#### Delegation Layer (Capa 4)
+- 7 agentes Tier 1 (`core/agents/`) actualizados con sección `## Forge v2` (spec-first, hooks awareness, scope rules)
+- 7 perfiles Tier 2 actualizados a Forge v2: `hono-drizzle`, `nextjs-admin`, `laravel`, `fastapi`, `astro`, `expo`, `wordpress`
+- `README.md` creado para cada perfil con agentes, cuándo usar, hooks específicos del stack, activación en `project.yaml`
+
+#### Distribution Layer (Capa 5)
+- `manifest.json`: inventario completo de agentes, perfiles, skills, comandos, hooks y schemas
+- `docs/team-install.md`: guía de onboarding de 5 minutos para nuevos desarrolladores
+- `scripts/team-install.sh`: script de instalación automática del equipo
+
+---
+
 ## [0.3.0] — 2026-05-17
 
 ### Agregado — Forge v2 Fase 0 (session lifecycle + hooks)
