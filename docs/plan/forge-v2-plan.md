@@ -17,11 +17,11 @@ Las decisiones se basan en cuatro fuentes de evidencia:
 
 Primero, el estudio de claude-code-harness (Chachamaru127), proyecto japonés con 252 estrellas que cristaliza el patrón "plan-work-review-release" con guardrails en TypeScript y planner-critic dialéctico.
 
-Segundo, las configuraciones del proyecto cookycmp (greenfield, SDD estricto, compliance Ley 21.719), que aporta el ciclo de sesión obligatorio, hooks de enforcement en runtime, integración con GitHub Projects y wiki en git.
+Segundo, las configuraciones del proyecto proyecto-alpha (greenfield, SDD estricto, compliance Ley 21.719), que aporta el ciclo de sesión obligatorio, hooks de enforcement en runtime, integración con GitHub Projects y wiki en git.
 
-Tercero, las configuraciones del proyecto fesw-encuestas (producción activa, Vercel + Supabase + Prisma), que aporta el flujo local-to-prod, integración MCP con servicios externos, protecciones contra incidentes reales de producción, y el patrón "leer antes, escribir después" con Obsidian.
+Tercero, las configuraciones del proyecto proyecto-beta (producción activa, Vercel + Supabase + Prisma), que aporta el flujo local-to-prod, integración MCP con servicios externos, protecciones contra incidentes reales de producción, y el patrón "leer antes, escribir después" con Obsidian.
 
-Cuarto, la experiencia operativa de SocialWeb trabajando con clientes reales (CNTV, UNICEF, IATA, SERCOTEC, DEP) sobre stacks heterogéneos (Laravel, WordPress, Next.js, Hono, etc.).
+Cuarto, la experiencia operativa de SocialWeb trabajando con clientes reales (Cliente-Media, Cliente-ONG, Cliente-Viajes, Cliente-GobiernoCL, Cliente-Deporte) sobre stacks heterogéneos (Laravel, WordPress, Next.js, Hono, etc.).
 
 ---
 
@@ -31,15 +31,15 @@ La versión 2 se construye sobre siete principios. Cada feature nueva debe pasar
 
 **Pocos verbos, mucha profundidad.** La superficie de comandos se reduce. Toda la complejidad vive detrás de los verbos, no en su nombre. Forge v1 tiene una superficie demasiado amplia para un usuario que no es el autor.
 
-**La sesión es la unidad de trabajo.** No es "abro Claude Code y empiezo a tipear". Una sesión tiene apertura, contexto, rama git asociada, y cierre. El ritual de apertura detecta trabajo previo y reanuda sesiones existentes en vez de crear nuevas. Esto se inspira directamente en `/session-start` y `/session-close` de cookycmp.
+**La sesión es la unidad de trabajo.** No es "abro Claude Code y empiezo a tipear". Una sesión tiene apertura, contexto, rama git asociada, y cierre. El ritual de apertura detecta trabajo previo y reanuda sesiones existentes en vez de crear nuevas. Esto se inspira directamente en `/session-start` y `/session-close` de proyecto-alpha.
 
-**Configuración declarativa, enforcement en runtime.** El `project.yaml` sigue siendo la fuente de verdad. Pero la nueva versión añade hooks que aplican reglas activamente durante la ejecución de los agentes, no solo en setup. La diferencia entre skill-pack y harness. Cookycmp lo hace con `pre-edit-check.py` y `stop-typecheck.sh`. Fesw-encuestas lo hace con `check-destructive-sql.mjs` y `check-attack-queue.mjs`.
+**Configuración declarativa, enforcement en runtime.** El `project.yaml` sigue siendo la fuente de verdad. Pero la nueva versión añade hooks que aplican reglas activamente durante la ejecución de los agentes, no solo en setup. La diferencia entre skill-pack y harness. proyecto-alpha lo hace con `pre-edit-check.py` y `stop-typecheck.sh`. proyecto-beta lo hace con `check-destructive-sql.mjs` y `check-attack-queue.mjs`.
 
 **Multi-runtime real, no aspiracional.** Forge v1 promete soporte para Claude Code, OpenCode, Kiro y Codex, pero el flujo principal está pensado para Claude Code. La v2 asume que el desarrollador real puede usar dos o tres runtimes en paralelo. Las sesiones se coordinan entre ellos.
 
-**Producción es un modo, no un addon.** Las acciones de producción (deploy verificado, smoke tests, rollback, monitoreo) son parte del flujo principal cuando un proyecto tiene marca de "production". El patrón sale del trabajo real en fesw-encuestas: nunca dar por terminada una tarea hasta que Vercel responda `state: READY`.
+**Producción es un modo, no un addon.** Las acciones de producción (deploy verificado, smoke tests, rollback, monitoreo) son parte del flujo principal cuando un proyecto tiene marca de "production". El patrón sale del trabajo real en proyecto-beta: nunca dar por terminada una tarea hasta que Vercel responda `state: READY`.
 
-**Memoria del proyecto en git.** Sin vector stores, sin RAG infrastructure, sin servicios externos. El conocimiento del proyecto vive en archivos markdown que Claude lee como contexto. Cookycmp lo hace con `docs/wiki/`. Fesw-encuestas lo hace con `docs/fesw-obsidian-vault/`. Forge v2 estandariza el patrón con un esqueleto opinado.
+**Memoria del proyecto en git.** Sin vector stores, sin RAG infrastructure, sin servicios externos. El conocimiento del proyecto vive en archivos markdown que Claude lee como contexto. proyecto-alpha lo hace con `docs/wiki/`. proyecto-beta lo hace con `docs/proyecto-beta-obsidian-vault/`. Forge v2 estandariza el patrón con un esqueleto opinado.
 
 **Tu equipo es el primer usuario, no la comunidad.** Cada decisión de diseño se valida contra el uso de los desarrolladores de SocialWeb antes de pensar en adopción externa. Si tu equipo no lo usa con fluidez, la comunidad tampoco lo va a usar.
 
@@ -53,7 +53,7 @@ Forge v2 tiene cinco capas claramente separadas. Cada una tiene un propósito di
 
 **Capa 1: Configuración declarativa (`project.yaml`).** La fuente de verdad. Stack, modo (startup/standard/enterprise), profiles activos, skills activas, integraciones MCP, reglas no-negociables del proyecto. Esto Forge v1 ya lo tiene y es de lo mejor diseñado.
 
-**Capa 2: Sesiones y ciclo de vida.** Comandos que envuelven el trabajo del día: apertura, trabajo, cierre. Esta es la capa nueva más importante. Toma el patrón de cookycmp y lo generaliza.
+**Capa 2: Sesiones y ciclo de vida.** Comandos que envuelven el trabajo del día: apertura, trabajo, cierre. Esta es la capa nueva más importante. Toma el patrón de proyecto-alpha y lo generaliza.
 
 **Capa 3: Flujo SDD (plan, work, review, ship).** Los cuatro verbos del trabajo real. Cada uno ejecuta dentro de una sesión activa. Aquí se concentran las skills y los agentes. Se inspira en Harness pero ajustado al patrón SocialWeb.
 
@@ -131,7 +131,7 @@ mi-proyecto/
 └── .changeset/                     # Si usa changesets
 ```
 
-Cada elemento tiene una razón concreta. La estructura sale de cookycmp combinada con fesw-encuestas.
+Cada elemento tiene una razón concreta. La estructura sale de proyecto-alpha combinada con proyecto-beta.
 
 ---
 
@@ -139,7 +139,7 @@ Cada elemento tiene una razón concreta. La estructura sale de cookycmp combinad
 
 ### 4.1 `/session-start`
 
-Lo más importante de Forge v2. Es la primera acción obligatoria de cada sesión y enforza el patrón que cookycmp ya estableció.
+Lo más importante de Forge v2. Es la primera acción obligatoria de cada sesión y enforza el patrón que proyecto-alpha ya estableció.
 
 **Qué hace en orden:**
 
@@ -155,7 +155,7 @@ Si está en main sin trabajo previo, espera el primer mensaje del usuario para i
 
 Tercero, antes de cualquier edición, asegura estar en una feature branch. El hook `pre-edit-check.py` enforza esto bloqueando edits en main para archivos de código (no para docs).
 
-Cuarto, si Forge detecta que el proyecto tiene wiki, hace una pre-carga implícita del index y de las notas del área que va a tocar. Esto es lo que fesw-encuestas hace explícitamente con Obsidian: "leer antes de implementar".
+Cuarto, si Forge detecta que el proyecto tiene wiki, hace una pre-carga implícita del index y de las notas del área que va a tocar. Esto es lo que proyecto-beta hace explícitamente con Obsidian: "leer antes de implementar".
 
 **Convención de naming de branches:**
 
@@ -201,7 +201,7 @@ git push --force-with-lease
 git push -u origin <branch>
 ```
 
-El `--force-with-lease` es seguro porque la feature branch es exclusiva de esta sesión. Esta es una de las cosas que cookycmp resuelve elegantemente.
+El `--force-with-lease` es seguro porque la feature branch es exclusiva de esta sesión. Esta es una de las cosas que proyecto-alpha resuelve elegantemente.
 
 **Integración con GitHub Projects:**
 
@@ -231,9 +231,9 @@ Implementación. La spec ya está aprobada, ahora se construye.
 
 Lee la spec asociada (o pide elegir una si no hay una sesión activa con spec definida).
 
-Identifica los paquetes afectados (relevante en monorepos como cookycmp).
+Identifica los paquetes afectados (relevante en monorepos como proyecto-alpha).
 
-Propone un agent team con los roles correspondientes según el `project.yaml`. Para cookycmp serían `senior-frontend`, `senior-backend`, `compliance-reviewer`, `qa-reviewer`. Para fesw-encuestas serían los mismos cinco roles que ya definió ese proyecto.
+Propone un agent team con los roles correspondientes según el `project.yaml`. Para proyecto-alpha serían `senior-frontend`, `senior-backend`, `compliance-reviewer`, `qa-reviewer`. Para proyecto-beta serían los mismos cinco roles que ya definió ese proyecto.
 
 Pregunta al usuario si aprueba el team y si quiere ajustar.
 
@@ -243,7 +243,7 @@ Coordina la ejecución. Cuando los teammates terminan, sintetiza resultados.
 
 **Tamaño y composición del team:**
 
-Forge v2 adopta la regla empírica de fesw-encuestas: 3 a 5 teammates, 5-6 tasks cada uno. No crear team para tareas simples, lectura de código, o cambios en un solo archivo. Para esas, una sesión normal de Claude Code basta.
+Forge v2 adopta la regla empírica de proyecto-beta: 3 a 5 teammates, 5-6 tasks cada uno. No crear team para tareas simples, lectura de código, o cambios en un solo archivo. Para esas, una sesión normal de Claude Code basta.
 
 **Modos de ejecución:**
 
@@ -279,7 +279,7 @@ Si BLOCKED, no permite avanzar al `/ship`.
 
 ### 4.6 `/ship` (modo production)
 
-El verbo nuevo, sale directo de fesw-encuestas. Solo está disponible cuando `project.yaml` declara una integración de hosting (Vercel, Railway, Fly, AWS, etc.).
+El verbo nuevo, sale directo de proyecto-beta. Solo está disponible cuando `project.yaml` declara una integración de hosting (Vercel, Railway, Fly, AWS, etc.).
 
 **Pipeline:**
 
@@ -288,7 +288,7 @@ El verbo nuevo, sale directo de fesw-encuestas. Solo está disponible cuando `pr
 2. git status limpio                              → ningún archivo sin commit
 3. Merge PR a main (si el usuario aprueba)
 4. Trigger deploy (push + esperar webhook, o manual)
-5. Polling de deploy con backoff                  → max 1 poll/min (regla fesw)
+5. Polling de deploy con backoff                  → max 1 poll/min (regla proyecto-beta)
 6. Si state=BUILDING: esperar
 7. Si state=ERROR: leer build logs, reportar al usuario, NO continuar
 8. Si state=READY: 
@@ -299,7 +299,7 @@ El verbo nuevo, sale directo de fesw-encuestas. Solo está disponible cuando `pr
 10. Actualizar daily-note con resultado del deploy
 ```
 
-**La regla del max 1 poll/min** sale directamente de la experiencia operativa de fesw-encuestas. Vercel rate-limita el API y polling agresivo termina con backoffs forzados que retrasan todo. La lección está aprendida, Forge la incorpora por defecto.
+**La regla del max 1 poll/min** sale directamente de la experiencia operativa de proyecto-beta. Vercel rate-limita el API y polling agresivo termina con backoffs forzados que retrasan todo. La lección está aprendida, Forge la incorpora por defecto.
 
 **Smoke tests:** declarados en `project.yaml`:
 
@@ -316,7 +316,7 @@ deploy:
 
 Si los smoke tests fallan post-deploy, `/ship` reporta y propone rollback (no lo ejecuta automáticamente; el rollback en producción siempre requiere confirmación humana explícita).
 
-**Lección dolorosa codificada como regla:** después del incidente `--force-reset` del 2026-04-28 en fesw-encuestas (225 usuarios y 35 formularios borrados, recuperados desde backup de Supabase Pro), Forge v2 incluye por defecto un hook `pre-bash-check.py` que detecta y bloquea comandos peligrosos como `--force-reset`, `prisma migrate reset`, `DROP TABLE`, `TRUNCATE`, y similares cuando se ejecutan contra URLs de producción identificadas en `project.yaml`. Este hook no es opcional en modo production.
+**Lección dolorosa codificada como regla:** después del incidente `--force-reset` del 2026-04-28 en proyecto-beta (225 usuarios y 35 formularios borrados, recuperados desde backup de Supabase Pro), Forge v2 incluye por defecto un hook `pre-bash-check.py` que detecta y bloquea comandos peligrosos como `--force-reset`, `prisma migrate reset`, `DROP TABLE`, `TRUNCATE`, y similares cuando se ejecutan contra URLs de producción identificadas en `project.yaml`. Este hook no es opcional en modo production.
 
 ---
 
@@ -360,7 +360,7 @@ Forge v2 instala hooks por defecto según el modo y el stack del proyecto. Esto 
 
 ```
 - Revisa la cola de alertas de seguridad antes de cada mensaje del usuario
-- Útil para proyectos que tienen un sistema de detección de ataques (como fesw)
+- Útil para proyectos que tienen un sistema de detección de ataques (como proyecto-beta)
 - Si hay alertas pendientes, las muestra como contexto antes de procesar el prompt
 ```
 
@@ -372,7 +372,7 @@ Forge v2 instala hooks por defecto según el modo y el stack del proyecto. Esto 
 - Para proyectos con frameworks de compliance declarados (ley-21719, gdpr, etc.)
 - Detecta patrones específicos: UPDATE/DELETE en tablas append-only,
   modificación de jerarquía visual entre botones de consent, etc.
-- Sale del compliance-pre-edit que cookycmp ya tiene implementado para Ley 21.719
+- Sale del compliance-pre-edit que proyecto-alpha ya tiene implementado para Ley 21.719
 ```
 
 **`audit-log-append.py`** (PostToolUse):
@@ -389,11 +389,11 @@ Forge v2 selecciona hooks adicionales según el stack declarado en `project.yaml
 
 | Stack | Hook adicional |
 |---|---|
-| Supabase | `check-destructive-sql.mjs` (ya existe en fesw) |
+| Supabase | `check-destructive-sql.mjs` (ya existe en proyecto-beta) |
 | Prisma | Bloquea `--force-reset` y `migrate reset` en prod |
 | Vercel | Smoke test integration en `/ship` |
 | Next.js | Verifica `output: 'standalone'` consistency |
-| Drizzle | Verifica que migraciones tengan rollback (cookycmp) |
+| Drizzle | Verifica que migraciones tengan rollback (proyecto-alpha) |
 
 ---
 
@@ -403,7 +403,7 @@ Forge v2 estandariza el patrón "memoria en archivos markdown leídos como conte
 
 ### 6.1 Estructura única opinada
 
-Mezcla lo mejor de cookycmp wiki y fesw obsidian vault:
+Mezcla lo mejor de proyecto-alpha wiki y proyecto-beta obsidian vault:
 
 ```
 docs/wiki/
@@ -439,7 +439,7 @@ Los ADRs viven en `docs/architecture/adr/` (no en wiki). Son decisiones formales
 
 ### 6.4 Integración opcional con Obsidian via MCP
 
-Para proyectos donde el equipo prefiere editar con Obsidian Desktop, Forge v2 documenta la integración con `obsidian-local-rest-api` plugin (igual que fesw-encuestas hace). Pero el formato sigue siendo markdown plano en `docs/wiki/` para que Claude lo lea sin depender de Obsidian. Si Obsidian no está corriendo, todo sigue funcionando.
+Para proyectos donde el equipo prefiere editar con Obsidian Desktop, Forge v2 documenta la integración con `obsidian-local-rest-api` plugin (igual que proyecto-beta hace). Pero el formato sigue siendo markdown plano en `docs/wiki/` para que Claude lo lea sin depender de Obsidian. Si Obsidian no está corriendo, todo sigue funcionando.
 
 ---
 
@@ -519,7 +519,7 @@ rules:
   conventional_commits: true
 ```
 
-La explicitud aquí es deliberada. Lo que en cookycmp está hardcodeado en CLAUDE.md, en Forge v2 vive en `project.yaml` y se lee desde los comandos.
+La explicitud aquí es deliberada. Lo que en proyecto-alpha está hardcodeado en CLAUDE.md, en Forge v2 vive en `project.yaml` y se lee desde los comandos.
 
 ---
 
@@ -529,9 +529,9 @@ Los tres modos heredados de Forge v1 se refinan en v2.
 
 **Startup (1-2 personas).** Lo mínimo necesario. Sesiones, plan, work, review, ship. Sin Planner-Critic obligatorio. Sin compliance-reviewer. Sin audit logs. Foco en velocidad. Esto es para los proyectos chicos de la consultora o startups en pre-MVP.
 
-**Standard (3-8 personas).** El default. Roster completo de agentes, fases A/B, Planner-Critic obligatorio, hooks de typecheck y branch-guard activos. Esto es para la mayoría de proyectos de SocialWeb: fesw-encuestas, IDEA-DEP, los proyectos de CNTV no infantiles.
+**Standard (3-8 personas).** El default. Roster completo de agentes, fases A/B, Planner-Critic obligatorio, hooks de typecheck y branch-guard activos. Esto es para la mayoría de proyectos de SocialWeb: proyecto-beta, proyecto-IDEA, los proyectos de Cliente-Media no infantiles.
 
-**Enterprise (9+ personas o cliente regulatorio).** Standard más compliance-reviewer activo, audit logs append-only, ADRs obligatorios, 4 fases en lugar de 2, CI con verificación de compliance. Esto es para cookycmp (Ley 21.719), proyectos con SOC2, y eventualmente para sistemas del sector público si Forge alguna vez se aplica ahí (con las restricciones de probidad ya discutidas).
+**Enterprise (9+ personas o cliente regulatorio).** Standard más compliance-reviewer activo, audit logs append-only, ADRs obligatorios, 4 fases en lugar de 2, CI con verificación de compliance. Esto es para proyecto-alpha (Ley 21.719), proyectos con SOC2, y eventualmente para sistemas del sector público si Forge alguna vez se aplica ahí (con las restricciones de probidad ya discutidas).
 
 Cada modo activa un conjunto distinto de hooks por defecto. El `forge init` lo configura automáticamente según el modo elegido en el wizard.
 
@@ -547,7 +547,7 @@ El roadmap se organiza en fases trimestrales. Las primeras dos son adopción int
 
 Tareas:
 
-Reescribir `/session-start` y `/session-close` en Forge tomando los archivos de cookycmp como base. Estos dos comandos solos justifican una versión "v1.5" que se puede usar inmediatamente.
+Reescribir `/session-start` y `/session-close` en Forge tomando los archivos de proyecto-alpha como base. Estos dos comandos solos justifican una versión "v1.5" que se puede usar inmediatamente.
 
 Documentar la convención de naming de branches y la regla "no editar main".
 
@@ -579,9 +579,9 @@ Generar el comando `/forge wiki` con ingest, query y lint.
 
 Documentar internamente todo lo nuevo.
 
-Migrar cookycmp y fesw-encuestas a Forge v2 (los dos proyectos que han sido fuente de evidencia se convierten en validación: si no funcionan en Forge v2, Forge v2 está mal).
+Migrar proyecto-alpha y proyecto-beta a Forge v2 (los dos proyectos que han sido fuente de evidencia se convierten en validación: si no funcionan en Forge v2, Forge v2 está mal).
 
-**Resultado esperado al cierre de la fase:** Forge v2 funcionando en cookycmp, fesw-encuestas, y al menos un proyecto nuevo de SocialWeb. Documentación interna completa. Cinco proyectos rodando con el flujo `/session-start` → `/plan` → `/work` → `/review` → `/ship` → `/session-close`.
+**Resultado esperado al cierre de la fase:** Forge v2 funcionando en proyecto-alpha, proyecto-beta, y al menos un proyecto nuevo de SocialWeb. Documentación interna completa. Cinco proyectos rodando con el flujo `/session-start` → `/plan` → `/work` → `/review` → `/ship` → `/session-close`.
 
 ### 9.3 Fase 2 — Multi-runtime real (Septiembre–Octubre 2026)
 
@@ -619,7 +619,7 @@ Limpiar el repo de cualquier rastro de cliente específico o información sensib
 
 Escribir el README final con posicionamiento honesto y comparativa contra cc-sdd, Bridle, Harness.
 
-Conversar con probidad de Bienes Nacionales (consultivo, no consultivo formal).
+Conversar con probidad de organismo-publico (consultivo, no consultivo formal).
 
 Publicar la extensión de VS Code al Marketplace simultáneamente, con mantenedor asignado.
 
@@ -645,7 +645,7 @@ Esta fase no se planifica en detalle ahora. Se decide con datos en mano.
 
 ## 10. Riesgos y mitigaciones
 
-**Riesgo: Cris no puede mantener el proyecto activamente mientras está en Bienes Nacionales.**
+**Riesgo: Cris no puede mantener el proyecto activamente mientras está en organismo-publico.**
 
 Mitigación: el líder técnico designado en la Fase 0 es el mantenedor activo. Cris queda como autor original y consultor. Decisiones grandes pasan por comité de dos personas, no por Cris solo.
 
@@ -657,7 +657,7 @@ Mitigación: Forge v2 no compite con Harness o cc-sdd en velocidad de releases. 
 
 Mitigación: la Fase 0 es exactamente para detectar esto. Si al cierre de junio menos de tres devs lo usan voluntariamente, hay que repensar el proyecto antes de seguir invirtiendo. La bitácora de fricción es el termómetro.
 
-**Riesgo: probidad de Bienes Nacionales pide que Cris se desvincule de proyectos open source mientras esté en el cargo.**
+**Riesgo: probidad de organismo-publico pide que Cris se desvincule de proyectos open source mientras esté en el cargo.**
 
 Mitigación: la conversación con probidad se hace ANTES de cualquier publicación pública. Si la respuesta es que sí hay restricciones, Forge v2 se mantiene como herramienta interna de SocialWeb sin publicación pública hasta que Cris termine su paso por el gobierno. El trabajo no se pierde, solo se posterga la liberación.
 
@@ -695,7 +695,7 @@ No es un sistema de gestión de proyectos. Se integra con GitHub Projects pero n
 
 No es un sistema de memoria con vector store. La memoria vive en git como markdown.
 
-No es un producto comercial mientras Cris esté en Bienes Nacionales. Es una herramienta interna que se libera abierta.
+No es un producto comercial mientras Cris esté en organismo-publico. Es una herramienta interna que se libera abierta.
 
 ---
 
@@ -719,7 +719,7 @@ Estas preguntas se resuelven en la primera reunión de equipo sobre Forge v2.
 
 ## 14. Cierre
 
-Forge v2 toma lo que tres proyectos reales de SocialWeb (cookycmp en greenfield, fesw-encuestas en producción) y un proyecto externo destacado (Harness de Chachamaru) demostraron que funciona. No inventa.
+Forge v2 toma lo que tres proyectos reales de SocialWeb (proyecto-alpha en greenfield, proyecto-beta en producción) y un proyecto externo destacado (Harness de Chachamaru) demostraron que funciona. No inventa.
 
 Lo más valioso de este plan no es la arquitectura nueva. Es haber identificado que **la sesión es la unidad de trabajo correcta**, no el comando ni la skill ni el agente. Una vez que se acepta esa observación, todo lo demás se ordena.
 

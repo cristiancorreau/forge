@@ -31,7 +31,7 @@ Esta es la bitácora de fricción de Forge. Cada vez que un desarrollador tropie
 |-------|-------|
 | Fecha | 2026-05-01 |
 | Dev | cris |
-| Proyecto | fesw-encuestas |
+| Proyecto | proyecto-beta |
 | Comando | /session-start |
 | Fricción | El comando busca ramas con prefijo `feat/` para sugerir la rama activa. Si el proyecto usa `feature/`, `fix/` o ramas sin prefijo convencional, session-start no detecta nada y pide crear una rama nueva aunque ya exista una en curso. El desarrollador tiene que ingresarla manualmente o arriesga crear una rama duplicada. |
 | Severidad | P1 (importante pero hay workaround: ingresar la rama a mano) |

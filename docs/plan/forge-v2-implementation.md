@@ -59,17 +59,17 @@ Las siguientes tres cosas son bloqueantes. Sin ellas el plan no empieza.
 
 **Responsable:** Cris
 **Plazo:** Esta semana
-**Output:** Memo interno indicando quién es la persona designada como mantenedora principal de Forge mientras Cris esté en Bienes Nacionales.
+**Output:** Memo interno indicando quién es la persona designada como mantenedora principal de Forge mientras Cris esté en organismo-publico.
 
 La persona designada debe cumplir:
 
 - Senior con autoridad para aprobar PRs sin pasar por Cris
 - Disponibilidad de al menos cuatro horas semanales para Forge
-- Acceso a los proyectos cookycmp y fesw-encuestas (los dos casos de evidencia)
+- Acceso a los proyectos proyecto-alpha y proyecto-beta (los dos casos de evidencia)
 
 Sin esta designación, el resto del plan es teórico.
 
-### PR-2: Conversar con probidad de Bienes Nacionales
+### PR-2: Conversar con probidad de organismo-publico
 
 **Responsable:** Cris
 **Plazo:** Antes del cierre de Fase 0
@@ -85,27 +85,27 @@ Pregunta concreta a hacer: dado que Forge se publicará bajo SocialWeb con licen
 
 Tareas concretas:
 
-- Buscar cualquier referencia a clientes específicos (CNTV, UNICEF, IATA, SERCOTEC, DEP)
+- Buscar cualquier referencia a clientes específicos (Cliente-Media, Cliente-ONG, Cliente-Viajes, Cliente-GobiernoCL, Cliente-Deporte)
 - Buscar credenciales, tokens, URLs internas, IDs de proyectos privados
-- Buscar mención a Bienes Nacionales o cualquier órgano público
+- Buscar mención a organismos públicos o referencias a personas concretas en cargos del Estado
 - Buscar referencias a Ley 21.719 que no sean genéricas (los profiles de compliance se eliminaron del scope, ver decisión)
 
 ---
 
 ## Fase 0 — Estabilización (Mayo–Junio 2026)
 
-**Objetivo:** que Forge v1.5 (con session-start/close de cookycmp portado) esté siendo usado por al menos tres desarrolladores de SocialWeb en proyectos reales.
+**Objetivo:** que Forge v1.5 (con session-start/close de proyecto-alpha portado) esté siendo usado por al menos tres desarrolladores de SocialWeb en proyectos reales.
 
 **Milestone:** `v1.5.0`
 
-### F0-01: Portar `/session-start` desde cookycmp
+### F0-01: Portar `/session-start` desde proyecto-alpha
 
 **Capa:** Knowledge Layer
 **Tipo:** `parallel-safe` (independiente de F0-02 a F0-05)
 **Tamaño:** S (1-2 horas con agente)
 
 **Descripción:**
-Tomar el archivo `commands/session-start.md` de cookycmp y adaptarlo para Forge.
+Tomar el archivo `commands/session-start.md` de proyecto-alpha y adaptarlo para Forge.
 
 **Criterios de aceptación:**
 - Archivo en `forge/core/commands/session-start.md` con la lógica completa
@@ -117,14 +117,14 @@ Tomar el archivo `commands/session-start.md` de cookycmp y adaptarlo para Forge.
 
 ---
 
-### F0-02: Portar `/session-close` desde cookycmp
+### F0-02: Portar `/session-close` desde proyecto-alpha
 
 **Capa:** Knowledge Layer
 **Tipo:** `parallel-safe`
 **Tamaño:** M (2-4 horas con agente)
 
 **Descripción:**
-Tomar `commands/session-close.md` de cookycmp y adaptarlo para Forge. El pipeline de ocho pasos debe quedar idéntico, pero la integración con GitHub Projects debe parametrizarse via `project.yaml`.
+Tomar `commands/session-close.md` de proyecto-alpha y adaptarlo para Forge. El pipeline de ocho pasos debe quedar idéntico, pero la integración con GitHub Projects debe parametrizarse via `project.yaml`.
 
 **Criterios de aceptación:**
 - Archivo en `forge/core/commands/session-close.md`
@@ -196,7 +196,7 @@ Guía paso a paso para que un proyecto que ya usa Forge v1 incorpore los nuevos 
 - Contiene los comandos exactos para actualizar el submodule
 - Documenta los cambios en `project.yaml` necesarios
 - Incluye sección "qué hago si ya tenía hooks custom"
-- Probado migrando manualmente cookycmp y fesw-encuestas
+- Probado migrando manualmente proyecto-alpha y proyecto-beta
 
 **Agente sugerido:** `docs-writer`
 
@@ -241,7 +241,7 @@ Tres devs distintos adoptan Forge v1.5 en tres proyectos reales y reportan fricc
 
 ## Fase 1 — Forge v2 Core (Julio–Agosto 2026)
 
-**Objetivo:** las cinco capas del Agent Development Kit implementadas, los seis comandos principales funcionando, y cookycmp + fesw-encuestas migrados como prueba de validez.
+**Objetivo:** las cinco capas del Agent Development Kit implementadas, los seis comandos principales funcionando, y proyecto-alpha + proyecto-beta migrados como prueba de validez.
 
 **Milestone:** `v2.0.0-alpha`
 
@@ -309,7 +309,7 @@ Comando que crea o continúa specs en `docs/specs/`. Incluye plantilla obligator
 - Implementa los tres modos: `/plan <fase> "<título>"`, `/plan` (continuar), `/plan --review <spec>`
 - En modo standard y enterprise, antes de marcar spec como ready, invoca dialéctica Planner-Critic
 - Documentado en `docs/commands/plan.md` con ejemplos
-- Tests manuales en cookycmp creando una spec real
+- Tests manuales en proyecto-alpha creando una spec real
 
 **Agente sugerido:** `senior-backend` + `compliance-reviewer` (para validar Planner-Critic)
 
@@ -406,7 +406,7 @@ Sistema que selecciona hooks a instalar según el modo del proyecto (startup/sta
 **Tamaño:** M (3-4 horas)
 
 **Descripción:**
-Hook que bloquea comandos destructivos contra URLs de producción. Basado en la lección del incidente fesw del 2026-04-28.
+Hook que bloquea comandos destructivos contra URLs de producción. Basado en la lección del incidente proyecto-beta del 2026-04-28.
 
 **Criterios de aceptación:**
 - Archivo `forge/core/hooks/pre-bash-check.py`
@@ -414,7 +414,7 @@ Hook que bloquea comandos destructivos contra URLs de producción. Basado en la 
 - Lee `PRODUCTION_DATABASE_URL` o equivalentes del proyecto
 - Si el comando incluye URL de producción, bloquea sin más
 - Si es ambiguo, pide confirmación explícita
-- Tests con casos reales del incidente fesw
+- Tests con casos reales del incidente proyecto-beta
 
 **Agente sugerido:** `senior-devops` + `security-auditor`
 
@@ -566,14 +566,14 @@ Comandos para gestionar `docs/wiki/`: ingest, query, lint.
 
 ### Bloque G: Validación con proyectos reales
 
-#### F1-G01: Migrar cookycmp a Forge v2
+#### F1-G01: Migrar proyecto-alpha a Forge v2
 
 **Capa:** transversal
 **Tipo:** `serial` (depende de TODAS las anteriores de Fase 1)
 **Tamaño:** XL (8-10 horas)
 
 **Descripción:**
-El proyecto cookycmp se convierte en el primer caso real corriendo con Forge v2. Si no funciona, Forge v2 está mal.
+El proyecto proyecto-alpha se convierte en el primer caso real corriendo con Forge v2. Si no funciona, Forge v2 está mal.
 
 **Criterios de aceptación:**
 - `project.yaml` v2 generado y validado
@@ -587,7 +587,7 @@ El proyecto cookycmp se convierte en el primer caso real corriendo con Forge v2.
 
 ---
 
-#### F1-G02: Migrar fesw-encuestas a Forge v2
+#### F1-G02: Migrar proyecto-beta a Forge v2
 
 **Capa:** transversal
 **Tipo:** `serial` (depende de F1-G01 para detectar problemas antes)
@@ -704,7 +704,7 @@ Solo después de confirmar quién es el mantenedor designado de la extensión (n
 **Tipo:** `parallel-safe`
 **Tamaño:** XL (tres artículos)
 
-Tres a cinco artículos en LinkedIn firmados desde el rol académico (profesor UTFSM, alumno MIT). No mencionar el rol en Bienes Nacionales.
+Tres a cinco artículos en LinkedIn firmados desde el rol académico (profesor UTFSM, alumno MIT). No mencionar el rol en organismo-publico.
 
 Temas sugeridos:
 - "Por qué los agentes de IA necesitan un harness, no solo prompts"
@@ -775,12 +775,12 @@ create_issue() {
 # ─────────────────────────────────────────────────────────
 
 create_issue \
-  "F0-01: Portar /session-start desde cookycmp" \
+  "F0-01: Portar /session-start desde proyecto-alpha" \
   "Capa: Knowledge Layer
 Tipo: parallel-safe
 Tamaño: S
 
-Tomar commands/session-start.md de cookycmp y adaptarlo para Forge.
+Tomar commands/session-start.md de proyecto-alpha y adaptarlo para Forge.
 
 ## Criterios de aceptación
 - [ ] Archivo en forge/core/commands/session-start.md con la lógica completa
@@ -794,7 +794,7 @@ senior-backend o docs-writer" \
   "fase-0,capa-knowledge,parallel-safe,size-S"
 
 create_issue \
-  "F0-02: Portar /session-close desde cookycmp" \
+  "F0-02: Portar /session-close desde proyecto-alpha" \
   "Capa: Knowledge Layer
 Tipo: parallel-safe
 Tamaño: M
@@ -933,7 +933,7 @@ La retrospectiva queda documentada como ADR en `docs/architecture/adr/`.
 Antes de arrancar Fase 0, el líder técnico designado debe:
 
 - [ ] Confirmar disponibilidad (mínimo 4 horas/semana)
-- [ ] Tener acceso a cookycmp y fesw-encuestas como casos de evidencia
+- [ ] Tener acceso a proyecto-alpha y proyecto-beta como casos de evidencia
 - [ ] Leer `forge-v2-plan.md` completo
 - [ ] Leer este documento completo
 - [ ] Tener una conversación con Cris para alinear expectativas
