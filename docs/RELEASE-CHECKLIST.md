@@ -13,7 +13,6 @@
 - [ ] README.md completo con quick start funcional
 
 ## Legal
-- [ ] Conversación con probidad completada y documentada
 - [ ] LICENSE (Apache 2.0) presente en repo raíz
 - [ ] Copyright headers correctos en archivos principales
 

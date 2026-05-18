@@ -53,15 +53,7 @@ forge/
 
 ## Pre-requisitos antes de arrancar
 
-Las siguientes cosas son bloqueantes. Sin ellas el plan no empieza.
-
-### PR-2: Conversar con probidad de organismo-publico
-
-**Responsable:** Cris
-**Plazo:** Antes del cierre de Fase 0
-**Output:** Documento de respaldo donde se deja constancia de que Cris notificó a probidad sobre el proyecto open source bajo SocialWeb, y la respuesta recibida.
-
-Pregunta concreta a hacer: dado que Forge se publicará bajo SocialWeb con licencia Apache 2.0 y será usado por la consultora con clientes privados, ¿hay alguna restricción específica que respetar mientras Cris esté como Head of IT? La respuesta esperada es "ninguna mientras no toque al Estado", pero hay que tenerla por escrito.
+El siguiente pre-requisito es bloqueante. Sin él el plan no empieza.
 
 ### PR-3: Auditoría de contenido del repo actual
 
@@ -670,13 +662,6 @@ Reescribir el README con:
 - Quick start de cinco minutos
 - Casos de uso reales (sin nombres de clientes)
 - Sección de contribuciones
-
-### F3-03: Conversación final con probidad
-
-**Tipo:** `serial` (debe ocurrir antes de la publicación)
-**Tamaño:** S
-
-Confirmar que las condiciones de PR-2 siguen vigentes y que la publicación pública no genera problemas.
 
 ### F3-04: Publicar extensión VS Code al Marketplace
 

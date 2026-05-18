@@ -619,8 +619,6 @@ Limpiar el repo de cualquier rastro de cliente específico o información sensib
 
 Escribir el README final con posicionamiento honesto y comparativa contra cc-sdd, Bridle, Harness.
 
-Conversar con probidad de organismo-publico (consultivo, no consultivo formal).
-
 Publicar la extensión de VS Code al Marketplace simultáneamente, con mantenedor asignado.
 
 Escribir tres a cinco artículos de LinkedIn desde el rol académico (UTFSM, MIT) anunciando y explicando el proyecto.
@@ -656,10 +654,6 @@ Mitigación: Forge v2 no compite con Harness o cc-sdd en velocidad de releases. 
 **Riesgo: el equipo no adopta Forge y queda como herramienta de una sola persona.**
 
 Mitigación: la Fase 0 es exactamente para detectar esto. Si al cierre de junio menos de tres devs lo usan voluntariamente, hay que repensar el proyecto antes de seguir invirtiendo. La bitácora de fricción es el termómetro.
-
-**Riesgo: probidad de organismo-publico pide que Cris se desvincule de proyectos open source mientras esté en el cargo.**
-
-Mitigación: la conversación con probidad se hace ANTES de cualquier publicación pública. Si la respuesta es que sí hay restricciones, Forge v2 se mantiene como herramienta interna de SocialWeb sin publicación pública hasta que Cris termine su paso por el gobierno. El trabajo no se pierde, solo se posterga la liberación.
 
 **Riesgo: el código actual de Forge tiene rastros de clientes específicos o información sensible.**
 
