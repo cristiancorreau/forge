@@ -154,6 +154,49 @@ def install_agent(src: Path, dst: Path, name: str, source_label: str, scope_path
     return "UPDATE" if already_existed else "OK"
 
 
+def _install_templates(root: Path, forge: Path, config: dict):
+    """Crea docs/daily-notes/, docs/specs/_template.md y .claude/architecture.rules si no existen."""
+    project_name = config.get("project", {}).get("name", "Mi Proyecto")
+    tpl_base = forge / "core" / "templates"
+
+    # 1. docs/daily-notes/
+    daily_notes_dir = root / "docs" / "daily-notes"
+    if not daily_notes_dir.exists():
+        daily_notes_dir.mkdir(parents=True, exist_ok=True)
+        print(f"  [OK]   docs/daily-notes/ — creado")
+    else:
+        print(f"  [KEEP] docs/daily-notes/ — ya existe")
+
+    # 2. docs/specs/_template.md
+    specs_dir = root / "docs" / "specs"
+    spec_tpl_dst = specs_dir / "_template.md"
+    spec_tpl_src = tpl_base / "spec-template.md"
+    if not spec_tpl_dst.exists():
+        specs_dir.mkdir(parents=True, exist_ok=True)
+        if spec_tpl_src.exists():
+            shutil.copy2(spec_tpl_src, spec_tpl_dst)
+            print(f"  [OK]   docs/specs/_template.md — copiado desde core/templates/")
+        else:
+            print(f"  [MISS] core/templates/spec-template.md no encontrado en forge")
+    else:
+        print(f"  [KEEP] docs/specs/_template.md — ya existe")
+
+    # 3. .claude/architecture.rules (nunca sobreescribir — editado manualmente)
+    arch_rules_dst = root / ".claude" / "architecture.rules"
+    arch_rules_src = tpl_base / "claude-md" / "architecture.rules"
+    if not arch_rules_dst.exists():
+        if arch_rules_src.exists():
+            content = arch_rules_src.read_text(encoding="utf-8")
+            content = content.replace("<NOMBRE_PROYECTO>", project_name)
+            arch_rules_dst.parent.mkdir(parents=True, exist_ok=True)
+            arch_rules_dst.write_text(content, encoding="utf-8")
+            print(f"  [OK]   .claude/architecture.rules — creado desde template")
+        else:
+            print(f"  [MISS] core/templates/claude-md/architecture.rules no encontrado en forge")
+    else:
+        print(f"  [KEEP] .claude/architecture.rules — ya existe (no se sobreescribe)")
+
+
 def init_wiki(root: Path, forge: Path, config: dict):
     """Inicializa estructura docs/wiki/ desde templates si hay skills de wiki activos."""
     skills_active = config.get("skills", {}).get("active", [])
@@ -352,6 +395,10 @@ def init_claude_code(root: Path, forge: Path, config: dict):
 
     # AGENTS.md siempre se regenera
     _write_agents_md(root, config, active, compliance, specialized, profiles)
+
+    # Instalar templates de proyecto (daily-notes, specs, architecture.rules)
+    print(f"\n  Templates:")
+    _install_templates(root, forge, config)
 
     if tier1_discarded and (VERBOSE or len(tier1_discarded) > 0):
         print(f"\n  Conflictos resueltos: {len(tier1_discarded)} agente(s) core descartado(s) por profiles activos.")
