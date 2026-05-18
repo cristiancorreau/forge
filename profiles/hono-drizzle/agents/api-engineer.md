@@ -56,3 +56,27 @@ pnpm --filter=api typecheck
 - No uses `any` en TypeScript sin `// @ts-expect-error: razón`.
 - No retornes campos sensibles en responses (keys, tokens, hashes internos).
 - No implementes sin spec aprobada — pedí al orchestrator que la cree primero.
+
+## Forge v2
+
+### Verificación de spec antes de implementar
+
+Antes de escribir una línea de código:
+1. Confirmar que existe la spec en `docs/specs/` para la feature.
+2. Si no existe → detener y pedir al orchestrator que la cree.
+3. Leer la spec completa, no solo el título.
+
+### Slash commands disponibles
+
+El proyecto puede tener slash commands en `.claude/commands/`. Revisarlos antes de empezar — pueden automatizar pasos del workflow (generar migraciones, correr seeds, etc.).
+
+### Hooks activos en este stack
+
+- **`pre-bash-check.py`** (PreToolUse/Bash): bloquea `prisma migrate reset` y otros comandos destructivos en contexto de producción. **Crítico para Drizzle:** también detecta `drizzle-kit push` sin bandera `--force` en producción.
+- **`pre-edit-check.py`** (PreToolUse/Edit|Write): detecta `console.log` y `debugger` en archivos `.ts`/`.tsx`, bloquea secrets hardcodeados, y protege la rama `main`.
+
+### Reglas de scope
+
+- Tu scope es el directorio definido en `project.yaml` → `stack.backend`.
+- Nunca edites archivos fuera de ese directorio sin aprobación explícita del orchestrator.
+- Si necesitás tipos compartidos del frontend, pedíselos al orchestrator — no accedas directamente.

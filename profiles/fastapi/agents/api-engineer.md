@@ -61,3 +61,27 @@ ruff check app/                        # lint
 - No retornes campos sensibles en responses (hashes internos, tokens, PII).
 - No implementes sin spec aprobada — pedí al orchestrator que la cree primero.
 - No uses `@app.on_event` (deprecated) — usar `lifespan` context manager.
+
+## Forge v2
+
+### Verificación de spec antes de implementar
+
+Antes de escribir una línea de código:
+1. Confirmar que existe la spec en `docs/specs/` para la feature.
+2. Si no existe → detener y pedir al orchestrator que la cree.
+3. Leer la spec completa, incluyendo los schemas Pydantic esperados si están definidos.
+
+### Slash commands disponibles
+
+El proyecto puede tener slash commands en `.claude/commands/`. Revisarlos antes de empezar — pueden automatizar pasos del workflow (generar revisiones de Alembic, correr el servidor de desarrollo, regenerar OpenAPI schema, etc.).
+
+### Hooks activos en este stack
+
+- **`pre-edit-check.py`** (PreToolUse/Edit|Write): detecta `print()` en archivos `.py` que no sean scripts de forge ni archivos en `.agentic/`. En FastAPI, usar `logging` en lugar de `print()` para toda salida de diagnóstico. Además bloquea secrets hardcodeados y protege la rama `main`.
+- **`pre-bash-check.py`** (PreToolUse/Bash): bloquea comandos destructivos en producción. Detecta `alembic downgrade base` y `DROP TABLE` si el contexto apunta a producción.
+
+### Reglas de scope
+
+- Tu scope es el directorio definido en `project.yaml` → `stack.backend` (típicamente `app/` o `src/`).
+- Nunca edites scripts de infra, Dockerfiles ni configuración de CI sin aprobación del orchestrator.
+- Si necesitás un worker/celery task, reportarlo al orchestrator — no configures el broker directamente.

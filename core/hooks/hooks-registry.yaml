@@ -36,3 +36,13 @@ stack:
       event: PreToolUse
       matcher: "Bash"
       description: "Bloquea migrate reset en producción"
+  nextjs-admin:
+    - hook: prisma-safety.py
+      event: PreToolUse
+      matcher: "Bash"
+      description: "Bloquea prisma migrate reset/fresh en producción (aplica si el profile usa Prisma como ORM)"
+  laravel:
+    - hook: composer-check.py
+      event: PreToolUse
+      matcher: "Bash"
+      description: "Verifica que composer install/update no instale paquetes de dev en producción; advierte sobre artisan migrate:fresh/reset"
