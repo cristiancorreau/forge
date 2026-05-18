@@ -1,0 +1,486 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Forge project.yaml v2",
+  "description": "Schema de validación para project.yaml v2 del framework Forge",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [],
+  "properties": {
+    "project": {
+      "description": "Metadatos principales del proyecto",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "mode"],
+      "properties": {
+        "name": {
+          "description": "Nombre legible del proyecto",
+          "type": "string",
+          "minLength": 1
+        },
+        "slug": {
+          "description": "Identificador único en lowercase sin espacios, usado en rutas y nombres de recursos",
+          "type": ["string", "null"],
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "description": {
+          "description": "Descripción breve del propósito del proyecto",
+          "type": ["string", "null"]
+        },
+        "language": {
+          "description": "Lenguaje principal del proyecto",
+          "type": ["string", "null"],
+          "enum": ["typescript", "python", "ruby", "go", "php", "mixed", null]
+        },
+        "mode": {
+          "description": "Modo operativo del proyecto: startup (velocidad), standard (balance), enterprise (compliance)",
+          "type": "string",
+          "enum": ["startup", "standard", "enterprise"]
+        },
+        "status": {
+          "description": "Estado actual del proyecto",
+          "type": ["string", "null"],
+          "enum": ["active", "paused", "maintenance", "archived", null]
+        }
+      }
+    },
+    "team": {
+      "description": "Equipo del proyecto",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Nombre del equipo",
+          "type": ["string", "null"]
+        },
+        "members": {
+          "description": "Lista de miembros del equipo",
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "role": {
+                "type": "string",
+                "enum": ["lead", "backend", "frontend", "fullstack", "qa", "design"]
+              },
+              "email": { "type": ["string", "null"], "format": "email" }
+            }
+          }
+        }
+      }
+    },
+    "stack": {
+      "description": "Stack tecnológico del proyecto",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "description": "Framework o runtime del backend",
+          "type": ["string", "null"],
+          "enum": ["hono", "fastapi", "rails", "express", "laravel", "nestjs", "django", "go-gin", null]
+        },
+        "frontend": {
+          "description": "Framework del frontend",
+          "type": ["string", "null"],
+          "enum": ["nextjs", "nuxt", "remix", "rails-views", "astro", "sveltekit", null]
+        },
+        "database": {
+          "description": "Motor de base de datos principal",
+          "type": ["string", "null"],
+          "enum": ["postgresql", "mysql", "sqlite", null]
+        },
+        "orm": {
+          "description": "ORM o query builder utilizado (nuevo en v2)",
+          "type": ["string", "null"],
+          "enum": ["drizzle", "prisma", "sequelize", "typeorm", "sqlalchemy", "active-record", null]
+        },
+        "cache": {
+          "description": "Sistema de caché",
+          "type": ["string", "null"],
+          "enum": ["redis", "memcached", null]
+        },
+        "package_manager": {
+          "description": "Gestor de paquetes del proyecto (nuevo en v2)",
+          "type": ["string", "null"],
+          "enum": ["npm", "pnpm", "yarn", "bun", "pip", "poetry", "bundler", null]
+        },
+        "monorepo": {
+          "description": "Herramienta de monorepo si aplica (nuevo en v2)",
+          "type": ["string", "null"],
+          "enum": ["turborepo", "nx", "lerna", null]
+        },
+        "testing": {
+          "description": "Frameworks de testing activos",
+          "type": ["array", "null"],
+          "items": {
+            "type": "string",
+            "enum": ["vitest", "jest", "pytest", "rspec", "phpunit", "playwright", "cypress"]
+          }
+        }
+      }
+    },
+    "agents": {
+      "description": "Configuración de agentes activos para este proyecto",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "description": "Lista de nombres de agentes activos (de core/agents/)",
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "by_role": {
+          "description": "Mapeo de rol a modelo específico (nuevo en v2)",
+          "type": ["object", "null"],
+          "additionalProperties": {
+            "type": "string",
+            "description": "Nombre del modelo Claude a usar para este rol (ej: claude-opus-4-7)"
+          }
+        },
+        "compliance": {
+          "description": "Agentes de compliance opcionales",
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "profiles": {
+          "description": "Profiles stack-específicos (Tier 2) que reemplazan agentes genéricos",
+          "type": ["array", "null"],
+          "items": {
+            "type": "string",
+            "enum": [
+              "hono-drizzle", "nextjs-admin", "astro", "expo", "playwright-crawler",
+              "fastapi", "express", "rails", "nestjs", "django", "vuenuxt",
+              "go-gin", "sveltekit"
+            ]
+          }
+        }
+      }
+    },
+    "sprint": {
+      "description": "Configuración del sprint actual",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "current": {
+          "description": "Número del sprint actual",
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "length_days": {
+          "description": "Duración del sprint en días",
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "phases": {
+          "description": "Fases del sprint con sus specs",
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "specs": {
+                "type": ["array", "null"],
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "skills": {
+      "description": "Skills de Forge activos para el proyecto",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "description": "Lista de skills activos (de core/skills/)",
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "integrations": {
+          "description": "Integraciones opcionales que requieren herramienta externa",
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "wiki": {
+      "description": "Configuración del wiki del proyecto (solo si wiki-ingest/wiki-query están activos)",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "description": "Ruta al wiki del proyecto, relativa a la raíz del repo",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "deploy": {
+      "description": "Configuración de deploy y smoke tests (nuevo en v2)",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "description": "Plataforma de deploy",
+          "type": ["string", "null"],
+          "enum": ["vercel", "railway", "fly", "aws", "github-actions", "custom", null]
+        },
+        "branch": {
+          "description": "Branch que trigerea el deploy automático",
+          "type": ["string", "null"]
+        },
+        "project_id": {
+          "description": "ID del proyecto en la plataforma de deploy (ej: prj_xxx en Vercel)",
+          "type": ["string", "null"]
+        },
+        "production_url": {
+          "description": "URL de producción del proyecto",
+          "type": ["string", "null"],
+          "format": "uri"
+        },
+        "team_id": {
+          "description": "ID del equipo en Vercel (ej: team_xxx)",
+          "type": ["string", "null"]
+        },
+        "app_name": {
+          "description": "Nombre de la app en Fly.io",
+          "type": ["string", "null"]
+        },
+        "check_command": {
+          "description": "Comando para verificar el deploy en providers custom",
+          "type": ["string", "null"]
+        },
+        "smoke_tests": {
+          "description": "Tests de humo a ejecutar después del deploy",
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url"],
+            "properties": {
+              "url": {
+                "description": "URL o ruta relativa a verificar (ej: /api/health o https://...)",
+                "type": "string"
+              },
+              "expect_status": {
+                "description": "HTTP status code esperado",
+                "type": ["integer", "null"],
+                "minimum": 100,
+                "maximum": 599
+              },
+              "expect_json": {
+                "description": "Objeto JSON que debe estar contenido en la respuesta",
+                "type": ["object", "null"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "mcp": {
+      "description": "Configuración de servidores MCP (Model Context Protocol) (nuevo en v2)",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "servers": {
+          "description": "Lista de servidores MCP configurados para el proyecto",
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "description": "Nombre del servidor MCP",
+                "type": "string"
+              },
+              "auto_approve": {
+                "description": "Lista de nombres de tools que se auto-aprueban sin confirmación",
+                "type": ["array", "null"],
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "github": {
+      "description": "Integración con GitHub Projects para tracking de tareas (nuevo en v2)",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "project": {
+          "description": "Configuración del GitHub Project asociado",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "number": {
+              "description": "Número del GitHub Project",
+              "type": ["integer", "null"],
+              "minimum": 1
+            },
+            "owner": {
+              "description": "Owner del repositorio (usuario u organización)",
+              "type": ["string", "null"]
+            },
+            "repo": {
+              "description": "Nombre del repositorio",
+              "type": ["string", "null"]
+            },
+            "status_field_id": {
+              "description": "ID del campo Status en el GitHub Project",
+              "type": ["string", "null"]
+            },
+            "status_in_progress": {
+              "description": "Valor del campo Status para tareas en progreso",
+              "type": ["string", "null"]
+            },
+            "status_done": {
+              "description": "Valor del campo Status para tareas completadas",
+              "type": ["string", "null"]
+            }
+          }
+        }
+      }
+    },
+    "rules": {
+      "description": "Reglas de desarrollo y guardrails del proyecto (nuevo en v2)",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "forbidden_in_production": {
+          "description": "Lista de strings o patrones que no deben estar en código de producción",
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "required_review_before_ship": {
+          "description": "Requiere revisión humana antes de hacer ship",
+          "type": ["boolean", "null"]
+        },
+        "require_spec_before_implementation": {
+          "description": "Requiere spec aprobada antes de comenzar implementación",
+          "type": ["boolean", "null"]
+        },
+        "conventional_commits": {
+          "description": "Enforza Conventional Commits en todos los commits",
+          "type": ["boolean", "null"]
+        },
+        "forbidden_patterns": {
+          "description": "Lista de patrones regex evaluados por el hook pre-edit-check",
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "scripts": {
+      "description": "Comandos de scripts del proyecto (nuevo en v2)",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "description": "Comando ejecutado por post-turn-check.sh para validar el proyecto",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "compliance": {
+      "description": "Configuración de compliance y regulaciones",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "frameworks": {
+          "description": "Frameworks regulatorios aplicables al proyecto",
+          "type": ["array", "null"],
+          "items": {
+            "type": "string",
+            "enum": ["gdpr", "lgpd", "ley-21719", "ccpa"]
+          }
+        },
+        "pii_handling": {
+          "description": "El proyecto maneja Personally Identifiable Information",
+          "type": ["boolean", "null"]
+        },
+        "audit_logs": {
+          "description": "El proyecto requiere logs inmutables de auditoría",
+          "type": ["boolean", "null"]
+        }
+      }
+    },
+    "paths": {
+      "description": "Paths del proyecto relativos a la raíz del repo",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "specs": {
+          "description": "Directorio de specs del proyecto",
+          "type": ["string", "null"]
+        },
+        "progress": {
+          "description": "Archivo de progreso HTML",
+          "type": ["string", "null"]
+        },
+        "migrations": {
+          "description": "Directorio de migraciones de base de datos",
+          "type": ["string", "null"]
+        },
+        "tests": {
+          "description": "Directorio de tests",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "agent_paths": {
+      "description": "Paths de scope por agente, inyectados en el frontmatter de cada agente durante forge-init",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "api": {
+          "description": "Directorio del agente backend/API",
+          "type": ["string", "null"]
+        },
+        "frontend": {
+          "description": "Directorio del agente frontend",
+          "type": ["string", "null"]
+        },
+        "admin": {
+          "description": "Directorio del agente admin",
+          "type": ["string", "null"]
+        },
+        "mobile": {
+          "description": "Directorio del agente mobile",
+          "type": ["string", "null"]
+        },
+        "scanner": {
+          "description": "Directorio del agente scanner/crawler",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "integrations": {
+      "description": "Configuración de integraciones externas",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "obsidian": {
+          "description": "Integración con Obsidian via Local REST API",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "vault_path": {
+              "description": "Ruta al vault de Obsidian, relativa a la raíz del repo",
+              "type": ["string", "null"]
+            },
+            "map": {
+              "description": "Mapeo de área de código a nota del vault",
+              "type": ["object", "null"],
+              "additionalProperties": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}
