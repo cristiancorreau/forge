@@ -23,7 +23,7 @@ forge tiene una extensión oficial para VS Code que provee un panel lateral con 
 # Desde la raíz del repo forge
 cd vscode-extension
 npx vsce package --no-dependencies
-code --install-extension forge-agent-framework-0.2.1.vsix
+code --install-extension forge-agent-framework-0.5.0.vsix
 ```
 
 Después de instalar, aparece el ícono **forge** (robot) en la barra de actividad izquierda.
