@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright 2026 SocialWeb — Apache License 2.0
+# https://github.com/socialwebcl/forge
 """
 generate-agents-md.py — Genera AGENTS.md para OpenCode / Codex.
 
