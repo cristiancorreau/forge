@@ -320,6 +320,9 @@ class ForgeActionsProvider implements vscode.TreeDataProvider<ForgeActionItem> {
       new ForgeActionItem('Audit Agent…',     'forge.auditAgent',       'person',       'audit a single agent'),
       new ForgeActionItem('Search Catalog',   'forge.searchCatalog',    'search',       'MCP servers & profiles'),
       new ForgeActionItem('Show Status',      'forge.showStatus',       'info',         'audit summary'),
+      new ForgeActionItem('Generate All Runtimes', 'forge.generateAll', 'layers',       'generate for all runtimes'),
+      new ForgeActionItem('Validate project.yaml', 'forge.validateProjectYaml', 'pass', 'check project.yaml structure'),
+      new ForgeActionItem('Migrate to v2',    'forge.migrateProjectYaml', 'arrow-up',   'migrate project.yaml to Forge v2'),
     ];
   }
 }
@@ -981,6 +984,117 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.window.showErrorMessage('forge: Error al generar CLAUDE.md. Ver output channel.');
       } else {
         vscode.window.showInformationMessage('forge: CLAUDE.md generado correctamente.');
+        projectProvider.refresh();
+      }
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.generateAll
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.generateAll', async () => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('forge: No workspace open.');
+        return;
+      }
+      const forgeDir = await requireForgeDir(workspaceRoot);
+      if (!forgeDir) { return; }
+
+      const channel = getInitChannel();
+      channel.clear();
+      channel.show(true);
+      channel.appendLine('Generating all runtimes...\n');
+
+      const script = path.join(forgeDir, 'scripts', 'forge-generate-all.py');
+      const result = await runForgeCommand(['python3', script], workspaceRoot);
+
+      channel.appendLine(result.stdout);
+      if (result.stderr) {
+        channel.appendLine('--- stderr ---');
+        channel.appendLine(result.stderr);
+      }
+      if (result.code !== 0) {
+        channel.appendLine(`\nProcess exited with code ${result.code}`);
+        vscode.window.showErrorMessage(`forge: Generate all runtimes failed. Check the 'forge Init' output channel.`);
+      } else {
+        vscode.window.showInformationMessage('forge: All runtimes generated successfully.');
+      }
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.validateProjectYaml
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.validateProjectYaml', async () => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('forge: No workspace open.');
+        return;
+      }
+      const forgeDir = await requireForgeDir(workspaceRoot);
+      if (!forgeDir) { return; }
+
+      const channel = getInitChannel();
+      channel.clear();
+      channel.appendLine('Validating project.yaml...\n');
+
+      const script = path.join(forgeDir, 'scripts', 'forge-validate-project-yaml.py');
+      const result = await runForgeCommand(['python3', script], workspaceRoot);
+
+      if (result.code === 0) {
+        vscode.window.showInformationMessage('forge: project.yaml is valid.');
+      } else {
+        channel.appendLine(result.stdout);
+        if (result.stderr) {
+          channel.appendLine('--- stderr ---');
+          channel.appendLine(result.stderr);
+        }
+        channel.show(true);
+        vscode.window.showErrorMessage(`forge: project.yaml validation failed. Check the 'forge Init' output channel.`);
+      }
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.migrateProjectYaml
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.migrateProjectYaml', async () => {
+      const workspaceRoot = getWorkspaceRoot();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('forge: No workspace open.');
+        return;
+      }
+      const forgeDir = await requireForgeDir(workspaceRoot);
+      if (!forgeDir) { return; }
+
+      const confirm = await vscode.window.showWarningMessage(
+        'forge: Migrate project.yaml to Forge v2 format? A backup will be created automatically.',
+        'Yes', 'No'
+      );
+      if (confirm !== 'Yes') { return; }
+
+      const channel = getInitChannel();
+      channel.clear();
+      channel.show(true);
+      channel.appendLine('Migrating project.yaml to Forge v2...\n');
+
+      const script = path.join(forgeDir, 'scripts', 'forge-migrate-project-yaml.py');
+      const result = await runForgeCommand(['python3', script, '--backup'], workspaceRoot);
+
+      channel.appendLine(result.stdout);
+      if (result.stderr) {
+        channel.appendLine('--- stderr ---');
+        channel.appendLine(result.stderr);
+      }
+      if (result.code !== 0) {
+        channel.appendLine(`\nProcess exited with code ${result.code}`);
+        vscode.window.showErrorMessage(`forge: Migration failed. Check the 'forge Init' output channel.`);
+      } else {
+        vscode.window.showInformationMessage('forge: project.yaml migrated to Forge v2 successfully.');
         projectProvider.refresh();
       }
     })
