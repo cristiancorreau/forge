@@ -53,21 +53,7 @@ forge/
 
 ## Pre-requisitos antes de arrancar
 
-Las siguientes tres cosas son bloqueantes. Sin ellas el plan no empieza.
-
-### PR-1: Designar líder técnico de Forge
-
-**Responsable:** Cris
-**Plazo:** Esta semana
-**Output:** Memo interno indicando quién es la persona designada como mantenedora principal de Forge mientras Cris esté en organismo-publico.
-
-La persona designada debe cumplir:
-
-- Senior con autoridad para aprobar PRs sin pasar por Cris
-- Disponibilidad de al menos cuatro horas semanales para Forge
-- Acceso a los proyectos proyecto-alpha y proyecto-beta (los dos casos de evidencia)
-
-Sin esta designación, el resto del plan es teórico.
+Las siguientes cosas son bloqueantes. Sin ellas el plan no empieza.
 
 ### PR-2: Conversar con probidad de organismo-publico
 
@@ -697,7 +683,7 @@ Confirmar que las condiciones de PR-2 siguen vigentes y que la publicación púb
 **Tipo:** `parallel-safe` con F3-02
 **Tamaño:** M
 
-Solo después de confirmar quién es el mantenedor designado de la extensión (no debe ser Cris). Publicar al Marketplace con el manifiesto correcto.
+Publicar al Marketplace con el manifiesto correcto.
 
 ### F3-05: Artículos de lanzamiento
 

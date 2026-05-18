@@ -18,6 +18,5 @@
 - [ ] Copyright headers correctos en archivos principales
 
 ## Operativo
-- [ ] Mantenedor designado confirmado (no puede ser solo Cris)
 - [ ] Al menos 2 devs pueden hacer PR reviews autónomamente
 - [ ] GitHub Actions CI pasando en main
