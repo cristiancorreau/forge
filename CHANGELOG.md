@@ -7,6 +7,43 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [0.5.0] — 2026-05-17
+
+### Agregado — Forge v2 Fase 2 (multi-runtime)
+
+#### OpenCode (F2-01/02/03/04)
+- `adapters/opencode/commands/`: 6 comandos adaptados para ejecución serial (plan, work, review, ship, session-start, session-close)
+- `/work` en OpenCode: modo serial equivalente a `--serial` de Claude Code (sin agent teams paralelos)
+- `/review`: veredicto APPROVED/CHANGES_REQUESTED/BLOCKED; escribe `.opencode/review-status.json`
+- `/ship`: usa `vercel deploy` vía CLI en vez de MCP tools
+- `adapters/opencode/HOOKS.md`: tabla de equivalencia hook-por-hook; todos los guardrails se embeben en AGENTS.md
+- `adapters/opencode/generate-agents-md.py`: agrega sección de comandos SDD y reglas de guardrail al AGENTS.md generado
+- `docs/runtimes/opencode.md`: guía completa con diferencias vs Claude Code, agent teams serial, limitaciones
+
+#### Codex CLI (F2-05/06/07/08)
+- `adapters/codex/commands/`: 6 prompt templates para uso con Codex CLI autónomo
+- `adapters/codex/hooks/codex.yaml.tpl`: template de configuración con hooks `onStart`/`onFinish`
+- `adapters/codex/hooks/forge-codex-start.sh`: checks determinísticos de entorno al inicio de sesión
+- `adapters/codex/hooks/forge-codex-finish.sh`: typecheck/lint post-sesión por tipo de archivo
+- `scripts/setup-codex.sh`: instalación automática del entorno Codex en 7 pasos
+- `adapters/codex/generate-codex-config.py`: agrega SDD workflow, production safety rules y branch guard al AGENTS.md
+- `docs/runtimes/codex.md`: guía completa con tabla de diferencias, uso diario y consideraciones de seguridad
+
+#### Kiro (F2-09)
+- `adapters/kiro/generate-steering.py`: agrega flujo SDD en `structure.md`, genera `commands.md` y hook `pre-edit-branch-guard.json`
+- `docs/runtimes/kiro.md`: tablas de equivalencia de conceptos, guía de uso, roadmap para soporte completo
+- `docs/architecture/adr/ADR-002-kiro-support-level.md`: decisión formal de soporte en nivel "monitoring"
+
+#### Capa de traducción (F2-10)
+- `scripts/forge-generate-all.py`: punto de entrada unificado para generar configs de todos los runtimes activos
+- Auto-detección por marcadores de filesystem (`.claude/`, `.opencode/`, `.kiro/`, `AGENTS.md`)
+- Flags: `--runtime`, `--dry-run`, `--force`
+- `templates/project.yaml.tpl`: nueva sección `runtimes.active` con los 4 runtimes soportados
+- `core/schemas/project.schema.json`: validación de la nueva sección `runtimes`
+- `docs/runtimes/README.md`: índice de runtimes con tabla de nivel de soporte
+
+---
+
 ## [0.4.0] — 2026-05-17
 
 ### Agregado — Forge v2 Fase 1 (core commands + full stack)
