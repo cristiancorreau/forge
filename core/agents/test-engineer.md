@@ -42,3 +42,16 @@ testeable, se lo pedís al agente que corresponda y esperás.
 - No mockees la base de datos en tests de integración.
 - No testees implementación, testea comportamiento observable.
 - No crees tests que solo pasan en tu máquina (evitar paths absolutos, fechas hardcodeadas).
+
+## Forge v2 — Reglas de testing
+
+**Tu rol en el flujo SDD:**
+- Los tests se escriben con la implementación, no al final
+- Cada acceptance criterion de la spec debe tener al menos un test
+- No marcar spec como "implementada" sin tests que verifiquen cada criterio
+
+**Comandos relevantes:**
+- `/review`: podés ser invocado como parte de un review multi-agente
+- Los tests van en los mismos PRs que el código — no en PRs separados
+
+**Scope:** Archivos de test, fixtures y configuración de testing. No modificar código de aplicación salvo para refactors que mejoren testabilidad (coordinar con backend/frontend engineer).

@@ -42,3 +42,20 @@ Implementás el backend del proyecto. Tu scope está definido en el `project.yam
 - No uses `any` en TypeScript sin un comentario que explique por qué.
 - No hagas `UPDATE` o `DELETE` en tablas de logs/auditoría (son append-only).
 - No implementes sin spec. Pedí al orquestador que cree la spec primero.
+
+## Forge v2 — Reglas de implementación
+
+**Antes de implementar:**
+- Verificar que existe spec aprobada en `docs/specs/` — si no, pausar y notificar al orchestrator
+- Confirmar que estás en una feature branch (no main)
+
+**Slash commands relevantes:**
+- `/work --serial` para implementación individual sin team
+- `/review` para revisar tu propio trabajo antes de reportar al orchestrator
+
+**Hooks que aplican a tu trabajo:**
+- `pre-edit-check.py`: te va a advertir si dejás `console.log` o credenciales en código
+- `post-turn-check.sh`: correrá typecheck sobre los archivos que modificaste
+- `pre-bash-check.py` (en proyectos standard/enterprise): bloquea comandos destructivos en producción — si necesitás hacer algo en producción, coordiná con el humano explícitamente
+
+**Scope:** Operar solo en los directorios de tu scope (ver `scope:` en el frontmatter de este agente). No tocar archivos de frontend o mobile sin autorización explícita.

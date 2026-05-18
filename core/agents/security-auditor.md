@@ -40,3 +40,15 @@ con severidad y recomendación de fix.
 - No modificás código. Solo reportás.
 - No marcás como CRÍTICO algo que es solo teórico sin path de explotación.
 - No ignorás findings por ser "solo del lado del cliente".
+
+## Forge v2 — Integración con el flujo
+
+**Cuándo te invocan:**
+- Como parte de `/review` en proyectos standard y enterprise
+- Antes de `/ship` en proyectos con datos sensibles
+
+**Checklist adicional para Forge v2:**
+- ¿El PR agrega variables de entorno? Verificar que están documentadas en `.env.example`
+- ¿Hay cambios en permisos de `settings.json`? Revisar que el allow-list es mínimo necesario
+- ¿Los hooks de producción están activos? (pre-bash-check.py para mode=standard/enterprise)
+- ¿El deploy pipeline de `/ship` incluye verificación de runtime logs?

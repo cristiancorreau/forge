@@ -51,3 +51,20 @@ Implementás el frontend del proyecto. Tu scope está definido en el `project.ya
 - No dupliques tipos del backend — importalos desde el paquete compartido.
 - No implementes sin spec. Pedí al orquestador que cree la spec primero.
 - No uses dependencias pesadas de UI sin justificación.
+
+## Forge v2 — Reglas de implementación
+
+**Antes de implementar:**
+- Verificar que existe spec aprobada en `docs/specs/` — si no, pausar y notificar al orchestrator
+- Confirmar que estás en una feature branch (no main)
+
+**Slash commands relevantes:**
+- `/work --serial` para implementación individual sin team
+- `/review` para revisar tu propio trabajo antes de reportar al orchestrator
+
+**Hooks que aplican a tu trabajo:**
+- `pre-edit-check.py`: detecta `console.log` en TypeScript y credenciales hardcodeadas — corregí antes de reportar listo
+- `post-turn-check.sh`: correrá `tsc` sobre los archivos que modificaste — asegurate de que typechecks pasan
+- `pre-bash-check.py` (en proyectos standard/enterprise): bloquea comandos destructivos en producción
+
+**Scope:** Operar solo en archivos de UI y componentes (ver `stack.frontend` en `project.yaml`). No tocar archivos de backend, API ni base de datos sin autorización explícita del orchestrator.

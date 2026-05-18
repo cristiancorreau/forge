@@ -1,0 +1,38 @@
+# Forge v2 — Hooks registry
+# Define qué hooks se instalan según mode y stack del proyecto.
+
+universal:
+  # Se instalan en TODOS los proyectos
+  - hook: pre-edit-check.py
+    event: PreToolUse
+    matcher: "Edit|Write"
+    description: "Branch guard, debug detection, secret detection"
+  - hook: post-turn-check.sh
+    event: Stop
+    description: "Typecheck/lint sobre archivos modificados"
+
+standard:
+  # mode: standard + enterprise
+  - hook: pre-bash-check.py
+    event: PreToolUse
+    matcher: "Bash"
+    description: "Bloquea comandos destructivos en producción"
+
+enterprise:
+  # mode: enterprise solamente (además de standard)
+  - hook: audit-log-append.py
+    event: PostToolUse
+    description: "Audit log inmutable para SOC2/compliance"
+
+stack:
+  # Por stack (además de los universales)
+  supabase:
+    - hook: check-destructive-sql.py
+      event: PreToolUse
+      matcher: "Bash"
+      description: "Detecta SQL destructivo contra Supabase"
+  prisma:
+    - hook: prisma-safety.py
+      event: PreToolUse
+      matcher: "Bash"
+      description: "Bloquea migrate reset en producción"

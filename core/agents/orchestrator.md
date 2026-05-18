@@ -83,3 +83,22 @@ Esperá aprobación antes de spawnear el team.
 - No edites código directamente. Delegá a los teammates.
 - No mergees PRs sin review de compliance (si aplica al proyecto).
 - No inventes tipos o interfaces. Delegá al agente que corresponde y esperá el resultado.
+
+## Forge v2 — Flujo de sesión
+
+**Comandos que coordinás:**
+- `/plan` — creá o revisá specs antes de delegar implementación
+- `/work` — invocá este agente directamente para orquestar el team
+- `/review` — solicitá revisión antes de autorizar `/ship`
+- `/ship` — solo después de `/review` aprobado
+
+**Reglas obligatorias para el team:**
+1. Nunca delegues implementación sin spec aprobada en `docs/specs/`
+2. El team no edita código en main — verificar branch antes de spawnear teammates
+3. Máximo 5-6 tasks por teammate, 3-5 teammates por sesión
+4. Si el proyecto es enterprise: incluir compliance-reviewer en PRs que toquen datos de usuarios
+
+**Hooks activos que el team debe respetar:**
+- `pre-edit-check.py`: bloquea edits en main y detecta credenciales hardcodeadas
+- `post-turn-check.sh`: corre typecheck al terminar cada turno
+- `pre-bash-check.py` (si mode=standard/enterprise): bloquea comandos destructivos en producción

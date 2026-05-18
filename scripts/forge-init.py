@@ -268,6 +268,88 @@ def install_hooks(root: Path, forge: Path, config: dict):
     if not hooks_src.exists():
         return
 
+    registry_path = hooks_src / "hooks-registry.yaml"
+    if registry_path.exists():
+        _install_hooks_from_registry(root, hooks_src, config, registry_path)
+    else:
+        _install_hooks_legacy(root, hooks_src, config)
+
+
+def _resolve_hooks_from_registry(config: dict, registry: dict) -> list[dict]:
+    """
+    Determina qué hooks instalar según el registry y el project.yaml.
+    Retorna lista de dicts con keys: hook, event, matcher (opcional), description.
+    """
+    mode = config.get("project", {}).get("mode", "startup")
+    stack = config.get("stack", {})
+    database = (stack.get("database") or "").lower()
+    orm = (stack.get("orm") or "").lower()
+
+    selected: list[dict] = []
+
+    # Universal — siempre
+    for entry in registry.get("universal", []):
+        selected.append(entry)
+
+    # Standard — mode standard + enterprise
+    if mode in ("standard", "enterprise"):
+        for entry in registry.get("standard", []):
+            selected.append(entry)
+
+    # Enterprise — solo mode enterprise
+    if mode == "enterprise":
+        for entry in registry.get("enterprise", []):
+            selected.append(entry)
+
+    # Stack-based
+    stack_registry = registry.get("stack", {})
+    for stack_name, entries in stack_registry.items():
+        stack_name_lower = stack_name.lower()
+        if stack_name_lower in database or stack_name_lower in orm:
+            for entry in entries:
+                selected.append(entry)
+
+    return selected
+
+
+def _install_hooks_from_registry(root: Path, hooks_src: Path, config: dict, registry_path: Path):
+    """Lee hooks-registry.yaml e instala los hooks que corresponden."""
+    with open(registry_path) as f:
+        registry = yaml.safe_load(f)
+
+    if not isinstance(registry, dict):
+        print("  [WARN] hooks-registry.yaml inválido — usando fallback legacy")
+        _install_hooks_legacy(root, hooks_src, config)
+        return
+
+    hooks_dir = root / ".claude" / "hooks"
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+
+    selected = _resolve_hooks_from_registry(config, registry)
+    installed = []
+    for entry in selected:
+        hook_file = entry.get("hook", "")
+        if not hook_file:
+            continue
+        src = hooks_src / hook_file
+        dst = hooks_dir / hook_file
+        if not src.exists():
+            continue
+        if dst.exists() and not FORCE:
+            print(f"  [KEEP] .claude/hooks/{hook_file}")
+            continue
+        shutil.copy2(src, dst)
+        if hook_file.endswith(".sh"):
+            dst.chmod(dst.stat().st_mode | 0o111)
+        installed.append(hook_file)
+        print(f"  [OK]   .claude/hooks/{hook_file}")
+
+    if installed:
+        print(f"  Hooks instalados: {', '.join(installed)}")
+
+
+def _install_hooks_legacy(root: Path, hooks_src: Path, config: dict):
+    """Fallback: instala hooks con lógica hardcodeada (sin registry)."""
     hooks_dir = root / ".claude" / "hooks"
     hooks_dir.mkdir(parents=True, exist_ok=True)
 
@@ -275,15 +357,10 @@ def install_hooks(root: Path, forge: Path, config: dict):
     stack = config.get("stack", {})
     database = (stack.get("database") or "").lower()
 
-    # Hooks universales — todos los proyectos
     universal_hooks = ["pre-edit-check.py", "post-turn-check.sh"]
-
-    # Hooks de modo production (standard + enterprise)
     production_hooks: list[str] = []
     if mode in ("standard", "enterprise"):
         production_hooks.append("pre-bash-check.py")
-
-    # Hooks por stack
     stack_hooks: list[str] = []
     if "supabase" in database:
         stack_hooks.append("check-destructive-sql.py")
@@ -299,7 +376,6 @@ def install_hooks(root: Path, forge: Path, config: dict):
             print(f"  [KEEP] .claude/hooks/{hook_file}")
             continue
         shutil.copy2(src, dst)
-        # Mantener permisos de ejecución en scripts shell
         if hook_file.endswith(".sh"):
             dst.chmod(dst.stat().st_mode | 0o111)
         installed.append(hook_file)
@@ -307,6 +383,120 @@ def install_hooks(root: Path, forge: Path, config: dict):
 
     if installed:
         print(f"  Hooks instalados: {', '.join(installed)}")
+
+
+def _build_hooks_config(config: dict) -> dict:
+    """
+    Construye el dict de hooks para settings.json.
+    Si hooks-registry.yaml existe, lo usa para determinar qué hooks incluir.
+    Si no, usa la configuración hardcodeada de fallback.
+    """
+    # Intentar leer el registry desde el directorio forge
+    registry: dict | None = None
+    try:
+        from pathlib import Path as _Path
+        # Buscar forge dir
+        cwd = _Path.cwd()
+        for candidate in [cwd / ".agentic", cwd / "forge"]:
+            reg_path = candidate / "core" / "hooks" / "hooks-registry.yaml"
+            if reg_path.exists():
+                with open(reg_path) as f:
+                    registry = yaml.safe_load(f)
+                break
+        # También probar relativo al script
+        if registry is None:
+            script_dir = _Path(__file__).parent.parent
+            reg_path = script_dir / "core" / "hooks" / "hooks-registry.yaml"
+            if reg_path.exists():
+                with open(reg_path) as f:
+                    registry = yaml.safe_load(f)
+    except Exception:
+        pass
+
+    if registry and isinstance(registry, dict):
+        selected = _resolve_hooks_from_registry(config, registry)
+        return _entries_to_hooks_config(selected)
+
+    # Fallback hardcodeado
+    return {
+        "PreToolUse": [
+            {
+                "matcher": "Edit|Write",
+                "hooks": [
+                    {"type": "command", "command": "python3 .claude/hooks/pre-edit-check.py"}
+                ],
+            }
+        ],
+        "Stop": [
+            {
+                "hooks": [
+                    {"type": "command", "command": "bash .claude/hooks/post-turn-check.sh"}
+                ]
+            }
+        ],
+    }
+
+
+def _entries_to_hooks_config(entries: list[dict]) -> dict:
+    """Convierte la lista de hook entries del registry al formato de settings.json."""
+    # Agrupar por evento
+    by_event: dict[str, list[dict]] = {}
+    for entry in entries:
+        event = entry.get("event", "")
+        if not event:
+            continue
+        hook_file = entry.get("hook", "")
+        if not hook_file:
+            continue
+
+        # Determinar comando según extensión
+        if hook_file.endswith(".py"):
+            command = f"python3 .claude/hooks/{hook_file}"
+        elif hook_file.endswith(".sh"):
+            command = f"bash .claude/hooks/{hook_file}"
+        else:
+            command = f".claude/hooks/{hook_file}"
+
+        hook_entry: dict = {"type": "command", "command": command}
+        matcher = entry.get("matcher")
+
+        group_key = f"{event}|{matcher or ''}"
+        if group_key not in by_event:
+            by_event[group_key] = []
+        by_event[group_key].append((event, matcher, hook_entry))
+
+    # Construir estructura final
+    result: dict = {}
+    # Agrupar por (event, matcher) para consolidar hooks del mismo bloque
+    blocks: dict[tuple, list] = {}
+    for entry in entries:
+        event = entry.get("event", "")
+        hook_file = entry.get("hook", "")
+        matcher = entry.get("matcher") or None
+        if not event or not hook_file:
+            continue
+
+        if hook_file.endswith(".py"):
+            command = f"python3 .claude/hooks/{hook_file}"
+        elif hook_file.endswith(".sh"):
+            command = f"bash .claude/hooks/{hook_file}"
+        else:
+            command = f".claude/hooks/{hook_file}"
+
+        key = (event, matcher)
+        if key not in blocks:
+            blocks[key] = []
+        blocks[key].append({"type": "command", "command": command})
+
+    for (event, matcher), hook_list in blocks.items():
+        if event not in result:
+            result[event] = []
+        block: dict = {"hooks": hook_list}
+        if matcher:
+            block["matcher"] = matcher
+        result[event].append(block)
+
+    return result
 
 
 def _generate_settings_json(root: Path, config: dict):
@@ -344,24 +534,8 @@ def _generate_settings_json(root: Path, config: dict):
         allow += ["Bash(psql *)", "Bash(pg_dump *)"]
     allow += ["Bash(git status)", "Bash(git diff *)", "Bash(git log *)", "Bash(git branch *)"]
 
-    # Configuración de hooks (Forge v2)
-    hooks_config = {
-        "PreToolUse": [
-            {
-                "matcher": "Edit|Write",
-                "hooks": [
-                    {"type": "command", "command": "python3 .claude/hooks/pre-edit-check.py"}
-                ],
-            }
-        ],
-        "Stop": [
-            {
-                "hooks": [
-                    {"type": "command", "command": "bash .claude/hooks/post-turn-check.sh"}
-                ]
-            }
-        ],
-    }
+    # Configuración de hooks (Forge v2) — derivada del registry si existe
+    hooks_config = _build_hooks_config(config)
 
     settings = {
         "permissions": {"allow": sorted(set(allow))},

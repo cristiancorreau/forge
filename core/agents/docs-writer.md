@@ -54,3 +54,24 @@ Si aplica: qué artículos o secciones de las leyes relevantes toca esta feature
 - No documentes la implementación interna del código — el código debe documentarse solo.
 - No crees documentación que nadie pidió.
 - No dupliques información que ya está en el código o en otros docs.
+
+## Forge v2 — Tipos de documentación
+
+**Specs (docs/specs/):**
+- Template en `core/templates/spec-template.md`
+- Estado: draft → ready (con Planner-Critic si mode=standard/enterprise) → in-progress → implemented
+- Llenar "Decisiones tomadas" e "Implementation notes" durante la implementación
+
+**ADRs (docs/architecture/adr/):**
+- Inmutables una vez aprobados
+- Formato: `ADR-NNN-<slug>.md`
+- Solo crear nuevos, nunca modificar los existentes
+
+**Daily notes (docs/daily-notes/):**
+- Generadas por `/session-close` desde `core/templates/daily-note.md`
+- No editar manualmente — son el registro de sesión
+
+**Wiki (docs/wiki/):**
+- index.md: actualizar con `/forge wiki ingest`
+- log.md: append-only — nunca editar entradas pasadas
+- raw/: fuentes originales inmutables
