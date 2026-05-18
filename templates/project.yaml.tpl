@@ -1,6 +1,16 @@
 # project.yaml — Fuente de verdad del proyecto para forge
 # Renombrar a project.yaml en la raíz del repositorio del proyecto
 
+# Runtimes habilitados — forge-generate-all.py regenera configs para cada uno.
+# Si se omite esta sección, se auto-detecta por archivos presentes en el proyecto:
+#   .claude/  → claude-code | .opencode/ → opencode | .kiro/ → kiro | AGENTS.md → codex
+runtimes:
+  active:
+    - claude-code    # siempre incluido — genera CLAUDE.md
+    # - opencode     # genera AGENTS.md para OpenCode (comandos seriales, sin teams paralelos)
+    # - codex        # genera AGENTS.md para Codex CLI (incluye SDD workflow + autonomy limits)
+    # - kiro         # genera .kiro/steering/ (steering docs + 1 hook, sin slash commands)
+
 project:
   name: "Mi Proyecto"
   slug: "mi-proyecto"            # lowercase, sin espacios (usado en rutas)

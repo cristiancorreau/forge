@@ -120,6 +120,23 @@
         }
       }
     },
+    "runtimes": {
+      "description": "Runtimes de IA habilitados. Si se omite, forge-generate-all.py auto-detecta por archivos presentes.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "description": "Lista de runtimes a generar. Tiene prioridad sobre la auto-detección.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["claude-code", "opencode", "codex", "kiro"]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      }
+    },
     "agents": {
       "description": "Configuración de agentes activos para este proyecto",
       "type": ["object", "null"],
