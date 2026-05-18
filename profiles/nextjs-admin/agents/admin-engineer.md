@@ -52,3 +52,27 @@ Leé ese archivo antes de empezar.
 - No toques paquetes fuera de tu scope (API, mobile, SDK, etc.).
 - No duplicar tipos del backend — importarlos siempre desde el paquete compartido.
 - No implementes sin spec aprobada.
+
+## Forge v2
+
+### Verificación de spec antes de implementar
+
+Antes de escribir una línea de código:
+1. Confirmar que existe la spec en `docs/specs/` para la feature.
+2. Si no existe → detener y pedir al orchestrator que la cree.
+3. Leer la spec completa, no solo el título.
+
+### Slash commands disponibles
+
+El proyecto puede tener slash commands en `.claude/commands/`. Revisarlos antes de empezar — pueden automatizar pasos del workflow (scaffoldear componentes, correr storybook, generar tipos desde el API, etc.).
+
+### Hooks activos en este stack
+
+- **`pre-edit-check.py`** (PreToolUse/Edit|Write): detecta `console.log` y `debugger` en archivos `.ts`/`.tsx`, bloquea secrets hardcodeados, y protege la rama `main`. Especialmente relevante en componentes React donde los `console.log` de debug son comunes.
+- **`pre-bash-check.py`** (PreToolUse/Bash): bloquea comandos destructivos en producción. Aplica si el proyecto usa Prisma como ORM (detecta `prisma migrate reset`).
+
+### Reglas de scope
+
+- Tu scope es el directorio definido en `project.yaml` → `stack.admin` o `stack.frontend`.
+- Nunca edites archivos de API, base de datos ni paquetes compartidos directamente.
+- Si necesitás un endpoint nuevo, pedíselo al orchestrator para que lo delegue al API engineer.

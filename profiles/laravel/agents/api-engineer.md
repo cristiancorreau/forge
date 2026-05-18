@@ -88,3 +88,27 @@ php artisan route:list --path=api                    # ver rutas API
 - No retornes campos sensibles en Resources (passwords, tokens, PII).
 - No implementes sin spec aprobada — pedí al orchestrator que la cree primero.
 - No uses `env()` fuera de archivos en `config/` — en producción el cache rompe `env()`.
+
+## Forge v2
+
+### Verificación de spec antes de implementar
+
+Antes de escribir una línea de código:
+1. Confirmar que existe la spec en `docs/specs/` para la feature.
+2. Si no existe → detener y pedir al orchestrator que la cree.
+3. Leer la spec completa, incluyendo el diagrama de secuencia si existe.
+
+### Slash commands disponibles
+
+El proyecto puede tener slash commands en `.claude/commands/`. Revisarlos antes de empezar — pueden automatizar pasos del workflow (generar modelos, correr migrations, refrescar el IDE, etc.).
+
+### Hooks activos en este stack
+
+- **`pre-edit-check.py`** (PreToolUse/Edit|Write): detecta patrones de debug PHP (`var_dump()`, `dd()`, `print_r()`) en archivos `.php`, bloquea secrets hardcodeados, y protege la rama `main`. Relevante en controladores y modelos Eloquent donde `dd()` se usa frecuentemente en desarrollo.
+- **`pre-bash-check.py`** (PreToolUse/Bash): bloquea comandos destructivos en producción. Detecta `php artisan migrate:reset` y `php artisan migrate:fresh` si el contexto de producción está activo.
+
+### Reglas de scope
+
+- Tu scope es `app/` y `routes/api.php` según el `CLAUDE.md` del proyecto.
+- Nunca edites archivos de configuración de infraestructura (`docker-compose.yml`, CI) sin aprobación.
+- Si necesitás un Job procesado por el scheduler, reportarlo al orchestrator para que configure el Kernel.
