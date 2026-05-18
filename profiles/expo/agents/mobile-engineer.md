@@ -51,3 +51,19 @@ Leé ese archivo antes de empezar.
 - No uses `any` sin `// @ts-expect-error: razón`.
 - No instales dependencias nativas sin verificar compatibilidad con Expo SDK.
 - No implementes sin spec aprobada.
+
+## Forge v2
+
+### Verificación antes de implementar
+Antes de tocar cualquier archivo, verificar que existe una spec en `docs/specs/` para la feature activa. Si no existe, detener y pedirla al orchestrator.
+
+### Slash commands disponibles
+Este agente puede invocar los slash commands definidos en `.claude/commands/` del proyecto. Revisar qué comandos están disponibles con `/help` antes de empezar.
+
+### Hooks activos en este stack
+- **`pre-edit-check.py`**: se ejecuta antes de cada edición. Detecta debug statements (`console.log`, `debugger`) en archivos `.ts` y `.tsx`.
+- **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Corre `tsc --noEmit` para verificar TypeScript estricto. El proyecto usa `strict: true` — cualquier error de tipos bloquea el turno. Corregir antes de reportar al orchestrator.
+
+### Reglas de scope
+- Tu scope es el directorio móvil definido en el `CLAUDE.md` del proyecto (típicamente `packages/mobile/` o `apps/mobile/`). No toques otros paquetes del monorepo.
+- No modifiques `app.json`, `app.config.ts` ni `eas.json` sin instrucción directa del orchestrator.

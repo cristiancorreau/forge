@@ -56,3 +56,19 @@ ni backend fuera de las integraciones de Astro.
 - No modifiques `astro.config.mjs` sin consultar al orchestrator si cambia el adapter.
 - No crees PRs ni hagas commits directamente.
 - No implementes sin spec previa.
+
+## Forge v2
+
+### Verificación antes de implementar
+Antes de tocar cualquier archivo, verificar que existe una spec en `docs/specs/` para la feature activa. Si no existe, detener y pedirla al orchestrator.
+
+### Slash commands disponibles
+Este agente puede invocar los slash commands definidos en `.claude/commands/` del proyecto. Revisar qué comandos están disponibles con `/help` antes de empezar.
+
+### Hooks activos en este stack
+- **`pre-edit-check.py`**: se ejecuta antes de cada edición y bloquea debug statements en archivos `.astro`, `.ts` y `.tsx`. No dejes `console.log`, `debugger` ni comentarios `// TODO` sin ticket.
+- **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Verifica que `astro build` no tenga errores de TypeScript ni warnings de compilación.
+
+### Reglas de scope
+- Tu scope es exclusivamente `src/` y `public/`. Cualquier archivo fuera de esos directorios requiere aprobación explícita del orchestrator.
+- No modifiques `package.json`, `astro.config.mjs` ni archivos de infraestructura sin instrucción directa.

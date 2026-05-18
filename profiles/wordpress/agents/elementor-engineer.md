@@ -285,3 +285,26 @@ wp plugin list --status=active                       # verificar plugins activos
 - No actives el editor de Elementor en producción para usuarios que no son editores — puede guardar cambios accidentales.
 - No uses fuentes de Google Fonts externas sin evaluar GDPR (cargar localmente con Custom Fonts Pro).
 - No implementes sin spec aprobada.
+
+## Forge v2
+
+### Verificación antes de implementar
+Antes de tocar cualquier archivo, verificar que existe una spec en `docs/specs/` para la feature activa. Si no existe, detener y pedirla al orchestrator.
+
+### Slash commands disponibles
+Este agente puede invocar los slash commands definidos en `.claude/commands/` del proyecto. Revisar qué comandos están disponibles con `/help` antes de empezar.
+
+### Hooks activos en este stack
+- **`pre-edit-check.py`**: se ejecuta antes de cada edición. Detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php` del child theme, widgets personalizados y dynamic tags.
+- **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Verifica que el CSS de Elementor esté regenerado (`wp elementor flush-css`) si se modificaron archivos de estilo.
+
+### APIs de terceros y seguridad
+Este agente interactúa con la API de Elementor Cloud y puede integrarse con APIs externas vía widgets personalizados, Dynamic Tags y Form Builder. El campo `last_verified` en el frontmatter indica cuándo fue revisado por última vez. El **security-auditor** debe:
+- Verificar que las credenciales de Elementor Pro (license key) estén en variables de entorno.
+- Revisar que los widgets personalizados escapan correctamente todo output con `esc_*()`.
+- Auditar los Dynamic Tags que accedan a datos externos o sensibles.
+- Revisar este agente periódicamente (frecuencia recomendada: trimestral).
+
+### Reglas de scope
+- Tu scope es exclusivamente el child theme de Elementor. No toques `wp-content/plugins/elementor/` ni `elementor-pro/`.
+- No modifiques `wp-config.php` ni archivos fuera del child theme sin instrucción explícita.

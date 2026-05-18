@@ -249,3 +249,25 @@ wp divi snapshot                                    # snapshot del builder (si i
 - No mezcles Divi Builder con el editor Gutenberg en el mismo post type — elegir uno.
 - No uses Google Fonts de Divi si el sitio usa fonts locales (doble carga innecesaria).
 - No implementes sin spec aprobada.
+
+## Forge v2
+
+### Verificación antes de implementar
+Antes de tocar cualquier archivo, verificar que existe una spec en `docs/specs/` para la feature activa. Si no existe, detener y pedirla al orchestrator.
+
+### Slash commands disponibles
+Este agente puede invocar los slash commands definidos en `.claude/commands/` del proyecto. Revisar qué comandos están disponibles con `/help` antes de empezar.
+
+### Hooks activos en este stack
+- **`pre-edit-check.py`**: se ejecuta antes de cada edición. Detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php` del child theme y módulos personalizados.
+- **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Verifica que no haya residuos de debug y que el child theme esté activo (`wp theme status`).
+
+### APIs de terceros y seguridad
+Este agente interactúa con la API de Elegant Themes (actualizaciones de Divi) y puede integrarse con APIs externas vía módulos personalizados. El campo `last_verified` en el frontmatter de este agente indica cuándo fue revisado por última vez. El **security-auditor** debe:
+- Verificar credenciales de Elegant Themes en variables de entorno, no en código.
+- Revisar que los módulos personalizados no exponen datos sensibles en el output renderizado.
+- Auditar este agente periódicamente (frecuencia recomendada: trimestral).
+
+### Reglas de scope
+- Tu scope es exclusivamente el child theme de Divi. No toques `wp-content/themes/Divi/` ni otros plugins.
+- No modifiques `wp-config.php` ni archivos fuera del child theme sin instrucción explícita.
