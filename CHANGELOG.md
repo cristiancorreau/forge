@@ -7,6 +7,35 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.0.0] — 2026-05-18
+
+### Agregado — Forge v2 Fase 3 (liberación pública)
+
+#### Limpieza (F3-01)
+- `LICENSE`: Apache 2.0, Copyright 2026 SocialWeb
+- `docs/RELEASE-CHECKLIST.md`: checklist de liberación pública (seguridad, técnico, legal, operativo)
+- Anonimización de referencias internas en `docs/plan/`: clientes reales → `Cliente-Media`, `Cliente-ONG`, etc.; proyectos internos → `proyecto-alpha`, `proyecto-beta`; `Bienes Nacionales` → `organismo-publico`
+
+#### README y documentación (F3-02)
+- README reescrito para público general: posicionamiento honesto, tabla comparativa vs cc-sdd/Bridle/wshobson, quick start de 4 pasos, sin referencias a clientes
+
+#### Extensión VS Code (F3-04)
+- Versión `0.2.1` → `0.5.0` (alineada con forge pre-milestone)
+- 3 nuevos comandos: `forge: Generate All Runtimes`, `forge: Validate project.yaml`, `forge: Migrate project.yaml to v2`
+- Handlers en `extension.ts` con confirmación para migración destructiva
+
+#### Artículos (F3-05)
+- `docs/content/linkedin-articles/`: 3 borradores listos para publicar
+  - "Por qué los agentes de IA necesitan un harness, no solo prompts"
+  - "Las cinco capas de un kit de desarrollo agéntico"
+  - "Cómo usamos agentes para enseñar gestión de proyectos de software"
+
+### Convenciones
+- Versión `2.0.0` corresponde a Forge v2 completo (Fases 0–3)
+- Milestone: `v2.0.0` — listo para publicación pública
+
+---
+
 ## [0.5.0] — 2026-05-17
 
 ### Agregado — Forge v2 Fase 2 (multi-runtime)
