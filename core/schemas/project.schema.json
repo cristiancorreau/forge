@@ -1,0 +1,305 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/forge-framework/forge/core/schemas/project.schema.json",
+  "title": "project.yaml",
+  "description": "Esquema de validación para project.yaml — fuente de verdad de un proyecto forge.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "runtimes": {
+      "type": "object",
+      "description": "Runtimes de IA habilitados para este proyecto. Si se omite, forge-generate-all.py auto-detecta por archivos presentes.",
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "type": "array",
+          "description": "Lista de runtimes a generar. Tiene prioridad sobre la auto-detección.",
+          "items": {
+            "type": "string",
+            "enum": ["claude-code", "opencode", "codex", "kiro"]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "description": "Metadatos del proyecto.",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Nombre legible del proyecto."
+        },
+        "slug": {
+          "type": "string",
+          "description": "Identificador lowercase sin espacios (usado en rutas).",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Descripción breve del proyecto."
+        },
+        "language": {
+          "type": "string",
+          "description": "Lenguaje principal del proyecto.",
+          "enum": ["typescript", "python", "ruby", "go", "php", "mixed"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado actual del proyecto.",
+          "enum": ["active", "paused", "maintenance", "archived"]
+        }
+      }
+    },
+    "team": {
+      "type": "object",
+      "description": "Información del equipo de desarrollo.",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "role": {
+                "type": "string",
+                "enum": ["lead", "backend", "frontend", "fullstack", "qa", "design"]
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              }
+            }
+          }
+        }
+      }
+    },
+    "stack": {
+      "type": "object",
+      "description": "Stack tecnológico del proyecto.",
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "type": ["string", "null"],
+          "description": "Framework o runtime de backend."
+        },
+        "frontend": {
+          "type": ["string", "null"],
+          "description": "Framework de frontend."
+        },
+        "database": {
+          "type": ["string", "null"],
+          "description": "Motor de base de datos.",
+          "enum": ["postgresql", "mysql", "sqlite", "mongodb", null]
+        },
+        "cache": {
+          "type": ["string", "null"],
+          "description": "Sistema de caché.",
+          "enum": ["redis", "memcached", null]
+        },
+        "testing": {
+          "type": "array",
+          "description": "Frameworks de testing activos.",
+          "items": {
+            "type": "string",
+            "enum": ["vitest", "jest", "pytest", "rspec", "phpunit", "playwright", "cypress"]
+          }
+        }
+      }
+    },
+    "agents": {
+      "type": "object",
+      "description": "Configuración del equipo de agentes IA.",
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "type": "array",
+          "description": "Agentes principales del proyecto.",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "compliance": {
+          "type": "array",
+          "description": "Agentes de revisión y compliance.",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "specialized": {
+          "type": "array",
+          "description": "Agentes especializados del proyecto (no están en forge core).",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "profiles": {
+          "type": "array",
+          "description": "Profiles Tier 2 stack-específicos. Reemplazan agentes core con versiones especializadas.",
+          "items": {
+            "type": "string",
+            "examples": [
+              "hono-drizzle", "nextjs-admin", "astro", "expo", "playwright-crawler",
+              "fastapi", "express", "rails", "nestjs", "django", "vuenuxt",
+              "go-gin", "sveltekit"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "sprint": {
+      "type": "object",
+      "description": "Estado del sprint actual.",
+      "additionalProperties": false,
+      "properties": {
+        "current": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "length_days": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "specs": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "status": {
+                "type": "string",
+                "enum": ["pendiente", "en-curso", "completada"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "skills": {
+      "type": "object",
+      "description": "Skills y comandos activos en el proyecto.",
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "integrations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["obsidian-sync"]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "wiki": {
+      "type": "object",
+      "description": "Configuración del wiki del proyecto (solo si wiki-ingest/wiki-query están activos).",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Ruta relativa a la raíz del repo donde vive el wiki.",
+          "default": "docs/wiki"
+        }
+      }
+    },
+    "deploy": {
+      "type": "object",
+      "description": "Configuración de deploy.",
+      "additionalProperties": true,
+      "properties": {
+        "provider": {
+          "type": ["string", "null"],
+          "enum": ["vercel", "railway", "fly", "github-actions", "custom", null]
+        },
+        "branch": {
+          "type": "string",
+          "default": "main"
+        }
+      }
+    },
+    "compliance": {
+      "type": "object",
+      "description": "Marcos regulatorios y configuración de compliance.",
+      "additionalProperties": false,
+      "properties": {
+        "frameworks": {
+          "type": "array",
+          "description": "Marcos regulatorios activos.",
+          "items": {
+            "type": "string",
+            "enum": ["gdpr", "lgpd", "ley-21719", "ccpa", "hipaa", "sox"]
+          },
+          "uniqueItems": true
+        },
+        "pii_handling": {
+          "type": "boolean",
+          "description": "true si el proyecto maneja datos personales identificables."
+        },
+        "audit_logs": {
+          "type": "boolean",
+          "description": "true si el proyecto requiere logs de auditoría inmutables."
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "description": "Paths del proyecto (relativos a la raíz del repo).",
+      "additionalProperties": false,
+      "properties": {
+        "specs":      { "type": ["string", "null"] },
+        "progress":   { "type": ["string", "null"] },
+        "migrations": { "type": ["string", "null"] },
+        "tests":      { "type": ["string", "null"] }
+      }
+    },
+    "agent_paths": {
+      "type": "object",
+      "description": "Paths de scope por agente — se inyectan en el frontmatter al hacer forge-init.",
+      "additionalProperties": false,
+      "properties": {
+        "api":      { "type": ["string", "null"] },
+        "frontend": { "type": ["string", "null"] },
+        "admin":    { "type": ["string", "null"] },
+        "mobile":   { "type": ["string", "null"] },
+        "scanner":  { "type": ["string", "null"] }
+      }
+    },
+    "integrations": {
+      "type": "object",
+      "description": "Configuración de integraciones externas.",
+      "additionalProperties": true,
+      "properties": {
+        "obsidian": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "vault_path": { "type": ["string", "null"] },
+            "map": {
+              "type": "object",
+              "additionalProperties": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}
