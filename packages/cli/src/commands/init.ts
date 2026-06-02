@@ -2,6 +2,9 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync, copyFileSync, readd
 import { join, basename } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
+
+// Detect Bun runtime (OpenTUI requires Bun)
+const isBun = typeof (globalThis as any).Bun !== 'undefined';
 import { resolveForgeRoot } from '../lib/paths.js';
 import { buildManifest, saveManifest } from '../lib/lock.js';
 import { dim } from '../ui/colors.js';
@@ -231,8 +234,14 @@ export async function init(args: string[]): Promise<number> {
   printHeader();
 
   if (!existsSync(projectYamlPath)) {
-    // Run interactive wizard
-    const result = await runWizard();
+    // Run interactive wizard — OpenTUI (Bun) or @clack/prompts (Node.js)
+    let result;
+    if (isBun) {
+      const { runOpenTUIWizard } = await import('../tui/wizard.js');
+      result = await runOpenTUIWizard();
+    } else {
+      result = await runWizard();
+    }
     if (!result) { console.log('\nCancelado.'); return 1; }
 
     const yamlContent = buildProjectYaml(result);
@@ -350,7 +359,7 @@ export async function init(args: string[]): Promise<number> {
             ...allAgents.map(a => `.claude/agents/${a}.md`),
           ];
           const ts = new Date().toISOString();
-          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.5.0', ts));
+          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.6.0', ts));
         },
       },
     ]);
