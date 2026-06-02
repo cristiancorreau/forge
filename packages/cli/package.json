@@ -1,6 +1,6 @@
 {
   "name": "@cristiancorreau/forge",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "Agentic development framework — multi-runtime support for Claude Code, OpenCode, Codex and Kiro",
   "author": "Cristian Correa <cristian@socialweb.cl>",
   "license": "Apache-2.0",
@@ -45,6 +45,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@clack/prompts": "^0.9.1",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "js-yaml": "^4.2.0"
