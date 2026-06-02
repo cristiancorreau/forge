@@ -1,0 +1,33 @@
+# OS
+.DS_Store
+
+# Claude Code worktrees
+.claude/worktrees/
+
+# Codex workspace
+.codex/
+
+# Pencil design files
+*.pen
+
+# VS Code extension build artifacts
+vscode-extension/node_modules/
+vscode-extension/out/
+vscode-extension/package-lock.json
+
+# CLI build artifacts (generated at build time)
+packages/cli/dist/
+packages/cli/assets/
+packages/cli/node_modules/
+packages/cli/*.tgz
+packages/cli/README.md
+packages/cli/LICENSE
+packages/cli/CHANGELOG.md
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Test temporaries
+/tmp/
