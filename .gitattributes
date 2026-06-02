@@ -1,0 +1,6 @@
+docs/analysis/   export-ignore
+docs/plan/       export-ignore
+docs/feedback/   export-ignore
+.claude/         export-ignore
+.codex/          export-ignore
+tests/           export-ignore
