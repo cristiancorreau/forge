@@ -85,7 +85,7 @@ export function generateClaudeMd(config: ProjectYaml): string {
   const agentScopeSection = buildAgentScopeTable(agents, paths);
 
   const complianceSection = compliance.frameworks && compliance.frameworks.length > 0
-    ? `\n## Compliance activo\n\nEste proyecto opera bajo:\n${compliance.frameworks.map(f => `- **${f.toUpperCase()}**`).join('\n')}\n\nReglas no-negociables:\n- Sin datos personales en logs de stdout\n- Consentimiento explícito antes de cualquier tracker no esencial\n- Logs de auditoría append-only (sin UPDATE/DELETE)\n`
+    ? `\n## Compliance activo\n\nEste proyecto opera bajo: ${compliance.frameworks.map(f => `**${f.toUpperCase()}**`).join(', ')}\n\nReglas no-negociables:\n- Sin datos personales en logs de stdout\n- Consentimiento explícito antes de cualquier tracker no esencial\n- Logs de auditoría append-only (sin UPDATE/DELETE)\n- Derechos del titular implementados (acceso, rectificación, supresión, portabilidad)\n`
     : '';
 
   return `# CLAUDE.md — ${name}
@@ -109,7 +109,13 @@ ${agentScopeSection}## Estructura
 \`\`\`
 ${proj.slug ?? 'proyecto'}/
 ├── CLAUDE.md                    ← Estás acá
+├── AGENTS.md                    ← Convenciones del agent team
 ├── project.yaml                 ← Config de forge (fuente de verdad)
+├── .claude/
+│   ├── agents/                  ← Agentes instalados
+│   ├── hooks/                   ← Hooks de guardrail (JS, sin Python)
+│   ├── commands/                ← Slash commands del flujo SDD
+│   └── architecture.rules       ← Convenciones de arquitectura del proyecto
 ├── ${specsPath}/                ← Specs de features (requeridas antes de implementar)
 └── ${progressPath}              ← Dashboard de progreso
 \`\`\`

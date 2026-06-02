@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync, copyFileSync, readdirSync, statSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, copyFileSync, readdirSync, statSync } from 'fs';
 import { join, basename } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
@@ -136,8 +136,9 @@ function installHooks(forgeRoot: string, destDir: string, mode: string, force: b
   const hooksDir = join(forgeRoot, 'core', 'hooks');
   if (!existsSync(hooksDir)) return;
 
-  const universal = ['pre-edit-check.py', 'post-turn-check.sh', 'session-start.sh'];
-  const standard = ['pre-bash-check.py'];
+  // JS hooks (zero Python dependency)
+  const universal = ['pre-edit-check.js', 'post-turn-check.sh', 'session-start.sh'];
+  const standard = ['pre-bash-check.js'];
 
   for (const hook of universal) {
     const src = join(hooksDir, hook);
@@ -168,13 +169,13 @@ function generateSettingsJson(language: string, mode: string): string {
   allowList.push('Bash(git *)');
 
   const hooks: Record<string, unknown[]> = {
-    PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: 'python3 .claude/hooks/pre-edit-check.py' }] }],
+    PreToolUse: [{ matcher: '.*', hooks: [{ type: 'command', command: 'node .claude/hooks/pre-edit-check.js' }] }],
     Stop: [{ hooks: [{ type: 'command', command: 'bash .claude/hooks/post-turn-check.sh' }] }],
   };
   if (mode === 'standard' || mode === 'enterprise') {
     (hooks.PreToolUse as Array<Record<string, unknown>>).push({
       matcher: 'Bash',
-      hooks: [{ type: 'command', command: 'python3 .claude/hooks/pre-bash-check.py' }],
+      hooks: [{ type: 'command', command: 'node .claude/hooks/pre-bash-check.js' }],
     });
   }
 
@@ -274,6 +275,15 @@ export async function init(args: string[]): Promise<number> {
     const specTemplateSrc = join(forgeRoot, 'core', 'templates', 'spec-template.md');
     if (existsSync(specTemplateSrc)) {
       copyFile(specTemplateSrc, join(projectRoot, 'docs', 'specs', '_template.md'), false);
+    }
+
+    // architecture.rules — never overwrite if exists
+    const archRulesTemplate = join(forgeRoot, 'core', 'templates', 'claude-md', 'architecture.rules');
+    const archRulesDest = join(claudeDir, 'architecture.rules');
+    if (existsSync(archRulesTemplate) && !existsSync(archRulesDest)) {
+      const content = readFileSync(archRulesTemplate, 'utf-8').replace('<NOMBRE_PROYECTO>', config.project.name ?? 'Mi Proyecto');
+      writeFileSync(archRulesDest, content, 'utf-8');
+      console.log('  write architecture.rules');
     }
 
   } else if (runtime === 'opencode') {
