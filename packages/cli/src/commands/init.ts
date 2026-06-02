@@ -4,7 +4,9 @@ import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
 import { resolveForgeRoot } from '../lib/paths.js';
 import { buildManifest, saveManifest } from '../lib/lock.js';
-import { bold, dim, cyan } from '../ui/colors.js';
+import { dim } from '../ui/colors.js';
+import { printHeader, printSection, printDetected, printAgentList } from '../ui/header.js';
+import { runTasks } from '../ui/tasks.js';
 import { generateClaudeMd } from '../lib/generators/claude-code.js';
 import { generateAgentsMd } from '../lib/generators/opencode.js';
 import { generateCodexAgentsMd } from '../lib/generators/codex.js';
@@ -31,21 +33,13 @@ Options:
 // ---------------------------------------------------------------------------
 
 function write(path: string, content: string, force: boolean): void {
-  if (existsSync(path) && !force) {
-    console.log(`  skip  ${basename(path)} (ya existe)`);
-    return;
-  }
+  if (existsSync(path) && !force) return;
   writeFileSync(path, content, 'utf-8');
-  console.log(`  write ${basename(path)}`);
 }
 
 function copyFile(src: string, dest: string, force: boolean): void {
-  if (existsSync(dest) && !force) {
-    console.log(`  skip  ${basename(dest)} (ya existe)`);
-    return;
-  }
+  if (existsSync(dest) && !force) return;
   copyFileSync(src, dest);
-  console.log(`  copy  ${basename(dest)}`);
 }
 
 function copyDir(src: string, dest: string, force: boolean): void {
@@ -102,6 +96,16 @@ runtimes:
 #   provider: vercel
 #   production_url: https://tu-proyecto.vercel.app
 `;
+}
+
+function getAgentTech(agent: string): string {
+  const map: Record<string, string> = {
+    'orchestrator': 'coordination', 'backend-engineer': 'API', 'api-engineer': 'API',
+    'frontend-engineer': 'UI', 'admin-engineer': 'admin UI', 'mobile-engineer': 'mobile',
+    'test-engineer': 'testing', 'docs-writer': 'docs', 'compliance-reviewer': 'compliance',
+    'security-auditor': 'security', 'fullstack-engineer': 'fullstack',
+  };
+  return map[agent] ?? 'specialized';
 }
 
 function defaultAgentsForMode(mode: string): string[] {
@@ -223,6 +227,9 @@ export async function init(args: string[]): Promise<number> {
   const projectYamlPath = join(process.cwd(), 'project.yaml');
   let config: ProjectYaml;
 
+  // Show header
+  printHeader();
+
   if (!existsSync(projectYamlPath)) {
     // Run interactive wizard
     const result = await runWizard();
@@ -230,7 +237,6 @@ export async function init(args: string[]): Promise<number> {
 
     const yamlContent = buildProjectYaml(result);
     writeFileSync(projectYamlPath, yamlContent, 'utf-8');
-    console.log(`\n  write project.yaml`);
 
     // Build config from wizard result
     config = {
@@ -240,7 +246,6 @@ export async function init(args: string[]): Promise<number> {
       runtimes: { active: [runtimeOverride ?? result.runtime] },
     };
   } else {
-    console.log('project.yaml encontrado — usando configuración existente.\n');
     config = loadProjectYaml(projectYamlPath);
   }
 
@@ -254,68 +259,101 @@ export async function init(args: string[]): Promise<number> {
   const profiles = config.agents?.profiles ?? [];
   const allAgents = [...activeAgents, ...complianceAgents];
 
+  // Show detected stack
+  const detectedItems: string[] = [];
+  if (language && language !== 'typescript') detectedItems.push(language.charAt(0).toUpperCase() + language.slice(1));
+  if (config.stack?.backend)  detectedItems.push(config.stack.backend);
+  if (config.stack?.frontend) detectedItems.push(config.stack.frontend);
+  if (config.stack?.database) detectedItems.push(config.stack.database);
+  if (config.stack?.orm)      detectedItems.push(config.stack.orm);
+  if ((config.stack?.testing ?? []).length > 0) detectedItems.push(...(config.stack?.testing ?? []));
+  if (language === 'typescript') detectedItems.unshift('TypeScript');
+
+  if (detectedItems.length > 0) printDetected(detectedItems);
+
+  // Show agent list
+  const agentListItems = allAgents.map(a => ({ name: a, tech: getAgentTech(a) }));
+  if (agentListItems.length > 0) printAgentList(agentListItems);
+
   // --dry-run: show what would be installed
   if (dryRun) {
-    console.log('\n  ' + cyan(bold('forge init --dry-run')) + '\n');
-    console.log(dim('  Archivos que se crearían:'));
+    printSection('Would install (--dry-run)');
     const dryFiles = [
-      `.claude/agents/ (${allAgents.length} agentes${profiles.length ? ' + ' + profiles.length + ' profiles' : ''})`,
-      '.claude/hooks/ (pre-edit-check.js, pre-bash-check.js, post-turn-check.sh)',
-      '.claude/commands/ (11 slash commands)',
-      'CLAUDE.md',
-      '.claude/settings.json',
-      '.claude/architecture.rules',
-      '.forge/manifest.json',
+      { title: `.claude/agents/ — ${allAgents.length} agents`, tech: runtime },
+      { title: '.claude/hooks/ — pre-edit-check.js, pre-bash-check.js', tech: 'guardrail' },
+      { title: '.claude/commands/ — 11 slash commands', tech: 'sdd' },
+      { title: 'CLAUDE.md', tech: 'config' },
+      { title: '.claude/settings.json', tech: 'config' },
+      { title: '.forge/manifest.json', tech: 'manifest' },
     ];
-    dryFiles.forEach(f => console.log('  ' + dim('→') + ' ' + f));
-    console.log('\n' + dim('  Ejecutar sin --dry-run para aplicar los cambios.') + '\n');
+    dryFiles.forEach((f, i) => {
+      process.stdout.write(`  ${dim(String(i + 1).padStart(2) + '.')} ${f.title}  ${dim('← ' + f.tech)}\n`);
+    });
+    console.log('\n' + dim('  Run without --dry-run to apply.') + '\n');
     return 0;
   }
-
-  console.log(`\nInstalando forge para runtime: ${runtime}\n`);
 
   if (runtime === 'claude-code') {
     const claudeDir = join(projectRoot, '.claude');
     mkdirSync(claudeDir, { recursive: true });
 
-    console.log('Agentes:');
-    installCoreAgents(forgeRoot, join(claudeDir, 'agents'), allAgents, profiles, force);
-
-    console.log('\nHooks:');
-    installHooks(forgeRoot, join(claudeDir, 'hooks'), mode, force);
-
-    console.log('\nSlash commands:');
-    installCommands(forgeRoot, join(claudeDir, 'commands'), force);
-
-    console.log('\nArchivos de configuración:');
-    write(join(projectRoot, 'CLAUDE.md'), generateClaudeMd(config), force);
-    write(join(claudeDir, 'settings.json'), generateSettingsJson(language, mode), force);
-
-    // Docs structure
-    mkdirSync(join(projectRoot, 'docs', 'specs'), { recursive: true });
-    mkdirSync(join(projectRoot, 'docs', 'daily-notes'), { recursive: true });
-    const specTemplateSrc = join(forgeRoot, 'core', 'templates', 'spec-template.md');
-    if (existsSync(specTemplateSrc)) {
-      copyFile(specTemplateSrc, join(projectRoot, 'docs', 'specs', '_template.md'), false);
-    }
-
-    // architecture.rules — never overwrite if exists
-    const archRulesTemplate = join(forgeRoot, 'core', 'templates', 'claude-md', 'architecture.rules');
-    const archRulesDest = join(claudeDir, 'architecture.rules');
-    if (existsSync(archRulesTemplate) && !existsSync(archRulesDest)) {
-      const content = readFileSync(archRulesTemplate, 'utf-8').replace('<NOMBRE_PROYECTO>', config.project.name ?? 'Mi Proyecto');
-      writeFileSync(archRulesDest, content, 'utf-8');
-      console.log('  write architecture.rules');
-    }
-
-    // Write .forge/manifest.json
-    const installedFiles = [
-      'CLAUDE.md', '.claude/settings.json', '.claude/architecture.rules',
-      ...allAgents.map(a => `.claude/agents/${a}.md`),
-    ];
-    const ts = new Date().toISOString();
-    saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.4.2', ts));
-    console.log('  write .forge/manifest.json');
+    await runTasks('Installing...', [
+      {
+        title: `Agents (${allAgents.length})`,
+        tech: profiles.length ? `${profiles.join(', ')} profile` : 'core',
+        task: () => installCoreAgents(forgeRoot, join(claudeDir, 'agents'), allAgents, profiles, force),
+      },
+      {
+        title: 'Hooks (pre-edit-check.js, pre-bash-check.js)',
+        tech: 'guardrail',
+        task: () => installHooks(forgeRoot, join(claudeDir, 'hooks'), mode, force),
+      },
+      {
+        title: 'Slash commands (11)',
+        tech: 'sdd workflow',
+        task: () => installCommands(forgeRoot, join(claudeDir, 'commands'), force),
+      },
+      {
+        title: 'CLAUDE.md',
+        tech: 'generated',
+        task: () => write(join(projectRoot, 'CLAUDE.md'), generateClaudeMd(config), force),
+      },
+      {
+        title: 'settings.json',
+        tech: 'permissions + hooks',
+        task: () => write(join(claudeDir, 'settings.json'), generateSettingsJson(language, mode), force),
+      },
+      {
+        title: 'docs/specs/ + architecture.rules',
+        tech: 'scaffold',
+        task: () => {
+          mkdirSync(join(projectRoot, 'docs', 'specs'), { recursive: true });
+          mkdirSync(join(projectRoot, 'docs', 'daily-notes'), { recursive: true });
+          const specTemplateSrc = join(forgeRoot, 'core', 'templates', 'spec-template.md');
+          if (existsSync(specTemplateSrc)) {
+            copyFile(specTemplateSrc, join(projectRoot, 'docs', 'specs', '_template.md'), false);
+          }
+          const archRulesTemplate = join(forgeRoot, 'core', 'templates', 'claude-md', 'architecture.rules');
+          const archRulesDest = join(claudeDir, 'architecture.rules');
+          if (existsSync(archRulesTemplate) && !existsSync(archRulesDest)) {
+            const content = readFileSync(archRulesTemplate, 'utf-8').replace('<NOMBRE_PROYECTO>', config.project.name ?? 'Mi Proyecto');
+            writeFileSync(archRulesDest, content, 'utf-8');
+          }
+        },
+      },
+      {
+        title: '.forge/manifest.json',
+        tech: 'sha256 tracking',
+        task: () => {
+          const installedFiles = [
+            'CLAUDE.md', '.claude/settings.json', '.claude/architecture.rules',
+            ...allAgents.map(a => `.claude/agents/${a}.md`),
+          ];
+          const ts = new Date().toISOString();
+          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.5.0', ts));
+        },
+      },
+    ]);
 
   } else if (runtime === 'opencode') {
     mkdirSync(join(projectRoot, '.opencode'), { recursive: true });
@@ -328,19 +366,26 @@ export async function init(args: string[]): Promise<number> {
     installKiro(forgeRoot, projectRoot, config, force);
   }
 
-  console.log(`\nForge instalado para ${runtime}.\n`);
-  console.log('Próximos pasos:');
-  if (runtime === 'claude-code') {
-    console.log('  1. Revisar CLAUDE.md y ajustar si es necesario');
-    console.log('  2. Abrir el proyecto en Claude Code');
-    console.log('  3. Usar /plan para crear tu primera spec');
-  } else if (runtime === 'opencode') {
-    console.log('  1. Revisar AGENTS.md');
-    console.log('  2. Abrir el proyecto en OpenCode');
-  } else if (runtime === 'kiro') {
-    console.log('  1. Revisar .kiro/steering/');
-    console.log('  2. Abrir el proyecto en Kiro IDE');
-  }
+  // Final summary box
+  const import_boxen = await import('boxen');
+  const importChalk = await import('chalk');
+  const nextSteps =
+    runtime === 'claude-code' ? ['Open project in Claude Code', 'Run /plan to create your first spec'] :
+    runtime === 'opencode'    ? ['Open project in OpenCode'] :
+    runtime === 'kiro'        ? ['Open project in Kiro IDE'] :
+                                ['Open project in your AI runtime'];
+
+  const summaryContent =
+    importChalk.default.green.bold('✔ forge installed — ' + runtime) + '\n\n' +
+    importChalk.default.dim('Next steps:\n') +
+    nextSteps.map((s, i) => importChalk.default.dim(`  ${i + 1}. ${s}`)).join('\n');
+
+  process.stdout.write('\n' + import_boxen.default(summaryContent, {
+    borderStyle: 'round',
+    borderColor: 'green',
+    padding: { top: 0, bottom: 0, left: 1, right: 1 },
+    margin: { top: 0, bottom: 1, left: 0, right: 0 },
+  }) + '\n');
 
   return 0;
 }
