@@ -1,0 +1,44 @@
+{
+  "name": "@cristiancorreau/forge",
+  "version": "2.1.0",
+  "description": "Agentic development framework — multi-runtime support for Claude Code, OpenCode, Codex and Kiro",
+  "author": "Cristian Correa <cristian@socialweb.cl>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cristiancorreau/forge"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "claude-code",
+    "opencode",
+    "codex",
+    "kiro",
+    "agentic",
+    "framework"
+  ],
+  "type": "module",
+  "bin": {
+    "forge": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist",
+    "assets",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
