@@ -314,7 +314,7 @@ export async function init(args: string[]): Promise<number> {
       ...allAgents.map(a => `.claude/agents/${a}.md`),
     ];
     const ts = new Date().toISOString();
-    saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.4.1', ts));
+    saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.4.2', ts));
     console.log('  write .forge/manifest.json');
 
   } else if (runtime === 'opencode') {
