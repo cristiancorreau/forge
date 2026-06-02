@@ -74,7 +74,7 @@ FULL_V2_VALID = {
     "github": {
         "project": {
             "number": 1,
-            "owner": "socialwebcl",
+            "owner": "cristiancorreau",
             "repo": "forge",
         },
     },

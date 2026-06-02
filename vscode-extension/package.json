@@ -1,6 +1,6 @@
 {
   "name": "forge-agent-framework",
-  "publisher": "socialwebcl",
+  "publisher": "cristiancorreau",
   "displayName": "forge — Agent Framework",
   "description": "Manage Forge v2 agent projects from VS Code — multi-runtime support (Claude Code, OpenCode, Kiro, Codex)",
   "version": "0.5.0",
@@ -165,7 +165,7 @@
   "keywords": ["forge", "agents", "claude", "agentic", "development"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/socialwebcl/forge"
+    "url": "https://github.com/cristiancorreau/forge"
   },
   "scripts": {
     "compile": "tsc -p ./",

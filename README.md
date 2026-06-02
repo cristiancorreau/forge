@@ -1,6 +1,6 @@
 # forge
 
-[![tests](https://github.com/socialwebcl/forge/actions/workflows/tests.yml/badge.svg)](https://github.com/socialwebcl/forge/actions/workflows/tests.yml)
+[![tests](https://github.com/cristiancorreau/forge/actions/workflows/tests.yml/badge.svg)](https://github.com/cristiancorreau/forge/actions/workflows/tests.yml)
 [![version](https://img.shields.io/badge/version-0.5.0-blue)](CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 
@@ -39,7 +39,7 @@ Framework de desarrollo agéntico para equipos de software. Un `project.yaml` ge
 
 ```bash
 # 1. Agregar forge al proyecto como submodule
-git submodule add https://github.com/socialwebcl/forge .agentic
+git submodule add https://github.com/cristiancorreau/forge .agentic
 pip3 install -r .agentic/requirements.txt
 ```
 
@@ -153,4 +153,4 @@ python3 -m pytest tests/ -q   # debe pasar al 100%
 
 ## Licencia
 
-Apache 2.0 — [SocialWeb](https://github.com/socialwebcl), 2026.
+Apache 2.0 — [Cristian Correa](https://github.com/cristiancorreau), 2026.

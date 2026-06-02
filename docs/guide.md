@@ -12,7 +12,7 @@ Tecnología agnóstica (TypeScript, Python, Ruby, Go). Se integra en cada proyec
 
 ```
 proyecto/
-├── .agentic/          ← forge como submodule (socialwebcl/forge)
+├── .agentic/          ← forge como submodule (cristiancorreau/forge)
 ├── project.yaml       ← fuente de verdad del proyecto
 ├── AGENTS.md          ← generado por forge-init.py
 └── .claude/
@@ -97,7 +97,7 @@ En `Settings > forge`:
 
 ```bash
 git init mi-proyecto && cd mi-proyecto
-git submodule add https://github.com/socialwebcl/forge .agentic
+git submodule add https://github.com/cristiancorreau/forge .agentic
 pip3 install -r .agentic/requirements.txt   # pyyaml
 ```
 
@@ -191,7 +191,7 @@ Un proyecto nuevo recién inicializado debería mostrar **0 gaps**.
 
 ```bash
 # En la raíz del proyecto existente
-git submodule add https://github.com/socialwebcl/forge .agentic
+git submodule add https://github.com/cristiancorreau/forge .agentic
 pip3 install -r .agentic/requirements.txt
 ```
 

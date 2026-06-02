@@ -58,7 +58,7 @@ async function requireForgeDir(workspaceRoot: string): Promise<string | null> {
   );
 
   if (choice === 'Ver instrucciones') {
-    vscode.env.openExternal(vscode.Uri.parse('https://github.com/socialwebcl/forge#instalaci%C3%B3n'));
+    vscode.env.openExternal(vscode.Uri.parse('https://github.com/cristiancorreau/forge#instalaci%C3%B3n'));
   } else if (choice === 'Seleccionar carpeta forge…') {
     const picked = await vscode.window.showOpenDialog({
       canSelectFiles: false,
@@ -925,14 +925,14 @@ export function activate(context: vscode.ExtensionContext): void {
         if (choice === 'Inicializar git repo primero') {
           const terminal = vscode.window.createTerminal({ name: 'forge install', cwd: workspaceRoot });
           terminal.show();
-          terminal.sendText('git init && git submodule add https://github.com/socialwebcl/forge .agentic && git submodule update --init --recursive');
+          terminal.sendText('git init && git submodule add https://github.com/cristiancorreau/forge .agentic && git submodule update --init --recursive');
         }
         return;
       }
 
       const terminal = vscode.window.createTerminal({ name: 'forge install', cwd: workspaceRoot });
       terminal.show();
-      terminal.sendText('git submodule add https://github.com/socialwebcl/forge .agentic && git submodule update --init --recursive');
+      terminal.sendText('git submodule add https://github.com/cristiancorreau/forge .agentic && git submodule update --init --recursive');
       vscode.window.showInformationMessage(
         'forge: Instalando en .agentic/ — el panel se actualizará automáticamente al terminar.'
       );

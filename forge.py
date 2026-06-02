@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright 2026 SocialWeb — Apache License 2.0
-# https://github.com/socialwebcl/forge
+# Copyright 2026 Cristian Correa — Apache License 2.0
+# https://github.com/cristiancorreau/forge
 """
 forge — CLI principal del framework de desarrollo con agentes IA.
 

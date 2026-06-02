@@ -44,4 +44,4 @@ python3 -m pytest tests/ -q   # debe pasar al 100%
 Conventional Commits en inglés: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
 
 ## Gobernanza
-Proyecto mantenido por [@socialwebcl](https://github.com/socialwebcl). PRs bienvenidos. Para cambios grandes, abre un issue primero.
+Proyecto mantenido por [@cristiancorreau](https://github.com/cristiancorreau). PRs bienvenidos. Para cambios grandes, abre un issue primero.

@@ -45,11 +45,11 @@ CATALOG: list[dict] = [
     # ── Frameworks ──────────────────────────────────────────────────────────
 
     {
-        "name":        "socialwebcl/forge",
+        "name":        "cristiancorreau/forge",
         "description": "Framework de desarrollo con agentes IA para equipos. Profiles para Next.js, Astro, FastAPI, Rails, NestJS, Express, Expo y más. Wizard CLI interactivo.",
         "category":    "framework",
         "tags":        ["claude-code", "agents", "typescript", "python", "ruby", "nextjs", "astro", "fastapi", "rails", "nestjs", "express", "expo"],
-        "url":         "https://github.com/socialwebcl/forge",
+        "url":         "https://github.com/cristiancorreau/forge",
         "language":    "Python",
     },
     {
@@ -405,7 +405,7 @@ CATALOG: list[dict] = [
         "description": "Agente api-engineer especializado en Hono + Drizzle ORM + TypeScript. Incluye rutas, schemas, migraciones y tests.",
         "category":    "profile",
         "tags":        ["hono", "drizzle", "typescript", "api", "orm", "edge"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/hono-drizzle",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/hono-drizzle",
         "language":    "TypeScript",
     },
     {
@@ -413,7 +413,7 @@ CATALOG: list[dict] = [
         "description": "Agente admin-engineer para dashboards con Next.js 15 + shadcn/ui. Componentes, tablas de datos y gestión interna.",
         "category":    "profile",
         "tags":        ["nextjs", "shadcn", "react", "dashboard", "admin", "typescript"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/nextjs-admin",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/nextjs-admin",
         "language":    "TypeScript",
     },
     {
@@ -421,7 +421,7 @@ CATALOG: list[dict] = [
         "description": "Agente frontend-engineer para sitios con Astro. SSG/SSR, islands architecture, Content Collections y Tailwind.",
         "category":    "profile",
         "tags":        ["astro", "ssg", "ssr", "islands", "typescript", "tailwind", "static"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/astro",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/astro",
         "language":    "TypeScript",
     },
     {
@@ -429,7 +429,7 @@ CATALOG: list[dict] = [
         "description": "Agente api-engineer para FastAPI + Python. Endpoints async, Pydantic schemas, SQLAlchemy y pytest.",
         "category":    "profile",
         "tags":        ["fastapi", "python", "async", "pydantic", "sqlalchemy", "pytest"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/fastapi",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/fastapi",
         "language":    "Python",
     },
     {
@@ -437,7 +437,7 @@ CATALOG: list[dict] = [
         "description": "Agente fullstack-engineer para Ruby on Rails. Modelos, migraciones, controllers, views y RSpec.",
         "category":    "profile",
         "tags":        ["rails", "ruby", "activerecord", "rspec", "fullstack"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/rails",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/rails",
         "language":    "Ruby",
     },
     {
@@ -445,7 +445,7 @@ CATALOG: list[dict] = [
         "description": "Agente api-engineer para NestJS + TypeScript. Módulos, guards, decorators y arquitectura escalable.",
         "category":    "profile",
         "tags":        ["nestjs", "typescript", "node", "api", "modules", "guards"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/nestjs",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/nestjs",
         "language":    "TypeScript",
     },
     {
@@ -453,7 +453,7 @@ CATALOG: list[dict] = [
         "description": "Agente api-engineer para Express + Node.js + TypeScript. Middleware, rutas, validación y Jest.",
         "category":    "profile",
         "tags":        ["express", "nodejs", "typescript", "middleware", "api"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/express",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/express",
         "language":    "TypeScript",
     },
     {
@@ -461,7 +461,7 @@ CATALOG: list[dict] = [
         "description": "Agente mobile-engineer para React Native con Expo. Navegación, componentes nativos y EAS.",
         "category":    "profile",
         "tags":        ["expo", "react-native", "mobile", "ios", "android", "typescript"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/expo",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/expo",
         "language":    "TypeScript",
     },
     {
@@ -469,7 +469,7 @@ CATALOG: list[dict] = [
         "description": "Agente scanner-engineer para scraping y crawling con Playwright. Extracción de datos, screenshots y automatización.",
         "category":    "profile",
         "tags":        ["playwright", "scraping", "crawler", "browser", "automation", "typescript"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/playwright-crawler",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/playwright-crawler",
         "language":    "TypeScript",
     },
     {
@@ -477,7 +477,7 @@ CATALOG: list[dict] = [
         "description": "Agente api-engineer para Django 4.x + DRF + PostgreSQL + pytest-django. Modelos, migraciones, serializers, viewsets y tests.",
         "category":    "profile",
         "tags":        ["django", "python", "drf", "postgresql", "rest-api", "pytest"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/django",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/django",
         "language":    "Python",
     },
     {
@@ -485,7 +485,7 @@ CATALOG: list[dict] = [
         "description": "Agente frontend-engineer para Nuxt 3 + Vue 3 + Pinia + TypeScript. Pages, componentes, composables y SSR.",
         "category":    "profile",
         "tags":        ["nuxt", "vue", "typescript", "pinia", "ssr", "tailwind"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/vuenuxt",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/vuenuxt",
         "language":    "TypeScript",
     },
     {
@@ -493,7 +493,7 @@ CATALOG: list[dict] = [
         "description": "Agente api-engineer para Go + Gin/Echo + sqlc + PostgreSQL + testify. Handlers, services, repositories e migrations.",
         "category":    "profile",
         "tags":        ["go", "golang", "gin", "echo", "sqlc", "postgresql", "rest-api"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/go-gin",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/go-gin",
         "language":    "Go",
     },
     {
@@ -501,7 +501,7 @@ CATALOG: list[dict] = [
         "description": "Agente frontend-engineer para SvelteKit 2 + Svelte 5 + TypeScript + Tailwind. Routes, components, load functions y form actions.",
         "category":    "profile",
         "tags":        ["sveltekit", "svelte", "typescript", "tailwind", "ssr", "vite"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/sveltekit",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/sveltekit",
         "language":    "TypeScript",
     },
     {
@@ -509,7 +509,7 @@ CATALOG: list[dict] = [
         "description": "Tres agentes para proyectos Laravel: api-engineer (Sanctum + Eloquent + Form Requests), fullstack-engineer (Blade + Livewire 3 o Inertia) y migration-specialist (upgrade L6→L13 paso a paso con breaking changes por versión).",
         "category":    "profile",
         "tags":        ["laravel", "php", "eloquent", "sanctum", "livewire", "blade", "inertia", "migration", "upgrade"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/laravel",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/laravel",
         "language":    "PHP",
     },
     {
@@ -517,7 +517,7 @@ CATALOG: list[dict] = [
         "description": "Tres agentes para proyectos WordPress: wp-engineer (FSE + bloques Gutenberg + Interactivity API + WP REST API), divi-engineer (Divi Theme Builder + módulos ET_Builder_Module + Dynamic Content) y elementor-engineer (Elementor Pro + widgets personalizados + Dynamic Tags + Loop Grid).",
         "category":    "profile",
         "tags":        ["wordpress", "php", "gutenberg", "fse", "divi", "elementor", "page-builder", "blocks", "theme-builder"],
-        "url":         "https://github.com/socialwebcl/forge/tree/main/profiles/wordpress",
+        "url":         "https://github.com/cristiancorreau/forge/tree/main/profiles/wordpress",
         "language":    "PHP",
     },
 

@@ -30,10 +30,10 @@ pip install pyyaml
 
 ```bash
 # Opcion A: como git submodule (recomendado)
-git submodule add https://github.com/socialwebcl/forge .agentic
+git submodule add https://github.com/cristiancorreau/forge .agentic
 
 # Opcion B: clonar directamente
-git clone https://github.com/socialwebcl/forge .agentic
+git clone https://github.com/cristiancorreau/forge .agentic
 ```
 
 ### Generar AGENTS.md
