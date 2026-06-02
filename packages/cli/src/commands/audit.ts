@@ -1,6 +1,9 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
+import { bold, dim, green, red, yellow, cyan, gray, icons } from '../ui/colors.js';
+import { box } from '../ui/box.js';
+import { loadManifest, checkOutdated } from '../lib/lock.js';
 
 const HELP = `Usage: forge audit [options]
 
@@ -159,6 +162,19 @@ export async function audit(args: string[]): Promise<number> {
     issues.push({ level: 'warn', check: 'runtime', message: 'No se detectó ningún runtime — ejecutar forge init' });
   }
 
+  // Manifest check
+  const manifest = loadManifest(root);
+  if (manifest) {
+    const outdated = checkOutdated(root, manifest);
+    if (outdated.length === 0) {
+      issues.push({ level: 'ok', check: 'manifest', message: `forge v${manifest.forgeVersion} — todos los archivos al día` });
+    } else {
+      issues.push({ level: 'warn', check: 'manifest', message: `${outdated.length} archivo(s) modificados desde forge init` });
+    }
+  } else {
+    issues.push({ level: 'info', check: 'manifest', message: 'Sin .forge/manifest.json — ejecutar forge init para generarlo' });
+  }
+
   // Summary
   const errors = issues.filter(i => i.level === 'error').length;
   const warnings = issues.filter(i => i.level === 'warn').length;
@@ -170,14 +186,19 @@ export async function audit(args: string[]): Promise<number> {
       issues,
     }, null, 2));
   } else {
-    console.log('forge audit\n');
+    console.log(cyan(bold('forge audit')) + '\n');
     for (const issue of issues) {
-      const icons: Record<string, string> = { ok: '✓', warn: '!', error: '✗', info: 'i' };
-      const icon = icons[issue.level] ?? '·';
-      console.log(`  [${icon}] ${issue.check.padEnd(20)} ${issue.message}`);
+      const levelIcon = icons[issue.level] ?? gray('·');
+      console.log(`  [${levelIcon}] ${bold(issue.check.padEnd(20))} ${dim(issue.message)}`);
     }
-    console.log(`\n  Resumen: ${ok} OK · ${warnings} warnings · ${errors} errores`);
-    if (errors === 0 && warnings === 0) console.log('  El proyecto cumple con el estándar forge.');
+
+    const summaryLine = `Resumen: ${green(String(ok) + ' OK')} · ${yellow(String(warnings) + ' warn')} · ${red(String(errors) + ' ✗')}`;
+    const boxTitle = errors === 0 && warnings === 0
+      ? green('Todo en orden')
+      : errors > 0
+        ? red('Se encontraron errores')
+        : yellow('Advertencias encontradas');
+    console.log('\n' + box(boxTitle, [summaryLine]));
   }
 
   return errors > 0 ? 1 : 0;

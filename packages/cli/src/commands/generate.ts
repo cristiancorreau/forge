@@ -8,6 +8,8 @@ import {
   generateKiroProduct, generateKiroStructure,
   generateKiroAgents, generateKiroCommands, generateKiroBranchGuardHook
 } from '../lib/generators/kiro.js';
+import { bold, dim, green, red, yellow, cyan, gray } from '../ui/colors.js';
+import { createSpinner } from '../ui/spinner.js';
 
 const HELP = `Usage: forge generate [options]
 
@@ -77,8 +79,8 @@ export async function generate(args: string[]): Promise<number> {
   const root = join(yamlPath, '..');
   const projectName = config.project.name ?? 'Proyecto';
 
-  console.log(`forge generate — ${projectName}`);
-  if (dryRun) console.log('  Modo: DRY-RUN (no escribe archivos)\n');
+  console.log(cyan(bold('forge generate')) + dim(' — ' + projectName) + '\n');
+  if (dryRun) console.log(dim('  Modo: DRY-RUN (no escribe archivos)') + '\n');
 
   let runtimesToRun: Runtime[];
   if (runtimeArg === 'all') {
@@ -94,52 +96,97 @@ export async function generate(args: string[]): Promise<number> {
     }
   }
 
+  // Build spinner items: one entry per runtime (kiro gets a summary entry)
+  const spinnerItems = runtimesToRun.map(rt => ({
+    runtime: rt,
+    file: rt === 'kiro' ? '.kiro/steering/' : rt === 'claude-code' ? 'CLAUDE.md' : 'AGENTS.md',
+  }));
+  const spinner = createSpinner(spinnerItems);
+  spinner.start();
+
   const results: Array<{ runtime: string; file: string; status: string }> = [];
 
   for (const runtime of runtimesToRun) {
-    if (runtime === 'claude-code') {
-      mkdirSync(join(root, '.claude'), { recursive: true });
-      const claudeMdPath = join(root, 'CLAUDE.md');
-      const status = writeFile(claudeMdPath, generateClaudeMd(config), dryRun, force);
-      results.push({ runtime, file: 'CLAUDE.md', status });
+    spinner.update(runtime, 'running');
+    try {
+      if (runtime === 'claude-code') {
+        mkdirSync(join(root, '.claude'), { recursive: true });
+        const claudeMdPath = join(root, 'CLAUDE.md');
+        const status = writeFile(claudeMdPath, generateClaudeMd(config), dryRun, force);
+        results.push({ runtime, file: 'CLAUDE.md', status });
+        spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'CLAUDE.md');
 
-    } else if (runtime === 'opencode') {
-      mkdirSync(join(root, '.opencode'), { recursive: true });
-      const status = writeFile(join(root, 'AGENTS.md'), generateAgentsMd(config), dryRun, force);
-      results.push({ runtime, file: 'AGENTS.md', status });
+      } else if (runtime === 'opencode') {
+        mkdirSync(join(root, '.opencode'), { recursive: true });
+        const status = writeFile(join(root, 'AGENTS.md'), generateAgentsMd(config), dryRun, force);
+        results.push({ runtime, file: 'AGENTS.md', status });
+        spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md');
 
-    } else if (runtime === 'codex') {
-      const status = writeFile(join(root, 'AGENTS.md'), generateCodexAgentsMd(config), dryRun, force);
-      results.push({ runtime, file: 'AGENTS.md', status });
+      } else if (runtime === 'codex') {
+        const status = writeFile(join(root, 'AGENTS.md'), generateCodexAgentsMd(config), dryRun, force);
+        results.push({ runtime, file: 'AGENTS.md', status });
+        spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md');
 
-    } else if (runtime === 'kiro') {
-      const kiroDir = join(root, '.kiro', 'steering');
-      const kiroHooks = join(root, '.kiro', 'hooks');
-      mkdirSync(kiroDir, { recursive: true });
-      mkdirSync(kiroHooks, { recursive: true });
+      } else if (runtime === 'kiro') {
+        const kiroDir = join(root, '.kiro', 'steering');
+        const kiroHooks = join(root, '.kiro', 'hooks');
+        mkdirSync(kiroDir, { recursive: true });
+        mkdirSync(kiroHooks, { recursive: true });
 
-      const files: Array<[string, string]> = [
-        [join(kiroDir, 'product.md'), generateKiroProduct(config)],
-        [join(kiroDir, 'structure.md'), generateKiroStructure(config)],
-        [join(kiroDir, 'agents.md'), generateKiroAgents(config)],
-        [join(kiroDir, 'commands.md'), generateKiroCommands()],
-        [join(kiroHooks, 'pre-edit-branch-guard.json'), generateKiroBranchGuardHook()],
-      ];
-      for (const [path, content] of files) {
-        const status = writeFile(path, content, dryRun, force);
-        results.push({ runtime, file: path.replace(root + '/', ''), status });
+        const files: Array<[string, string]> = [
+          [join(kiroDir, 'product.md'), generateKiroProduct(config)],
+          [join(kiroDir, 'structure.md'), generateKiroStructure(config)],
+          [join(kiroDir, 'agents.md'), generateKiroAgents(config)],
+          [join(kiroDir, 'commands.md'), generateKiroCommands()],
+          [join(kiroHooks, 'pre-edit-branch-guard.json'), generateKiroBranchGuardHook()],
+        ];
+        let kiroOk = 0;
+        let kiroSkip = 0;
+        for (const [path, content] of files) {
+          const status = writeFile(path, content, dryRun, force);
+          results.push({ runtime, file: path.replace(root + '/', ''), status });
+          if (status.startsWith('SKIP')) kiroSkip++; else kiroOk++;
+        }
+        const kiroSummary = `.kiro/steering/ (${files.length} archivos)`;
+        spinner.update(runtime, kiroSkip === files.length ? 'skip' : 'done', kiroSummary);
       }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      results.push({ runtime, file: '—', status: `ERROR: ${msg}` });
+      spinner.update(runtime, 'error');
     }
   }
 
-  console.log('\n  Runtime        File                               Status');
-  console.log('  ' + '─'.repeat(70));
+  spinner.stop();
+  console.log('');
+
+  // Print final results table with colors
   for (const r of results) {
-    const rt = r.runtime.padEnd(14);
-    const f = r.file.padEnd(34);
-    console.log(`  ${rt} ${f} ${r.status}`);
+    const rt = r.runtime.padEnd(12);
+    let statusStr: string;
+    if (r.status === 'OK' || r.status === 'DRY-RUN') {
+      statusStr = green(r.status);
+    } else if (r.status.startsWith('SKIP')) {
+      statusStr = yellow(dim(r.status));
+    } else {
+      statusStr = red(r.status);
+    }
+    console.log(`  ${rt}  ${gray(r.file)}   ${statusStr}`);
   }
   console.log('');
 
-  return 0;
+  const hasErrors = results.some(r => r.status.startsWith('ERROR'));
+  const hasSkips = results.some(r => r.status.startsWith('SKIP'));
+  const okCount = results.filter(r => r.status === 'OK' || r.status === 'DRY-RUN').length;
+
+  if (hasErrors) {
+    console.log(red('  Algunos archivos fallaron. Ver detalles arriba.'));
+  } else if (hasSkips && okCount === 0) {
+    console.log(yellow('  Archivos existentes sin cambios. Usa --force para sobreescribir.'));
+  } else {
+    console.log(green(`  ${okCount} archivo(s) generado(s) correctamente.`));
+  }
+  console.log('');
+
+  return hasErrors ? 1 : 0;
 }

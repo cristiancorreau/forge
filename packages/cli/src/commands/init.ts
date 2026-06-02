@@ -3,6 +3,8 @@ import { join, basename } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
 import { resolveForgeRoot } from '../lib/paths.js';
+import { buildManifest, saveManifest } from '../lib/lock.js';
+import { bold, dim, cyan } from '../ui/colors.js';
 import { generateClaudeMd } from '../lib/generators/claude-code.js';
 import { generateAgentsMd } from '../lib/generators/opencode.js';
 import { generateCodexAgentsMd } from '../lib/generators/codex.js';
@@ -20,6 +22,7 @@ project.yaml, then installs agents, hooks, and runtime configuration.
 Options:
   --runtime <name>   Skip wizard for runtime selection: claude-code, opencode, codex, kiro
   --force            Overwrite existing files without prompting
+  --dry-run          Show what would be installed without writing files
   -h, --help         Show this help
 `;
 
@@ -213,6 +216,7 @@ export async function init(args: string[]): Promise<number> {
   }
 
   const force = args.includes('--force');
+  const dryRun = args.includes('--dry-run');
   const runtimeIdx = args.indexOf('--runtime');
   const runtimeOverride = runtimeIdx !== -1 ? (args[runtimeIdx + 1] ?? null) : null;
 
@@ -250,6 +254,24 @@ export async function init(args: string[]): Promise<number> {
   const profiles = config.agents?.profiles ?? [];
   const allAgents = [...activeAgents, ...complianceAgents];
 
+  // --dry-run: show what would be installed
+  if (dryRun) {
+    console.log('\n  ' + cyan(bold('forge init --dry-run')) + '\n');
+    console.log(dim('  Archivos que se crearían:'));
+    const dryFiles = [
+      `.claude/agents/ (${allAgents.length} agentes${profiles.length ? ' + ' + profiles.length + ' profiles' : ''})`,
+      '.claude/hooks/ (pre-edit-check.js, pre-bash-check.js, post-turn-check.sh)',
+      '.claude/commands/ (11 slash commands)',
+      'CLAUDE.md',
+      '.claude/settings.json',
+      '.claude/architecture.rules',
+      '.forge/manifest.json',
+    ];
+    dryFiles.forEach(f => console.log('  ' + dim('→') + ' ' + f));
+    console.log('\n' + dim('  Ejecutar sin --dry-run para aplicar los cambios.') + '\n');
+    return 0;
+  }
+
   console.log(`\nInstalando forge para runtime: ${runtime}\n`);
 
   if (runtime === 'claude-code') {
@@ -285,6 +307,15 @@ export async function init(args: string[]): Promise<number> {
       writeFileSync(archRulesDest, content, 'utf-8');
       console.log('  write architecture.rules');
     }
+
+    // Write .forge/manifest.json
+    const installedFiles = [
+      'CLAUDE.md', '.claude/settings.json', '.claude/architecture.rules',
+      ...allAgents.map(a => `.claude/agents/${a}.md`),
+    ];
+    const ts = new Date().toISOString();
+    saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.4.0', ts));
+    console.log('  write .forge/manifest.json');
 
   } else if (runtime === 'opencode') {
     mkdirSync(join(projectRoot, '.opencode'), { recursive: true });
