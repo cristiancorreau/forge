@@ -1,0 +1,20 @@
+\babel@toc {spanish}{}\relax 
+\contentsline {section}{\numberline {1}Resumen ejecutivo}{2}{section.1}%
+\contentsline {section}{\numberline {2}Estado del proyecto}{2}{section.2}%
+\contentsline {section}{\numberline {3}Bugs confirmados en el codigo}{2}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Bug 1 — Campo \texttt {summary} ausente en el JSON de auditoria}{2}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Bug 2 — Flag \texttt {--forge} documentada pero no implementada}{3}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Bug 3 — Opcion \texttt {--only} del menu no implementada}{3}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Bug 4 — Documentacion desactualizada en tres archivos}{3}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Benchmark comparativo}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Herramientas evaluadas}{4}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Matriz de benchmark}{4}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Interpretacion del benchmark}{5}{subsection.4.3}%
+\contentsline {section}{\numberline {5}Fortalezas}{5}{section.5}%
+\contentsline {section}{\numberline {6}Limitaciones}{5}{section.6}%
+\contentsline {section}{\numberline {7}Matriz de decision}{6}{section.7}%
+\contentsline {section}{\numberline {8}Conclusion}{6}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Para quien es forge ideal hoy}{6}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Para quien no es forge adecuado hoy}{7}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Veredicto}{7}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Proximos pasos recomendados}{7}{subsection.8.4}%

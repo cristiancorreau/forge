@@ -1,0 +1,458 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{array}
+\usepackage{parskip}
+
+\geometry{
+  top=2.5cm,
+  bottom=2.5cm,
+  left=3cm,
+  right=3cm
+}
+
+\definecolor{criticalred}{RGB}{180,30,30}
+\definecolor{warnorange}{RGB}{200,100,0}
+\definecolor{okgreen}{RGB}{30,130,60}
+\definecolor{accentblue}{RGB}{30,80,160}
+\definecolor{lightgray}{RGB}{245,245,245}
+\definecolor{titlegray}{RGB}{60,60,80}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accentblue,
+  urlcolor=accentblue,
+  pdftitle={forge v2.0 — Analisis Dual + Benchmark},
+  pdfauthor={Analisis independiente},
+  pdfsubject={Framework de gobernanza de agentes IA}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{titlegray}{forge v2.0 — Analisis Dual + Benchmark (v4)}}
+\fancyhead[R]{\small\textcolor{titlegray}{Mayo 2026}}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}
+  {\large\bfseries\color{titlegray}}
+  {\thesection}{1em}{}[\titlerule]
+
+\titleformat{\subsection}
+  {\normalsize\bfseries\color{accentblue}}
+  {\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+  {\normalsize\bfseries}
+  {\thesubsubsection}{1em}{}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\begin{document}
+
+%% ============================================================
+%% PORTADA
+%% ============================================================
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\fontsize{28}{34}\selectfont\bfseries\color{titlegray} forge v2.0}\par
+  \vspace{0.5cm}
+  {\fontsize{18}{22}\selectfont\color{accentblue} Analisis Dual + Benchmark Competitivo}\par
+  \vspace{0.3cm}
+  {\large\color{titlegray} Version 4 del ciclo de analisis}\par
+  \vspace{2cm}
+  \hrule height 1pt
+  \vspace{0.5cm}
+
+  \begin{abstract}
+    \noindent
+    Este documento sintetiza dos analisis independientes realizados sobre
+    \textbf{forge v2.0} (44 commits, un unico maintainer, rama \texttt{main}).
+    El primer analisis audito el codigo fuente en busca de bugs, inconsistencias
+    entre documentacion y codigo, y riesgos de adopcion. El segundo comparo forge
+    con cinco alternativas del ecosistema de desarrollo asistido por IA
+    (aider, Cursor rules, cline/Roo Code, OpenHands, DIY manual) en diez criterios
+    cuantificados.
+
+    Los hallazgos incluyen cuatro bugs confirmados en el codigo ---el mas critico
+    implica que la integracion CI documentada genera falsa seguridad--- y una
+    ventaja competitiva real: forge lidera en 8 de 10 criterios del benchmark
+    en su nicho especifico de gobernanza de equipos de agentes IA.
+
+    La sintesis presenta un veredicto diferenciado por perfil de equipo.
+  \end{abstract}
+
+  \vspace{0.5cm}
+  \hrule height 1pt
+  \vspace{2cm}
+
+  \begin{tabular}{rl}
+    \textbf{Fecha:} & 2026-05-03 \\
+    \textbf{Version analizada:} & forge v2.0, 44 commits \\
+    \textbf{Metodologia:} & Analisis dual independiente \\
+    \textbf{Benchmark:} & 5 alternativas, 10 criterios \\
+  \end{tabular}
+
+  \vfill
+  {\small\color{titlegray} Analisis independiente. No afiliado con Anthropic ni con
+  ningun vendor mencionado en el benchmark.}
+\end{titlepage}
+
+%% ============================================================
+%% TABLA DE CONTENIDOS
+%% ============================================================
+\tableofcontents
+\newpage
+
+%% ============================================================
+\section{Resumen ejecutivo}
+%% ============================================================
+
+forge es un framework de gobernanza de agentes IA que define, versiona y despliega
+equipos de agentes especializados en multiples runtimes (Claude Code, OpenCode, Kiro)
+desde una unica fuente de verdad declarativa (\texttt{project.yaml}).
+
+En su version 2.0, post-mejoras, el proyecto ha alcanzado un nivel de madurez notable:
+358 tests automatizados, 13 profiles de stack, un CLI interactivo sin dependencias
+externas y soporte declarativo para compliance regulatorio (GDPR, Ley 21.719 chilena).
+
+Al mismo tiempo, cuatro problemas estructurales persisten. Uno de ellos ---la ausencia
+del campo \texttt{summary} en el JSON de auditoria--- es un bug que hace que la integracion
+CI documentada en el README oficial genere falsa seguridad en produccion.
+
+El analisis benchmark concluye que, para equipos de 2 a 8 personas que usan Claude Code
+de forma activa con multiples proyectos, forge no tiene competidor directo en el ecosistema.
+Para otros perfiles, las alternativas son mas adecuadas.
+
+%% ============================================================
+\section{Estado del proyecto}
+%% ============================================================
+
+\begin{center}
+\begin{tabular}{ll}
+  \toprule
+  \textbf{Metrica} & \textbf{Valor} \\
+  \midrule
+  Commits totales & 44 \\
+  Autores & 1 (Cristian Correa) \\
+  PRs externos & 0 visibles \\
+  Tests automatizados & 358 (2.86 segundos) \\
+  Profiles de stack (Tier 2) & 13 \\
+  Agentes core (Tier 1) & 7 \\
+  MCP servers en catalogo & 20 \\
+  Runtimes soportados & 3 (Claude Code, OpenCode, Kiro) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+La arquitectura central es un sistema de tres tiers: Tier 1 (agentes universales en
+\texttt{core/agents/}), Tier 2 (profiles por stack en \texttt{profiles/<stack>/}) y
+Tier 3 (agentes de dominio en el proyecto del equipo, fuera de forge). La regla de
+colision garantiza que la especializacion por stack no rompe el roster base.
+
+%% ============================================================
+\section{Bugs confirmados en el codigo}
+%% ============================================================
+
+Los siguientes son hechos verificados entre el codigo fuente y la documentacion,
+con referencias precisas a archivos y numeros de linea. No son estimaciones de riesgo.
+
+\subsection{Bug 1 — Campo \texttt{summary} ausente en el JSON de auditoria}
+
+\textbf{\textcolor{criticalred}{Severidad: ALTA}}
+
+El comando \texttt{forge-audit.py --json} emite un JSON con cuatro campos:
+\texttt{project}, \texttt{agents}, \texttt{opportunities} y \texttt{orphans}.
+El campo \texttt{summary} no existe en el output.
+
+Sin embargo, los siguientes archivos documentan la integracion CI usando ese campo
+inexistente:
+
+\begin{itemize}
+  \item \texttt{README.md}, linea 173: \texttt{jq -e '.summary.errors == 0'}
+  \item \texttt{docs/guide.md}, linea 332: \texttt{jq -e '.summary.errors == 0'}
+  \item \texttt{forge.py}, lineas 696 y 967: \texttt{jq '.summary'} y
+        \texttt{jq '.summary.errors'}
+\end{itemize}
+
+En \texttt{jq}, acceder a un campo inexistente devuelve \texttt{null} sin error y
+sin exit code distinto de 0. Un pipeline de CI construido con los ejemplos del README
+nunca fallara aunque haya errores criticos de auditoria. Ningun test en
+\texttt{test\_forge\_audit.py} verifica la estructura del JSON de salida.
+
+\textbf{Impacto:} Falsa seguridad en CI. Un equipo que siga la documentacion oficial
+tendra un pipeline que reporta exito ante cualquier estado de los agentes.
+
+\subsection{Bug 2 — Flag \texttt{--forge} documentada pero no implementada}
+
+\textbf{\textcolor{warnorange}{Severidad: MEDIA}}
+
+\texttt{docs/guide.md} referencia el flag \texttt{--forge .agentic} en cinco ocasiones
+(lineas 112, 146, 180, 205, 282). El script \texttt{forge-audit.py} no implementa ese
+parametro. Al ejecutar el comando documentado, el flag se ignora silenciosamente: no
+hay error, no hay advertencia, el comportamiento es diferente al documentado.
+
+\subsection{Bug 3 — Opcion \texttt{--only} del menu no implementada}
+
+\textbf{\textcolor{warnorange}{Severidad: MEDIA}}
+
+\texttt{forge.py}, linea 712, invoca \texttt{forge-audit.py --only=\{agent\}}.
+El script no implementa \texttt{--only}: ejecuta siempre el audit completo. La opcion
+del menu describe auditar ``sin revisar el roster completo'' y hace lo contrario.
+
+\subsection{Bug 4 — Documentacion desactualizada en tres archivos}
+
+\textbf{Severidad: BAJA}
+
+\texttt{forge.py} (linea 754) describe ``9 profiles'' cuando el repositorio tiene 13.
+\texttt{README.md} no lista astro, django, vuenuxt, go-gin ni sveltekit en la tabla
+Tier 2. \texttt{templates/project.yaml.tpl} no incluye los cuatro profiles nuevos.
+La causa: la documentacion no se actualizo al agregar los profiles en v2.0.
+
+%% ============================================================
+\section{Benchmark comparativo}
+%% ============================================================
+
+\subsection{Herramientas evaluadas}
+
+\begin{description}
+  \item[aider] (44.3k estrellas) CLI de pair programming. Soporta 100+ lenguajes,
+    commits automaticos, repomap para contexto. Sin profiles, sin gobernanza de equipo,
+    sin auditoria.
+  \item[Cursor rules] Sistema de reglas del editor Cursor. Archivos de contexto por
+    directorio. Simple y efectivo para un desarrollador individual. No multi-runtime,
+    no profiles, no auditoria.
+  \item[cline / Roo Code] (61.3k / 23.8k estrellas) Extensiones de VS Code con agente
+    autonomo. Multiples LLM providers, MCP, checkpoints. Sin profiles de stack, sin
+    fuente de verdad declarativa.
+  \item[OpenHands] (72.6k estrellas) Plataforma de agentes autonomos. SDK Python, CLI,
+    GUI. Sin profiles predefinidos, orientado a tareas autonomas, no a gobernanza.
+  \item[DIY manual] Crear \texttt{.claude/agents/} a mano sin framework. Maxima
+    flexibilidad, entropia creciente con el tiempo.
+\end{description}
+
+\subsection{Matriz de benchmark}
+
+\begin{longtable}{L{4.5cm}C{1.2cm}C{1.2cm}C{1.4cm}C{1.4cm}C{1.4cm}C{1.0cm}}
+  \caption{Benchmark forge vs. alternativas (escala 1--5)} \\
+  \toprule
+  \textbf{Criterio} & \textbf{forge} & \textbf{aider} & \textbf{Cursor} &
+  \textbf{cline/Roo} & \textbf{OpenHands} & \textbf{DIY} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Criterio} & \textbf{forge} & \textbf{aider} & \textbf{Cursor} &
+  \textbf{cline/Roo} & \textbf{OpenHands} & \textbf{DIY} \\
+  \midrule
+  \endhead
+  \midrule
+  \multicolumn{7}{r}{\small Continua en la pagina siguiente\ldots} \\
+  \endfoot
+  \bottomrule
+  \endlastfoot
+  Setup $<$ 10 min        & \textbf{5} & 5 & 4 & 4 & 3 & 1 \\
+  Especializacion por stack & \textbf{5} & 1 & 2 & 2 & 1 & 3 \\
+  Multi-runtime             & \textbf{5} & 1 & 1 & 1 & 2 & 2 \\
+  CLI interactivo           & \textbf{5} & 4 & 1 & 3 & 4 & 1 \\
+  Auditoria de agentes      & \textbf{5} & 1 & 1 & 1 & 1 & 1 \\
+  Catalogo MCP              & \textbf{5} & 1 & 1 & 3 & 2 & 1 \\
+  Tests del framework       & \textbf{5} & 3 & 1 & 3 & 4 & 1 \\
+  Sin vendor lock-in        & 5 & 5 & 1 & 4 & 4 & \textbf{5} \\
+  Comunidad activa          & 2 & 5 & 4 & \textbf{5} & 5 & -- \\
+  Gobernanza y compliance   & \textbf{5} & 1 & 1 & 1 & 2 & 2 \\
+  \midrule
+  \textbf{Total}            & \textbf{47} & 27 & 17 & 27 & 29 & 21 \\
+\end{longtable}
+
+forge lidera en 8 de 10 criterios. Las dos excepciones son significativas:
+\textbf{comunidad activa} (donde las alternativas tienen comunidades 10--50 veces
+mayores) y \textbf{vendor lock-in real} (donde el informe critico identifico que
+\texttt{orchestrator.md} usa APIs exclusivas de Claude Code).
+
+\subsection{Interpretacion del benchmark}
+
+Las herramientas comparadas no resuelven el mismo problema. aider es una herramienta
+de edicion asistida sin estado entre proyectos. Cursor rules es configuracion por
+directorio. cline y Roo Code dependen de VS Code. OpenHands es una plataforma de
+ejecucion autonoma a escala.
+
+La ventaja diferencial de forge es concreta: 13 profiles con instrucciones especializadas
+por stack que nadie en el ecosistema provee empaquetadas. Un \texttt{admin-engineer}
+que prohíbe explicitamente Tailwind 3 y SWR, que exige WCAG 2.1 AA, que tiene scope
+de archivos definido ---eso no se consigue con ninguna alternativa sin escribirlo a
+mano en cada proyecto.
+
+%% ============================================================
+\section{Fortalezas}
+%% ============================================================
+
+\textbf{Arquitectura de tres tiers.} El sistema Tier 1 / Tier 2 / Tier 3 con regla
+de colision precisa garantiza que la especializacion por stack no rompe el roster base.
+\texttt{forge-init.py} instala profiles primero, core despues, sin sobreescribir.
+
+\textbf{Auditoria como ciudadano de primera clase.} \texttt{forge-audit.py} detecta
+frontmatter incompleto, modelo incorrecto por tier, similitud fuera de umbrales
+(\texttt{SIMILARITY\_WARN=0.80}, \texttt{SIMILARITY\_OUTDATED=0.50}), agentes huerfanos
+y profiles no usados. El bug del campo \texttt{summary} no invalida la capacidad de
+auditoria; invalida la integracion CI documentada.
+
+\textbf{358 tests en 2.86 segundos.} Cobertura de auditoria, wizard, integracion
+completa de init, adapters, teardown, profiles y CLI. Inusual para un framework de
+este tipo.
+
+\textbf{CLI sin dependencias.} TUI completa (pills de categoria, bordes redondeados,
+cursor con seleccion, panel de descripcion contextual) en Python puro.
+
+\textbf{Compliance propagado.} El campo \texttt{compliance.frameworks} en
+\texttt{project.yaml} activa el \texttt{compliance-reviewer} con modelo \texttt{opus}
+obligatorio y propaga las reglas al steering de Kiro. Sin equivalente en el ecosistema.
+
+%% ============================================================
+\section{Limitaciones}
+%% ============================================================
+
+\textbf{Lock-in con Claude Code a nivel de orchestrator.} El agente central usa
+\texttt{Agent()}, \texttt{subagent\_type}, \texttt{run\_in\_background},
+\texttt{SendMessage} e \texttt{isolation: worktree} ---APIs exclusivas de Claude Code.
+Los adapters de OpenCode y Kiro generan configuraciones de roster pero no resuelven
+la brecha de comportamiento. Un equipo en OpenCode no accede al mecanismo de
+coordinacion que el orchestrator asume.
+
+\textbf{Bug de CI en produccion.} El campo \texttt{summary} no existe en el JSON de
+\texttt{forge-audit.py}. Cualquier pipeline construido con los ejemplos del README
+genera falsa seguridad. Es el problema mas urgente.
+
+\textbf{Modelo de instalacion por submodule.} Sin versioning semantico, sin releases
+etiquetados, sin script de actualizacion automatizado. El proceso de actualizacion
+requiere 6 pasos manuales. \texttt{forge-teardown.py} ignora silenciosamente errores
+si el submodule ya fue removido manualmente.
+
+\textbf{Bus factor 1.} 44 commits, un unico autor, cero PRs externos visibles. Para
+un framework que gestiona configuracion de agentes en produccion, esto es un riesgo
+operativo real para adopcion enterprise.
+
+\textbf{Tests estructurales, no de flujo real.} Los 358 tests verifican que archivos
+se copian, que el frontmatter existe, que el YAML contiene ciertos strings. No hay
+tests end-to-end del flujo wizard $\rightarrow$ init $\rightarrow$ audit $\rightarrow$
+update.
+
+\textbf{Stacks sin profile.} El wizard ofrece Laravel y Angular. No existen profiles
+para ninguno. El wizard termina con \texttt{profiles: []} despues de 10 pantallas.
+
+%% ============================================================
+\section{Matriz de decision}
+%% ============================================================
+
+\begin{center}
+\begin{tabular}{L{5cm}L{3cm}L{5.5cm}}
+  \toprule
+  \textbf{Perfil} & \textbf{Recomendacion} & \textbf{Razon} \\
+  \midrule
+  Equipo 2--8 personas, Claude Code activo, multiples proyectos &
+    \textcolor{okgreen}{\textbf{Adoptar}} &
+    Maximo beneficio de profiles y auditoria \\
+  \addlinespace
+  Equipo con compliance GDPR / Ley 21.719 &
+    \textcolor{okgreen}{\textbf{Adoptar}} &
+    Sin equivalente en el ecosistema \\
+  \addlinespace
+  Desarrollador individual, un proyecto, sin compliance &
+    \textcolor{warnorange}{DIY o Cursor} &
+    Overhead no justificado \\
+  \addlinespace
+  Migracion planificada a otro runtime &
+    \textcolor{warnorange}{Esperar} &
+    Orchestrator no portable \\
+  \addlinespace
+  Enterprise con SLA requerido &
+    \textcolor{criticalred}{No adoptar} &
+    Bus factor 1 inaceptable \\
+  \addlinespace
+  Stack Laravel o Angular &
+    \textcolor{criticalred}{DIY manual} &
+    Sin profile; wizard sin resultado util \\
+  \addlinespace
+  Pair programming puro &
+    \textcolor{warnorange}{aider} &
+    Mas directo, comunidad 50x mayor \\
+  \addlinespace
+  Autonomia a escala en nube &
+    \textcolor{warnorange}{OpenHands} &
+    Infraestructura que forge no tiene \\
+  \addlinespace
+  Flujo centrado en VS Code &
+    \textcolor{warnorange}{cline / Roo Code} &
+    Integracion nativa con el editor \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+%% ============================================================
+\section{Conclusion}
+%% ============================================================
+
+\subsection{Para quien es forge ideal hoy}
+
+Equipos de 2 a 8 personas que usan Claude Code de forma activa, trabajan con multiples
+proyectos que comparten patrones de stack (Next.js, FastAPI, Expo, Rails), y necesitan
+coherencia reproducible entre proyectos sin escribir instrucciones de agente desde cero
+en cada uno. Especialmente para equipos con requisitos de compliance donde la propagacion
+automatica de reglas tiene valor operativo real.
+
+\subsection{Para quien no es forge adecuado hoy}
+
+Desarrolladores individuales sin necesidad de coordinacion. Equipos que planean migrar
+de Claude Code a otro runtime en el corto plazo. Equipos enterprise que necesitan un
+vendor con soporte o SLA. Equipos con Laravel o Angular como stack principal.
+
+\subsection{Veredicto}
+
+forge v2.0 es el framework mas completo del ecosistema para gobernanza de agentes IA
+en equipos que usan Claude Code. Su ventaja es real y documentada. Sus bugs tambien son
+reales y documentados.
+
+\textbf{\textcolor{criticalred}{El bug del campo \texttt{summary} en el JSON de CI
+debe corregirse antes de cualquier adopcion en produccion:}} es una sola linea de codigo
+con consecuencias operativas desproporcionadas. Corregido ese bug, forge es la eleccion
+mas racional para el perfil de equipo descrito.
+
+Para quienes no encajan en ese perfil, las alternativas son mejores en sus propios
+dominios: aider para pair programming, OpenHands para autonomia a escala, cline para
+integracion con VS Code. La eleccion no es ``forge vs. todo'': es ``forge para
+gobernanza de equipos en Claude Code, las otras herramientas para todo lo demas''.
+
+\subsection{Proximos pasos recomendados}
+
+\begin{enumerate}
+  \item \textbf{[Inmediato]} Corregir campo \texttt{summary} en \texttt{forge-audit.py}
+    y actualizar ejemplos en README, guide.md y forge.py.
+  \item \textbf{[Inmediato]} Implementar o eliminar flags \texttt{--forge} y
+    \texttt{--only} de la documentacion.
+  \item \textbf{[Corto plazo]} Actualizar documentacion a 13 profiles en forge.py,
+    README y templates.
+  \item \textbf{[Corto plazo]} Agregar tests del contrato JSON en
+    \texttt{test\_forge\_audit.py}.
+  \item \textbf{[Medio plazo]} Evaluar paquete pip o releases etiquetados como
+    alternativa al submodule.
+  \item \textbf{[Medio plazo]} Plan de gobernanza para reducir bus factor.
+\end{enumerate}
+
+\vspace{1cm}
+\hrule
+\vspace{0.5cm}
+{\small\color{titlegray}
+Documento generado a partir de analisis dual independiente sobre forge v2.0.
+Fecha: 2026-05-03. No afiliado con Anthropic ni con ningun vendor mencionado en el benchmark.
+}
+
+\end{document}
