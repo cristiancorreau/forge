@@ -18,8 +18,8 @@ export function resolveForgeRoot(): string {
     throw new Error(`FORGE_HOME="${p}" does not contain forge.py`);
   }
 
-  // npm package mode: assets/ is next to dist/
-  const assetsPath = join(__dirname, '..', 'assets');
+  // npm package mode: __dirname is dist/lib/, assets/ is at package root (two levels up)
+  const assetsPath = join(__dirname, '..', '..', 'assets');
   if (existsSync(join(assetsPath, 'forge.py'))) return assetsPath;
 
   // dev mode: walk up from __dirname to find forge.py

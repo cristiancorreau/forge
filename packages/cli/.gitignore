@@ -1,3 +1,8 @@
 node_modules/
 dist/
+assets/
 *.tsbuildinfo
+*.tgz
+README.md
+LICENSE
+CHANGELOG.md
