@@ -11,7 +11,7 @@ import { aitmplSearch } from './commands/aitmpl-search.js';
 import { scaffold } from './commands/scaffold.js';
 import { teardown } from './commands/teardown.js';
 
-const VERSION = '2.9.1';
+const VERSION = '2.9.2';
 
 const HELP = `forge v${VERSION} — Agentic development framework
 

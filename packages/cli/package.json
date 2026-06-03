@@ -1,6 +1,6 @@
 {
   "name": "@cristiancorreau/forge",
-  "version": "2.9.1",
+  "version": "2.9.2",
   "description": "Agentic development framework — multi-runtime support for Claude Code, OpenCode, Codex and Kiro",
   "author": "Cristian Correa <cristian@socialweb.cl>",
   "license": "Apache-2.0",

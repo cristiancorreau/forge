@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLI = join(__dirname, '..', 'dist', 'cli.js');
 
-const EXPECTED_VERSION = '2.9.1';
+const EXPECTED_VERSION = '2.9.2';
 const ALL_COMMANDS = [
   'init',
   'audit',
@@ -116,7 +116,7 @@ describe('forge CLI — parity suite', () => {
     }
   });
 
-  test('--version reports 2.9.1', () => {
+  test('--version reports 2.9.2', () => {
     const { status, stdout } = runForge(['--version']);
     assert.equal(status, 0);
     assert.equal(stdout.trim(), EXPECTED_VERSION);
@@ -198,6 +198,60 @@ describe('forge CLI — parity suite', () => {
     const { status, all } = runForge(['validate'], { cwd: dir });
     assert.equal(status, 1);
     assert.match(all, /No se encontró project\.yaml/);
+  });
+
+  // Regression for the v2.9.0 schema bug: `skills` as a flat string array was
+  // rejected because the JSON schema only allowed the legacy object form.
+  test('validate accepts skills as a flat string array (v2.9+ form)', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Skills Array Project"
+  mode: "standard"
+skills:
+  - spec
+  - security-audit
+`
+    );
+    const { status, stdout } = runForge(['validate'], { cwd: dir });
+    assert.equal(status, 0, `validate should accept a skills array; output:\n${stdout}`);
+    assert.match(stdout, /OK|válido/i);
+    assert.doesNotMatch(stdout, /\/skills/, 'must not report a /skills schema error');
+  });
+
+  // The legacy object form (skills.active) must keep validating for back-compat.
+  test('validate still accepts the legacy skills object form', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Legacy Skills Project"
+  mode: "standard"
+skills:
+  active:
+    - spec
+`
+    );
+    const { status, stdout } = runForge(['validate'], { cwd: dir });
+    assert.equal(status, 0, `validate should accept skills.active; output:\n${stdout}`);
+  });
+
+  test('audit reports skill opportunities for unused skills', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Audit Project"
+  mode: "standard"
+skills:
+  - spec
+`
+    );
+    const { status, all } = runForge(['audit'], { cwd: dir });
+    assert.ok(status === 0 || status === 1, `audit should exit 0/1, got ${status}`);
+    // 'spec' is active, so other skills should surface as opportunities.
+    assert.match(all, /oportunidad/i, 'audit should list unused-skill opportunities');
   });
 
   test('an unknown command exits 1', () => {
