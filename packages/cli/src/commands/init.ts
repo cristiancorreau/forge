@@ -413,7 +413,7 @@ export async function init(args: string[]): Promise<number> {
             ...allAgents.map(a => `.claude/agents/${a}.md`),
           ];
           const ts = new Date().toISOString();
-          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.6.4', ts));
+          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.7.0', ts));
         },
       },
     ]);
@@ -429,7 +429,28 @@ export async function init(args: string[]): Promise<number> {
     installKiro(forgeRoot, projectRoot, config, force);
   }
 
-  // Final summary box
+  // Interactive post-install dashboard (Bun + TTY). Explains the project,
+  // installed agents, SDD workflow, skills, runtimes and detected tech.
+  const canDashboard = isBun && process.stdout.isTTY && process.env.FORGE_NO_DASHBOARD !== '1';
+  if (canDashboard) {
+    try {
+      const { runPostInstallDashboard } = await import('../tui/dashboard.js');
+      await runPostInstallDashboard({
+        projectName: config.project.name ?? 'Project',
+        runtime: runtime as any,
+        mode,
+        language,
+        agents: allAgents,
+        profiles,
+        stack: { ...(config.stack ?? {}), packageManager: config.stack?.package_manager },
+      });
+    } catch {
+      // fall through to the static recap below
+    }
+  }
+
+  // Static recap (persists in scrollback after the dashboard, and is the
+  // fallback for Node.js / non-TTY / other runtimes).
   const import_boxen = await import('boxen');
   const importChalk = await import('chalk');
   const nextSteps =
