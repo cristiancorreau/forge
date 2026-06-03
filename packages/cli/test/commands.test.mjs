@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLI = join(__dirname, '..', 'dist', 'cli.js');
 
-const EXPECTED_VERSION = '2.9.3';
+const EXPECTED_VERSION = '2.9.4';
 const ALL_COMMANDS = [
   'init',
   'audit',
@@ -116,7 +116,7 @@ describe('forge CLI — parity suite', () => {
     }
   });
 
-  test('--version reports 2.9.3', () => {
+  test('--version reports 2.9.4', () => {
     const { status, stdout } = runForge(['--version']);
     assert.equal(status, 0);
     assert.equal(stdout.trim(), EXPECTED_VERSION);
@@ -314,5 +314,51 @@ agents:
     assert.ok(existsSync(join(dir, 'project.yaml.bak')), 'expected a .bak backup');
     const migrated = readFileSync(join(dir, 'project.yaml'), 'utf-8');
     assert.match(migrated, /schema_version|rules|mcp|github/);
+  });
+
+  // End-to-end install pipeline: with an existing project.yaml, `init --force`
+  // is non-interactive (no wizard) and installs the full claude-code setup.
+  // This is the same code path the wizard reaches after collecting answers.
+  test('init --force installs agents, CLAUDE.md, hooks and manifest', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Install E2E"
+  mode: "standard"
+  language: "typescript"
+stack:
+  backend: hono
+agents:
+  active:
+    - orchestrator
+    - test-engineer
+runtimes:
+  active:
+    - claude-code
+`
+    );
+    const { status } = runForge(['init', '--force'], { cwd: dir });
+    assert.equal(status, 0, 'init --force should exit 0');
+
+    // Agents installed.
+    assert.ok(existsSync(join(dir, '.claude', 'agents', 'orchestrator.md')), 'orchestrator agent missing');
+    // Generated config.
+    assert.ok(existsSync(join(dir, 'CLAUDE.md')), 'CLAUDE.md missing');
+    assert.ok(existsSync(join(dir, '.claude', 'settings.json')), 'settings.json missing');
+    // Hooks are JavaScript (zero Python).
+    assert.ok(existsSync(join(dir, '.claude', 'hooks', 'pre-edit-check.js')), 'JS hook missing');
+    assert.ok(!existsSync(join(dir, '.claude', 'hooks', 'pre-edit-check.py')), 'Python hook must not exist');
+    // Manifest with the current version.
+    const manifestPath = join(dir, '.forge', 'manifest.json');
+    assert.ok(existsSync(manifestPath), '.forge/manifest.json missing');
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+    assert.equal(manifest.forgeVersion, EXPECTED_VERSION);
+    assert.equal(manifest.runtime, 'claude-code');
+
+    // settings.json wires hooks via node (no python3).
+    const settings = readFileSync(join(dir, '.claude', 'settings.json'), 'utf-8');
+    assert.match(settings, /node .claude\/hooks/);
+    assert.doesNotMatch(settings, /python3/);
   });
 });
