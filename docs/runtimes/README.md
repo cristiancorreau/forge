@@ -5,18 +5,42 @@ en `adapters/<runtime>/` que lee `project.yaml` y produce los archivos que esper
 
 ## Tabla de soporte
 
-| Runtime | Generador | Archivos generados | Nivel de soporte |
-|---------|-----------|-------------------|-----------------|
-| [Claude Code](#claude-code) | `adapters/claude-code/generate-claude-md.py` | `CLAUDE.md`, `.claude/agents/`, `.claude/commands/`, `.claude/settings.json` | Completo |
-| [OpenCode](#opencode) | `adapters/opencode/generate-agents-md.py` | `AGENTS.md` | Soportado |
-| [Codex CLI](#codex-cli) | `adapters/codex/generate-codex-config.py` | `AGENTS.md` | Soportado |
-| [Kiro](#kiro) | `adapters/kiro/generate-steering.py` | `.kiro/steering/*.md` | Monitoring |
+| Runtime | Instalación | Archivos generados | Nivel de soporte |
+|---------|-------------|-------------------|-----------------|
+| [Claude Code](#claude-code) | `npm i -g @anthropic-ai/claude-code` | `CLAUDE.md`, `.claude/agents/`, `.claude/commands/`, `.claude/settings.json` | Completo |
+| [OpenCode](#opencode) | `npm i -g opencode-ai` | `AGENTS.md` | Soportado |
+| [Codex CLI](#codex-cli) | `npm i -g @openai/codex` | `AGENTS.md` | Soportado |
+| [Kiro](#kiro) | Descargar el IDE desde [kiro.dev](https://kiro.dev) | `.kiro/steering/*.md` | Monitoring |
+
+## Detección de runtimes (`forge doctor`)
+
+`forge doctor` detecta qué runtimes tenés instalados localmente buscando su binario en el
+`PATH` y leyendo su versión. Así sabés qué runtimes podés activar en `project.yaml` antes de
+generar configuración.
+
+| Runtime | Binario detectado | Comprobar manualmente |
+|---------|-------------------|-----------------------|
+| Claude Code | `claude` | `claude --version` |
+| OpenCode | `opencode` | `opencode --version` |
+| Codex CLI | `codex` | `codex --version` |
+| Kiro | IDE (no expone CLI) | abrir la app de Kiro |
+
+```bash
+# Reporta runtimes instalados (binario + versión) y valida project.yaml v2
+npx @cristiancorreau/forge doctor
+```
+
+> Para que forge **genere** configuración para un runtime no hace falta que esté instalado:
+> `forge doctor` solo informa el estado del entorno. La generación se controla con
+> `runtimes.active` en `project.yaml` y `forge generate`.
 
 ---
 
 ## Claude Code
 
 **Soporte: completo — todas las features de forge**
+
+**Instalación:** `npm i -g @anthropic-ai/claude-code` (verificar con `claude --version`)
 
 El runtime principal de forge. Genera:
 
@@ -35,6 +59,8 @@ Adapter: `adapters/claude-code/generate-claude-md.py`
 ## OpenCode
 
 **Soporte: comandos seriales, sin teams paralelos**
+
+**Instalación:** `npm i -g opencode-ai` (verificar con `opencode --version`)
 
 OpenCode lee `AGENTS.md` desde la raíz del repositorio. El adapter genera este archivo con:
 
@@ -56,6 +82,8 @@ Adapter: `adapters/opencode/generate-agents-md.py`
 
 **Soporte: prompt templates, SDD workflow inline, reglas de autonomía**
 
+**Instalación:** `npm i -g @openai/codex` (verificar con `codex --version`)
+
 Codex CLI (OpenAI) lee `AGENTS.md` desde la raíz. El adapter genera un archivo enriquecido
 respecto al de OpenCode porque Codex opera autónomamente en terminal:
 
@@ -76,6 +104,8 @@ Referencia: https://github.com/openai/codex
 ## Kiro
 
 **Soporte: monitoring — steering docs + hooks, sin slash commands**
+
+**Instalación:** descargar el IDE desde [kiro.dev](https://kiro.dev) (no expone CLI propio)
 
 Kiro IDE lee archivos desde `.kiro/steering/` como contexto persistente en todas
 las conversaciones. El adapter genera:

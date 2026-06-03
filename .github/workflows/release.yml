@@ -53,6 +53,10 @@ jobs:
         working-directory: packages/cli
         run: npm run build:all
 
+      - name: Run CLI parity tests
+        working-directory: packages/cli
+        run: npm test
+
       - name: Smoke test — pack
         working-directory: packages/cli
         run: |

@@ -12,13 +12,42 @@ Tecnología agnóstica (TypeScript, Python, Ruby, Go). Se integra en cada proyec
 
 ```
 proyecto/
-├── .agentic/          ← forge como submodule (cristiancorreau/forge)
 ├── project.yaml       ← fuente de verdad del proyecto
-├── AGENTS.md          ← generado por forge-init.py
+├── CLAUDE.md          ← generado por forge
+├── .forge/            ← manifest de la instalación
 └── .claude/
     ├── agents/        ← agentes instalados por forge
     └── commands/      ← slash commands instalados por forge
 ```
+
+Desde la **v2.8.0** la CLI es 100% TypeScript (sin Python) y se ejecuta con
+`npx @cristiancorreau/forge <comando>`.
+
+---
+
+## Comandos
+
+La CLI expone los siguientes comandos. Todos corren sobre Node/Bun, sin dependencias de Python.
+
+| Comando | Qué hace | Flags principales |
+|---------|----------|-------------------|
+| `forge init` | Wizard interactivo que genera `project.yaml` e instala agentes, comandos y skills. Al terminar abre un **dashboard post-install** interactivo. | — |
+| `forge generate` | Regenera la configuración nativa de cada runtime activo a partir de `project.yaml`. | `--runtime <id>`, `--dry-run`, `--force` |
+| `forge audit` | Audita los agentes del proyecto contra forge (frontmatter, secciones, similitud, oportunidades). | `--json`, `--only <agente>` |
+| `forge validate` | Valida la estructura y el esquema de `project.yaml`. | `--json` |
+| `forge doctor` | Detecta los runtimes instalados (binario + versión) y valida `project.yaml` v2. | — |
+| `forge migrate` | Migra `project.yaml` de v1 a v2. | `--dry-run`, `--backup` |
+| `forge wiki` | Gestiona el wiki del proyecto. | `status`, `ingest <file>`, `query <q>`, `lint` |
+| `forge skills` | Lista las 12 skills disponibles agrupadas por categoría. | `--json`, `--active` |
+| `forge aitmpl-search <query>` | Busca en el catálogo curado de frameworks, MCP servers y profiles. | `<query>` |
+| `forge scaffold` | Crea un nuevo profile Tier 2. | `--name <stack>`, `--engineer <agente>` |
+| `forge teardown` | Desinstala forge del proyecto de forma limpia. | `--dry-run` |
+
+### Dashboard post-install
+
+Al finalizar `forge init`, forge abre un panel interactivo (OpenTUI sobre Bun) navegable por
+secciones: Overview, agentes instalados, workflow SDD, skills, runtimes e iconos/tech. En
+runtimes sin Bun se muestra un resumen estático. Salir con `q` o `Esc`.
 
 ---
 
@@ -347,20 +376,26 @@ git commit -m "chore(forge): bump submodule to <hash> + update <agents>"
 ## Referencia rápida de comandos
 
 ```bash
+# Inicializar el proyecto (wizard + dashboard post-install)
+npx @cristiancorreau/forge init
+
 # Auditar estado del proyecto vs forge
-python3 .agentic/scripts/forge-audit.py --forge .agentic
+npx @cristiancorreau/forge audit
 
-# Inicializar/reinstalar (preserva existentes)
-python3 .agentic/scripts/forge-init.py --tool claude-code
+# Regenerar configs nativas tras cambiar project.yaml
+npx @cristiancorreau/forge generate
 
-# Actualizar forge
-git -C .agentic pull origin main
+# Validar project.yaml
+npx @cristiancorreau/forge validate
 
-# Actualizar un agente específico de forge
-python3 .agentic/scripts/forge-init.py --tool claude-code --force --only=<nombre>
+# Detectar runtimes instalados y validar project.yaml v2
+npx @cristiancorreau/forge doctor
 
-# Instalar dependencias
-pip3 install -r .agentic/requirements.txt
+# Migrar project.yaml v1 → v2
+npx @cristiancorreau/forge migrate --backup
+
+# Buscar en el catálogo curado
+npx @cristiancorreau/forge aitmpl-search <query>
 
 # Wiki
 /wiki-ingest <url|archivo|texto>
@@ -388,25 +423,25 @@ agent-browser screenshot
 
 ## Uso en CI/CD (sin terminal interactiva)
 
-forge.py requiere terminal interactiva. Para pipelines de CI, usa los scripts directamente:
+El dashboard post-install requiere terminal interactiva. Para pipelines de CI, usa los
+subcomandos no interactivos directamente:
 
 | Acción | Comando |
 |--------|---------|
-| Crear project.yaml | `python3 .agentic/scripts/forge-wizard.py --mode=startup` |
-| Instalar agentes (Claude Code) | `python3 .agentic/scripts/forge-init.py --tool=claude-code` |
-| Instalar agentes (todos los runtimes) | `python3 .agentic/scripts/forge-init.py --tool=all` |
-| Instalar (sobreescribir) | `python3 .agentic/scripts/forge-init.py --tool=claude-code --force` |
-| Auditar (legible) | `python3 .agentic/scripts/forge-audit.py` |
-| Auditar (JSON para CI) | `python3 .agentic/scripts/forge-audit.py --json` |
-| Falla si hay errores críticos | `python3 .agentic/scripts/forge-audit.py --json \| jq -e '.summary.errors == 0'` |
-| Teardown (preview) | `python3 .agentic/scripts/forge-teardown.py` |
-| Teardown (ejecutar) | `python3 .agentic/scripts/forge-teardown.py --confirm` |
+| Regenerar configs (todos los runtimes activos) | `npx @cristiancorreau/forge generate` |
+| Regenerar un runtime específico | `npx @cristiancorreau/forge generate --runtime claude-code` |
+| Regenerar (preview, sin escribir) | `npx @cristiancorreau/forge generate --dry-run` |
+| Validar project.yaml | `npx @cristiancorreau/forge validate --json` |
+| Auditar (legible) | `npx @cristiancorreau/forge audit` |
+| Auditar (JSON para CI) | `npx @cristiancorreau/forge audit --json` |
+| Falla si hay errores críticos | `npx @cristiancorreau/forge audit --json \| jq -e '.summary.errors == 0'` |
+| Teardown (preview) | `npx @cristiancorreau/forge teardown --dry-run` |
 
 ### Ejemplo GitHub Actions
 
 ```yaml
 - name: Audit forge agents
-  run: python3 .agentic/scripts/forge-audit.py --json | jq -e '.summary.errors == 0'
+  run: npx @cristiancorreau/forge audit --json | jq -e '.summary.errors == 0'
 ```
 
 ---

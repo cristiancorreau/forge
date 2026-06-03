@@ -358,6 +358,8 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
     mode: ans.mode, backend: ans.backend, frontend: ans.frontend,
     database: ans.database, orm: ans.orm, packageManager: ans.packageManager,
     testing: ans.testing, profiles: [...new Set(profiles)],
+    // Default skills (the OpenTUI wizard doesn't ask for them yet).
+    skills: ['spec', 'new-feature', 'security-audit'],
     runtime: ans.runtime, detected: ans.detected,
   };
 }

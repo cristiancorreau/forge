@@ -1,5 +1,6 @@
 import * as p from '@clack/prompts';
 import { detectStack } from './detect.js';
+import { SKILLS } from './catalog.js';
 
 export interface WizardResult {
   name: string;
@@ -14,6 +15,7 @@ export interface WizardResult {
   packageManager?: string;
   testing: string[];
   profiles: string[];
+  skills: string[];
   runtime: string;
   detected: boolean;
 }
@@ -88,6 +90,9 @@ const PROFILE_MAP: Record<string, string> = {
   rails:   'rails',
   laravel: 'laravel',
 };
+
+// Skills pre-seleccionadas por defecto en el wizard.
+const DEFAULT_SKILLS: string[] = ['spec', 'new-feature', 'security-audit'];
 
 function toSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -242,6 +247,18 @@ export async function runWizard(): Promise<WizardResult | null> {
     ],
   })) as string;
 
+  // ── Skills ──
+  const skills = check(await p.multiselect({
+    message: 'Skills a instalar',
+    initialValues: DEFAULT_SKILLS,
+    options: SKILLS.map((s) => ({
+      value: s.id,
+      label: s.command,
+      hint: `${s.category} — ${s.purpose}`,
+    })),
+    required: false,
+  })) as string[];
+
   // ── Confirmación ──
   const summary = [
     `  Nombre:   ${name}`,
@@ -251,6 +268,7 @@ export async function runWizard(): Promise<WizardResult | null> {
     database ? `  Base de datos: ${database}${orm ? ' + ' + orm : ''}` : '',
     testing.length ? `  Testing:  ${testing.join(', ')}` : '',
     `  Runtime:  ${runtime}`,
+    skills.length ? `  Skills:   ${skills.join(', ')}` : '',
   ].filter(Boolean).join('\n');
 
   p.note(summary, 'Configuración seleccionada');
@@ -269,6 +287,6 @@ export async function runWizard(): Promise<WizardResult | null> {
   return {
     name, slug, description: description || '', language, mode,
     backend, frontend, database, orm, packageManager, testing,
-    profiles: [...new Set(profiles)], runtime, detected: hasDetection,
+    profiles: [...new Set(profiles)], skills, runtime, detected: hasDetection,
   };
 }

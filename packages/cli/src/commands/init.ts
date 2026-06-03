@@ -128,7 +128,7 @@ ${profiles}
 runtimes:
   active:
     - ${result.runtime}
-
+${result.skills && result.skills.length > 0 ? `\nskills:\n${result.skills.map(s => `  - ${s}`).join('\n')}\n` : ''}
 # Agregar cuando tengas deploy configurado:
 # deploy:
 #   provider: vercel
@@ -309,6 +309,7 @@ export async function init(args: string[]): Promise<number> {
       stack: { backend: result.backend, frontend: result.frontend, database: result.database, orm: result.orm, package_manager: result.packageManager, testing: result.testing },
       agents: { active: defaultAgentsForMode(result.mode), compliance: [], profiles: result.profiles },
       runtimes: { active: [runtimeOverride ?? result.runtime] },
+      skills: result.skills,
     };
   }
 
@@ -413,7 +414,7 @@ export async function init(args: string[]): Promise<number> {
             ...allAgents.map(a => `.claude/agents/${a}.md`),
           ];
           const ts = new Date().toISOString();
-          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.8.0', ts));
+          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.9.0', ts));
         },
       },
     ]);
