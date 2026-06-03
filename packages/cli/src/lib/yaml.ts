@@ -18,6 +18,8 @@ export interface ProjectAgents {
   profiles?: string[];
   specialized?: string[];
   by_role?: Record<string, string | null>;
+  /** Per-agent scope: maps an agent id to a directory it is restricted to. */
+  scope?: Record<string, string>;
 }
 
 export interface ProjectDeploy {
@@ -81,6 +83,8 @@ export interface ProjectYaml {
   runtimes?: { active?: string[] };
   mcp?: { servers?: Array<{ name: string; auto_approve?: string[] }> };
   scripts?: Record<string, string>;
+  /** Active skills (slash-command ids without the leading slash). */
+  skills?: string[];
 }
 
 export function findProjectYaml(start: string = process.cwd()): string | null {
