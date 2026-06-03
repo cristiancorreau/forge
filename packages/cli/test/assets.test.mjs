@@ -52,6 +52,11 @@ describe('forge assets — integrity', () => {
     assert.ok(existsSync(join(hooksDir, 'pre-bash-check.js')), 'pre-bash-check.js missing');
   });
 
+  test('the published bundle contains zero Python files', () => {
+    const pyFiles = walk(ASSETS, f => f.endsWith('.py')).map(f => f.replace(ASSETS + '/', ''));
+    assert.deepEqual(pyFiles, [], `bundle still ships Python files: ${pyFiles.join(', ')}`);
+  });
+
   test('every agent has valid frontmatter (name, description, model, tier)', () => {
     const agents = walk(join(ASSETS, 'core', 'agents'), f => f.endsWith('.md'))
       .concat(walk(join(ASSETS, 'profiles'), f => f.endsWith('.md') && f.includes('/agents/')));

@@ -16,10 +16,17 @@ const ASSETS    = join(CLI_DIR, 'assets');
 if (existsSync(ASSETS)) rmSync(ASSETS, { recursive: true });
 mkdirSync(ASSETS, { recursive: true });
 
-const DIRS  = ['core', 'adapters', 'profiles', 'templates', 'scripts', 'hooks'];
-const FILES = ['forge.py', 'manifest.json', 'requirements.txt'];
+const DIRS  = ['core', 'adapters', 'profiles', 'templates', 'hooks'];
+const FILES = ['manifest.json'];
 // Top-level package metadata (also copied to CLI root for npm)
 const META  = ['LICENSE', 'README.md', 'CHANGELOG.md'];
+
+// The TS CLI never invokes Python. Exclude all .py files (legacy hooks, adapter
+// generators, scripts) and Python caches from the published bundle.
+const isExcluded = (src) =>
+  src.endsWith('.py') ||
+  src.includes('__pycache__') ||
+  src.includes('.pytest_cache');
 
 function sizeKB(path) {
   try {
@@ -43,7 +50,7 @@ for (const dir of DIRS) {
   const src  = join(REPO_ROOT, dir);
   const dest = join(ASSETS, dir);
   if (!existsSync(src)) { console.log(`  skip  ${dir}/ (not found)`); continue; }
-  cpSync(src, dest, { recursive: true, filter: (s) => !s.includes('__pycache__') && !s.includes('.pytest_cache') });
+  cpSync(src, dest, { recursive: true, filter: (s) => !isExcluded(s) });
   console.log(`  copied ${dir}/`);
 }
 

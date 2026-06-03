@@ -68,7 +68,8 @@ export async function doctor(_args: string[]): Promise<number> {
     // Core assets
     const coreOk = existsSync(join(root, 'core', 'agents'))
       && existsSync(join(root, 'core', 'schemas'))
-      && existsSync(join(root, 'scripts'));
+      && existsSync(join(root, 'profiles'))
+      && existsSync(join(root, 'adapters'));
     if (coreOk) {
       const assetsLine = `${icons.ok} forge assets: completos`;
       console.log('  ' + assetsLine);
