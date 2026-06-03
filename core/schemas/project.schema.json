@@ -208,21 +208,31 @@
       }
     },
     "skills": {
-      "description": "Skills de Forge activos para el proyecto",
-      "type": ["object", "null"],
-      "additionalProperties": false,
-      "properties": {
-        "active": {
-          "description": "Lista de skills activos (de core/skills/)",
+      "description": "Skills de Forge activos. Forma simple: lista de ids. Forma extendida (legacy): objeto con active/integrations.",
+      "oneOf": [
+        {
+          "description": "Forma simple (v2.9+): lista de skill ids",
           "type": ["array", "null"],
           "items": { "type": "string" }
         },
-        "integrations": {
-          "description": "Integraciones opcionales que requieren herramienta externa",
-          "type": ["array", "null"],
-          "items": { "type": "string" }
+        {
+          "description": "Forma extendida (legacy)",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "active": {
+              "description": "Lista de skills activos (de core/skills/)",
+              "type": ["array", "null"],
+              "items": { "type": "string" }
+            },
+            "integrations": {
+              "description": "Integraciones opcionales que requieren herramienta externa",
+              "type": ["array", "null"],
+              "items": { "type": "string" }
+            }
+          }
         }
-      }
+      ]
     },
     "wiki": {
       "description": "Configuración del wiki del proyecto (solo si wiki-ingest/wiki-query están activos)",
