@@ -117,7 +117,7 @@ Invocar el skill `/security-audit` como checklist mental antes de escribir cualq
    # > Estado: IMPLEMENTED
    ```
 
-5. **Actualizar CLAUDE.md** — mover el ID de spec de "En curso" a "Completadas"
+6. **Actualizar CLAUDE.md** — mover el ID de spec de "En curso" a "Completadas"
 
 ---
 

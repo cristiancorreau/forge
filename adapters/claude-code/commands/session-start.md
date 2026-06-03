@@ -15,7 +15,7 @@ Ejecutar los siguientes comandos y guardar sus resultados:
 ## Paso 2 — Leer configuración del proyecto
 
 - Si existe `project.yaml` en el directorio actual, leerlo para obtener: `project.mode`, `project.name`, `stack.*`, `agents.active`
-- Si existe `docs/wiki/index.md`, leerlo para obtener contexto del proyecto
+- Si existe `wiki/index.md`, leerlo para obtener contexto del proyecto
 - Si ninguno existe, continuar con defaults: mode=startup, sin checks de compliance
 
 ## Paso 3 — Evaluar escenario y actuar

@@ -6,11 +6,11 @@ Scope: $ARGUMENTS (ej: `--serial`, `--autorun`, o vacío para modo paralelo est�
 
 ## Paso 1 — Identificar la spec
 
-Buscar archivos `.md` en `docs/specs/` que contengan `**Estado:** ready`.
+Buscar archivos `.md` en `docs/specs/` que contengan `> Estado: APPROVED`.
 
 - Si hay exactamente una: mostrarla y confirmar "Implementando: `<archivo>`."
 - Si hay varias: mostrarlas como lista numerada y pedir que el usuario elija.
-- Si no hay ninguna: "No hay spec en estado ready. Ejecutá `/plan` primero." y detener.
+- Si no hay ninguna: "No hay spec en estado APPROVED. Ejecutá `/plan` primero." y detener.
 
 Leer la spec seleccionada completa antes de continuar.
 
@@ -94,8 +94,10 @@ Si hay errores o conflictos: reportar claramente y preguntar cómo proceder. No 
 
 ## Paso 7 — Actualizar la spec
 
-- Al iniciar la implementación: cambiar `**Estado:** ready` → `**Estado:** in-progress`
-- Al completar exitosamente: cambiar `**Estado:** in-progress` → `**Estado:** implemented`
-- Completar las secciones "Implementation notes" y "Decisiones tomadas" con lo que se hizo
+Estados de spec (alineados con `core/templates/spec-template.md`): `DRAFT` → `REVIEW` → `APPROVED` → `IMPLEMENTED`.
 
-Confirmar: "Implementación completa. Spec actualizada a `implemented`. Podés ejecutar `/review` y luego `/ship`."
+- Al completar exitosamente: cambiar `> Estado: APPROVED` → `> Estado: IMPLEMENTED`
+- Actualizar la fecha de `Actualizada:` a la fecha de hoy
+- Completar la sección "Notas de implementación" con lo que se hizo y las decisiones tomadas
+
+Confirmar: "Implementación completa. Spec actualizada a `IMPLEMENTED`. Podés ejecutar `/review` y luego `/ship`."

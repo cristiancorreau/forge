@@ -22,9 +22,9 @@ sabemos de", "wiki:", "query:", "consultar wiki", "what does the wiki say about"
 
 ### Paso 1 — Leer el índice
 
-Leer `docs/wiki/index.md` para identificar qué páginas son relevantes a la pregunta.
+Leer `wiki/index.md` para identificar qué páginas son relevantes a la pregunta.
 
-Si no hay wiki (`docs/wiki/` no existe o está vacío): indicar que el wiki está vacío
+Si no hay wiki (`wiki/` no existe o está vacío): indicar que el wiki está vacío
 y sugerir usar `/wiki-ingest` para agregar conocimiento.
 
 ### Paso 2 — Leer páginas relevantes
@@ -60,7 +60,7 @@ qué fuentes ingestar para cubrir el gap.
 Si la pregunta produjo una síntesis nueva (no trivial, reutilizable), archivarla:
 
 ```
-docs/wiki/synthesis/<tema>.md
+wiki/synthesis/<tema>.md
 ```
 
 Formato:

@@ -3,6 +3,8 @@
 Protocolo para iniciar una nueva fase de desarrollo en un proyecto forge.
 Activar al comienzo de cada sprint o fase nueva.
 
+Triggers: /phase-kickoff, "iniciar sprint", "kickoff de fase", "empezar fase"
+
 ---
 
 ## Cuándo usar este skill

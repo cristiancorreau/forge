@@ -31,7 +31,7 @@ wiki-lint   → health check + auto-reparación
 | `security-audit` | Universal | No | new-feature, security-auditor |
 | `db-migrate` | Universal | No (solo el ORM del proyecto) | new-feature |
 | `browser-test` | Universal | `agent-browser` CLI (npm i -g) | new-feature, usuario directo |
-| `wiki-ingest` | Wiki | No | usuario directo, docs-writer |
+| `wiki-ingest` | Wiki | No | usuario directo, agente docs-writer |
 | `wiki-query` | Wiki | No | usuario directo, new-feature |
 | `wiki-lint` | Wiki | No | usuario directo |
 | `local2prod` | Universal | CLI del provider de deploy | new-feature |
@@ -53,7 +53,7 @@ Configurar en `project.yaml` bajo `skills.active`:
 - **`new-feature`**: checklist completo de implementación (orquesta los otros)
 
 ### Wiki — knowledge base del proyecto
-Configurar en `project.yaml` bajo `skills.active`. Generan slash commands `/wiki-ingest`, `/wiki-query`, `/wiki-lint` en Claude Code. La estructura `docs/wiki/` se inicializa con `forge-init.py`:
+Configurar en `project.yaml` bajo `skills`. Generan slash commands `/wiki-ingest`, `/wiki-query`, `/wiki-lint` en Claude Code. La estructura `wiki/` se inicializa con `forge wiki ingest <archivo>`:
 - **`wiki-ingest`**: ingesta fuentes (URL, archivo, texto) → actualiza `raw/` + páginas wiki + index + log
 - **`wiki-query`**: responde preguntas usando el wiki como base, con citas a páginas
 - **`wiki-lint`**: verifica integridad del wiki: links, huérfanos, frontmatter, log

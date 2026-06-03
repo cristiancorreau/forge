@@ -1,8 +1,7 @@
 # Skill: aitmpl-search
 
 Busca en el catálogo curado de forge: frameworks de agentes IA, MCP servers instalables,
-profiles de stack y herramientas. La búsqueda es offline (catálogo local); opcionalmente
-puede extenderse a GitHub con `--github`.
+profiles de stack y herramientas. La búsqueda es offline (catálogo local).
 
 Triggers: /aitmpl-search, "buscar templates", "buscar en catálogo", "templates de AI",
 "buscar template", "buscar MCP", "buscar profile".
@@ -24,33 +23,22 @@ Triggers: /aitmpl-search, "buscar templates", "buscar en catálogo", "templates 
 
 Búsqueda por texto en el catálogo local:
 ```bash
-python3 .agentic/scripts/aitmpl-search.py "<query>" --limit 10
+forge aitmpl-search "<query>" --limit 10
 ```
 
-Filtrar por categoría (`framework`, `mcp-server`, `profile`, `tool`, `resource`):
+Filtrar por categoría (`mcp-server`, `framework`, `profile`):
 ```bash
-python3 .agentic/scripts/aitmpl-search.py "<query>" --category mcp-server
+forge aitmpl-search --category mcp-server
 ```
 
 Ver todas las categorías disponibles:
 ```bash
-python3 .agentic/scripts/aitmpl-search.py --list-categories
+forge aitmpl-search --list-categories
 ```
 
 Salida JSON (para integración o análisis):
 ```bash
-python3 .agentic/scripts/aitmpl-search.py "<query>" --json
-```
-
-Extender con búsqueda en GitHub (requiere red; límite 60 req/h sin token):
-```bash
-python3 .agentic/scripts/aitmpl-search.py "<query>" --github
-export GITHUB_TOKEN=ghp_...   # aumenta a 5000 req/h
-```
-
-Desde el CLI interactivo:
-```bash
-python3 .agentic/forge.py   # → "Buscar templates" → buscar o filtrar por categoría
+forge aitmpl-search "<query>" --json
 ```
 
 ### Paso 2 — Analizar resultados
@@ -71,4 +59,4 @@ Para profiles, ofrece agregar el profile a `project.yaml` directamente.
 
 - No asumir que un resultado del catálogo está actualizado — verificar el repositorio antes de recomendar
 - No crear agentes Tier 2 sin revisar si el stack ya tiene un profile en `profiles/`
-- No instalar MCP servers sin verificar que el usuario tiene Python 3.9+ y las dependencias requeridas
+- No instalar MCP servers sin verificar que el usuario tiene las dependencias requeridas

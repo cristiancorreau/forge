@@ -20,7 +20,7 @@ wiki", "wiki health", "wiki check".
 
 ### 1. Integridad del índice
 
-Leer `docs/wiki/index.md` y verificar:
+Leer `wiki/index.md` y verificar:
 
 ```
 ✓ Cada [[link]] del índice apunta a un archivo que existe
@@ -32,10 +32,10 @@ Auto-reparar: agregar al índice los archivos que faltan (con descripción vací
 ### 2. Wikilinks rotos
 
 Buscar en todas las páginas wiki referencias `[[ruta/nombre]]` y verificar que
-el archivo `docs/wiki/ruta/nombre.md` existe.
+el archivo `wiki/ruta/nombre.md` existe.
 
 ```bash
-grep -rn "\[\[" docs/wiki/ --include="*.md" | grep -v "raw/"
+grep -rn "\[\[" wiki/ --include="*.md" | grep -v "raw/"
 ```
 
 Reportar: lista de links rotos con el archivo donde aparecen.
@@ -53,7 +53,7 @@ Reportar: lista de huérfanas. No auto-borrar — requiere decisión humana.
 
 ### 4. Integridad del log
 
-Verificar que `docs/wiki/log.md` existe y tiene al menos una entrada.
+Verificar que `wiki/log.md` existe y tiene al menos una entrada.
 El log es append-only — nunca modificar entradas pasadas.
 
 Reportar si el log no ha sido actualizado en los últimos 30 días (wiki posiblemente abandonado).

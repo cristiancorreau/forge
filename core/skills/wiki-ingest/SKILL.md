@@ -33,7 +33,7 @@ Si es texto   → usar el texto tal como está
 ### Paso 2 — Almacenar en raw/ (inmutable)
 
 ```
-Path: docs/wiki/raw/<tema>/<YYYY-MM-DD>-<slug-del-titulo>.md
+Path: wiki/raw/<tema>/<YYYY-MM-DD>-<slug-del-titulo>.md
 
 Formato del archivo raw:
 ---
@@ -59,14 +59,14 @@ Leer el contenido y identificar:
 ### Paso 4 — Actualizar páginas wiki
 
 Para cada concepto identificado:
-- Si `docs/wiki/concepts/<nombre>.md` existe → agregar sección con nueva info + citar fuente
+- Si `wiki/concepts/<nombre>.md` existe → agregar sección con nueva info + citar fuente
 - Si no existe → crear la página desde la plantilla
 
 Para cada entidad identificada:
-- Si `docs/wiki/entities/<nombre>.md` existe → actualizar con nueva info
+- Si `wiki/entities/<nombre>.md` existe → actualizar con nueva info
 - Si no existe → crear la página desde la plantilla
 
-Crear siempre `docs/wiki/sources/<slug>.md` con resumen de la fuente:
+Crear siempre `wiki/sources/<slug>.md` con resumen de la fuente:
 
 ```markdown
 ---
@@ -95,11 +95,11 @@ tags: [tag1, tag2]
 
 ### Paso 5 — Actualizar index.md y log.md
 
-En `docs/wiki/index.md`:
+En `wiki/index.md`:
 - Agregar filas nuevas en las tablas correspondientes (concepts, entities, sources)
 - Si la categoría no existe, crearla
 
-En `docs/wiki/log.md` (append-only — NUNCA editar entradas anteriores):
+En `wiki/log.md` (append-only — NUNCA editar entradas anteriores):
 
 ```markdown
 ## [<YYYY-MM-DD>] ingest | <título de la fuente>
@@ -180,4 +180,4 @@ Si la nueva fuente contradice algo en el wiki:
 
 - `wiki-query` consume las páginas que este skill crea
 - `wiki-lint` verifica la integridad después de un ingest
-- `docs-writer` puede invocar wiki-ingest al documentar una decisión nueva
+- el agente `docs-writer` (no es un skill) puede invocar wiki-ingest al documentar una decisión nueva

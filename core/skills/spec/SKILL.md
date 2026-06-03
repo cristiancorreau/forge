@@ -3,6 +3,8 @@
 Redactar specs de features siguiendo la plantilla del framework forge.
 Activar antes de escribir cualquier spec nueva.
 
+Triggers: /spec, "crear spec", "redactar spec", "nueva spec"
+
 ---
 
 ## Cuándo usar este skill

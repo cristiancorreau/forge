@@ -16,44 +16,66 @@ Construir el nombre del archivo:
 - Tomar el título, convertirlo a minúsculas, reemplazar espacios por guiones, eliminar caracteres especiales → `<slug>`
 - Nombre final: `docs/specs/<fase>-<slug>.md`
 
-Crear el archivo con este template exacto:
+Crear el archivo con el template canónico de `core/templates/spec-template.md` (misma fuente única de verdad que el skill `spec`):
 
 ```markdown
-# Spec: <título>
-**Fase:** <fase> | **Estado:** draft | **Fecha:** YYYY-MM-DD
+# <fase> Título de la Feature
 
-## Problem statement
-[¿Qué problema resuelve? ¿Por qué ahora?]
+> Estado: DRAFT | REVIEW | APPROVED | IMPLEMENTED
+> Responsable: [nombre o rol]
+> Creada: YYYY-MM-DD | Actualizada: YYYY-MM-DD
 
-## Non-goals
-[Qué NO cubre esta spec]
+## Contexto
 
-## Acceptance criteria
-- [ ] Criterio 1 (verificable, testeable)
-- [ ] Criterio 2
+Por qué existe esta feature. Qué problema resuelve. Qué pasa si no la hacemos.
 
-## Compliance mapping
-[Si el proyecto tiene frameworks de compliance en project.yaml, mapear qué artículos aplican. Si no aplica, escribir "N/A".]
+## Decisión
 
-## Edge cases
-[Casos límite que la implementación debe manejar]
+Qué vamos a implementar exactamente. Ser específico: endpoints, tablas, componentes.
 
-## Implementation notes
-[Se llena durante la implementación]
+## Alternativas consideradas
 
-## Decisiones tomadas
-[Se llena durante la implementación]
+| Opción | Pros | Contras | Descartada por |
+|--------|------|---------|----------------|
+| Opción A | ... | ... | ... |
+| Opción B | ... | ... | ... |
+
+## Criterios de aceptación
+
+- [ ] Criterio verificable 1
+- [ ] Criterio verificable 2
+- [ ] Criterio verificable N
+
+## Impacto de compliance
+
+Si el proyecto tiene `compliance.frameworks` configurado, completar:
+
+- **Ley 21.719**: art. X → [descripción del impacto]
+- **GDPR**: Art. Y → [descripción del impacto]
+- No aplica (si no hay impacto de compliance)
+
+## Dependencias
+
+- Requiere que [otra spec ID] esté implementada
+- Bloqueada por [issue/ticket]
+
+## Notas de implementación
+
+Cualquier decisión tomada durante la implementación que no estaba en la spec original.
 ```
+
+Marcar el estado inicial como `DRAFT` (la primera línea del bloque de metadata: `> Estado: DRAFT`).
 
 ### Paso 3 — Guiar al usuario por cada sección
 
 Preguntar una sección a la vez, en orden:
 
-1. "¿Qué problema concreto resuelve esta feature? ¿Por qué ahora y no más adelante?"
-2. "¿Qué queda explícitamente fuera del scope de esta spec?"
-3. "¿Cuáles son los criterios de aceptación verificables? (cada uno debe ser testeable de forma objetiva)"
-4. Si `project.yaml` tiene frameworks de compliance: "¿Qué artículos o controles de compliance aplican a esta feature?"
-5. "¿Qué casos límite debe manejar la implementación? (ej: usuario sin permisos, datos vacíos, concurrencia)"
+1. **Contexto**: "¿Qué problema concreto resuelve esta feature? ¿Por qué ahora y no más adelante? ¿Qué pasa si no la hacemos?"
+2. **Decisión**: "¿Qué vamos a implementar exactamente? Ser específico: endpoints, tablas, componentes."
+3. **Alternativas consideradas**: "¿Qué otras opciones se evaluaron y por qué se descartaron?"
+4. **Criterios de aceptación**: "¿Cuáles son los criterios de aceptación verificables? (cada uno debe ser testeable de forma objetiva)"
+5. Si `project.yaml` tiene frameworks de compliance: "¿Qué artículos o controles de compliance aplican a esta feature?"
+6. **Dependencias**: "¿De qué otras specs o tickets depende esta feature?"
 
 Completar el archivo con las respuestas del usuario a medida que avanza.
 
@@ -68,28 +90,31 @@ Leer `project.yaml` → `project.mode`:
 **Cómo aplicar el Planner-Critic:**
 
 Adoptar el rol de "Critic" y revisar la spec completa buscando:
-- ¿Hay acceptance criteria que no son objetivamente verificables?
+- ¿Hay criterios de aceptación que no son objetivamente verificables?
 - ¿Hay términos ambiguos que diferentes personas podrían interpretar distinto?
-- ¿Hay edge cases no cubiertos que podrían romper la implementación?
-- ¿Los non-goals son suficientemente explícitos para evitar scope creep?
+- ¿El contexto y la decisión son suficientemente específicos para evitar scope creep?
+- ¿Faltan dependencias o alternativas relevantes que deberían documentarse?
 
-Mostrar las críticas como bullet points. Preguntar: "¿Ajustamos la spec antes de marcarla como ready?"
+Mostrar las críticas como bullet points. Preguntar: "¿Ajustamos la spec antes de pasarla a REVIEW?"
 
 Si el usuario ajusta: actualizar el archivo y repetir el Critic una vez más.
 
-### Paso 5 — Marcar como ready
+### Paso 5 — Marcar como APPROVED
 
 Cuando el usuario aprueba la spec (o decide no aplicar el Critic):
-- Cambiar `**Estado:** draft` → `**Estado:** ready` en el archivo
-- Confirmar: "Spec lista: `docs/specs/<archivo>.md`. Ahora podés ejecutar `/work` para implementarla."
+- Cambiar `> Estado: DRAFT` → `> Estado: APPROVED` en el archivo
+- Actualizar la fecha de `Actualizada:` a la fecha de hoy
+- Confirmar: "Spec aprobada: `docs/specs/<archivo>.md`. Ahora podés ejecutar `/work` para implementarla."
+
+> Estados de spec (alineados con `core/templates/spec-template.md`): `DRAFT` → `REVIEW` → `APPROVED` → `IMPLEMENTED`. `/plan` crea en `DRAFT` y aprueba a `APPROVED`; `/work` la marca `IMPLEMENTED`.
 
 ---
 
 ## Modo listar (`/plan` sin argumentos)
 
-Buscar todos los archivos `.md` en `docs/specs/` que contengan `**Estado:** draft` o `**Estado:** in-review`.
+Buscar todos los archivos `.md` en `docs/specs/` que contengan `> Estado: DRAFT` o `> Estado: REVIEW`.
 
-Si no hay ninguno: "No hay specs en estado draft o in-review. Ejecutá `/plan <fase> \"<título>\"` para crear una."
+Si no hay ninguno: "No hay specs en estado DRAFT o REVIEW. Ejecutá `/plan <fase> \"<título>\"` para crear una."
 
 Si hay alguno: mostrarlos como lista numerada con título, fase y fecha. Ejemplo:
 ```
@@ -106,10 +131,10 @@ Preguntar: "¿Cuál continuamos?"
 Leer el archivo de spec indicado.
 
 Aplicar el Planner-Critic completo:
-- ¿Los acceptance criteria son objetivamente testeables?
-- ¿Hay ambigüedades en el problem statement o en los criterios?
-- ¿Hay edge cases no cubiertos?
-- ¿Los non-goals son suficientemente explícitos?
+- ¿Los criterios de aceptación son objetivamente testeables?
+- ¿Hay ambigüedades en el contexto, la decisión o los criterios?
+- ¿Las alternativas consideradas justifican la decisión tomada?
+- ¿Las dependencias están completas y son explícitas?
 
 Mostrar sugerencias de mejora como bullet points con la sección específica que afectan.
 

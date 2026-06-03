@@ -27,7 +27,7 @@ git status                      # confirmar qué va al commit
 
 git commit -m "tipo(scope): descripción en imperativo
 
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+Co-Authored-By: <modelo> <noreply@anthropic.com>"
 ```
 
 Si ya hay un commit listo, ir directo al Paso 2.

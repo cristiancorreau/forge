@@ -10,10 +10,12 @@ Leer `project.yaml`. Si no existe sección `deploy`: "deploy no configurado en p
 
 ## Paso 1 — Verificar review
 
-Buscar en el contexto de la sesión si se ejecutó `/review` y resultó en APPROVED.
+Leer `.claude/review-status.json` (es el archivo que persiste `/review` en su Paso 6).
 
-- Si hay evidencia de review aprobado: continuar.
-- Si no hay evidencia: "¿Confirmás que el código fue revisado y aprobado? (s/n)"
+- **Si el archivo existe**: parsear su contenido y validar el campo `verdict`.
+  - `verdict == "APPROVED"`: continuar. (Opcional: si el `timestamp` del review es anterior al último commit relevante, advertir que el review podría estar desactualizado y pedir confirmación.)
+  - `verdict == "CHANGES_REQUESTED"` o `verdict == "BLOCKED"`: "El último review resultó en `<verdict>`. Resolvé los puntos y volvé a ejecutar `/review` antes de hacer deploy." y detener.
+- **Si el archivo NO existe** (fallback): "No se encontró `.claude/review-status.json`. ¿Confirmás que el código fue revisado y aprobado? (s/n)"
   - Si n: "Ejecutá `/review` antes de hacer deploy." y detener.
 
 ## Paso 2 — Verificar git status
@@ -31,7 +33,7 @@ Preguntar: "¿Querés mergear el PR actual a main antes del deploy? (s/n)"
 Si sí:
 - Ejecutar `gh pr checks` para verificar que todos los checks pasan
 - Si algún check falla: "El PR tiene checks fallando. Resolvelos antes de mergear." y detener.
-- Si todos pasan: ejecutar `gh pr merge --merge` (o la estrategia configurada en `project.yaml` → `deploy.merge_strategy`)
+- Si todos pasan: ejecutar `gh pr merge --merge`
 
 Si no: continuar sin mergear.
 

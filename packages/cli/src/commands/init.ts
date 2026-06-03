@@ -414,7 +414,7 @@ export async function init(args: string[]): Promise<number> {
             ...allAgents.map(a => `.claude/agents/${a}.md`),
           ];
           const ts = new Date().toISOString();
-          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.9.5', ts));
+          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.9.6', ts));
         },
       },
     ]);
