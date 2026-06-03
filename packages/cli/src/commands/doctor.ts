@@ -47,12 +47,12 @@ export async function doctor(_args: string[]): Promise<number> {
   // Node.js version
   const nodeVersion = process.versions.node;
   const [major] = nodeVersion.split('.').map(Number);
-  if (major >= 18) {
+  if (major >= 20) {
     const line = `${icons.ok} Node.js ${nodeVersion}`;
     console.log('  ' + line);
     lines.push(line);
   } else {
-    const line = `${icons.error} Node.js ${nodeVersion} — se requiere >= 18`;
+    const line = `${icons.error} Node.js ${nodeVersion} — se requiere >= 20`;
     console.log('  ' + line);
     lines.push(line);
     ok = false;

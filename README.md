@@ -122,7 +122,7 @@ Catálogo completo en [docs/skills.md](docs/skills.md).
 
 Toda la CLI corre en Node.js. Los hooks de guardrail son JavaScript puro.
 
-No hay `pip install`, no hay `requirements.txt`, no hay dependencias de sistema fuera de Node.js 18+.
+No hay `pip install`, no hay `requirements.txt`, no hay dependencias de sistema fuera de Node.js 20+.
 
 ---
 
