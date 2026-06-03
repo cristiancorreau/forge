@@ -107,22 +107,21 @@ ${rows || '| — | No agents declared in project.yaml |'}
 `;
 }
 
-export function generateKiroCommands(): string {
-  return `# Forge v2 Commands Reference
+export function generateKiroCommands(deployProvider: string): string {
+  return `# Forge SDD Workflow (reference)
 
-| Command | Description |
-|---------|-------------|
-| \`/session-start\` | Start session: verify branch, tools, repo state |
-| \`/plan\` | Create or review specs with Planner-Critic |
-| \`/work\` | Implement an approved spec |
-| \`/review\` | Multi-agent diff review |
-| \`/ship\` | Deploy pipeline: tests → build → Vercel |
-| \`/session-close\` | Close session: commit, PR, daily note |
+Kiro no soporta slash commands. Lo siguiente es la **metodología SDD de forge**
+que seguís manualmente al trabajar con el agente — no son comandos ejecutables.
 
-## Kiro Note
+| Fase | Qué hacer |
+|------|-----------|
+| **Plan** | Creá o revisá la spec en \`docs/specs/\` antes de tocar código |
+| **Work** | Implementá solo lo que la spec aprueba; tests junto con el código |
+| **Review** | Revisá el diff: ¿cumple la spec?, ¿secrets/debug?, ¿pasa typecheck/lint? |
+| **Ship** | Deploy a ${deployProvider} con tests + build en verde y smoke tests OK |
 
-Kiro does not support slash commands natively.
-Use these as prompts or reference them in your workflow.
+El guardrail de rama (\`.kiro/hooks/pre-edit-branch-guard.json\`) sí es nativo de
+Kiro y avisa antes de editar en main/master.
 `;
 }
 

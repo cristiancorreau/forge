@@ -137,7 +137,7 @@ export async function generate(args: string[]): Promise<number> {
           [join(kiroDir, 'product.md'), generateKiroProduct(config)],
           [join(kiroDir, 'structure.md'), generateKiroStructure(config)],
           [join(kiroDir, 'agents.md'), generateKiroAgents(config)],
-          [join(kiroDir, 'commands.md'), generateKiroCommands()],
+          [join(kiroDir, 'commands.md'), generateKiroCommands(config.deploy?.provider ?? 'tu plataforma de deploy')],
           [join(kiroHooks, 'pre-edit-branch-guard.json'), generateKiroBranchGuardHook()],
         ];
         let kiroOk = 0;

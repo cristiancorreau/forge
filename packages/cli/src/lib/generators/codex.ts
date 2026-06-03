@@ -47,8 +47,9 @@ rm -rf /         # Borra sistema
 git push --force # Sobreescribe historial remoto
 \`\`\`
 
-> Incidente 2026-04-28: --force-reset borró 225 usuarios en producción.
-> Estos comandos están bloqueados por el hook pre-bash-check.
+> Codex no tiene hooks de bloqueo automático como Claude Code: el cumplimiento
+> de estas reglas es responsabilidad del agente. Ante cualquier comando
+> destructivo en producción, pará y pedí confirmación explícita al humano.
 
 ## Branch guard
 
@@ -62,12 +63,13 @@ git push --force # Sobreescribe historial remoto
 - No modificar migraciones de BD existentes
 - No borrar archivos sin verificar que no hay referencias
 
-## Comandos por tipo de tarea
+## Flujo SDD por tipo de tarea
 
-Ver plantillas en \`adapters/codex/commands/\`:
-- \`plan.md\` — crear/revisar spec
-- \`work.md\` — implementar feature
-- \`review.md\` — revisar diff
-- \`ship.md\` — deploy a producción
+Codex es autónomo: seguí este flujo en cada tarea (no hay slash commands).
+
+1. **Plan** — leé/creá la spec en \`docs/specs/\` antes de tocar código. Sin spec aprobada, no implementes.
+2. **Work** — implementá solo lo que la spec aprueba. Tests junto con el código.
+3. **Review** — antes de cerrar, revisá el diff: ¿cumple la spec?, ¿hay secrets/debug?, ¿pasa typecheck/lint?
+4. **Ship** — solo después de que tests + typecheck pasen y los smoke tests de \`deploy\` estén en verde.
 `;
 }

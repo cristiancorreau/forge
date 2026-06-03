@@ -41,19 +41,20 @@ Las siguientes reglas aplican a TODOS los agentes sin excepción:
 `;
 }
 
-function commandsSection(): string {
-  return `## Comandos del flujo SDD
+function commandsSection(deployProvider: string): string {
+  return `## Flujo de trabajo (SDD)
 
-| Comando | Descripción |
-|---------|-------------|
-| \`/session-start\` | Inicia sesión: verifica rama, tools, estado del repo |
-| \`/plan\` | Crea o revisa specs con Planner-Critic |
-| \`/work\` | Implementa una spec aprobada (modo serial en OpenCode) |
-| \`/review\` | Revisión multi-agente del diff actual |
-| \`/ship\` | Pipeline de deploy: tests → typecheck → Vercel |
-| \`/session-close\` | Cierra sesión: commit, PR, daily note |
+OpenCode no tiene slash commands ni agent teams paralelos: aplicá este flujo
+manualmente, ejecutando un agente a la vez.
 
-> **Nota OpenCode**: Los agentes se ejecutan en serie, no en paralelo.
+| Paso | Qué hacer |
+|------|-----------|
+| **Plan** | Creá o revisá la spec en \`docs/specs/\` antes de tocar código |
+| **Work** | Implementá solo lo que la spec aprueba; tests junto con el código |
+| **Review** | Revisá el diff: ¿cumple la spec?, ¿secrets/debug?, ¿pasa typecheck/lint? |
+| **Ship** | Deploy a ${deployProvider} solo con tests + typecheck en verde y smoke tests OK |
+
+> **Nota OpenCode**: ejecución serial — un agente a la vez, sin teams paralelos.
 `;
 }
 
@@ -99,6 +100,6 @@ ${agentRows || '| — | Sin agentes declarados en project.yaml |'}
 
 > Invocar el agente especializado para cada tarea. Usar orchestrator solo para tareas multi-agente.
 
-${commandsSection()}
+${commandsSection(config.deploy?.provider ?? 'tu plataforma de deploy')}
 ${guardrailSection()}${complianceSection}`;
 }

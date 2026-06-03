@@ -243,7 +243,7 @@ function installKiro(forgeRoot: string, projectRoot: string, config: ProjectYaml
   write(join(kiroDir, 'product.md'), generateKiroProduct(config), force);
   write(join(kiroDir, 'structure.md'), generateKiroStructure(config), force);
   write(join(kiroDir, 'agents.md'), generateKiroAgents(config), force);
-  write(join(kiroDir, 'commands.md'), generateKiroCommands(), force);
+  write(join(kiroDir, 'commands.md'), generateKiroCommands(config.deploy?.provider ?? 'tu plataforma de deploy'), force);
   write(join(hooksDir, 'pre-edit-branch-guard.json'), generateKiroBranchGuardHook(), force);
 }
 
@@ -414,7 +414,7 @@ export async function init(args: string[]): Promise<number> {
             ...allAgents.map(a => `.claude/agents/${a}.md`),
           ];
           const ts = new Date().toISOString();
-          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.9.7', ts));
+          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.9.8', ts));
         },
       },
     ]);

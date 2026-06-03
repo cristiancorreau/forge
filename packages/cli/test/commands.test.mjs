@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLI = join(__dirname, '..', 'dist', 'cli.js');
 
-const EXPECTED_VERSION = '2.9.7';
+const EXPECTED_VERSION = '2.9.8';
 const ALL_COMMANDS = [
   'init',
   'audit',
@@ -116,7 +116,7 @@ describe('forge CLI — parity suite', () => {
     }
   });
 
-  test('--version reports 2.9.7', () => {
+  test('--version reports 2.9.8', () => {
     const { status, stdout } = runForge(['--version']);
     assert.equal(status, 0);
     assert.equal(stdout.trim(), EXPECTED_VERSION);
