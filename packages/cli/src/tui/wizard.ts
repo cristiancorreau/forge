@@ -18,6 +18,24 @@ import type { WizardResult } from '../lib/wizard.js';
 import { detectStack } from '../lib/detect.js';
 import { VERSION } from '../version.js';
 
+/**
+ * Restore the terminal to a sane state. OpenTUI enables alt-screen, mouse
+ * reporting, focus tracking and bracketed paste on `createCliRenderer`; if those
+ * modes leak into the shell they show up as ANSI garbage. Always emit the reset
+ * sequences after destroying the renderer as a safeguard.
+ */
+function restoreTerminal(): void {
+  try {
+    process.stdout.write(
+      '\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l' + // disable mouse reporting
+      '\x1b[?1004l' +                                   // disable focus tracking
+      '\x1b[?2004l' +                                   // disable bracketed paste
+      '\x1b[?1049l' +                                   // leave alt screen
+      '\x1b[?25h'                                       // show cursor
+    );
+  } catch {}
+}
+
 // ─── Palette ─────────────────────────────────────────────────────────────────
 const C = {
   cyan:    '#00e5ff',
@@ -306,6 +324,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   // ─── Wizard steps ─────────────────────────────────────────────────────────────
   const ans: any = { testing: detected.testing ?? [], detected: !!(detected.language || detected.backend) };
 
+  try {
   await showWelcome();
 
   ans.name     = await askInput('Project name', 'Enter a name for your project');
@@ -380,7 +399,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
     o('✗  Cancel',             'no',  ''),
   ], undefined, summaryRows) === 'yes';
 
-  if (!confirmed) { renderer.destroy(); return null; }
+  if (!confirmed) { renderer.destroy(); restoreTerminal(); return null; }
 
   // Done
   renderSteps();
@@ -390,6 +409,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   }));
   await new Promise(r => setTimeout(r, 500));
   renderer.destroy();
+  restoreTerminal();
 
   const profiles: string[] = [];
   if (ans.backend  && PROFILE_MAP[ans.backend])  profiles.push(PROFILE_MAP[ans.backend]);
@@ -404,4 +424,10 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
     skills: ['spec', 'new-feature', 'security-audit'],
     runtime: ans.runtime, detected: ans.detected,
   };
+  } catch (err) {
+    // Never leave the terminal in raw mode if a step throws.
+    try { renderer.destroy(); } catch {}
+    restoreTerminal();
+    throw err;
+  }
 }

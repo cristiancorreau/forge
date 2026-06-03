@@ -7,6 +7,20 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.9.9] — 2026-06-03
+
+### Corregido
+- **Fuga de modos de terminal tras `forge init`**: el dashboard post-install (OpenTUI) referenciaba `VERSION` sin importarla. Bajo Bun esto lanzaba `ReferenceError` *después* de que el renderer activara alt-screen y mouse reporting, por lo que el renderer nunca se destruía y la terminal quedaba inundada de secuencias ANSI (iTerm2: "mouse reporting was left on").
+- `src/tui/dashboard.ts`: importa `VERSION`; el ciclo del renderer va dentro de `try/finally` que siempre llama `renderer.destroy()` y restaura los modos de terminal (`?1000/1002/1003/1006` mouse, `?1004` focus, `?2004` bracketed paste, `?1049` alt-screen, `?25h` cursor).
+- `src/tui/wizard.ts`: misma red de seguridad `restoreTerminal()` en todas las salidas, incluido el path de excepción.
+- `src/commands/init.ts`: la versión del manifest se toma de `VERSION` en vez de un literal hardcodeado.
+
+### Tests
+- Nuevo test de regresión: cualquier módulo TUI que use `VERSION` debe importarla (cubre el punto ciego de `@ts-nocheck`).
+- `--version` y el manifest ahora se validan contra `package.json` (sin literal hardcodeado). 29 tests pasando.
+
+---
+
 ## [2.0.1] — 2026-05-18
 
 ### Agregado

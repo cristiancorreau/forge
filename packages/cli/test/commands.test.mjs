@@ -23,7 +23,10 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLI = join(__dirname, '..', 'dist', 'cli.js');
 
-const EXPECTED_VERSION = '2.9.8';
+// Read the version from package.json so a version bump never breaks the suite.
+const EXPECTED_VERSION = JSON.parse(
+  readFileSync(join(__dirname, '..', 'package.json'), 'utf-8')
+).version;
 const ALL_COMMANDS = [
   'init',
   'audit',
@@ -116,7 +119,7 @@ describe('forge CLI — parity suite', () => {
     }
   });
 
-  test('--version reports 2.9.8', () => {
+  test('--version reports the package.json version', () => {
     const { status, stdout } = runForge(['--version']);
     assert.equal(status, 0);
     assert.equal(stdout.trim(), EXPECTED_VERSION);

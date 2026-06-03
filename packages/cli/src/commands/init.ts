@@ -4,6 +4,7 @@ import { spawnSync } from 'child_process';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
 import { resolveForgeRoot } from '../lib/paths.js';
+import { VERSION } from '../version.js';
 
 // OpenTUI panels require Bun runtime
 const isBun = typeof (globalThis as any).Bun !== 'undefined';
@@ -414,7 +415,7 @@ export async function init(args: string[]): Promise<number> {
             ...allAgents.map(a => `.claude/agents/${a}.md`),
           ];
           const ts = new Date().toISOString();
-          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.9.8', ts));
+          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, VERSION, ts));
         },
       },
     ]);

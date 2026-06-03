@@ -109,6 +109,24 @@ describe('forge assets — integrity', () => {
     assert.deepEqual(offenders, [], `files still use docs/wiki/ (CLI uses wiki/): ${offenders.join(', ')}`);
   });
 
+  // The OpenTUI modules carry `@ts-nocheck`, so tsc won't catch an undefined
+  // identifier like `VERSION`. A missing import there throws a ReferenceError at
+  // runtime *after* the renderer enabled alt-screen/mouse modes, leaking ANSI
+  // garbage into the shell (the v2.9.9 post-install bug). Guard it here.
+  test('TUI modules that use VERSION also import it', () => {
+    const SRC = join(__dirname, '..', 'src', 'tui');
+    const tsFiles = walk(SRC, f => f.endsWith('.ts'));
+    assert.ok(tsFiles.length > 0, 'expected TUI .ts source files');
+    const offenders = [];
+    for (const f of tsFiles) {
+      const content = readFileSync(f, 'utf-8');
+      const usesVersion = /\bVERSION\b/.test(content.replace(/^import .*VERSION.*$/m, ''));
+      const importsVersion = /import\s*\{[^}]*\bVERSION\b[^}]*\}\s*from\s*['"][^'"]*version\.js['"]/.test(content);
+      if (usesVersion && !importsVersion) offenders.push(f.replace(SRC + '/', ''));
+    }
+    assert.deepEqual(offenders, [], `TUI files use VERSION without importing it: ${offenders.join(', ')}`);
+  });
+
   test('no agent embeds a hardcoded major framework version in prose', () => {
     // Migration guides legitimately reference specific versions; skip them.
     const agents = walk(join(ASSETS, 'core', 'agents'), f => f.endsWith('.md'))

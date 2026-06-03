@@ -14,6 +14,26 @@ import {
   bold as otBold,
   dim as otDim,
 } from '@opentui/core';
+import { VERSION } from '../version.js';
+
+/**
+ * Restore the terminal to a sane state. OpenTUI enables alt-screen, mouse
+ * reporting, focus tracking and bracketed paste on `createCliRenderer`; if the
+ * renderer ever fails to clean up (a throw, a partial init), those modes leak
+ * into the user's shell as ANSI garbage. We always emit the reset sequences as
+ * a belt-and-suspenders safeguard after destroying the renderer.
+ */
+function restoreTerminal(): void {
+  try {
+    process.stdout.write(
+      '\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l' + // disable mouse reporting
+      '\x1b[?1004l' +                                   // disable focus tracking
+      '\x1b[?2004l' +                                   // disable bracketed paste
+      '\x1b[?1049l' +                                   // leave alt screen
+      '\x1b[?25h'                                       // show cursor
+    );
+  } catch {}
+}
 
 export interface DashboardData {
   projectName: string;
@@ -174,6 +194,17 @@ function detectRuntimes(): Record<string, { installed: boolean; version: string 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export async function runPostInstallDashboard(data: DashboardData): Promise<void> {
   const renderer = await createCliRenderer({ exitOnCtrlC: true });
+  try {
+    await runDashboardLoop(renderer, data);
+  } finally {
+    // Always tear down — even if the section renderers throw — so the terminal
+    // never leaks alt-screen / mouse-reporting modes into the shell.
+    try { renderer.destroy(); } catch {}
+    restoreTerminal();
+  }
+}
+
+async function runDashboardLoop(renderer: any, data: DashboardData): Promise<void> {
   const icons = iconMode();
 
   const W = renderer.root.width ?? process.stdout.columns ?? 120;
@@ -372,13 +403,13 @@ export async function runPostInstallDashboard(data: DashboardData): Promise<void
     });
   } catch {}
 
-  // Exit on q / Esc
+  // Exit on q / Esc. Teardown (renderer.destroy + terminal restore) happens in
+  // the caller's finally block, so the handler only detaches itself + resolves.
   return new Promise<void>((resolve) => {
     const handler = (key: any) => {
       const name = (key?.name ?? '').toLowerCase();
       if (name === 'q' || name === 'escape') {
         try { renderer._internalKeyInput?.offInternal?.('keypress', handler); } catch {}
-        renderer.destroy();
         resolve();
       }
     };

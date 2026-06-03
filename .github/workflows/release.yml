@@ -21,7 +21,7 @@ jobs:
       - name: Install CLI dependencies
         working-directory: packages/cli
         run: npm ci
-      - name: Build + run the 28-test suite
+      - name: Build + run the CLI test suite
         working-directory: packages/cli
         run: npm run build:all && npm test
 
