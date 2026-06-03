@@ -5,6 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
 tier: 2
 profile: laravel
+last_verified: "2026-06"
 ---
 
 # Migration Specialist — Laravel
