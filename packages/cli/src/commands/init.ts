@@ -1,11 +1,46 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync, copyFileSync, readdirSync, statSync } from 'fs';
 import { join, basename } from 'path';
+import { spawnSync } from 'child_process';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
-
-// Detect Bun runtime (OpenTUI requires Bun)
-const isBun = typeof (globalThis as any).Bun !== 'undefined';
 import { resolveForgeRoot } from '../lib/paths.js';
+
+// OpenTUI panels require Bun runtime
+const isBun = typeof (globalThis as any).Bun !== 'undefined';
+
+// Locate a usable `bun` binary: PATH first, then the standard install location.
+function findBun(): string | null {
+  const candidates = [
+    'bun',
+    join(process.env.HOME ?? '', '.bun', 'bin', 'bun'),
+    '/opt/homebrew/bin/bun',
+    '/usr/local/bin/bun',
+  ];
+  for (const bin of candidates) {
+    try {
+      const r = spawnSync(bin, ['--version'], { encoding: 'utf8', timeout: 2000 });
+      if (r.status === 0) return bin;
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
+// If running under Node.js with a TTY, re-launch the CLI under Bun (if available)
+// so the OpenTUI panel wizard can render. Returns without exiting if not possible.
+function tryReLaunchWithBun(args: string[]): void {
+  if (isBun) return;
+  if (process.env.FORGE_NO_BUN === '1') return; // explicit opt-out
+  if (!process.stdin.isTTY || !process.stdout.isTTY) return; // panels need a real TTY
+  const bun = findBun();
+  if (!bun) return; // Bun not installed → fall back to clack
+  // cli.js is one level up from dist/commands/init.js
+  const cliPath = new URL('../cli.js', import.meta.url).pathname;
+  const result = spawnSync(bun, [cliPath, 'init', ...args], {
+    stdio: 'inherit',
+    env: { ...process.env, FORGE_BUN_RELAUNCH: '1' },
+  });
+  process.exit(result.status ?? 0);
+}
 import { buildManifest, saveManifest } from '../lib/lock.js';
 import { dim } from '../ui/colors.js';
 import { printHeader, printSection, printDetected, printAgentList } from '../ui/header.js';
@@ -228,17 +263,39 @@ export async function init(args: string[]): Promise<number> {
   const runtimeOverride = runtimeIdx !== -1 ? (args[runtimeIdx + 1] ?? null) : null;
 
   const projectYamlPath = join(process.cwd(), 'project.yaml');
+  const hasProjectYaml = existsSync(projectYamlPath);
   let config: ProjectYaml;
 
-  // Show header
-  printHeader();
+  // The interactive wizard runs only when there's no project.yaml and we're not
+  // in dry-run. On Node.js with Bun installed, re-launch under Bun for the
+  // OpenTUI panel wizard; otherwise fall back to the @clack/prompts wizard.
+  if (!hasProjectYaml && !dryRun) {
+    tryReLaunchWithBun(args); // exits the process if it re-launches under Bun
+  }
 
-  if (!existsSync(projectYamlPath)) {
+  // The OpenTUI wizard renders its own full-screen header. The static boxen
+  // header is only shown for the clack wizard, dry-run, and existing-config paths.
+  const usingOpenTUI = isBun && !hasProjectYaml && !dryRun;
+  if (!usingOpenTUI) printHeader();
+
+  if (hasProjectYaml) {
+    config = loadProjectYaml(projectYamlPath);
+  } else if (dryRun) {
+    // Dry-run without config: show what a default standard project would install
+    console.log(dim('  No project.yaml found — showing defaults for a "standard" project.') + '\n');
+    config = {
+      project: { name: 'My Project', slug: 'my-project', language: 'typescript', mode: 'standard', status: 'active' },
+      agents: { active: defaultAgentsForMode('standard'), compliance: [], profiles: [] },
+      runtimes: { active: [runtimeOverride ?? 'claude-code'] },
+    };
+  } else {
     // Run interactive wizard — OpenTUI (Bun) or @clack/prompts (Node.js)
     let result;
     if (isBun) {
       const { runOpenTUIWizard } = await import('../tui/wizard.js');
       result = await runOpenTUIWizard();
+      // OpenTUI restored the screen; now show the static header for install phase
+      printHeader();
     } else {
       result = await runWizard();
     }
@@ -247,15 +304,12 @@ export async function init(args: string[]): Promise<number> {
     const yamlContent = buildProjectYaml(result);
     writeFileSync(projectYamlPath, yamlContent, 'utf-8');
 
-    // Build config from wizard result
     config = {
       project: { name: result.name, slug: result.slug, description: result.description, language: result.language, mode: result.mode, status: 'active' },
       stack: { backend: result.backend, frontend: result.frontend, database: result.database, orm: result.orm, package_manager: result.packageManager, testing: result.testing },
       agents: { active: defaultAgentsForMode(result.mode), compliance: [], profiles: result.profiles },
       runtimes: { active: [runtimeOverride ?? result.runtime] },
     };
-  } else {
-    config = loadProjectYaml(projectYamlPath);
   }
 
   const forgeRoot = resolveForgeRoot();
@@ -359,7 +413,7 @@ export async function init(args: string[]): Promise<number> {
             ...allAgents.map(a => `.claude/agents/${a}.md`),
           ];
           const ts = new Date().toISOString();
-          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.6.0', ts));
+          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, '2.6.1', ts));
         },
       },
     ]);

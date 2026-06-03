@@ -5,7 +5,7 @@ import { generate } from './commands/generate.js';
 import { validate } from './commands/validate.js';
 import { doctor } from './commands/doctor.js';
 
-const VERSION = '2.6.0';
+const VERSION = '2.6.1';
 
 const HELP = `forge v${VERSION} — Agentic development framework
 
