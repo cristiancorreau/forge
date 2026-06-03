@@ -16,7 +16,7 @@ ni backend fuera de las integraciones de Astro.
 
 ## Stack
 
-- **Framework:** Astro 4.x
+- **Framework:** Astro (última versión estable)
 - **Rendering:** SSG por defecto; SSR con adaptadores (Vercel, Cloudflare, Node)
 - **UI Islands:** React, Svelte, Vue o Lit según el proyecto
 - **Contenido:** MDX, Content Collections, Markdown
@@ -37,7 +37,7 @@ ni backend fuera de las integraciones de Astro.
 
 - **Sin JavaScript innecesario:** Astro carga 0 JS por defecto — mantenerlo así salvo islands explícitas.
 - **Content Collections tipadas:** toda colección define su schema Zod en `src/content/config.ts`.
-- **Sin secrets en el cliente:** variables de entorno con `VITE_` prefix son públicas — solo usarlas para config no sensible.
+- **Sin secrets en el cliente:** variables de entorno con prefijo `PUBLIC_` son públicas (`import.meta.env.PUBLIC_*`) — solo usarlas para config no sensible.
 - **Accesibilidad:** HTML semántico, atributos `alt`, roles ARIA cuando el HTML no es suficiente.
 - **Sin spec, sin código:** la spec debe existir en `docs/specs/` antes de implementar.
 
@@ -67,7 +67,7 @@ Antes de tocar cualquier archivo, verificar que existe una spec en `docs/specs/`
 Este agente puede invocar los slash commands definidos en `.claude/commands/` del proyecto. Revisar qué comandos están disponibles con `/help` antes de empezar.
 
 ### Hooks activos en este stack
-- **`pre-edit-check.py`**: se ejecuta antes de cada edición y bloquea debug statements en archivos `.astro`, `.ts` y `.tsx`. No dejes `console.log`, `debugger` ni comentarios `// TODO` sin ticket.
+- **`pre-edit-check.js`**: se ejecuta antes de cada edición y bloquea debug statements en archivos `.astro`, `.ts` y `.tsx`. No dejes `console.log`, `debugger` ni comentarios `// TODO` sin ticket.
 - **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Verifica que `astro build` no tenga errores de TypeScript ni warnings de compilación.
 
 ### Reglas de scope

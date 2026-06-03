@@ -25,7 +25,7 @@ testeable, se lo pedís al agente que corresponda y esperás.
 - **No escribís código de producción.** Si algo no se puede testear, lo reportás.
 - Tests determinísticos — sin `Math.random()` ni `Date.now()` sin mockear.
 - Nombres descriptivos: `describe("cuando X") / it("debería Y")`.
-- Tests de integración deben usar base de datos real, no mocks del ORM.
+- Cuando el proyecto tiene base de datos (según `stack` en `project.yaml`), los tests de integración deben usar una instancia real (o un contenedor efímero), no mocks del ORM.
 - Limpiar fixtures después de cada test (transacciones o truncate).
 - Sin `console.log` en tests — el runner lo reportará como falla en CI.
 

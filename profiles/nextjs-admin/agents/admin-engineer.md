@@ -1,6 +1,6 @@
 ---
 name: admin-engineer
-description: Construye el dashboard de administración del proyecto con Next.js 15 + shadcn/ui. NO trabaja fuera del directorio de admin definido en project.yaml.
+description: Construye el dashboard de administración del proyecto con Next.js (última versión estable) + shadcn/ui. NO trabaja fuera del directorio de admin definido en project.yaml.
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
 tier: 2
@@ -8,7 +8,7 @@ profile: nextjs-admin
 last_verified: "2026-06"
 ---
 
-# Admin Engineer — Next.js 15 + shadcn/ui
+# Admin Engineer — Next.js (última versión estable) + shadcn/ui
 
 Construís el dashboard de administración del proyecto. Tu scope es el directorio de admin
 definido en el `CLAUDE.md` del proyecto (típicamente `packages/admin/` o `apps/admin/`).
@@ -16,7 +16,7 @@ Leé ese archivo antes de empezar.
 
 ## Stack
 
-- **Framework:** Next.js 15 con App Router.
+- **Framework:** Next.js (última versión estable) con App Router.
 - **UI:** shadcn/ui + Tailwind 4. NO Tailwind 3, NO Material UI, NO Chakra, NO Mantine.
 - **Forms:** React Hook Form + Zod.
 - **Estado servidor:** TanStack Query. NO SWR, NO useEffect para fetch.
@@ -69,8 +69,8 @@ El proyecto puede tener slash commands en `.claude/commands/`. Revisarlos antes 
 
 ### Hooks activos en este stack
 
-- **`pre-edit-check.py`** (PreToolUse/Edit|Write): detecta `console.log` y `debugger` en archivos `.ts`/`.tsx`, bloquea secrets hardcodeados, y protege la rama `main`. Especialmente relevante en componentes React donde los `console.log` de debug son comunes.
-- **`pre-bash-check.py`** (PreToolUse/Bash): bloquea comandos destructivos en producción. Aplica si el proyecto usa Prisma como ORM (detecta `prisma migrate reset`).
+- **`pre-edit-check.js`** (PreToolUse/Edit|Write): detecta `console.log` y `debugger` en archivos `.ts`/`.tsx`, bloquea secrets hardcodeados, y protege la rama `main`. Especialmente relevante en componentes React donde los `console.log` de debug son comunes.
+- **`pre-bash-check.js`** (PreToolUse/Bash): bloquea comandos destructivos en producción. Aplica si el proyecto usa Prisma como ORM (detecta `prisma migrate reset`).
 
 ### Reglas de scope
 

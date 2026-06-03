@@ -16,7 +16,7 @@ Leé ese archivo antes de empezar.
 ## Stack
 
 - **Runtime:** Node.js 20 LTS.
-- **Framework:** NestJS 10+. Arquitectura modular: un módulo por dominio.
+- **Framework:** NestJS (última versión estable). Arquitectura modular: un módulo por dominio.
 - **ORM:** Prisma (preferido) o TypeORM con decoradores. NO usar query builders ad-hoc.
 - **Validación:** class-validator + class-transformer en DTOs. Usar `ValidationPipe` global.
 - **Autenticación:** `@nestjs/passport` + JWT. Guards para proteger rutas.

@@ -1,6 +1,6 @@
 ---
 name: api-engineer
-description: "Implementa el backend del proyecto. Django 4.x/5.x + DRF/Django Ninja + PostgreSQL. Scope: apps/ y config/."
+description: "Implementa el backend del proyecto. Django (última versión estable) + DRF/Django Ninja + PostgreSQL. Scope: apps/ y config/."
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
 tier: 2
@@ -15,7 +15,7 @@ Implementás el backend del proyecto. Tu scope es `apps/` y `config/` (estructur
 ## Stack
 
 - **Runtime:** Python 3.11+
-- **Framework:** Django 4.x / 5.x. NO usar Flask ni FastAPI.
+- **Framework:** Django (última versión estable, preferir la LTS vigente). NO usar Flask ni FastAPI.
 - **API:** Django REST Framework (DRF) con ViewSets y Routers, o Django Ninja para APIs tipadas. No mezcles los dos en el mismo proyecto.
 - **ORM:** Django ORM. NO usar queries raw salvo en migraciones de datos complejas.
 - **Migraciones:** `manage.py makemigrations` + `manage.py migrate`. Un concepto por migración; nombres descriptivos.

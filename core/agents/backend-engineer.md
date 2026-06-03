@@ -54,8 +54,8 @@ Implementás el backend del proyecto. Tu scope está definido en el `project.yam
 - `/review` para revisar tu propio trabajo antes de reportar al orchestrator
 
 **Hooks que aplican a tu trabajo:**
-- `pre-edit-check.py`: te va a advertir si dejás `console.log` o credenciales en código
+- `pre-edit-check.js`: te va a advertir si dejás `console.log` o credenciales en código
 - `post-turn-check.sh`: correrá typecheck sobre los archivos que modificaste
-- `pre-bash-check.py` (en proyectos standard/enterprise): bloquea comandos destructivos en producción — si necesitás hacer algo en producción, coordiná con el humano explícitamente
+- `pre-bash-check.js` (en proyectos standard/enterprise): bloquea comandos destructivos en producción — si necesitás hacer algo en producción, coordiná con el humano explícitamente
 
-**Scope:** Operar solo en los directorios de tu scope (ver `scope:` en el frontmatter de este agente). No tocar archivos de frontend o mobile sin autorización explícita.
+**Scope:** Operar solo en el directorio de backend del proyecto (el derivado de `stack.backend` en `project.yaml`, o `paths.api` si está definido). No tocar archivos de frontend o mobile sin autorización explícita.

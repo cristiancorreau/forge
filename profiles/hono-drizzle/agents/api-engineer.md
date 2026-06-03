@@ -73,8 +73,8 @@ El proyecto puede tener slash commands en `.claude/commands/`. Revisarlos antes 
 
 ### Hooks activos en este stack
 
-- **`pre-bash-check.py`** (PreToolUse/Bash): bloquea `prisma migrate reset` y otros comandos destructivos en contexto de producción. **Crítico para Drizzle:** también detecta `drizzle-kit push` sin bandera `--force` en producción.
-- **`pre-edit-check.py`** (PreToolUse/Edit|Write): detecta `console.log` y `debugger` en archivos `.ts`/`.tsx`, bloquea secrets hardcodeados, y protege la rama `main`.
+- **`pre-bash-check.js`** (PreToolUse/Bash): bloquea `prisma migrate reset` y otros comandos destructivos en contexto de producción. **Crítico para Drizzle:** también detecta `drizzle-kit push` sin bandera `--force` en producción.
+- **`pre-edit-check.js`** (PreToolUse/Edit|Write): detecta `console.log` y `debugger` en archivos `.ts`/`.tsx`, bloquea secrets hardcodeados, y protege la rama `main`.
 
 ### Reglas de scope
 

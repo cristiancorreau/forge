@@ -78,8 +78,8 @@ El proyecto puede tener slash commands en `.claude/commands/`. Revisarlos antes 
 
 ### Hooks activos en este stack
 
-- **`pre-edit-check.py`** (PreToolUse/Edit|Write): detecta `print()` en archivos `.py` que no sean scripts de forge ni archivos en `.agentic/`. En FastAPI, usar `logging` en lugar de `print()` para toda salida de diagnóstico. Además bloquea secrets hardcodeados y protege la rama `main`.
-- **`pre-bash-check.py`** (PreToolUse/Bash): bloquea comandos destructivos en producción. Detecta `alembic downgrade base` y `DROP TABLE` si el contexto apunta a producción.
+- **`pre-edit-check.js`** (PreToolUse/Edit|Write): detecta `print()` en archivos `.py` que no sean scripts de forge ni archivos en `.agentic/`. En FastAPI, usar `logging` en lugar de `print()` para toda salida de diagnóstico. Además bloquea secrets hardcodeados y protege la rama `main`.
+- **`pre-bash-check.js`** (PreToolUse/Bash): bloquea comandos destructivos en producción. Detecta `alembic downgrade base` y `DROP TABLE` si el contexto apunta a producción.
 
 ### Reglas de scope
 

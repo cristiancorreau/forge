@@ -15,7 +15,7 @@ proyecto Rails (app/, db/, config/, spec/). Leé el `CLAUDE.md` del proyecto ant
 
 ## Stack
 
-- **Framework:** Ruby on Rails 7.x o 8.x.
+- **Framework:** Ruby on Rails (última versión estable).
 - **Base de datos:** PostgreSQL. Sin SQLite en producción.
 - **Frontend:** Hotwire (Turbo + Stimulus) por defecto. Si el proyecto usa React/Vue, el `CLAUDE.md` lo indicará.
 - **Tests:** RSpec + FactoryBot + Shoulda Matchers. Capybara para tests de sistema.

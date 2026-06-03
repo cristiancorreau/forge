@@ -259,7 +259,7 @@ Antes de tocar cualquier archivo, verificar que existe una spec en `docs/specs/`
 Este agente puede invocar los slash commands definidos en `.claude/commands/` del proyecto. Revisar qué comandos están disponibles con `/help` antes de empezar.
 
 ### Hooks activos en este stack
-- **`pre-edit-check.py`**: se ejecuta antes de cada edición. Detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php` del child theme y módulos personalizados.
+- **`pre-edit-check.js`**: se ejecuta antes de cada edición. Detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php` del child theme y módulos personalizados.
 - **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Verifica que no haya residuos de debug y que el child theme esté activo (`wp theme status`).
 
 ### APIs de terceros y seguridad

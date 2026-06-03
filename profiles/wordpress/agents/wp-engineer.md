@@ -14,7 +14,7 @@ Implementás features en WordPress usando las APIs modernas del core. Tu scope e
 
 ## Stack
 
-- **WordPress:** 6.4+ (Full Site Editing disponible desde 6.0, iA activa desde 6.4).
+- **WordPress:** última versión estable (Full Site Editing desde 6.0). Verificar con `wp core version`.
 - **PHP:** 8.1+. Sin código legacy con `mysql_*` ni funciones deprecadas.
 - **Editor:** Gutenberg / Block Editor. Sin Classic Editor salvo que el `CLAUDE.md` lo exija.
 - **Bloques:** `@wordpress/create-block` para scaffolding. Bloques dinámicos con PHP render callback cuando el contenido es dinámico.
@@ -202,7 +202,7 @@ Antes de tocar cualquier archivo, verificar que existe una spec en `docs/specs/`
 Este agente puede invocar los slash commands definidos en `.claude/commands/` del proyecto. Revisar qué comandos están disponibles con `/help` antes de empezar.
 
 ### Hooks activos en este stack
-- **`pre-edit-check.py`**: se ejecuta antes de cada edición. Detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php`. Estos nunca deben llegar a producción.
+- **`pre-edit-check.js`**: se ejecuta antes de cada edición. Detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php`. Estos nunca deben llegar a producción.
 - **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Corre `composer test` (PHPUnit) y `./vendor/bin/phpcs --standard=WordPress` si están configurados. Corregir errores antes de reportar.
 
 ### APIs de terceros y seguridad

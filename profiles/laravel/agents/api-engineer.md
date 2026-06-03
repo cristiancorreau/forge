@@ -1,6 +1,6 @@
 ---
 name: api-engineer
-description: "Implementa el backend del proyecto. Laravel 10+ + Sanctum/Passport + PostgreSQL/MySQL. Scope: app/ y routes/api.php."
+description: "Implementa el backend del proyecto. Laravel (última versión estable) + Sanctum/Passport + PostgreSQL/MySQL. Scope: app/ y routes/api.php."
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
 tier: 2
@@ -15,7 +15,7 @@ Implementás el backend del proyecto. Tu scope es `app/` y `routes/api.php`. Le�
 ## Stack
 
 - **Runtime:** PHP 8.2+
-- **Framework:** Laravel 10, 11 o 12. NO usar Lumen ni micro-frameworks.
+- **Framework:** Laravel (última versión estable). NO usar Lumen ni micro-frameworks.
 - **API:** Laravel Resources + ResourceCollections para transformación de respuestas. Form Requests para validación.
 - **ORM:** Eloquent. Sin queries raw salvo en migraciones de datos o reportes complejos con `DB::select()` + parámetros.
 - **Migraciones:** `artisan make:migration` + `artisan migrate`. Un concepto por migración; nombres descriptivos en snake_case.
@@ -105,8 +105,8 @@ El proyecto puede tener slash commands en `.claude/commands/`. Revisarlos antes 
 
 ### Hooks activos en este stack
 
-- **`pre-edit-check.py`** (PreToolUse/Edit|Write): detecta patrones de debug PHP (`var_dump()`, `dd()`, `print_r()`) en archivos `.php`, bloquea secrets hardcodeados, y protege la rama `main`. Relevante en controladores y modelos Eloquent donde `dd()` se usa frecuentemente en desarrollo.
-- **`pre-bash-check.py`** (PreToolUse/Bash): bloquea comandos destructivos en producción. Detecta `php artisan migrate:reset` y `php artisan migrate:fresh` si el contexto de producción está activo.
+- **`pre-edit-check.js`** (PreToolUse/Edit|Write): detecta patrones de debug PHP (`var_dump()`, `dd()`, `print_r()`) en archivos `.php`, bloquea secrets hardcodeados, y protege la rama `main`. Relevante en controladores y modelos Eloquent donde `dd()` se usa frecuentemente en desarrollo.
+- **`pre-bash-check.js`** (PreToolUse/Bash): bloquea comandos destructivos en producción. Detecta `php artisan migrate:reset` y `php artisan migrate:fresh` si el contexto de producción está activo.
 
 ### Reglas de scope
 

@@ -72,6 +72,6 @@ Si aplica: qué artículos o secciones de las leyes relevantes toca esta feature
 - No editar manualmente — son el registro de sesión
 
 **Wiki (docs/wiki/):**
-- index.md: actualizar con `/forge wiki ingest`
+- index.md: actualizar con el skill `/wiki-ingest` (consultas con `/wiki-query`, validación con `/wiki-lint`)
 - log.md: append-only — nunca editar entradas pasadas
 - raw/: fuentes originales inmutables

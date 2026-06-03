@@ -50,5 +50,5 @@ con severidad y recomendación de fix.
 **Checklist adicional para Forge v2:**
 - ¿El PR agrega variables de entorno? Verificar que están documentadas en `.env.example`
 - ¿Hay cambios en permisos de `settings.json`? Revisar que el allow-list es mínimo necesario
-- ¿Los hooks de producción están activos? (pre-bash-check.py para mode=standard/enterprise)
+- ¿Los hooks de producción están activos? (pre-bash-check.js para mode=standard/enterprise)
 - ¿El deploy pipeline de `/ship` incluye verificación de runtime logs?

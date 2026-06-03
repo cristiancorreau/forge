@@ -79,5 +79,5 @@ Este agente opera sobre el conocimiento de entrenamiento del modelo, **no sobre 
 - ¿Hay logs de auditoría para las acciones del PR?
 
 **Hooks relacionados:**
-- En mode=enterprise existe `compliance-pre-edit.py` que detecta patrones peligrosos antes de que edites
-- Si ves que ese hook no está activo, notificar al equipo
+- Los hooks de guardrail instalados (`pre-edit-check.js`, `pre-bash-check.js`) detectan secrets, debug y comandos destructivos antes de que se editen archivos
+- Si el proyecto define un hook de compliance adicional (ej: detección de PII en logs) y no está activo, notificar al equipo

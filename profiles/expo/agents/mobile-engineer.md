@@ -24,7 +24,7 @@ Leé ese archivo antes de empezar.
 
 ## Reglas
 
-1. **Bundle size controlado:** iOS <200KB, Android <250KB por defecto. Verificar con `expo bundle-size`.
+1. **Bundle size controlado:** iOS <200KB, Android <250KB por defecto. Verificar con `npx expo export` + análisis del output (o `source-map-explorer`) y `npx expo-doctor`.
 2. **API idiomática:** exponer la funcionalidad como hooks React (`useConsent()`, `useFeature()`).
 3. **No mezclar APIs nativas y JS bridge en el mismo flujo.** Si necesitás algo nativo, va en su propio módulo aislado.
 4. **Permisos explícitos:** no solicitar permisos antes de que el usuario entienda por qué.
@@ -62,7 +62,7 @@ Antes de tocar cualquier archivo, verificar que existe una spec en `docs/specs/`
 Este agente puede invocar los slash commands definidos en `.claude/commands/` del proyecto. Revisar qué comandos están disponibles con `/help` antes de empezar.
 
 ### Hooks activos en este stack
-- **`pre-edit-check.py`**: se ejecuta antes de cada edición. Detecta debug statements (`console.log`, `debugger`) en archivos `.ts` y `.tsx`.
+- **`pre-edit-check.js`**: se ejecuta antes de cada edición. Detecta debug statements (`console.log`, `debugger`) en archivos `.ts` y `.tsx`.
 - **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Corre `tsc --noEmit` para verificar TypeScript estricto. El proyecto usa `strict: true` — cualquier error de tipos bloquea el turno. Corregir antes de reportar al orchestrator.
 
 ### Reglas de scope

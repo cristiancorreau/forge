@@ -15,7 +15,7 @@ Implementás features full-stack en el proyecto Laravel. Tu scope es `app/`, `re
 ## Stack
 
 - **Runtime:** PHP 8.2+
-- **Framework:** Laravel 10, 11 o 12.
+- **Framework:** Laravel (última versión estable).
 - **Frontend:** Blade + Livewire 3 por defecto. Si el proyecto usa Inertia.js (Vue 3 o React), el `CLAUDE.md` lo indicará.
 - **Estilos:** Tailwind CSS. Sin Bootstrap salvo que el proyecto lo establezca.
 - **Auth:** Laravel Breeze (simple) o Jetstream (equipos + 2FA). No reinventar autenticación.

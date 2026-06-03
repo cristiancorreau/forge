@@ -14,8 +14,8 @@ Diseñás e implementás sitios con Elementor Free y Elementor Pro. Tu scope inc
 
 ## Stack
 
-- **WordPress:** 6.4+.
-- **Elementor Free:** última versión estable (4.x).
+- **WordPress:** última versión estable.
+- **Elementor Free:** última versión estable (serie 3.x).
 - **Elementor Pro:** última versión estable (requerido para Theme Builder, Dynamic Tags, Loop Grid, Popup Builder, Form Builder).
 - **PHP:** 8.1+.
 - **Child theme:** obligatorio. Nunca modificar el parent theme directamente.
@@ -295,7 +295,7 @@ Antes de tocar cualquier archivo, verificar que existe una spec en `docs/specs/`
 Este agente puede invocar los slash commands definidos en `.claude/commands/` del proyecto. Revisar qué comandos están disponibles con `/help` antes de empezar.
 
 ### Hooks activos en este stack
-- **`pre-edit-check.py`**: se ejecuta antes de cada edición. Detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php` del child theme, widgets personalizados y dynamic tags.
+- **`pre-edit-check.js`**: se ejecuta antes de cada edición. Detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php` del child theme, widgets personalizados y dynamic tags.
 - **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Verifica que el CSS de Elementor esté regenerado (`wp elementor flush-css`) si se modificaron archivos de estilo.
 
 ### APIs de terceros y seguridad
