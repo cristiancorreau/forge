@@ -98,7 +98,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   });
   header.add(Text({ id: 'hdr-t',
     content:
-      col(C.yellow, bold('forge')) + dim('  v2.6.2') + '\n' +
+      col(C.yellow, bold('forge')) + dim('  v2.6.3') + '\n' +
       col(C.muted,  'Configure any project for AI agents') + '\n' +
       dim('Claude Code · OpenCode · Codex · Kiro'),
   }));
@@ -137,6 +137,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
   let currentStep = 0;
+  let activeWidget: any = null; // currently focused Input/Select
 
   function renderSteps() {
     stepsPanel.remove('stp-list');
@@ -149,7 +150,11 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   }
 
   function clearContent() {
-    // Remove all children from content panel
+    // Blur + detach keyboard handler from the previous widget first
+    if (activeWidget) {
+      try { activeWidget.blur(); } catch {}
+      activeWidget = null;
+    }
     for (const child of [...contentPanel.getChildren()]) {
       try { contentPanel.remove(child.id ?? ''); } catch {}
     }
@@ -161,12 +166,10 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
       renderSteps();
       clearContent();
 
-      // Label
       contentPanel.add(Text({ id: 'q-label',
         content: col(C.white, bold(title)) + (hint ? '\n' + dim(hint) : ''),
       }));
 
-      // Input widget — flex child, takes full width of content panel
       const input = new InputRenderable(renderer, {
         id: 'q-input',
         width: RIGHT_W - 4,
@@ -177,7 +180,9 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
         placeholderColor: C.muted,
       });
       contentPanel.add(input);
-      renderer.focusRenderable(input);
+      // focus() attaches the keypress handler AND shows the input cursor
+      input.focus();
+      activeWidget = input;
 
       input.on('enter', () => {
         const val = input.value?.trim() || defVal;
@@ -187,14 +192,15 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   }
 
   // ─── askSelect — SelectRenderable as CHILD of contentPanel ────────────────────
-  async function askSelect(title: string, hint: string, options: any[], initialValue?: string): Promise<string> {
+  async function askSelect(title: string, hint: string, options: any[], initialValue?: string, rawLabel?: string): Promise<string> {
     return new Promise(resolve => {
       renderSteps();
       clearContent();
 
-      contentPanel.add(Text({ id: 'q-label',
-        content: col(C.white, bold(title)) + (hint ? '\n' + dim(hint) : ''),
-      }));
+      const labelContent = rawLabel
+        ? rawLabel + (hint ? '\n\n' + dim(hint) : '')
+        : col(C.white, bold(title)) + (hint ? '\n' + dim(hint) : '');
+      contentPanel.add(Text({ id: 'q-label', content: labelContent }));
 
       const initIdx = initialValue
         ? Math.max(0, options.findIndex((o: any) => o.value === initialValue))
@@ -215,7 +221,9 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
         descriptionColor: C.muted,
       });
       contentPanel.add(sel);
-      renderer.focusRenderable(sel);
+      // focus() attaches the keypress handler so ↑↓ + Enter work
+      sel.focus();
+      activeWidget = sel;
 
       sel.on('itemSelected', () => {
         const val = sel.getSelectedOption()?.value ?? options[0].value;
@@ -292,12 +300,10 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
     `  ${col(C.muted,'Runtime:')}   ${ans.runtime}`,
   ].filter(Boolean).join('\n');
 
-  contentPanel.add(Text({ id: 'q-label', content: summaryLines }));
-
   const confirmed = await askSelect('', 'Install with this configuration?', [
     o('✔  Yes, install forge', 'yes', ''),
     o('✗  Cancel',             'no',  ''),
-  ]) === 'yes';
+  ], undefined, summaryLines) === 'yes';
 
   if (!confirmed) { renderer.destroy(); return null; }
 
