@@ -4,19 +4,35 @@ import { audit } from './commands/audit.js';
 import { generate } from './commands/generate.js';
 import { validate } from './commands/validate.js';
 import { doctor } from './commands/doctor.js';
+import { migrate } from './commands/migrate.js';
+import { wiki } from './commands/wiki.js';
+import { skills } from './commands/skills.js';
+import { aitmplSearch } from './commands/aitmpl-search.js';
+import { scaffold } from './commands/scaffold.js';
+import { teardown } from './commands/teardown.js';
 
-const VERSION = '2.7.0';
+const VERSION = '2.8.0';
 
 const HELP = `forge v${VERSION} — Agentic development framework
 
 Usage: forge <command> [options]
 
-Commands:
-  init        Initialize forge in a project (wizard + generates agent files)
-  audit       Audit project against the forge standard
-  generate    Generate runtime config files from project.yaml
-  validate    Validate project.yaml schema (exit 1 on error, CI-safe)
-  doctor      Check environment: Python, pyyaml, forge root, project.yaml
+Setup
+  init           Initialize forge in a project (wizard + post-install dashboard)
+  generate       Generate runtime config files from project.yaml
+  migrate        Migrate project.yaml from the v1 schema to v2 (--dry-run, --backup)
+  scaffold       Scaffold a new Tier 2 profile (profiles/<stack>/agents/<engineer>.md)
+  teardown       Cleanly uninstall forge from a project (manifest-driven)
+
+Inspect
+  audit          Audit project against the forge standard
+  validate       Validate project.yaml schema (exit 1 on error, CI-safe)
+  doctor         Check environment, installed runtimes and project.yaml completeness
+  skills         List available forge skills grouped by category
+  aitmpl-search  Search the curated offline catalog (frameworks, MCP servers, profiles)
+
+Knowledge
+  wiki           Manage the project knowledge base (status | ingest | query | lint)
 
 Options:
   -v, --version   Show version
@@ -26,9 +42,9 @@ Run forge <command> --help for command-specific options.
 
 Examples:
   npx @cristiancorreau/forge init
-  npx @cristiancorreau/forge audit --json
-  npx @cristiancorreau/forge generate --runtime claude-code
-  npx @cristiancorreau/forge validate
+  npx @cristiancorreau/forge skills
+  npx @cristiancorreau/forge migrate --dry-run
+  npx @cristiancorreau/forge wiki status
   npx @cristiancorreau/forge doctor
 `;
 
@@ -51,6 +67,24 @@ switch (cmd) {
     break;
   case 'doctor':
     exitCode = await doctor(rest);
+    break;
+  case 'migrate':
+    exitCode = await migrate(rest);
+    break;
+  case 'wiki':
+    exitCode = await wiki(rest);
+    break;
+  case 'skills':
+    exitCode = await skills(rest);
+    break;
+  case 'aitmpl-search':
+    exitCode = await aitmplSearch(rest);
+    break;
+  case 'scaffold':
+    exitCode = await scaffold(rest);
+    break;
+  case 'teardown':
+    exitCode = await teardown(rest);
     break;
   case '-v':
   case '--version':
