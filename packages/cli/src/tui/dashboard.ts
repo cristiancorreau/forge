@@ -189,7 +189,7 @@ export async function runPostInstallDashboard(data: DashboardData): Promise<void
     border: true, borderStyle: 'double', borderColor: C.cyan, backgroundColor: C.bg,
     flexDirection: 'column', paddingLeft: 1, paddingTop: 1,
   });
-  header.add(Text({ id: 'hdr-t', content: t`${boldCol(C.yellow, 'forge')}  ${otDim('v2.7.0')}    ${fg(C.green)('✔ installed')} ${otDim('· ' + data.runtime + ' · ' + data.mode)}\n${fg(C.muted)('Post-install · ' + data.projectName)}\n${otDim('Tu proyecto está listo — explorá las secciones')}` }));
+  header.add(Text({ id: 'hdr-t', content: t`${boldCol(C.yellow, 'forge')}  ${otDim('v' + VERSION)}    ${fg(C.green)('✔ installed')} ${otDim('· ' + data.runtime + ' · ' + data.mode)}\n${fg(C.muted)('Post-install · ' + data.projectName)}\n${otDim('Tu proyecto está listo — explorá las secciones')}` }));
   renderer.root.add(header);
 
   // Nav (left) — SelectRenderable

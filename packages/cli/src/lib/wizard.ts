@@ -113,6 +113,25 @@ function check<T>(v: T | symbol): T {
 export async function runWizard(): Promise<WizardResult | null> {
   p.intro(' forge — Configuración de proyecto ');
 
+  // Welcome / tutorial shown BEFORE configuration.
+  p.note(
+    [
+      'forge convierte este repo en un entorno donde agentes especializados',
+      'trabajan con guardrails, memoria y un flujo estructurado (SDD).',
+      '',
+      'Vas a configurar 5 capas:',
+      '  ◆ Memory       project.yaml + CLAUDE.md',
+      '  ◆ Knowledge    specs, wiki, architecture.rules',
+      '  ◆ Guardrail    hooks que protegen el scope',
+      '  ◆ Delegation   agentes tier-1/2 acotados',
+      '  ◆ Distribution 1 config → 4 runtimes',
+      '',
+      'El wizard te guía en ~8 pasos. Al terminar verás un resumen de',
+      'lo instalado y cómo seguir trabajando.',
+    ].join('\n'),
+    'Bienvenido a forge'
+  );
+
   // Auto-detect stack
   const detected = detectStack(process.cwd());
   const hasDetection = !!(detected.language || detected.backend || detected.packageManager);

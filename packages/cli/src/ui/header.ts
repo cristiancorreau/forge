@@ -1,11 +1,10 @@
 import boxen from 'boxen';
 import chalk from 'chalk';
-
-const VERSION = '2.4.2';
+import { VERSION } from '../version.js';
 
 export function printHeader(): void {
   const content =
-    chalk.yellow.bold('forge') + '                        ' + chalk.dim('v' + '2.7.0') + '\n' +
+    chalk.yellow.bold('forge') + '                        ' + chalk.dim('v' + VERSION) + '\n' +
     chalk.dim('Configure any project for AI agents') + '\n' +
     chalk.dim('Claude Code · OpenCode · Codex · Kiro');
 

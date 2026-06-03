@@ -16,6 +16,7 @@ import {
 } from '@opentui/core';
 import type { WizardResult } from '../lib/wizard.js';
 import { detectStack } from '../lib/detect.js';
+import { VERSION } from '../version.js';
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
 const C = {
@@ -128,7 +129,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   });
   // Single t-template (all leaves interpolated directly — no nested t-results)
   header.add(Text({ id: 'hdr-t',
-    content: t`${boldCol(C.yellow, 'forge')}  ${otDim('v2.6.4')}\n${fg(C.muted)('Configure any project for AI agents')}\n${otDim('Claude Code · OpenCode · Codex · Kiro')}`,
+    content: t`${boldCol(C.yellow, 'forge')}  ${otDim('v' + VERSION)}\n${fg(C.muted)('Configure any project for AI agents')}\n${otDim('Claude Code · OpenCode · Codex · Kiro')}`,
   }));
   renderer.root.add(header);
 
@@ -263,8 +264,49 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
     });
   }
 
+  // ─── Welcome / tutorial (shown BEFORE configuration) ──────────────────────────
+  async function showWelcome(): Promise<void> {
+    return new Promise(resolve => {
+      // Steps panel shows the overview while the content explains forge.
+      stepsPanel.remove('stp-list');
+      stepsPanel.add(Text({ id: 'stp-list', content: buildLines([
+        boldCol(C.cyan, '¿Qué es forge?'), '',
+        fg(C.muted)('Configura tu repo'), fg(C.muted)('para trabajar con'), fg(C.muted)('agentes de IA.'), '',
+        fg(C.green)('El wizard te guía'), fg(C.green)('en ~8 pasos.'),
+      ]) }));
+      clearContent();
+      contentPanel.add(Text({ id: 'q-label', content: buildLines([
+        boldCol(C.white, 'Bienvenido a forge'), '',
+        fg(C.muted)('forge convierte este repositorio en un entorno donde agentes'),
+        fg(C.muted)('especializados trabajan con guardrails, memoria y un flujo'),
+        fg(C.muted)('estructurado (Spec-Driven Development).'), '',
+        boldCol(C.cyan, 'Las 5 capas que vas a configurar:'),
+        ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Memory'),       '       ', fg(C.muted)('project.yaml + CLAUDE.md')],
+        ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Knowledge'),    '    ', fg(C.muted)('specs, wiki, architecture.rules')],
+        ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Guardrail'),    '    ', fg(C.muted)('hooks que protegen el scope')],
+        ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Delegation'),   '   ', fg(C.muted)('agentes tier-1/2 acotados')],
+        ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Distribution'), ' ', fg(C.muted)('1 config → 4 runtimes')],
+        '',
+        fg(C.green)('Al terminar abrirás un dashboard con todo lo instalado y'),
+        fg(C.green)('cómo seguir trabajando.'),
+      ]) }));
+      const go = new SelectRenderable(renderer, {
+        id: 'q-select', width: RIGHT_W - 4, height: 3,
+        options: [o('Comenzar configuración  →', 'go', 'Enter para continuar')],
+        backgroundColor: C.bgPanel, focusedBackgroundColor: '#1c3a5e', focusedTextColor: C.cyan,
+        selectedBackgroundColor: '#162032', selectedTextColor: C.yellow, showDescription: true, descriptionColor: C.muted,
+      });
+      contentPanel.add(go);
+      go.focus();
+      activeWidget = go;
+      go.on('itemSelected', () => resolve());
+    });
+  }
+
   // ─── Wizard steps ─────────────────────────────────────────────────────────────
   const ans: any = { testing: detected.testing ?? [], detected: !!(detected.language || detected.backend) };
+
+  await showWelcome();
 
   ans.name     = await askInput('Project name', 'Enter a name for your project');
   if (!ans.name) ans.name = 'My Project';
