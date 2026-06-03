@@ -9,6 +9,10 @@ import {
   Text,
   SelectRenderable,
   InputRenderable,
+  t,
+  fg,
+  bold as otBold,
+  dim as otDim,
 } from '@opentui/core';
 import type { WizardResult } from '../lib/wizard.js';
 import { detectStack } from '../lib/detect.js';
@@ -27,12 +31,38 @@ const C = {
   white:   '#e6edf3',
 };
 
-const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
-const col  = (hex: string, s: string) => {
-  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  return `\x1b[38;2;${r};${g};${b}m${s}\x1b[0m`;
+// OpenTUI native styled text — NEVER embed raw ANSI escape codes in Text content,
+// OpenTUI computes layout width from the string and raw \x1b[...m sequences break it.
+// Composing helpers like fg()(bold()) can yield a StyledText with undefined chunks;
+// wrapping any value in t`${x}` normalizes it into a valid StyledText.
+// bold + color as a single "leaf" styled value. Leaves (fg()/bold()/dim()) can
+// be interpolated into a t-template; t-template RESULTS cannot (they stringify
+// to "[object Object]"). So everything below builds ONE t() call from leaves.
+const boldCol = (hex: string, s: string) => fg(hex)(otBold(s));
+const dimLeaf = (s: string) => otDim(s);
+
+type Part = string | any;          // string literal or leaf StyledText
+type Row = Part | Part[];          // a line = one part or several parts
+
+// Build a multi-line StyledText from rows of parts as a SINGLE tagged-template
+// call. Newlines are inserted between rows; leaves become interpolated values.
+const buildLines = (rows: Row[]) => {
+  const strings: any[] = [];
+  const values: any[] = [];
+  let pending = '';
+  rows.forEach((row, ri) => {
+    if (ri > 0) pending += '\n';
+    const parts = Array.isArray(row) ? row : [row];
+    for (const part of parts) {
+      if (typeof part === 'string') pending += part;
+      else { strings.push(pending); pending = ''; values.push(part); }
+    }
+  });
+  strings.push(pending);
+  (strings as any).raw = [...strings];
+  if (values.length === 0) return t`${pending}`;
+  return (t as any)(strings, ...values);
 };
-const dim  = (s: string) => `\x1b[2m${s}\x1b[0m`;
 
 const STEPS = [
   'Project name','Language','Mode',
@@ -96,11 +126,9 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
     backgroundColor: C.bg,
     flexDirection: 'column', paddingLeft: 1, paddingTop: 1,
   });
+  // Single t-template (all leaves interpolated directly — no nested t-results)
   header.add(Text({ id: 'hdr-t',
-    content:
-      col(C.yellow, bold('forge')) + dim('  v2.6.3') + '\n' +
-      col(C.muted,  'Configure any project for AI agents') + '\n' +
-      dim('Claude Code · OpenCode · Codex · Kiro'),
+    content: t`${boldCol(C.yellow, 'forge')}  ${otDim('v2.6.4')}\n${fg(C.muted)('Configure any project for AI agents')}\n${otDim('Claude Code · OpenCode · Codex · Kiro')}`,
   }));
   renderer.root.add(header);
 
@@ -132,7 +160,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
     backgroundColor: C.bgPanel,
     paddingLeft: 1,
   });
-  bottom.add(Text({ id: 'btm-t', content: dim('[↑↓] Navigate  [Enter] Confirm  [Ctrl+C] Cancel') }));
+  bottom.add(Text({ id: 'btm-t', content: buildLines([dimLeaf('[↑↓] Navigate  [Enter] Confirm  [Ctrl+C] Cancel')]) }));
   renderer.root.add(bottom);
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -142,11 +170,11 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   function renderSteps() {
     stepsPanel.remove('stp-list');
     const lines = STEPS.map((s, i) => {
-      if (i < currentStep) return col(C.green, `✔ ${i+1}. ${s}`);
-      if (i === currentStep) return col(C.cyan, `► ${bold(String(i+1))}. ${bold(s)}`);
-      return col(C.muted, `  ${i+1}. ${s}`);
-    }).join('\n');
-    stepsPanel.add(Text({ id: 'stp-list', content: lines }));
+      if (i < currentStep)   return fg(C.green)(`✔ ${i+1}. ${s}`);
+      if (i === currentStep) return boldCol(C.cyan, `► ${i+1}. ${s}`);
+      return fg(C.muted)(`  ${i+1}. ${s}`);
+    });
+    stepsPanel.add(Text({ id: 'stp-list', content: buildLines(lines) }));
   }
 
   function clearContent() {
@@ -167,7 +195,9 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
       clearContent();
 
       contentPanel.add(Text({ id: 'q-label',
-        content: col(C.white, bold(title)) + (hint ? '\n' + dim(hint) : ''),
+        content: hint
+          ? buildLines([boldCol(C.white, title), dimLeaf(hint)])
+          : buildLines([boldCol(C.white, title)]),
       }));
 
       const input = new InputRenderable(renderer, {
@@ -192,15 +222,16 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   }
 
   // ─── askSelect — SelectRenderable as CHILD of contentPanel ────────────────────
-  async function askSelect(title: string, hint: string, options: any[], initialValue?: string, rawLabel?: string): Promise<string> {
+  async function askSelect(title: string, hint: string, options: any[], initialValue?: string, labelRows?: Row[]): Promise<string> {
     return new Promise(resolve => {
       renderSteps();
       clearContent();
 
-      const labelContent = rawLabel
-        ? rawLabel + (hint ? '\n\n' + dim(hint) : '')
-        : col(C.white, bold(title)) + (hint ? '\n' + dim(hint) : '');
-      contentPanel.add(Text({ id: 'q-label', content: labelContent }));
+      // labelRows: pre-built rows (e.g. the confirm summary). Append the hint.
+      const rows: Row[] = labelRows
+        ? (hint ? [...labelRows, '', dimLeaf(hint)] : labelRows)
+        : (hint ? [boldCol(C.white, title), dimLeaf(hint)] : [boldCol(C.white, title)]);
+      contentPanel.add(Text({ id: 'q-label', content: buildLines(rows) }));
 
       const initIdx = initialValue
         ? Math.max(0, options.findIndex((o: any) => o.value === initialValue))
@@ -289,21 +320,23 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   renderSteps();
   clearContent();
 
-  const summaryLines = [
-    col(C.white, bold('Configuration summary')), '',
-    `  ${col(C.muted,'Name:')}      ${col(C.yellow, ans.name)}`,
-    `  ${col(C.muted,'Language:')}  ${ans.language}   ${col(C.muted,'Mode:')} ${ans.mode}`,
-    ans.backend  ? `  ${col(C.muted,'Backend:')}   ${ans.backend}` : '',
-    ans.frontend ? `  ${col(C.muted,'Frontend:')}  ${ans.frontend}` : '',
-    ans.database ? `  ${col(C.muted,'DB:')}        ${ans.database}${ans.orm ? ' + ' + ans.orm : ''}` : '',
-    ans.testing?.length ? `  ${col(C.muted,'Testing:')}   ${ans.testing.join(', ')}` : '',
-    `  ${col(C.muted,'Runtime:')}   ${ans.runtime}`,
-  ].filter(Boolean).join('\n');
+  // Each row is an array of parts (string literals + leaf StyledTexts).
+  const summaryRows: Row[] = [
+    boldCol(C.white, 'Configuration summary'),
+    '',
+    ['  ', fg(C.muted)('Name:'),     '      ', fg(C.yellow)(ans.name)],
+    ['  ', fg(C.muted)('Language:'), '  ' + ans.language + '   ', fg(C.muted)('Mode:'), ' ' + ans.mode],
+  ];
+  if (ans.backend)  summaryRows.push(['  ', fg(C.muted)('Backend:'),  '   ' + ans.backend]);
+  if (ans.frontend) summaryRows.push(['  ', fg(C.muted)('Frontend:'), '  ' + ans.frontend]);
+  if (ans.database) summaryRows.push(['  ', fg(C.muted)('Database:'), '  ' + ans.database + (ans.orm ? ' + ' + ans.orm : '')]);
+  if (ans.testing?.length) summaryRows.push(['  ', fg(C.muted)('Testing:'),  '   ' + ans.testing.join(', ')]);
+  summaryRows.push(['  ', fg(C.muted)('Runtime:'),  '   ' + ans.runtime]);
 
   const confirmed = await askSelect('', 'Install with this configuration?', [
     o('✔  Yes, install forge', 'yes', ''),
     o('✗  Cancel',             'no',  ''),
-  ], undefined, summaryLines) === 'yes';
+  ], undefined, summaryRows) === 'yes';
 
   if (!confirmed) { renderer.destroy(); return null; }
 
@@ -311,7 +344,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   renderSteps();
   clearContent();
   contentPanel.add(Text({ id: 'q-label',
-    content: '\n\n' + col(C.green, bold('  ✔ Configuration complete')) + '\n' + dim('  Installing forge...'),
+    content: buildLines(['', boldCol(C.green, '✔ Configuration complete'), dimLeaf('Installing forge...')]),
   }));
   await new Promise(r => setTimeout(r, 500));
   renderer.destroy();
