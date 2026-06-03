@@ -5,7 +5,7 @@ const VERSION = '2.4.2';
 
 export function printHeader(): void {
   const content =
-    chalk.yellow.bold('forge') + '                        ' + chalk.dim('v' + '2.6.1') + '\n' +
+    chalk.yellow.bold('forge') + '                        ' + chalk.dim('v' + '2.6.2') + '\n' +
     chalk.dim('Configure any project for AI agents') + '\n' +
     chalk.dim('Claude Code · OpenCode · Codex · Kiro');
 

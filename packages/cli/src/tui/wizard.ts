@@ -98,7 +98,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   });
   header.add(Text({ id: 'hdr-t',
     content:
-      col(C.yellow, bold('forge')) + dim('  v2.6.1') + '\n' +
+      col(C.yellow, bold('forge')) + dim('  v2.6.2') + '\n' +
       col(C.muted,  'Configure any project for AI agents') + '\n' +
       dim('Claude Code · OpenCode · Codex · Kiro'),
   }));
