@@ -1,5 +1,9 @@
 import type { ProjectYaml } from '../yaml.js';
 
+// Codex has no native blocking hooks: it shares the executable git pre-commit
+// fallback with OpenCode so branch guard + debug detection still run automatically.
+export { generateSharedPreCommitHook } from './opencode.js';
+
 export function generateCodexAgentsMd(config: ProjectYaml): string {
   const proj = config.project;
   const stack = config.stack ?? {};
@@ -47,9 +51,16 @@ rm -rf /         # Borra sistema
 git push --force # Sobreescribe historial remoto
 \`\`\`
 
-> Codex no tiene hooks de bloqueo automático como Claude Code: el cumplimiento
-> de estas reglas es responsabilidad del agente. Ante cualquier comando
-> destructivo en producción, pará y pedí confirmación explícita al humano.
+> Codex no tiene hooks de bloqueo automático nativos como Claude Code. Como
+> complemento, forge genera un git hook compartido en \`.githooks/pre-commit\`
+> (branch guard + detección de debug). Activalo una vez con:
+>
+> \`\`\`
+> git config core.hooksPath .githooks
+> \`\`\`
+>
+> Aún así, ante cualquier comando destructivo en producción, pará y pedí
+> confirmación explícita al humano: el git hook solo corre en \`git commit\`.
 
 ## Branch guard
 

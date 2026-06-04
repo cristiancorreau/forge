@@ -140,3 +140,37 @@ export function generateKiroBranchGuardHook(): string {
     }
   }, null, 2);
 }
+
+// Mirrors core/hooks/pre-bash-check.js: blocks destructive commands before they run.
+export function generateKiroBashCheckHook(): string {
+  return JSON.stringify({
+    name: 'forge-bash-check',
+    description: 'Block destructive commands (DROP TABLE, --force-reset, rm -rf /, git push --force)',
+    event: 'PreBash',
+    condition: {
+      type: 'script',
+      script: 'echo "$KIRO_BASH_COMMAND" | grep -qiE "(--force-reset|prisma +migrate +reset|DROP +TABLE|DROP +DATABASE|TRUNCATE|rm +-rf +/|git +push +--force([^-]|$))"'
+    },
+    action: {
+      type: 'block',
+      message: 'forge: comando potencialmente destructivo bloqueado. Si apunta a producción, ejecutalo manualmente con plena consciencia.\n  Lección 2026-04-28: --force-reset borró 225 usuarios en producción.'
+    }
+  }, null, 2);
+}
+
+// Mirrors core/hooks/post-turn-check.sh: warns about leftover debug statements after a turn.
+export function generateKiroPostTurnHook(): string {
+  return JSON.stringify({
+    name: 'forge-post-turn-check',
+    description: 'After each turn, warn about debug statements left in changed files',
+    event: 'PostTurn',
+    condition: {
+      type: 'script',
+      script: 'git diff --name-only HEAD 2>/dev/null | xargs -r grep -nE "(console\\.log\\(|debugger;|binding\\.pry|var_dump\\(|dd\\()" 2>/dev/null | grep -q .'
+    },
+    action: {
+      type: 'warn',
+      message: 'forge: se detectaron sentencias de debug (console.log, debugger, binding.pry, var_dump, dd) en archivos modificados. Eliminalas antes de commitear.'
+    }
+  }, null, 2);
+}

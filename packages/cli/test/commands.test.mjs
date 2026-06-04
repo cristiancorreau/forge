@@ -15,7 +15,7 @@
 import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -363,5 +363,130 @@ runtimes:
     const settings = readFileSync(join(dir, '.claude', 'settings.json'), 'utf-8');
     assert.match(settings, /node .claude\/hooks/);
     assert.doesNotMatch(settings, /python3/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Runtime-hooks integration suite (issue #32).
+//
+// `forge generate` must emit executable/automatic guardrail hooks for every
+// runtime, not just Claude Code:
+//   - Kiro:           branch-guard + bash-check + post-turn-check JSON hooks
+//   - OpenCode/Codex: shared .githooks/pre-commit fallback (branch guard + debug)
+// ---------------------------------------------------------------------------
+
+const ALL_RUNTIMES_YAML = `project:
+  name: "Hooks E2E"
+  mode: "standard"
+  language: "typescript"
+agents:
+  active:
+    - orchestrator
+runtimes:
+  active:
+    - claude-code
+    - opencode
+    - codex
+    - kiro
+`;
+
+describe('forge generate — runtime hooks (issue #32)', () => {
+  test('--runtime all produces hook files for the four runtimes', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, ALL_RUNTIMES_YAML);
+
+    const { status, stdout } = runForge(['generate', '--runtime', 'all', '--force'], { cwd: dir });
+    assert.equal(status, 0, `generate --runtime all should exit 0; output:\n${stdout}`);
+
+    // Kiro: three JSON hooks.
+    const kiroHooks = join(dir, '.kiro', 'hooks');
+    assert.ok(existsSync(join(kiroHooks, 'pre-edit-branch-guard.json')), 'kiro branch-guard hook missing');
+    assert.ok(existsSync(join(kiroHooks, 'pre-bash-check.json')), 'kiro bash-check hook missing');
+    assert.ok(existsSync(join(kiroHooks, 'post-turn-check.json')), 'kiro post-turn-check hook missing');
+
+    // OpenCode + Codex share the executable git fallback.
+    assert.ok(existsSync(join(dir, '.githooks', 'pre-commit')), 'shared .githooks/pre-commit missing');
+  });
+
+  test('Kiro JSON hooks are valid JSON with the expected event names', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, ALL_RUNTIMES_YAML);
+    runForge(['generate', '--runtime', 'kiro', '--force'], { cwd: dir });
+
+    const kiroHooks = join(dir, '.kiro', 'hooks');
+    const branch = JSON.parse(readFileSync(join(kiroHooks, 'pre-edit-branch-guard.json'), 'utf-8'));
+    const bash = JSON.parse(readFileSync(join(kiroHooks, 'pre-bash-check.json'), 'utf-8'));
+    const post = JSON.parse(readFileSync(join(kiroHooks, 'post-turn-check.json'), 'utf-8'));
+
+    assert.equal(branch.event, 'PreEdit');
+    assert.equal(bash.event, 'PreBash');
+    assert.equal(post.event, 'PostTurn');
+
+    // bash-check must block, not just warn, and cover destructive patterns.
+    assert.equal(bash.action.type, 'block');
+    assert.ok(bash.condition.script.includes('DROP'), 'bash-check must guard DROP statements');
+    assert.ok(bash.condition.script.includes('--force-reset'), 'bash-check must guard --force-reset');
+
+    // post-turn-check looks for debug statements.
+    assert.ok(post.condition.script.includes('console'), 'post-turn-check must look for console.log');
+    assert.ok(post.action.message.includes('debug'), 'post-turn-check message must mention debug');
+  });
+
+  test('OpenCode generates the shared git pre-commit hook (executable)', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, ALL_RUNTIMES_YAML);
+    const { status } = runForge(['generate', '--runtime', 'opencode', '--force'], { cwd: dir });
+    assert.equal(status, 0);
+
+    const hook = join(dir, '.githooks', 'pre-commit');
+    assert.ok(existsSync(hook), 'opencode did not generate .githooks/pre-commit');
+
+    const content = readFileSync(hook, 'utf-8');
+    assert.match(content, /#!\/bin\/sh/, 'hook must be a POSIX sh script');
+    assert.doesNotMatch(content, /python/i, 'shared hook must not require Python');
+    assert.ok(content.includes('main') && content.includes('master'), 'branch guard must cover main/master');
+    assert.ok(content.includes('console') && content.includes('.log'), 'debug detection must cover console.log');
+    assert.match(content, /debugger;/);
+
+    // Executable bit set (owner-exec) on non-Windows.
+    if (process.platform !== 'win32') {
+      assert.ok((statSync(hook).mode & 0o100) !== 0, 'pre-commit hook must be executable');
+    }
+  });
+
+  test('Codex generates the shared git pre-commit hook', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, ALL_RUNTIMES_YAML);
+    const { status } = runForge(['generate', '--runtime', 'codex', '--force'], { cwd: dir });
+    assert.equal(status, 0);
+    assert.ok(existsSync(join(dir, '.githooks', 'pre-commit')), 'codex did not generate .githooks/pre-commit');
+  });
+
+  test('Codex and OpenCode AGENTS.md document the git hook mechanism', (t) => {
+    const dirA = makeTmpDir(t);
+    writeProjectYaml(dirA, ALL_RUNTIMES_YAML);
+    runForge(['generate', '--runtime', 'codex', '--force'], { cwd: dirA });
+    assert.match(
+      readFileSync(join(dirA, 'AGENTS.md'), 'utf-8'),
+      /core\.hooksPath \.githooks/,
+      'Codex AGENTS.md must document core.hooksPath',
+    );
+
+    const dirB = makeTmpDir(t);
+    writeProjectYaml(dirB, ALL_RUNTIMES_YAML);
+    runForge(['generate', '--runtime', 'opencode', '--force'], { cwd: dirB });
+    assert.match(
+      readFileSync(join(dirB, 'AGENTS.md'), 'utf-8'),
+      /core\.hooksPath \.githooks/,
+      'OpenCode AGENTS.md must document core.hooksPath',
+    );
+  });
+
+  test('generate --runtime all --dry-run does not write any hook files', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, ALL_RUNTIMES_YAML);
+    runForge(['generate', '--runtime', 'all', '--dry-run'], { cwd: dir });
+    assert.ok(!existsSync(join(dir, '.githooks', 'pre-commit')), 'dry-run must not write the git hook');
+    assert.ok(!existsSync(join(dir, '.kiro', 'hooks', 'pre-bash-check.json')), 'dry-run must not write kiro hooks');
   });
 });

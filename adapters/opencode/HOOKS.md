@@ -2,19 +2,47 @@
 
 OpenCode no tiene un sistema de hooks equivalente al PreToolUse/Stop de Claude Code. Este documento describe cómo adaptar cada comportamiento de hook de Forge para OpenCode.
 
+> **Mecanismo de hook de este runtime:** git hooks compartidos (`.githooks/`),
+> no hooks nativos. `forge generate --runtime opencode` genera
+> `.githooks/pre-commit` (branch guard + detección de debug). Los demás
+> guardrails se embeben como instrucciones en `AGENTS.md`.
+
 ---
 
 ## 1. Equivalencia de hooks
 
 | Hook Forge (Claude Code) | Equivalente en OpenCode | Mecanismo |
 |--------------------------|------------------------|-----------|
-| `PreToolUse:Edit` — branch guard (bloquear edición en main) | **Ninguno nativo** | Instrucción en AGENTS.md |
-| `PreToolUse:Bash` — detección de console.log/print de debug | **Ninguno nativo** | Instrucción en AGENTS.md |
+| `PreToolUse:Edit` — branch guard (bloquear edición en main) | **git pre-commit** | `.githooks/pre-commit` (automático) + AGENTS.md |
+| `PreToolUse:Bash` — detección de console.log/print de debug | **git pre-commit** | `.githooks/pre-commit` (automático) + AGENTS.md |
 | `PreToolUse:Bash` — bloqueo de comandos destructivos en producción | **Ninguno nativo** | Instrucción en AGENTS.md |
 | `Stop` — resumen de sesión y persistencia de memoria | **Ninguno nativo** | Flujo `/session-close` |
 | `pre-commit` git hook — inyección de token stats en progress.html | **Compatible** | El hook git funciona igual en OpenCode |
 
-**Conclusión:** OpenCode no tiene PreToolUse ni Stop hooks. Todos los guardrails deben embeberse como instrucciones en AGENTS.md.
+**Conclusión:** OpenCode no tiene PreToolUse ni Stop nativos. Branch guard y
+detección de debug se ejecutan de forma automática vía el git hook compartido
+`.githooks/pre-commit`; el resto de los guardrails se embeben como instrucciones
+en AGENTS.md.
+
+---
+
+## 1.bis. Git hook compartido (`.githooks/pre-commit`)
+
+`forge generate` genera un hook ejecutable POSIX (sin Python) en
+`.githooks/pre-commit`. Activalo una vez por clon:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+Qué hace en cada `git commit`:
+
+1. **Branch guard** — bloquea el commit si estás en `main`/`master` y hay
+   archivos de código staged (los `*.md`, `*.yaml`, `*.json`, `*.txt` quedan exentos).
+2. **Debug detection** — bloquea el commit si encuentra `console.log(`,
+   `debugger;`, `binding.pry`, `var_dump(` o `dd(` en archivos staged.
+
+Para saltarlo puntualmente (bajo tu responsabilidad): `git commit --no-verify`.
 
 ---
 

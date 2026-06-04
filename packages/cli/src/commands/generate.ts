@@ -1,12 +1,13 @@
-import { existsSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, writeFileSync, mkdirSync, chmodSync } from 'fs';
 import { join } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { generateClaudeMd } from '../lib/generators/claude-code.js';
-import { generateAgentsMd } from '../lib/generators/opencode.js';
+import { generateAgentsMd, generateSharedPreCommitHook } from '../lib/generators/opencode.js';
 import { generateCodexAgentsMd } from '../lib/generators/codex.js';
 import {
   generateKiroProduct, generateKiroStructure,
-  generateKiroAgents, generateKiroCommands, generateKiroBranchGuardHook
+  generateKiroAgents, generateKiroCommands, generateKiroBranchGuardHook,
+  generateKiroBashCheckHook, generateKiroPostTurnHook
 } from '../lib/generators/kiro.js';
 import { bold, dim, green, red, yellow, cyan, gray } from '../ui/colors.js';
 import { createSpinner } from '../ui/spinner.js';
@@ -49,6 +50,25 @@ function writeFile(path: string, content: string, dryRun: boolean, force: boolea
   if (existsSync(path) && !force) return 'SKIP (usa --force para sobreescribir)';
   writeFileSync(path, content, 'utf-8');
   return 'OK';
+}
+
+// Write an executable file (e.g. a git hook), chmod 0o755 so it can run.
+function writeExecutable(path: string, content: string, dryRun: boolean, force: boolean): string {
+  const status = writeFile(path, content, dryRun, force);
+  if (status === 'OK') chmodSync(path, 0o755);
+  return status;
+}
+
+// Generate the shared .githooks/pre-commit fallback used by runtimes without
+// native blocking hooks (OpenCode, Codex). Returns the result row.
+function writeSharedGitHook(
+  root: string, runtime: string, dryRun: boolean, force: boolean,
+): { runtime: string; file: string; status: string } {
+  const githooksDir = join(root, '.githooks');
+  if (!dryRun) mkdirSync(githooksDir, { recursive: true });
+  const hookPath = join(githooksDir, 'pre-commit');
+  const status = writeExecutable(hookPath, generateSharedPreCommitHook(), dryRun, force);
+  return { runtime, file: '.githooks/pre-commit', status };
 }
 
 export async function generate(args: string[]): Promise<number> {
@@ -120,12 +140,16 @@ export async function generate(args: string[]): Promise<number> {
         mkdirSync(join(root, '.opencode'), { recursive: true });
         const status = writeFile(join(root, 'AGENTS.md'), generateAgentsMd(config), dryRun, force);
         results.push({ runtime, file: 'AGENTS.md', status });
-        spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md');
+        // OpenCode lacks native blocking hooks: ship the shared git pre-commit fallback.
+        results.push(writeSharedGitHook(root, runtime, dryRun, force));
+        spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md + .githooks/');
 
       } else if (runtime === 'codex') {
         const status = writeFile(join(root, 'AGENTS.md'), generateCodexAgentsMd(config), dryRun, force);
         results.push({ runtime, file: 'AGENTS.md', status });
-        spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md');
+        // Codex lacks native blocking hooks: ship the shared git pre-commit fallback.
+        results.push(writeSharedGitHook(root, runtime, dryRun, force));
+        spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md + .githooks/');
 
       } else if (runtime === 'kiro') {
         const kiroDir = join(root, '.kiro', 'steering');
@@ -139,6 +163,8 @@ export async function generate(args: string[]): Promise<number> {
           [join(kiroDir, 'agents.md'), generateKiroAgents(config)],
           [join(kiroDir, 'commands.md'), generateKiroCommands(config.deploy?.provider ?? 'tu plataforma de deploy')],
           [join(kiroHooks, 'pre-edit-branch-guard.json'), generateKiroBranchGuardHook()],
+          [join(kiroHooks, 'pre-bash-check.json'), generateKiroBashCheckHook()],
+          [join(kiroHooks, 'post-turn-check.json'), generateKiroPostTurnHook()],
         ];
         let kiroOk = 0;
         let kiroSkip = 0;
