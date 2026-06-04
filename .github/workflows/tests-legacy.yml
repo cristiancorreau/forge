@@ -1,0 +1,30 @@
+name: tests-legacy
+
+# Optional suite for the deprecated Python root script (forge.py).
+# The published product is the TypeScript CLI (packages/cli); its tests gate
+# the README badge via tests.yml. This workflow keeps the legacy Python tests
+# available for reference but no longer runs on every push/PR.
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} (legacy)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install pyyaml pytest
+
+      - name: Run tests
+        run: pytest tests/ -q --tb=short
