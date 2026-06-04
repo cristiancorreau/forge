@@ -1,48 +1,30 @@
 # Forge v2 — Hooks registry
 # Define qué hooks se instalan según mode y stack del proyecto.
+# Solo se referencian hooks JavaScript puro (.js) o shell scripts (.sh):
+# sin dependencias de Python. Cada entrada debe tener un archivo real en core/hooks/.
 
 universal:
   # Se instalan en TODOS los proyectos
-  - hook: pre-edit-check.py
+  - hook: pre-edit-check.js
     event: PreToolUse
     matcher: "Edit|Write"
     description: "Branch guard, debug detection, secret detection"
   - hook: post-turn-check.sh
     event: Stop
     description: "Typecheck/lint sobre archivos modificados"
+  - hook: session-start.sh
+    event: SessionStart
+    description: "Carga project.yaml + estado al iniciar la sesión"
 
 standard:
   # mode: standard + enterprise
-  - hook: pre-bash-check.py
+  - hook: pre-bash-check.js
     event: PreToolUse
     matcher: "Bash"
     description: "Bloquea comandos destructivos en producción"
 
-enterprise:
-  # mode: enterprise solamente (además de standard)
-  - hook: audit-log-append.py
-    event: PostToolUse
-    description: "Audit log inmutable para SOC2/compliance"
-
-stack:
-  # Por stack (además de los universales)
-  supabase:
-    - hook: check-destructive-sql.py
-      event: PreToolUse
-      matcher: "Bash"
-      description: "Detecta SQL destructivo contra Supabase"
-  prisma:
-    - hook: prisma-safety.py
-      event: PreToolUse
-      matcher: "Bash"
-      description: "Bloquea migrate reset en producción"
-  nextjs-admin:
-    - hook: prisma-safety.py
-      event: PreToolUse
-      matcher: "Bash"
-      description: "Bloquea prisma migrate reset/fresh en producción (aplica si el profile usa Prisma como ORM)"
-  laravel:
-    - hook: composer-check.py
-      event: PreToolUse
-      matcher: "Bash"
-      description: "Verifica que composer install/update no instale paquetes de dev en producción; advierte sobre artisan migrate:fresh/reset"
+# NOTA (issue #23): los hooks de enterprise y por stack (audit-log-append,
+# check-destructive-sql, prisma-safety, composer-check) aún no están
+# implementados como .js/.sh, por lo que se omiten del registry hasta que
+# exista una spec SDD aprobada y su implementación en core/hooks/.
+# No agregar referencias a hooks .py: la CLI corre 100% en Node.js.
