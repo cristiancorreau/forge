@@ -22,9 +22,12 @@ const AGENT_TRIGGER: Record<string, [string, string | null]> = {
 function buildAgentScopeTable(agents: ProjectYaml['agents'], paths: ProjectYaml['paths']): string {
   const active = agents?.active ?? [];
   const compliance = agents?.compliance ?? [];
+  const specialized = agents?.specialized ?? [];
+  const scopeMap = agents?.scope ?? {};
   const all = [...active, ...compliance];
-  if (all.length === 0) return '';
+  if (all.length === 0 && specialized.length === 0) return '';
 
+  // active + compliance agents have entries in the hardcoded AGENT_TRIGGER map.
   const rows = all.map(agent => {
     const [trigger, pathKey] = AGENT_TRIGGER[agent] ?? ['implementación', null];
     const scope = pathKey && paths ? (paths as Record<string, string>)[pathKey] : undefined;
@@ -32,11 +35,21 @@ function buildAgentScopeTable(agents: ProjectYaml['agents'], paths: ProjectYaml[
     return `| \`${agent}\` | ${scopeStr} | ${trigger} |`;
   });
 
+  // Tier 3 specialized agents are not in AGENT_TRIGGER: fall back to the
+  // per-agent scope map (agents.scope) if present, else `/`, and point the
+  // reader to the agent's own file for the trigger.
+  const specializedRows = specialized.map(agent => {
+    const scope = scopeMap[agent];
+    const scopeStr = scope ? `\`${scope}\`` : '`/`';
+    const trigger = `tareas de su dominio (ver \`.claude/agents/${agent}.md\`)`;
+    return `| \`${agent}\` | ${scopeStr} | ${trigger} |`;
+  });
+
   return (
     '## Agentes y su scope\n\n' +
     '| Agente | Scope | Cuándo usarlo |\n' +
     '|--------|-------|---------------|\n' +
-    rows.join('\n') + '\n\n' +
+    [...rows, ...specializedRows].join('\n') + '\n\n' +
     '> Invocar el agente del scope correcto, no el orchestrator, para tareas acotadas.\n\n'
   );
 }
