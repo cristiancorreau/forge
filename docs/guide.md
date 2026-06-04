@@ -1,6 +1,6 @@
 # forge — Guía de uso
 
-> Última actualización: 2026-05-04
+> Última actualización: 2026-06-03
 
 ---
 
@@ -27,7 +27,9 @@ Desde la **v2.8.0** la CLI es 100% TypeScript (sin Python) y se ejecuta con
 
 ## Comandos
 
-La CLI expone los siguientes comandos. Todos corren sobre Node/Bun, sin dependencias de Python.
+La CLI expone los siguientes comandos. Todos corren sobre Node/Bun, sin dependencias de Python.[^python-deprecated]
+
+[^python-deprecated]: Todos los comandos son TypeScript desde la v2.8.0. El `forge.py` y los `scripts/*.py` legacy están deprecados en v2.x y serán removidos en v3.0.0; ver [MIGRATION.md](../MIGRATION.md).
 
 | Comando | Qué hace | Flags principales |
 |---------|----------|-------------------|
