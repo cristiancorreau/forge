@@ -72,7 +72,7 @@ Options:
 // Helpers
 // ---------------------------------------------------------------------------
 
-function write(path: string, content: string, force: boolean): void {
+export function write(path: string, content: string, force: boolean): void {
   if (existsSync(path) && !force) return;
   writeFileSync(path, content, 'utf-8');
 }
@@ -97,7 +97,7 @@ function copyDir(src: string, dest: string, force: boolean): void {
  * y devuelve los nombres cuyo frontmatter declara `tier: 3`. Sirve para poblar
  * agents.specialized en project.yaml durante `forge init`.
  */
-function detectTier3Agents(root: string): string[] {
+export function detectTier3Agents(root: string): string[] {
   const agentsDir = join(root, '.claude', 'agents');
   if (!existsSync(agentsDir)) return [];
   const found: string[] = [];
@@ -124,7 +124,7 @@ function detectTier3Agents(root: string): string[] {
  * que el manifest sea estable entre plataformas. Devuelve [] si el dir no existe.
  * Recorre subdirectorios (los slash commands pueden estar anidados).
  */
-function listInstalledRelativeFiles(claudeDir: string, subdir: string, projectRoot: string): string[] {
+export function listInstalledRelativeFiles(claudeDir: string, subdir: string, projectRoot: string): string[] {
   const baseDir = join(claudeDir, subdir);
   if (!existsSync(baseDir)) return [];
   const out: string[] = [];
@@ -139,7 +139,7 @@ function listInstalledRelativeFiles(claudeDir: string, subdir: string, projectRo
   return out.sort();
 }
 
-export function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>>, specialized: string[] = []): string {
+export function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>> | null, specialized: string[] = []): string {
   if (!result) return '';
   const stack: string[] = [];
   // Per-side framework + language. backend_language/frontend_language are new
@@ -207,13 +207,13 @@ function getAgentTech(agent: string): string {
   return map[agent] ?? 'specialized';
 }
 
-function defaultAgentsForMode(mode: string): string[] {
+export function defaultAgentsForMode(mode: string): string[] {
   if (mode === 'startup') return ['orchestrator', 'backend-engineer', 'frontend-engineer'];
   if (mode === 'enterprise') return ['orchestrator', 'backend-engineer', 'frontend-engineer', 'test-engineer', 'docs-writer', 'compliance-reviewer', 'security-auditor'];
   return ['orchestrator', 'backend-engineer', 'frontend-engineer', 'test-engineer', 'docs-writer'];
 }
 
-function installCoreAgents(forgeRoot: string, destDir: string, activeAgents: string[], profiles: string[], force: boolean): void {
+export function installCoreAgents(forgeRoot: string, destDir: string, activeAgents: string[], profiles: string[], force: boolean): void {
   mkdirSync(destDir, { recursive: true });
 
   // Tier 2: profile agents first
@@ -237,7 +237,7 @@ function installCoreAgents(forgeRoot: string, destDir: string, activeAgents: str
   }
 }
 
-function installHooks(forgeRoot: string, destDir: string, mode: string, force: boolean): void {
+export function installHooks(forgeRoot: string, destDir: string, mode: string, force: boolean): void {
   mkdirSync(destDir, { recursive: true });
   const hooksDir = join(forgeRoot, 'core', 'hooks');
   if (!existsSync(hooksDir)) return;
@@ -329,7 +329,7 @@ function mergeSettings(
  * existe o no se puede parsear, escribe los settings generados tal cual.
  * Respeta `force`: con `force=false` no toca un archivo existente.
  */
-function writeSettingsJson(path: string, language: string, mode: string, force: boolean): void {
+export function writeSettingsJson(path: string, language: string, mode: string, force: boolean): void {
   const generated = buildSettings(language, mode);
   if (existsSync(path)) {
     if (!force) return;
@@ -348,11 +348,54 @@ function writeSettingsJson(path: string, language: string, mode: string, force: 
   writeFileSync(path, JSON.stringify(generated, null, 2), 'utf-8');
 }
 
-function installCommands(forgeRoot: string, destDir: string, force: boolean): void {
+export function installCommands(forgeRoot: string, destDir: string, force: boolean): void {
   mkdirSync(destDir, { recursive: true });
   const commandsDir = join(forgeRoot, 'adapters', 'claude-code', 'commands');
   if (!existsSync(commandsDir)) return;
   copyDir(commandsDir, destDir, force);
+}
+
+/**
+ * Scaffolds docs/specs/ (+ _template.md), docs/daily-notes/ and the
+ * .claude/architecture.rules file. Idempotent: never overwrites the spec
+ * template or architecture.rules once they exist. Shared by `forge init` and
+ * `forge adopt` so both lay down the same SDD scaffold.
+ */
+export function installSpecScaffold(forgeRoot: string, projectRoot: string, claudeDir: string, config: ProjectYaml): void {
+  mkdirSync(join(projectRoot, 'docs', 'specs'), { recursive: true });
+  mkdirSync(join(projectRoot, 'docs', 'daily-notes'), { recursive: true });
+  const specTemplateSrc = join(forgeRoot, 'core', 'templates', 'spec-template.md');
+  if (existsSync(specTemplateSrc)) {
+    copyFile(specTemplateSrc, join(projectRoot, 'docs', 'specs', '_template.md'), false);
+  }
+  const archRulesTemplate = join(forgeRoot, 'core', 'templates', 'claude-md', 'architecture.rules');
+  const archRulesDest = join(claudeDir, 'architecture.rules');
+  if (existsSync(archRulesTemplate) && !existsSync(archRulesDest)) {
+    const content = readFileSync(archRulesTemplate, 'utf-8').replace('<NOMBRE_PROYECTO>', config.project.name ?? 'Mi Proyecto');
+    writeFileSync(archRulesDest, content, 'utf-8');
+  }
+}
+
+/**
+ * Builds and saves the .forge/manifest.json for a claude-code install: tracks
+ * CLAUDE.md, settings.json, architecture.rules, all agents (active + compliance
+ * + specialized) and the installed hooks/commands. Shared by init and adopt.
+ */
+export function saveInstallManifest(
+  projectRoot: string, claudeDir: string, runtime: string,
+  allAgents: string[], specializedAgents: string[], forgeVersion: string,
+): void {
+  const installedFiles = [
+    'CLAUDE.md', '.claude/settings.json', '.claude/architecture.rules',
+    ...allAgents.map(a => `.claude/agents/${a}.md`),
+    ...specializedAgents.map(a => `.claude/agents/${a}.md`),
+    ...listInstalledRelativeFiles(claudeDir, 'hooks', projectRoot),
+    ...listInstalledRelativeFiles(claudeDir, 'commands', projectRoot),
+  ];
+  const seen = new Set<string>();
+  const uniqueFiles = installedFiles.filter(f => (seen.has(f) ? false : seen.add(f)));
+  const ts = new Date().toISOString();
+  saveManifest(projectRoot, buildManifest(runtime, uniqueFiles, projectRoot, forgeVersion, ts));
 }
 
 function installKiro(forgeRoot: string, projectRoot: string, config: ProjectYaml, force: boolean): void {
@@ -515,20 +558,7 @@ export async function init(args: string[]): Promise<number> {
       {
         title: 'docs/specs/ + architecture.rules',
         tech: 'scaffold',
-        task: () => {
-          mkdirSync(join(projectRoot, 'docs', 'specs'), { recursive: true });
-          mkdirSync(join(projectRoot, 'docs', 'daily-notes'), { recursive: true });
-          const specTemplateSrc = join(forgeRoot, 'core', 'templates', 'spec-template.md');
-          if (existsSync(specTemplateSrc)) {
-            copyFile(specTemplateSrc, join(projectRoot, 'docs', 'specs', '_template.md'), false);
-          }
-          const archRulesTemplate = join(forgeRoot, 'core', 'templates', 'claude-md', 'architecture.rules');
-          const archRulesDest = join(claudeDir, 'architecture.rules');
-          if (existsSync(archRulesTemplate) && !existsSync(archRulesDest)) {
-            const content = readFileSync(archRulesTemplate, 'utf-8').replace('<NOMBRE_PROYECTO>', config.project.name ?? 'Mi Proyecto');
-            writeFileSync(archRulesDest, content, 'utf-8');
-          }
-        },
+        task: () => installSpecScaffold(forgeRoot, projectRoot, claudeDir, config),
       },
       // Knowledge base — only for projects that activate a wiki-* skill. Other
       // projects don't get a wiki/ dir forced on them.
@@ -540,24 +570,10 @@ export async function init(args: string[]): Promise<number> {
       {
         title: '.forge/manifest.json',
         tech: 'sha256 tracking',
-        task: () => {
-          const specializedAgents = config.agents?.specialized ?? [];
-          const installedFiles = [
-            'CLAUDE.md', '.claude/settings.json', '.claude/architecture.rules',
-            // Tier 1 (active) + compliance agents.
-            ...allAgents.map(a => `.claude/agents/${a}.md`),
-            // Tier 3 (specialized) agents — must not be dropped from the manifest.
-            ...specializedAgents.map(a => `.claude/agents/${a}.md`),
-            // Installed guardrail hooks and slash commands (if present on disk).
-            ...listInstalledRelativeFiles(claudeDir, 'hooks', projectRoot),
-            ...listInstalledRelativeFiles(claudeDir, 'commands', projectRoot),
-          ];
-          // De-dup while preserving order (an agent could appear in both lists).
-          const seen = new Set<string>();
-          const uniqueFiles = installedFiles.filter(f => (seen.has(f) ? false : seen.add(f)));
-          const ts = new Date().toISOString();
-          saveManifest(projectRoot, buildManifest(runtime, uniqueFiles, projectRoot, VERSION, ts));
-        },
+        task: () => saveInstallManifest(
+          projectRoot, claudeDir, runtime,
+          allAgents, config.agents?.specialized ?? [], VERSION,
+        ),
       },
     ]);
 

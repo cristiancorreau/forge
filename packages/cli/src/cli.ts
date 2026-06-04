@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { init } from './commands/init.js';
+import { adopt } from './commands/adopt.js';
 import { audit } from './commands/audit.js';
 import { generate } from './commands/generate.js';
 import { validate } from './commands/validate.js';
@@ -23,6 +24,7 @@ Usage: forge <command> [options]
 Setup
   panel          Open the interactive panel (config, monitor, skills, hooks, templates)
   init           Initialize forge in a project (wizard + post-install dashboard)
+  adopt          Onboard forge into an EXISTING codebase (analyze + auto-wiki)
   generate       Generate runtime config files from project.yaml
   migrate        Migrate project.yaml from the v1 schema to v2 (--dry-run, --backup)
   scaffold       Scaffold a new agent: Tier 2 profile, or Tier 3 domain agent (--tier 3)
@@ -50,6 +52,7 @@ Run forge <command> --help for command-specific options.
 
 Examples:
   npx @cristiancorreau/forge init
+  npx @cristiancorreau/forge adopt ./my-existing-repo --yes
   npx @cristiancorreau/forge panel
   npx @cristiancorreau/forge skills
   npx @cristiancorreau/forge migrate --dry-run
@@ -64,6 +67,9 @@ let exitCode = 0;
 switch (cmd) {
   case 'init':
     exitCode = await init(rest);
+    break;
+  case 'adopt':
+    exitCode = await adopt(rest);
     break;
   case 'audit':
     exitCode = await audit(rest);

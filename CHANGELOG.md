@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.17.0] — 2026-06-04
+
+### Agregado
+- **`forge adopt [path]` — onboarding de forge en un repo existente (brownfield).** Lee y analiza un codebase ya existente (sin LLM), genera el `project.yaml` desde lo que detecta (stack vía `detect.ts` con lenguaje por lado, `project.type`, ORM, testing, monorepo, docker), instala la config de forge reusando los installers de `forge init` (agentes por modo, hooks, slash commands, CLAUDE.md, settings.json, architecture.rules, manifest `.forge`) sin pisar archivos existentes salvo `--force`, y **auto-genera el wiki del proyecto** con HECHOS determinísticos: `concepts/arquitectura.md` y `concepts/stack.md` (del mapa de directorios + stack), `entities/` (proyecto + cada framework/herramienta detectada), `sources/` (resumen de README + manifest), `synthesis/overview.md` (resumen factual + nota "Pendiente: compilación semántica con /wiki-ingest") y `raw/` con copias inmutables del README + manifest. El wiki generado pasa `forge wiki lint` (sin links rotos ni huérfanos). La capa SEMÁNTICA (lógica de negocio, decisiones) sigue siendo trabajo del skill `/wiki-ingest`, que `adopt` apunta como próximo paso. Flags: `--yes` (no-interactivo por defecto), `--no-wiki`, `--runtime`, `--mode`, `--force`, `--dry-run`. Módulos puros y testeados: `lib/project-analysis.ts` y `lib/wiki-autogen.ts` (SPEC-038).
+
+---
+
 ## [2.16.0] — 2026-06-04
 
 ### Agregado
