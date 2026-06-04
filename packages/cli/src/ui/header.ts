@@ -1,17 +1,18 @@
 import boxen from 'boxen';
 import chalk from 'chalk';
 import { VERSION } from '../version.js';
-import { FORGE_BANNER } from './banner.js';
+import { forgeBanner } from './banner.js';
+import { boxenBorderStyle } from './ascii.js';
 
 export function printHeader(): void {
-  const banner = FORGE_BANNER.map(l => chalk.cyan(l)).join('\n');
+  const banner = forgeBanner().map(l => chalk.cyan(l)).join('\n');
   const content =
     banner + '\n' +
     chalk.dim('Configure any project for AI agents') + '  ' + chalk.dim('v' + VERSION) + '\n' +
     chalk.dim('Claude Code · OpenCode · Codex · Kiro');
 
   const output = boxen(content, {
-    borderStyle: 'double',
+    borderStyle: boxenBorderStyle('double') as 'double' | 'classic',
     borderColor: 'cyan',
     padding: { top: 0, bottom: 0, left: 1, right: 1 },
     margin: { top: 1, bottom: 1, left: 0, right: 0 },

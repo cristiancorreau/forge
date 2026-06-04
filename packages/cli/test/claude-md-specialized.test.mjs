@@ -14,11 +14,13 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+// pathToFileURL so the absolute path is a valid file:// URL on Windows
+// (a bare "D:\..." path throws ERR_UNSUPPORTED_ESM_URL_SCHEME).
 const { generateClaudeMd } = await import(
-  join(__dirname, '..', 'dist', 'lib', 'generators', 'claude-code.js')
+  pathToFileURL(join(__dirname, '..', 'dist', 'lib', 'generators', 'claude-code.js')).href
 );
 
 describe('generateClaudeMd — Tier 3 specialized agents', () => {

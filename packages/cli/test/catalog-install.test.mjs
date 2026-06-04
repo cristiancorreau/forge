@@ -14,12 +14,16 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, '..', 'dist');
 const CLI = join(DIST, 'cli.js');
 const ASSETS = join(__dirname, '..', 'assets');
+
+// Dynamic import() of an absolute path needs a file:// URL on Windows
+// (a bare "D:\..." path throws ERR_UNSUPPORTED_ESM_URL_SCHEME).
+const importDist = (...parts) => import(pathToFileURL(join(DIST, ...parts)).href);
 
 // Point FORGE_HOME at the bundled assets so profiles/templates/commands resolve.
 process.env.FORGE_HOME = ASSETS;
@@ -34,8 +38,8 @@ let lib, yamlMod;
 before(async () => {
   assert.ok(existsSync(join(DIST, 'lib', 'catalog-install.js')),
     'dist not built — run "npm run build:all" before the tests.');
-  lib = await import(join(DIST, 'lib', 'catalog-install.js'));
-  yamlMod = await import(join(DIST, 'lib', 'yaml.js'));
+  lib = await importDist('lib', 'catalog-install.js');
+  yamlMod = await importDist('lib', 'yaml.js');
 });
 
 function makeTmpDir(t) {

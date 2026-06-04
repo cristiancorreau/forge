@@ -45,10 +45,11 @@ const SIMILARITY_OUTDATED = 0.5; // < 0.5 → agente desactualizado (warn)
 const LAST_VERIFIED_MAX_MONTHS = 6;
 
 function parseFrontmatter(content: string): Record<string, string> {
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  // Tolerate CRLF (Windows checkouts): match \r?\n around the --- fences.
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return {};
   const result: Record<string, string> = {};
-  for (const line of match[1].split('\n')) {
+  for (const line of match[1].split(/\r?\n/)) {
     const [key, ...rest] = line.split(':');
     if (key && rest.length > 0) result[key.trim()] = rest.join(':').trim();
   }

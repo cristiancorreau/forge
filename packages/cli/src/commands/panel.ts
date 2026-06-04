@@ -1,7 +1,7 @@
-import { join } from 'path';
 import { spawnSync } from 'child_process';
 import * as p from '@clack/prompts';
 import { resolveForgeRoot } from '../lib/paths.js';
+import { findBun, resolveCliEntry } from '../lib/bun.js';
 import { findProjectYaml } from '../lib/yaml.js';
 import { runAudit } from './audit.js';
 import { runDoctor } from './doctor.js';
@@ -32,27 +32,11 @@ Options:
 // OpenTUI panels require Bun runtime.
 const isBun = typeof (globalThis as any).Bun !== 'undefined';
 
-/** Locate a usable `bun` binary: PATH first, then standard install locations. */
-function findBun(): string | null {
-  const candidates = [
-    'bun',
-    join(process.env.HOME ?? '', '.bun', 'bin', 'bun'),
-    '/opt/homebrew/bin/bun',
-    '/usr/local/bin/bun',
-  ];
-  for (const bin of candidates) {
-    try {
-      const r = spawnSync(bin, ['--version'], { encoding: 'utf8', timeout: 2000 });
-      if (r.status === 0) return bin;
-    } catch { /* try next */ }
-  }
-  return null;
-}
-
 /**
  * If running under Node with a TTY, re-launch the CLI under Bun (if available)
  * so the OpenTUI panel can render. Returns false if it couldn't re-launch (the
  * caller then uses the @clack fallback); exits the process if it did.
+ * Bun discovery is cross-platform (lib/bun.ts).
  */
 function tryReLaunchWithBun(): boolean {
   if (isBun) return false;
@@ -61,7 +45,8 @@ function tryReLaunchWithBun(): boolean {
   if (!process.stdin.isTTY || !process.stdout.isTTY) return false;
   const bun = findBun();
   if (!bun) return false;
-  const cliPath = new URL('../cli.js', import.meta.url).pathname;
+  // fileURLToPath (not URL.pathname) so the entry path is valid on Windows.
+  const cliPath = resolveCliEntry(import.meta.url);
   const result = spawnSync(bun, [cliPath, 'panel'], {
     stdio: 'inherit',
     env: { ...process.env, FORGE_BUN_RELAUNCH: '1' },

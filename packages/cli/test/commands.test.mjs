@@ -524,10 +524,27 @@ runtimes:
     assert.equal(manifest.forgeVersion, EXPECTED_VERSION);
     assert.equal(manifest.runtime, 'claude-code');
 
-    // settings.json wires hooks via node (no python3).
+    // settings.json wires hooks via node (no python3, no bash — cross-platform,
+    // so the registered commands run in PowerShell as well as bash). SPEC-035.
     const settings = readFileSync(join(dir, '.claude', 'settings.json'), 'utf-8');
     assert.match(settings, /node .claude\/hooks/);
     assert.doesNotMatch(settings, /python3/);
+    assert.doesNotMatch(settings, /bash .claude\/hooks/);
+    assert.match(settings, /node .claude\/hooks\/post-turn-check\.js/);
+
+    // The installed Stop/post-turn hook is the cross-platform .js (no .sh).
+    assert.ok(
+      existsSync(join(dir, '.claude', 'hooks', 'post-turn-check.js')),
+      'post-turn-check.js (cross-platform) missing',
+    );
+    assert.ok(
+      existsSync(join(dir, '.claude', 'hooks', 'session-start.js')),
+      'session-start.js (cross-platform) missing',
+    );
+    assert.ok(
+      !existsSync(join(dir, '.claude', 'hooks', 'post-turn-check.sh')),
+      'legacy post-turn-check.sh must not be installed',
+    );
   });
 
   // Regression (dogfooding): re-running `init --force` over an existing
