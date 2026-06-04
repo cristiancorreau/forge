@@ -13,6 +13,103 @@ interface RuntimeProbe {
   version?: string;
 }
 
+export interface DoctorRuntime {
+  id: string;
+  label: string;
+  installed: boolean;
+  version?: string;
+  active: boolean;
+  install: string;
+}
+
+export interface DoctorReport {
+  ok: boolean;
+  nodeVersion: string;
+  forgeRootOk: boolean;
+  assetsOk: boolean;
+  projectYaml: string | null;
+  configMode: string | null;
+  runtimesDetected: string[];
+  runtimes: DoctorRuntime[];
+}
+
+/**
+ * Programmatic environment check. Returns structured data without printing —
+ * the `doctor` CLI command (and the panel/monitor view) render on top of this.
+ */
+export function runDoctor(root: string = process.cwd()): DoctorReport {
+  let ok = true;
+
+  const nodeVersion = process.versions.node;
+  const [major] = nodeVersion.split('.').map(Number);
+  if (major < 20) ok = false;
+
+  let forgeRootOk = false;
+  let assetsOk = false;
+  try {
+    const fr = resolveForgeRoot();
+    forgeRootOk = true;
+    assetsOk = existsSync(join(fr, 'core', 'agents'))
+      && existsSync(join(fr, 'core', 'schemas'))
+      && existsSync(join(fr, 'profiles'))
+      && existsSync(join(fr, 'adapters'));
+    if (!assetsOk) ok = false;
+  } catch {
+    forgeRootOk = false;
+    ok = false;
+  }
+
+  const projectYaml = findProjectYaml(root);
+  let config: ProjectYaml | null = null;
+  if (projectYaml) {
+    try {
+      config = loadProjectYaml(projectYaml);
+    } catch {
+      ok = false;
+    }
+  }
+
+  const hasClaude = existsSync(join(root, '.claude'));
+  const hasAgents = existsSync(join(root, 'AGENTS.md'));
+  const hasKiro = existsSync(join(root, '.kiro'));
+  const runtimesDetected: string[] = [];
+  if (hasClaude) runtimesDetected.push('claude-code');
+  if (hasAgents && !hasClaude) runtimesDetected.push('opencode/codex');
+  if (hasKiro) runtimesDetected.push('kiro');
+
+  const active = config?.runtimes?.active ?? [];
+  const activeSet = new Set(active);
+  const runtimes: DoctorRuntime[] = [];
+  for (const rt of RUNTIMES) {
+    const isActive = activeSet.has(rt.id);
+    const probe = probeRuntime(rt.cmd);
+    runtimes.push({
+      id: rt.id,
+      label: rt.label,
+      installed: probe.installed,
+      version: probe.version,
+      active: isActive,
+      install: rt.install,
+    });
+    // A runtime marked active but not installed is a failure.
+    if (isActive && !probe.installed) ok = false;
+  }
+
+  if (config && !config.project?.mode) ok = false;
+  if (config && active.length === 0) ok = false;
+
+  return {
+    ok,
+    nodeVersion,
+    forgeRootOk,
+    assetsOk,
+    projectYaml,
+    configMode: config?.project?.mode ?? null,
+    runtimesDetected,
+    runtimes,
+  };
+}
+
 /**
  * Probe a runtime by running its `cmd` (e.g. `claude --version`) with a short
  * timeout. Returns whether the binary is installed and the captured version.
