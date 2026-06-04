@@ -85,8 +85,12 @@ jobs:
         run: |
           TARBALL=$(ls *.tgz | head -1)
           npm install -g "$GITHUB_WORKSPACE/packages/cli/$TARBALL"
-          # The bare command must resolve on PATH and run via its shebang (no explicit `node`).
+          # Run from a clean dir (no project.yaml) so the bare command resolves via its shebang
+          # without picking up the repo's own dogfooded project.yaml (doctor would flag a runtime
+          # declared active but not installed on the CI runner and exit non-zero).
+          cd "$RUNNER_TEMP"
           forge --version
+          forge --help >/dev/null
           forge doctor
 
       - name: Publish
