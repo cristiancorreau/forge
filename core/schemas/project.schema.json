@@ -27,9 +27,14 @@
           "type": ["string", "null"]
         },
         "language": {
-          "description": "Lenguaje principal del proyecto",
+          "description": "Lenguaje principal del proyecto. Derivado del lenguaje backend (backend/fullstack) o frontend (frontend-only); 'mixed' cuando los lados difieren. Se mantiene por compatibilidad",
           "type": ["string", "null"],
           "enum": ["typescript", "python", "ruby", "go", "php", "mixed", null]
+        },
+        "type": {
+          "description": "Tipo de proyecto: solo frontend, solo backend o fullstack (nuevo). Opcional; se infiere para archivos antiguos",
+          "type": ["string", "null"],
+          "enum": ["frontend", "backend", "fullstack", null]
         },
         "mode": {
           "description": "Modo operativo del proyecto: startup (velocidad), standard (balance), enterprise (compliance)",
@@ -80,10 +85,20 @@
           "type": ["string", "null"],
           "enum": ["hono", "fastapi", "rails", "express", "laravel", "nestjs", "django", "go-gin", null]
         },
+        "backend_language": {
+          "description": "Lenguaje del backend (nuevo). Permite que backend y frontend usen lenguajes distintos",
+          "type": ["string", "null"],
+          "enum": ["typescript", "python", "ruby", "go", "php", null]
+        },
         "frontend": {
           "description": "Framework del frontend",
           "type": ["string", "null"],
           "enum": ["nextjs", "nuxt", "remix", "rails-views", "astro", "sveltekit", null]
+        },
+        "frontend_language": {
+          "description": "Lenguaje del frontend (nuevo). Permite que backend y frontend usen lenguajes distintos",
+          "type": ["string", "null"],
+          "enum": ["typescript", "python", "ruby", "go", "php", null]
         },
         "database": {
           "description": "Motor de base de datos principal",

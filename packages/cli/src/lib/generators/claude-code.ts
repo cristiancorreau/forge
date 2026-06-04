@@ -1,4 +1,5 @@
 import type { ProjectYaml } from '../yaml.js';
+import { stackWithLanguage } from '../wizard-flow.js';
 
 const AGENT_TRIGGER: Record<string, [string, string | null]> = {
   'orchestrator':        ['tareas multi-agente, análisis de >3 archivos, descomposición de features completas', null],
@@ -91,6 +92,10 @@ export function generateClaudeMd(config: ProjectYaml): string {
   const name = proj.name ?? 'Mi Proyecto';
   const description = proj.description ?? '';
   const language = proj.language ?? 'typescript';
+  // Per-side language (nuevo): muestra "FastAPI (Python)" / "Next.js (TypeScript)".
+  // Fallback a project.language cuando los campos por lado no existen (archivos viejos).
+  const backendStr  = stackWithLanguage(stack.backend,  stack.backend_language);
+  const frontendStr = stackWithLanguage(stack.frontend, stack.frontend_language);
   const { dev, test, lint, build } = devCommands(language);
   const specsPath = paths?.specs ?? 'docs/specs';
   const progressPath = paths?.progress ?? 'docs/progress.html';
@@ -112,8 +117,8 @@ ${description}
 ## Stack
 
 - **Lenguaje**: ${language}
-- **Backend**: ${stack.backend ?? 'N/A'}
-- **Frontend**: ${stack.frontend ?? 'N/A'}
+- **Backend**: ${backendStr}
+- **Frontend**: ${frontendStr}
 - **Base de datos**: ${stack.database ?? 'N/A'}
 - **Testing**: ${(stack.testing ?? []).join(', ')}
 

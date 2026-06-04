@@ -1,4 +1,5 @@
 import type { ProjectYaml } from '../yaml.js';
+import { stackWithLanguage } from '../wizard-flow.js';
 
 // Codex has no native blocking hooks: it shares the executable git pre-commit
 // fallback with OpenCode so branch guard + debug detection still run automatically.
@@ -24,8 +25,8 @@ export function generateCodexAgentsMd(config: ProjectYaml): string {
 
 - **Nombre**: ${name}
 - **Lenguaje**: ${language}
-- **Backend**: ${stack.backend ?? 'N/A'}
-- **Frontend**: ${stack.frontend ?? 'N/A'}
+- **Backend**: ${stackWithLanguage(stack.backend, stack.backend_language)}
+- **Frontend**: ${stackWithLanguage(stack.frontend, stack.frontend_language)}
 
 ## Agentes disponibles
 

@@ -139,11 +139,15 @@ function listInstalledRelativeFiles(claudeDir: string, subdir: string, projectRo
   return out.sort();
 }
 
-function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>>, specialized: string[] = []): string {
+export function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>>, specialized: string[] = []): string {
   if (!result) return '';
   const stack: string[] = [];
+  // Per-side framework + language. backend_language/frontend_language are new
+  // and let the two sides differ (e.g. Python backend + TypeScript frontend).
   if (result.backend) stack.push(`  backend: ${result.backend}`);
+  if (result.backendLanguage) stack.push(`  backend_language: ${result.backendLanguage}`);
   if (result.frontend) stack.push(`  frontend: ${result.frontend}`);
+  if (result.frontendLanguage) stack.push(`  frontend_language: ${result.frontendLanguage}`);
   if (result.database) stack.push(`  database: ${result.database}`);
   if (result.orm) stack.push(`  orm: ${result.orm}`);
   if (result.packageManager) stack.push(`  package_manager: ${result.packageManager}`);
@@ -161,12 +165,15 @@ function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>>, special
 
   const coreAgents = defaultAgentsForMode(result.mode);
 
+  // project.type only when known (the wizard always sets it); old flows omit it.
+  const typeLine = result.type ? `  type: ${result.type}\n` : '';
+
   return `project:
   name: "${result.name}"
   slug: "${result.slug}"
   description: "${result.description}"
   language: ${result.language}
-  mode: ${result.mode}
+${typeLine}  mode: ${result.mode}
   status: active
 
 stack:
@@ -423,8 +430,8 @@ export async function init(args: string[]): Promise<number> {
     writeFileSync(projectYamlPath, yamlContent, 'utf-8');
 
     config = {
-      project: { name: result.name, slug: result.slug, description: result.description, language: result.language, mode: result.mode, status: 'active' },
-      stack: { backend: result.backend, frontend: result.frontend, database: result.database, orm: result.orm, package_manager: result.packageManager, testing: result.testing },
+      project: { name: result.name, slug: result.slug, description: result.description, language: result.language, type: result.type, mode: result.mode, status: 'active' },
+      stack: { backend: result.backend, backend_language: result.backendLanguage, frontend: result.frontend, frontend_language: result.frontendLanguage, database: result.database, orm: result.orm, package_manager: result.packageManager, testing: result.testing },
       agents: { active: defaultAgentsForMode(result.mode), compliance: [], specialized, profiles: result.profiles },
       runtimes: { active: [runtimeOverride ?? result.runtime] },
       skills: result.skills,
