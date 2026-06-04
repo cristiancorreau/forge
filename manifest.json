@@ -111,6 +111,16 @@
       "agents": ["api-engineer"]
     },
     {
+      "id": "flask",
+      "stack": "Flask 3 + blueprints + SQLAlchemy + marshmallow (Python)",
+      "agents": ["api-engineer"]
+    },
+    {
+      "id": "flutter",
+      "stack": "Flutter 3 + Dart 3 + Riverpod + go_router",
+      "agents": ["mobile-engineer"]
+    },
+    {
       "id": "go-gin",
       "stack": "Go + Gin + sqlc",
       "agents": ["api-engineer"]
@@ -144,6 +154,16 @@
       "id": "rails",
       "stack": "Ruby on Rails",
       "agents": ["fullstack-engineer"]
+    },
+    {
+      "id": "rust",
+      "stack": "Axum + Tokio + sqlx/SeaORM (Rust; variantes Actix/Rocket)",
+      "agents": ["api-engineer"]
+    },
+    {
+      "id": "springboot",
+      "stack": "Spring Boot 3 + Spring Data JPA (Java/Kotlin)",
+      "agents": ["api-engineer"]
     },
     {
       "id": "sveltekit",

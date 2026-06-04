@@ -198,7 +198,7 @@
             "enum": [
               "hono-drizzle", "nextjs-admin", "astro", "expo", "playwright-crawler",
               "fastapi", "express", "rails", "nestjs", "django", "vuenuxt",
-              "go-gin", "sveltekit"
+              "go-gin", "sveltekit", "springboot", "flutter", "rust", "flask"
             ]
           }
         }

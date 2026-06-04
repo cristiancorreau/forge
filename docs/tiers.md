@@ -54,13 +54,17 @@ Un proyecto puede activar **varios profiles** a la vez (por ejemplo, un profile 
 |---|---|---|
 | `hono-drizzle` | `api-engineer` | Hono + Drizzle + PostgreSQL (TypeScript) |
 | `fastapi` | `api-engineer` | FastAPI + SQLAlchemy/SQLModel + PostgreSQL (Python) |
+| `flask` | `api-engineer` | Flask 3 + blueprints + SQLAlchemy + marshmallow/pydantic (Python) |
 | `express` | `api-engineer` | Express + Prisma/TypeORM + PostgreSQL (Node.js) |
 | `nestjs` | `api-engineer` | NestJS + TypeORM/Prisma + PostgreSQL (TypeScript) |
 | `django` | `api-engineer` | Django 4.x/5.x + DRF/Django Ninja + PostgreSQL |
 | `go-gin` | `api-engineer` | Go con Gin/Echo + sqlc + PostgreSQL + golang-migrate |
+| `springboot` | `api-engineer` | Spring Boot 3 + Spring Data JPA/Hibernate + Flyway (Java/Kotlin) |
+| `rust` | `api-engineer` | Axum + Tokio + sqlx/SeaORM (variantes Actix/Rocket) |
 | `laravel` | `api-engineer`, `fullstack-engineer`, `migration-specialist` | Laravel 10+ + Sanctum/Passport + PostgreSQL/MySQL |
 | `nextjs-admin` | `admin-engineer` | Next.js 15 + shadcn/ui (dashboard de administración) |
 | `expo` | `mobile-engineer` | Expo SDK (React Native) |
+| `flutter` | `mobile-engineer` | Flutter 3 + Dart 3 + Riverpod/Bloc + go_router |
 | `astro` | `frontend-engineer` | Astro: SSG, SSR, islands, MDX |
 | `sveltekit` | `frontend-engineer` | SvelteKit 2 + Svelte 5 runes + TypeScript + Tailwind |
 | `vuenuxt` | `frontend-engineer` | Nuxt 3 + Vue 3 Composition API + Pinia + TypeScript |

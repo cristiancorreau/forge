@@ -473,6 +473,42 @@ const CATALOG: CatalogItem[] = [
     language: 'Python',
   },
   {
+    name: 'forge profile — flask',
+    description:
+      'Agente api-engineer para Flask 3 + Python. Application factory, blueprints, SQLAlchemy, marshmallow/pydantic y pytest.',
+    category: 'profile',
+    tags: ['flask', 'python', 'blueprints', 'sqlalchemy', 'marshmallow', 'pytest'],
+    url: 'https://github.com/cristiancorreau/forge/tree/main/profiles/flask',
+    language: 'Python',
+  },
+  {
+    name: 'forge profile — springboot',
+    description:
+      'Agente api-engineer para Spring Boot 3 (Java/Kotlin). Spring Web, Spring Data JPA/Hibernate, Bean Validation, Flyway y JUnit 5.',
+    category: 'profile',
+    tags: ['spring-boot', 'java', 'kotlin', 'jpa', 'hibernate', 'jvm', 'rest-api'],
+    url: 'https://github.com/cristiancorreau/forge/tree/main/profiles/springboot',
+    language: 'Java',
+  },
+  {
+    name: 'forge profile — rust',
+    description:
+      'Agente api-engineer para Rust. Axum + Tokio + sqlx/SeaORM, errores con thiserror/anyhow y tests con cargo. Variantes Actix/Rocket.',
+    category: 'profile',
+    tags: ['rust', 'axum', 'tokio', 'sqlx', 'actix', 'rocket', 'rest-api'],
+    url: 'https://github.com/cristiancorreau/forge/tree/main/profiles/rust',
+    language: 'Rust',
+  },
+  {
+    name: 'forge profile — flutter',
+    description:
+      'Agente mobile-engineer para Flutter 3 + Dart 3. Widgets, Riverpod/Bloc, go_router, freezed y flutter test/analyze.',
+    category: 'profile',
+    tags: ['flutter', 'dart', 'mobile', 'ios', 'android', 'riverpod', 'bloc'],
+    url: 'https://github.com/cristiancorreau/forge/tree/main/profiles/flutter',
+    language: 'Dart',
+  },
+  {
     name: 'forge profile — rails',
     description:
       'Agente fullstack-engineer para Ruby on Rails. Modelos, migraciones, controllers, views y RSpec.',

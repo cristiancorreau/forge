@@ -49,11 +49,15 @@ herramientas diferentes? Si la respuesta es sí → Tier 2.
 | `expo` | `mobile-engineer` — React Native / Expo |
 | `playwright-crawler` | `scanner-engineer` — Scraping y crawling |
 | `fastapi` | `api-engineer` — FastAPI + Python |
+| `flask` | `api-engineer` — Flask 3 + blueprints + SQLAlchemy |
 | `express` | `api-engineer` — Express + Node.js |
 | `rails` | `fullstack-engineer` — Ruby on Rails |
 | `nestjs` | `api-engineer` — NestJS + TypeScript |
 | `django` | `api-engineer` — Django 4.x + Django REST Framework |
 | `go-gin` | `api-engineer` — Go + Gin + sqlc |
+| `springboot` | `api-engineer` — Spring Boot 3 + Spring Data JPA (Java/Kotlin) |
+| `rust` | `api-engineer` — Axum + Tokio + sqlx (variantes Actix/Rocket) |
+| `flutter` | `mobile-engineer` — Flutter 3 + Dart 3 + Riverpod |
 | `sveltekit` | `frontend-engineer` — SvelteKit 2 + Svelte 5 runes |
 | `vuenuxt` | `frontend-engineer` — Nuxt 3 + Vue 3 + Pinia |
 | `laravel` | `api-engineer` — Laravel 10+ + Sanctum + Eloquent · `fullstack-engineer` — Blade + Livewire 3 · `migration-specialist` — upgrade L6→L13 paso a paso |
