@@ -26,6 +26,9 @@ import { runDoctor } from '../commands/doctor.js';
 import {
   searchSkills, listInstalledHooks, listTemplates, getConfigSummary,
 } from '../lib/panel-data.js';
+import {
+  searchCatalog, installItem,
+} from '../lib/catalog-install.js';
 
 function restoreTerminal(): void {
   try {
@@ -113,6 +116,7 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     o('Configuración', 'config',    'resumen del project.yaml'),
     o('Monitoreo',     'monitor',   'audit + doctor'),
     o('Skills',        'skills',    'buscar en el catálogo'),
+    o('Catálogo',      'catalog',   'buscar e instalar'),
     o('Hooks',         'hooks',     'instalados + registry'),
     o('Templates',     'templates', 'wiki / spec / modes'),
   ];
@@ -141,15 +145,21 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     backgroundColor: C.bgPanel, paddingLeft: 1,
   });
   const bottomText = Text({ id: 'btm-t', content: buildLines([
-    dimLeaf('[↑↓] Sección   [Tab] Foco nav/contenido   [/] Buscar skills   [q/Esc] Salir'),
+    dimLeaf('[↑↓] Sección   [Tab] Foco input/lista/nav   [Enter] Instalar (Catálogo)   [q/Esc] Salir'),
   ]) });
   bottom.add(bottomText);
   renderer.root.add(bottom);
 
-  let searchInput: any = null; // active in the Skills section
+  let searchInput: any = null;   // active in the Skills section
+  let catalogInput: any = null;  // active in the Catálogo section
+  let catalogSelect: any = null; // results list in the Catálogo section
+  let catalogResults: any[] = [];
+  let catalogStatus = '';        // last install message
 
   function clearContent() {
     if (searchInput) { try { searchInput.blur(); } catch {} searchInput = null; }
+    if (catalogInput) { try { catalogInput.blur(); } catch {} catalogInput = null; }
+    if (catalogSelect) { try { catalogSelect.blur(); } catch {} catalogSelect = null; }
     for (const child of [...content.getChildren()]) {
       try { content.remove(child.id ?? ''); } catch {}
     }
@@ -303,9 +313,88 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     input.focus();
   }
 
+  // ── Section: Catálogo (search input + results Select + install on Enter) ──
+  const TYPE_COL: Record<string, string> = { skill: C.cyan, profile: C.yellow, template: C.green };
+
+  function refreshCatalogResults(query: string) {
+    catalogResults = searchCatalog(forgeRoot, root, query);
+    const options = catalogResults.map((it: any, i: number) => {
+      const mark = it.installed ? '✓ ' : '  ';
+      const tag = '[' + it.type + ']';
+      const state = it.installed ? ' · ya instalado' : '';
+      return o(`${mark}${it.label}  ${tag}`, String(i), it.description.slice(0, 60) + state);
+    });
+    if (catalogSelect) {
+      try { catalogSelect.options = options.length ? options : [o('Sin resultados', '-1', '')]; } catch {}
+    }
+  }
+
+  function installSelectedCatalogItem() {
+    const idx = catalogSelect?.getSelectedIndex?.() ?? -1;
+    const it = catalogResults[idx];
+    if (!it) return;
+    if (it.installed) { catalogStatus = `${it.label} ya estaba instalado.`; updateCatalogStatus(); return; }
+    const res = installItem(root, forgeRoot, { type: it.type, id: it.id });
+    catalogStatus = (res.ok ? '✓ ' : '✗ ') + res.message;
+    // Refresh config summary + installed flags after a successful install.
+    if (res.ok) {
+      try { Object.assign(cfg, getConfigSummary(root)); } catch {}
+      refreshCatalogResults(catalogInput?.value ?? '');
+      try { catalogSelect.setSelectedIndex?.(Math.min(idx, catalogResults.length - 1)); } catch {}
+    }
+    updateCatalogStatus();
+  }
+
+  function updateCatalogStatus() {
+    for (const child of [...content.getChildren()]) {
+      if (child.id === 'catalog-status') { try { content.remove(child.id); } catch {} }
+    }
+    const installed = catalogResults.filter((r: any) => r.installed).length;
+    content.add(Text({ id: 'catalog-status', content: buildLines([
+      catalogStatus ? fg(catalogStatus.startsWith('✓') ? C.green : C.red)(catalogStatus) : '',
+      dimLeaf(`${catalogResults.length} ítem(s) · ${installed} instalado(s)   [Enter] instalar el seleccionado`),
+    ]) }));
+  }
+
+  function renderCatalogSection() {
+    clearContent();
+    catalogStatus = '';
+    content.add(Text({ id: 'catalog-title', content: buildLines([
+      boldCol(C.white, 'Catálogo — buscar e instalar'),
+      dimLeaf('Skills, profiles y templates. Escribí para filtrar; Enter instala el seleccionado.'),
+    ]) }));
+    const input = new InputRenderable(renderer, {
+      id: 'catalog-input', width: RIGHT_W - 4,
+      backgroundColor: C.bgInput, focusedBackgroundColor: C.bgFocus, focusedTextColor: C.cyan,
+      placeholder: 'wiki, hono, spec…', placeholderColor: C.muted,
+    });
+    content.add(input);
+    catalogInput = input;
+
+    const sel = new SelectRenderable(renderer, {
+      id: 'catalog-sel', width: RIGHT_W - 4, height: Math.max(4, BODY_H - 9),
+      options: [o('…', '0', '')], selectedIndex: 0,
+      showScrollIndicator: true,
+      backgroundColor: C.bg, focusedBackgroundColor: C.bg, focusedTextColor: C.white,
+      selectedBackgroundColor: C.bgFocus, selectedTextColor: C.yellow,
+      showDescription: true, descriptionColor: C.muted, selectedDescriptionColor: C.cyan,
+    });
+    content.add(sel);
+    catalogSelect = sel;
+
+    refreshCatalogResults('');
+    updateCatalogStatus();
+
+    input.on('input', () => refreshCatalogResults(input.value ?? ''));
+    input.on('change', () => refreshCatalogResults(input.value ?? ''));
+    sel.on('itemSelected', () => installSelectedCatalogItem());
+    input.focus();
+  }
+
   function renderSection(idx: number) {
     const value = SECTIONS[idx]?.value ?? 'config';
     if (value === 'skills') { renderSkillsSection(); return; }
+    if (value === 'catalog') { renderCatalogSection(); return; }
     clearContent();
     let rows: Row[];
     switch (value) {
@@ -327,29 +416,42 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
   nav.on('itemSelected', (idx: any) => {
     const i = sectionIdx(idx);
     renderSection(i);
-    // Enter on Skills focuses the search box so the user can type immediately.
+    // Enter on Skills/Catálogo focuses the search box so the user can type immediately.
     if (SECTIONS[i]?.value === 'skills' && searchInput) { try { searchInput.focus(); } catch {} }
+    if (SECTIONS[i]?.value === 'catalog' && catalogInput) { try { catalogInput.focus(); } catch {} }
   });
 
   return new Promise<void>((resolve) => {
     const handler = (key: any) => {
       const name = (key?.name ?? '').toLowerCase();
-      // When typing in the skills search box, let the input consume keys.
-      const typing = !!searchInput && searchInput.focused;
-      if (!typing && (name === 'q' || name === 'escape')) {
+      // When typing in a search box, let the input consume keys.
+      const typingSkills = !!searchInput && searchInput.focused;
+      const typingCatalog = !!catalogInput && catalogInput.focused;
+      const inCatalogList = !!catalogSelect && catalogSelect.focused;
+      const typing = typingSkills || typingCatalog;
+
+      if (!typing && !inCatalogList && (name === 'q' || name === 'escape')) {
         try { renderer._internalKeyInput?.offInternal?.('keypress', handler); } catch {}
         resolve();
         return;
       }
-      if (typing && name === 'escape') {
-        // Esc out of the search box back to the nav.
-        try { searchInput.blur(); } catch {}
+      if ((typing || inCatalogList) && name === 'escape') {
+        // Esc out of the active widget back to the nav.
+        try { searchInput?.blur(); } catch {}
+        try { catalogInput?.blur(); } catch {}
+        try { catalogSelect?.blur(); } catch {}
         try { nav.focus(); } catch {}
         return;
       }
-      // Tab toggles focus between nav and the active content widget.
+      // Tab cycles focus. Skills: nav ↔ input. Catálogo: input → list → nav → input.
       if (name === 'tab') {
-        if (typing) { try { searchInput.blur(); nav.focus(); } catch {} }
+        if (catalogInput || catalogSelect) {
+          if (typingCatalog) { try { catalogInput.blur(); catalogSelect.focus(); } catch {} }
+          else if (inCatalogList) { try { catalogSelect.blur(); nav.focus(); } catch {} }
+          else { try { catalogInput?.focus(); } catch {} }
+          return;
+        }
+        if (typingSkills) { try { searchInput.blur(); nav.focus(); } catch {} }
         else if (searchInput) { try { searchInput.focus(); } catch {} }
       }
     };

@@ -311,6 +311,7 @@ describe('forge panel — CLI (non-TTY fallback)', () => {
     assert.match(out, /Configuración/);
     assert.match(out, /Monitoreo/);
     assert.match(out, /spec/);          // skills section
+    assert.match(out, /Catálogo — buscar e instalar/); // catalog searcher+installer
     assert.match(out, /Hooks/);
     assert.match(out, /Templates/);
     assert.doesNotMatch(out, /ERR_TTY_INIT_FAILED/);
