@@ -18,10 +18,19 @@ Options:
   -h, --help  Show this help
 `;
 
-interface AuditIssue {
+export interface AuditIssue {
   level: 'error' | 'warn' | 'info' | 'ok';
   check: string;
   message: string;
+}
+
+export interface AuditReport {
+  summary: { errors: number; warnings: number; ok: number; info: number };
+  issues: AuditIssue[];
+  /** Convenience flags used by the panel/monitor view. */
+  hooksInstalled: number;
+  hasProjectYaml: boolean;
+  manifestStatus: 'ok' | 'outdated' | 'missing';
 }
 
 const REQUIRED_FRONTMATTER = ['name', 'description', 'model', 'tier'];
@@ -216,15 +225,15 @@ function findOpportunities(config: ProjectYaml | null, forgeRoot: string | null)
   return opps;
 }
 
-export async function audit(args: string[]): Promise<number> {
-  if (args.includes('-h') || args.includes('--help')) {
-    process.stdout.write(HELP);
-    return 0;
-  }
-  const jsonMode = args.includes('--json');
-
-  const root = process.cwd();
+/**
+ * Programmatic audit: runs every check against `root` and returns a structured
+ * report. The `audit` CLI command (and the panel/monitor view) build on top of
+ * this — keeping the human/JSON rendering separate from the data collection.
+ */
+export function runAudit(root: string = process.cwd()): AuditReport {
   const issues: AuditIssue[] = [];
+  let hooksInstalled = 0;
+  let manifestStatus: 'ok' | 'outdated' | 'missing' = 'missing';
 
   // Resolver el forge root para comparar agentes y listar profiles.
   let forgeRoot: string | null = null;
@@ -316,6 +325,7 @@ export async function audit(args: string[]): Promise<number> {
       issues.push({ level: 'info', check: 'hooks', message: '.claude/hooks/ no existe — ejecutar forge init' });
     } else {
       const hookFiles = readdirSync(hooksDir);
+      hooksInstalled = hookFiles.length;
       issues.push({ level: 'ok', check: 'hooks', message: `${hookFiles.length} hook(s) instalado(s)` });
     }
 
@@ -344,11 +354,14 @@ export async function audit(args: string[]): Promise<number> {
   if (manifest) {
     const outdated = checkOutdated(root, manifest);
     if (outdated.length === 0) {
+      manifestStatus = 'ok';
       issues.push({ level: 'ok', check: 'manifest', message: `forge v${manifest.forgeVersion} — todos los archivos al día` });
     } else {
+      manifestStatus = 'outdated';
       issues.push({ level: 'warn', check: 'manifest', message: `${outdated.length} archivo(s) modificados desde forge init` });
     }
   } else {
+    manifestStatus = 'missing';
     issues.push({ level: 'info', check: 'manifest', message: 'Sin .forge/manifest.json — ejecutar forge init para generarlo' });
   }
 
@@ -360,6 +373,26 @@ export async function audit(args: string[]): Promise<number> {
   const warnings = issues.filter(i => i.level === 'warn').length;
   const ok = issues.filter(i => i.level === 'ok').length;
   const info = issues.filter(i => i.level === 'info').length;
+
+  return {
+    summary: { errors, warnings, ok, info },
+    issues,
+    hooksInstalled,
+    hasProjectYaml: yamlPath !== null,
+    manifestStatus,
+  };
+}
+
+export async function audit(args: string[]): Promise<number> {
+  if (args.includes('-h') || args.includes('--help')) {
+    process.stdout.write(HELP);
+    return 0;
+  }
+  const jsonMode = args.includes('--json');
+
+  const report = runAudit(process.cwd());
+  const { issues } = report;
+  const { errors, warnings, ok, info } = report.summary;
 
   if (jsonMode) {
     console.log(JSON.stringify({
