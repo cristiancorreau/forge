@@ -1,4 +1,5 @@
 import type { ProjectYaml } from '../yaml.js';
+import { stackWithLanguage } from '../wizard-flow.js';
 
 /**
  * Shared git pre-commit hook. Runtimes without native blocking hooks
@@ -151,8 +152,8 @@ export function generateAgentsMd(config: ProjectYaml): string {
 
 - **Nombre**: ${name}
 - **Lenguaje**: ${language}
-- **Backend**: ${stack.backend ?? 'N/A'}
-- **Frontend**: ${stack.frontend ?? 'N/A'}
+- **Backend**: ${stackWithLanguage(stack.backend, stack.backend_language)}
+- **Frontend**: ${stackWithLanguage(stack.frontend, stack.frontend_language)}
 - **Base de datos**: ${stack.database ?? 'N/A'}
 - **Profiles activos**: ${profiles.join(', ') || '—'}
 

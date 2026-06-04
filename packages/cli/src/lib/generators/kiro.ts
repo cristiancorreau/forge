@@ -1,4 +1,5 @@
 import type { ProjectYaml } from '../yaml.js';
+import { stackWithLanguage } from '../wizard-flow.js';
 
 function devCommands(language: string): { dev: string; test: string; lint: string } {
   switch (language) {
@@ -23,8 +24,8 @@ ${proj.description ?? ''}
 ## Stack
 
 - Language: ${proj.language ?? 'N/A'}
-- Backend: ${stack.backend ?? 'N/A'}
-- Frontend: ${stack.frontend ?? 'N/A'}
+- Backend: ${stackWithLanguage(stack.backend, stack.backend_language)}
+- Frontend: ${stackWithLanguage(stack.frontend, stack.frontend_language)}
 - Database: ${stack.database ?? 'N/A'}
 - ORM: ${stack.orm ?? 'N/A'}
 - Testing: ${(stack.testing ?? []).join(', ') || 'N/A'}

@@ -4,7 +4,11 @@ import yaml from 'js-yaml';
 
 export interface ProjectStack {
   backend?: string;
+  /** Lenguaje del backend (nuevo). Permite que back y front difieran. */
+  backend_language?: string;
   frontend?: string;
+  /** Lenguaje del frontend (nuevo). Permite que back y front difieran. */
+  frontend_language?: string;
   database?: string;
   orm?: string;
   package_manager?: string;
@@ -69,6 +73,8 @@ export interface ProjectYaml {
     slug?: string;
     description?: string;
     language?: string;
+    /** Tipo de proyecto (nuevo): solo frontend, solo backend o fullstack. */
+    type?: 'frontend' | 'backend' | 'fullstack';
     mode: 'startup' | 'standard' | 'enterprise';
     status?: string;
   };
