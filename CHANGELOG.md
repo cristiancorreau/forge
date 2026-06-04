@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.16.0] — 2026-06-04
+
+### Agregado
+- **El wizard pregunta el tipo de proyecto y el lenguaje/framework por lado.** `forge init` ahora pregunta primero si el proyecto es **solo Frontend · solo Backend · Fullstack**, y luego el **lenguaje y framework por separado** para cada lado (el listado de frameworks se filtra por el lenguaje), preguntando DB/ORM solo cuando hay backend. Esto permite stacks con lenguajes distintos (ej.: backend Python + frontend TypeScript). `project.yaml` suma `project.type` y `stack.backend_language`/`stack.frontend_language` (aditivo, backward-compatible); `project.language` se deriva (`mixed` cuando los lados difieren). Aplica a ambos wizards (OpenTUI + `@clack`) y a los generadores (CLAUDE.md/AGENTS.md muestran p. ej. "FastAPI (Python)" / "Next.js (TypeScript)").
+
+---
+
 ## [2.15.0] — 2026-06-04
 
 ### Agregado
