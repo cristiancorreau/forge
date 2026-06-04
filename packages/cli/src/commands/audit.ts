@@ -297,6 +297,17 @@ export async function audit(args: string[]): Promise<number> {
           issues.push(...agentIssues);
         }
       }
+
+      // Tier 3: cada agente declarado en agents.specialized debe tener su archivo.
+      const specialized = config?.agents?.specialized ?? [];
+      for (const name of specialized) {
+        const file = join(agentsDir, `${name}.md`);
+        if (existsSync(file)) {
+          issues.push({ level: 'ok', check: 'specialized', message: `Tier 3 '${name}' declarado y presente en .claude/agents/` });
+        } else {
+          issues.push({ level: 'error', check: 'specialized', message: `Tier 3 '${name}' en agents.specialized pero falta .claude/agents/${name}.md` });
+        }
+      }
     }
 
     // Check hooks

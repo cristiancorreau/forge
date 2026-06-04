@@ -6,15 +6,23 @@ import { box } from '../ui/box.js';
 
 const HELP = `Usage: forge scaffold [options]
 
-Scaffold a new Tier 2 profile for a stack not covered by forge. Creates
+Scaffold a new agent. Two modes:
+
+Tier 2 (default) — a profile for a stack not covered by forge. Creates
 profiles/<stack>/agents/<engineer>.md (with frontmatter and standard
 sections) plus a basic profiles/<stack>/README.md.
 
+Tier 3 (--tier 3) — a domain agent that lives in the project. Creates
+.claude/agents/<agente>.md with frontmatter (tier: 3) and the required
+sections, ready to register in agents.specialized of project.yaml.
+
 Options:
-  --name <stack>         Profile slug (e.g. django)            [required]
-  --engineer <agent>     Engineer agent name (e.g. api-engineer) [required]
+  --tier <2|3>           Agent tier to scaffold (default: 2)
+  --name <slug>          Tier 2: profile slug · Tier 3: agent name [required]
+  --engineer <agent>     Engineer agent name (e.g. api-engineer) [Tier 2]
   --description <text>   Short description for the agent
-  --stack-details <text> Stack details (technologies, versions)
+  --stack-details <text> Stack details (technologies, versions)  [Tier 2]
+  --scope-dir <dir>      Directory the Tier 3 agent is restricted to [Tier 3]
   --force                Overwrite the agent file if it already exists
   -h, --help             Show this help
 
@@ -23,28 +31,37 @@ Examples:
   forge scaffold --name django --engineer api-engineer \\
     --description "Backend Django con DRF" \\
     --stack-details "Django 4.2 + PostgreSQL + Django REST Framework"
+  forge scaffold --tier 3 --name dsar-specialist \\
+    --description "Maneja DSAR bajo Ley 21.719." --scope-dir src/dsar
 `;
 
 interface ScaffoldArgs {
+  tier: string;
   name: string;
   engineer: string;
   description: string;
   stackDetails: string;
+  scopeDir: string;
   force: boolean;
 }
 
 function parseArgs(args: string[]): ScaffoldArgs {
   const result: ScaffoldArgs = {
+    tier: '2',
     name: '',
     engineer: '',
     description: '',
     stackDetails: '',
+    scopeDir: '',
     force: false,
   };
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     switch (arg) {
+      case '--tier':
+        result.tier = args[++i] ?? '';
+        break;
       case '--name':
         result.name = args[++i] ?? '';
         break;
@@ -56,6 +73,9 @@ function parseArgs(args: string[]): ScaffoldArgs {
         break;
       case '--stack-details':
         result.stackDetails = args[++i] ?? '';
+        break;
+      case '--scope-dir':
+        result.scopeDir = args[++i] ?? '';
         break;
       case '--force':
         result.force = true;
@@ -166,6 +186,102 @@ Luego instalar los agentes con \`forge init\`.
 `;
 }
 
+function tier3Markdown(args: ScaffoldArgs): string {
+  const title = titleCase(args.name);
+  const scope = args.scopeDir ? args.scopeDir : '(definí el directorio de scope)';
+  const descLine = args.description
+    ? args.description
+    : `Reemplazá esto con la descripción de tu agente: qué hace + scope exacto (${scope}). Es lo que lee el orchestrator.`;
+
+  return `---
+name: ${args.name}
+description: ${descLine}
+model: sonnet
+tools: Read, Grep, Glob, Bash, Edit, Write
+tier: 3
+---
+
+# ${title} — dominio: (describí el concepto de negocio)
+
+[1 párrafo] Reemplazá esto: quién sos y cuál es tu scope EXACTO (${scope}).
+Dónde terminás, empieza otro agente.
+
+## Tu trabajo
+
+- (Reemplazá) Lo que SÍ hacés, listado.
+- Implementá con tests para toda la lógica nueva.
+- Corré linter, typecheck y tests antes de reportar al orchestrator.
+
+## Reglas
+
+- (Reemplazá) Restricciones en orden de importancia; las críticas de compliance primero.
+- Sin spec aprobada → no empieces. Pedí que se cree primero.
+- Sin secrets, tokens ni paths absolutos hardcodeados.
+
+## Workflow
+
+1. Leé la spec aprobada antes de tocar código.
+2. Implementá en tu scope con tests que cubran cada acceptance criterion.
+3. Verificá (build + tests) antes de reportar.
+4. Reportá al orchestrator: qué se hizo, qué archivos se tocaron, qué falta.
+
+## No hagas
+
+- (Reemplazá) Lo que está fuera de tu scope, listado.
+- No salgas del directorio de scope del agente: ${scope}.
+- No implementes sin spec aprobada.
+
+<!-- Agente Tier 3 (de dominio). Registralo en project.yaml → agents.specialized
+     y corré 'forge validate' para verificar la consistencia. -->
+`;
+}
+
+async function scaffoldTier3(parsed: ScaffoldArgs): Promise<number> {
+  parsed.name = parsed.name.trim().toLowerCase();
+  parsed.description = parsed.description.trim();
+  parsed.scopeDir = parsed.scopeDir.trim();
+
+  if (!parsed.name) {
+    console.error(`${icons.error} ${red('--name es obligatorio para --tier 3.')}\n`);
+    process.stdout.write(HELP);
+    return 1;
+  }
+
+  const projectRoot = process.cwd();
+  const agentsDir = join(projectRoot, '.claude', 'agents');
+  const agentFile = join(agentsDir, `${parsed.name}.md`);
+
+  if (existsSync(agentFile) && !parsed.force) {
+    console.error(
+      `${icons.error} ${red(`${agentFile} ya existe.`)} ${dim('Usá --force para sobrescribir.')}`
+    );
+    return 1;
+  }
+
+  try {
+    mkdirSync(agentsDir, { recursive: true });
+    writeFileSync(agentFile, tier3Markdown(parsed), 'utf-8');
+  } catch (e: unknown) {
+    console.error(`${icons.error} ${red(`Error al escribir el archivo: ${e instanceof Error ? e.message : String(e)}`)}`);
+    return 1;
+  }
+
+  console.log(cyan(bold('forge scaffold')) + ' ' + dim('(Tier 3)') + '\n');
+  console.log(`  [${icons.ok}] ${green('creado')}  ${agentFile}`);
+
+  const nextSteps = [
+    `1. Completar el agente: ${parsed.name}.md (description, Tu trabajo, Reglas, No hagas)`,
+    `2. Registrar en project.yaml: agents.specialized → - ${parsed.name}`,
+    `3. Validar la consistencia: forge validate`,
+  ];
+
+  console.log(
+    '\n' + box(green(`Agente Tier 3 '${parsed.name}' listo`), nextSteps)
+  );
+
+  return 0;
+}
+
 export async function scaffold(args: string[]): Promise<number> {
   if (args.includes('-h') || args.includes('--help')) {
     process.stdout.write(HELP);
@@ -173,6 +289,11 @@ export async function scaffold(args: string[]): Promise<number> {
   }
 
   const parsed = parseArgs(args);
+
+  if (parsed.tier.trim() === '3') {
+    return scaffoldTier3(parsed);
+  }
+
   parsed.name = parsed.name.trim().toLowerCase();
   parsed.engineer = parsed.engineer.trim().toLowerCase();
   parsed.description = parsed.description.trim();

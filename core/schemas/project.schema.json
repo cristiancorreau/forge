@@ -160,6 +160,11 @@
           "type": ["array", "null"],
           "items": { "type": "string" }
         },
+        "specialized": {
+          "description": "Agentes Tier 3 (de dominio) propios del proyecto, que viven en .claude/agents/ y no provienen de forge",
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
         "profiles": {
           "description": "Profiles stack-específicos (Tier 2) que reemplazan agentes genéricos",
           "type": ["array", "null"],

@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 const Ajv: any = require('ajv');
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const addFormats: any = require('ajv-formats');
-import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
+import { findProjectYaml, loadProjectYaml, projectRoot } from '../lib/yaml.js';
 import { resolveForgeRoot } from '../lib/paths.js';
 
 const HELP = `Usage: forge validate [options]
@@ -37,6 +37,30 @@ function businessWarnings(data: Record<string, unknown>): string[] {
   if (!data.rules) warnings.push("Sección 'rules' ausente — considera agregar guardrails del proyecto (v2)");
   if (!data.github) warnings.push("Sección 'github' ausente — considera integrar con GitHub Projects (v2)");
   return warnings;
+}
+
+/**
+ * Verifica que cada agente Tier 3 declarado en agents.specialized exista como
+ * archivo en .claude/agents/<agente>.md. Devuelve una lista de errores (vacía si
+ * todos existen o si no hay agentes especializados declarados).
+ */
+function specializedAgentErrors(data: Record<string, unknown>, root: string): string[] {
+  const errors: string[] = [];
+  const agents = (data.agents ?? null) as { specialized?: unknown } | null;
+  const specialized = agents?.specialized;
+  if (!Array.isArray(specialized)) return errors;
+
+  const agentsDir = join(root, '.claude', 'agents');
+  for (const name of specialized) {
+    if (typeof name !== 'string') continue;
+    const file = join(agentsDir, `${name}.md`);
+    if (!existsSync(file)) {
+      errors.push(
+        `/agents/specialized: el agente Tier 3 '${name}' está en agents.specialized pero no existe .claude/agents/${name}.md`,
+      );
+    }
+  }
+  return errors;
 }
 
 export async function validate(args: string[]): Promise<number> {
@@ -83,6 +107,11 @@ export async function validate(args: string[]): Promise<number> {
     }
   } catch {
     // schema not available — skip schema validation
+  }
+
+  // Tier 3: cada agente en agents.specialized debe tener su archivo en .claude/agents/.
+  if (errors.length === 0) {
+    errors = specializedAgentErrors(data, projectRoot(projectYamlPath));
   }
 
   const warnings = businessWarnings(data);

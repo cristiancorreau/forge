@@ -91,7 +91,33 @@ function copyDir(src: string, dest: string, force: boolean): void {
   }
 }
 
-function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>>): string {
+/**
+ * Auto-detecta agentes Tier 3 existentes: escanea .claude/agents/*.md en `root`
+ * y devuelve los nombres cuyo frontmatter declara `tier: 3`. Sirve para poblar
+ * agents.specialized en project.yaml durante `forge init`.
+ */
+function detectTier3Agents(root: string): string[] {
+  const agentsDir = join(root, '.claude', 'agents');
+  if (!existsSync(agentsDir)) return [];
+  const found: string[] = [];
+  for (const file of readdirSync(agentsDir)) {
+    if (!file.endsWith('.md')) continue;
+    let content: string;
+    try {
+      content = readFileSync(join(agentsDir, file), 'utf-8');
+    } catch {
+      continue;
+    }
+    const fm = content.match(/^---\n([\s\S]*?)\n---/);
+    if (!fm) continue;
+    if (/^\s*tier:\s*3\s*$/m.test(fm[1])) {
+      found.push(basename(file, '.md'));
+    }
+  }
+  return found.sort();
+}
+
+function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>>, specialized: string[] = []): string {
   if (!result) return '';
   const stack: string[] = [];
   if (result.backend) stack.push(`  backend: ${result.backend}`);
@@ -105,6 +131,10 @@ function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>>): string
 
   const profiles = result.profiles && result.profiles.length > 0
     ? `  profiles:\n${result.profiles.map(p => `    - ${p}`).join('\n')}`
+    : '';
+
+  const specializedBlock = specialized.length > 0
+    ? `  specialized:\n${specialized.map(s => `    - ${s}`).join('\n')}`
     : '';
 
   const coreAgents = defaultAgentsForMode(result.mode);
@@ -124,6 +154,7 @@ agents:
   active:
 ${coreAgents.map(a => `    - ${a}`).join('\n')}
   compliance: []
+${specializedBlock}
 ${profiles}
 
 runtimes:
@@ -302,13 +333,17 @@ export async function init(args: string[]): Promise<number> {
     }
     if (!result) { console.log('\nCancelado.'); return 1; }
 
-    const yamlContent = buildProjectYaml(result);
+    // Auto-detecta agentes Tier 3 existentes en .claude/agents/ (frontmatter
+    // tier: 3) y los registra en agents.specialized del project.yaml generado.
+    const specialized = detectTier3Agents(process.cwd());
+
+    const yamlContent = buildProjectYaml(result, specialized);
     writeFileSync(projectYamlPath, yamlContent, 'utf-8');
 
     config = {
       project: { name: result.name, slug: result.slug, description: result.description, language: result.language, mode: result.mode, status: 'active' },
       stack: { backend: result.backend, frontend: result.frontend, database: result.database, orm: result.orm, package_manager: result.packageManager, testing: result.testing },
-      agents: { active: defaultAgentsForMode(result.mode), compliance: [], profiles: result.profiles },
+      agents: { active: defaultAgentsForMode(result.mode), compliance: [], specialized, profiles: result.profiles },
       runtimes: { active: [runtimeOverride ?? result.runtime] },
       skills: result.skills,
     };
