@@ -8,7 +8,12 @@ universal:
   - hook: pre-edit-check.js
     event: PreToolUse
     matcher: "Edit|Write"
-    description: "Branch guard, debug detection, secret detection"
+    description: >-
+      Branch guard, debug detection, secret detection y spec gate (issue #28):
+      al editar código en una rama feature exige una spec APPROVED en
+      docs/specs/. Backward-compatible: advierte por defecto y solo bloquea con
+      mode=enterprise + rules.require_spec_before_implementation. Ver
+      docs/spec-gate-flow.md.
   - hook: post-turn-check.sh
     event: Stop
     description: "Typecheck/lint sobre archivos modificados"
