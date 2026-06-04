@@ -14,11 +14,15 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, '..', 'dist');
 const CLI = join(DIST, 'cli.js');
+
+// Dynamic import() of an absolute path needs a file:// URL on Windows
+// (a bare "D:\..." path throws ERR_UNSUPPORTED_ESM_URL_SCHEME).
+const importDist = (...parts) => import(pathToFileURL(join(DIST, ...parts)).href);
 
 /** Strip ANSI escapes so assertions match plain text. */
 function stripAnsi(s) {
@@ -36,9 +40,9 @@ let panelData, audit, doctor;
 before(async () => {
   assert.ok(existsSync(join(DIST, 'lib', 'panel-data.js')),
     'dist not built — run "npm run build:all" before the tests.');
-  panelData = await import(join(DIST, 'lib', 'panel-data.js'));
-  audit = await import(join(DIST, 'commands', 'audit.js'));
-  doctor = await import(join(DIST, 'commands', 'doctor.js'));
+  panelData = await importDist('lib', 'panel-data.js');
+  audit = await importDist('commands', 'audit.js');
+  doctor = await importDist('commands', 'doctor.js');
 });
 
 function makeTmpDir(t) {

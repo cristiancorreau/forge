@@ -16,15 +16,19 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, '..', 'dist');
 
+// Dynamic import() of an absolute path needs a file:// URL on Windows
+// (a bare "D:\..." path throws ERR_UNSUPPORTED_ESM_URL_SCHEME).
+const importDist = (...parts) => import(pathToFileURL(join(DIST, ...parts)).href);
+
 let bunMod, asciiMod, boxMod, bannerMod;
 
 before(async () => {
   assert.ok(existsSync(join(DIST, 'lib', 'bun.js')),
     'dist not built — run "npm run build:all" before the tests.');
-  bunMod = await import(join(DIST, 'lib', 'bun.js'));
-  asciiMod = await import(join(DIST, 'ui', 'ascii.js'));
-  boxMod = await import(join(DIST, 'ui', 'box.js'));
-  bannerMod = await import(join(DIST, 'ui', 'banner.js'));
+  bunMod = await importDist('lib', 'bun.js');
+  asciiMod = await importDist('ui', 'ascii.js');
+  boxMod = await importDist('ui', 'box.js');
+  bannerMod = await importDist('ui', 'banner.js');
 });
 
 // ── Bun resolver ─────────────────────────────────────────────────────────────
