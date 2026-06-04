@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.9.13] — 2026-06-04
+
+### Cambiado (UI)
+- **Selects del wizard/dashboard: colores invertidos y más altos.** El item bajo el cursor ahora usa el fondo resaltado (`#1e3a5f`) con texto amarillo; las opciones no seleccionadas quedan sobre el fondo del panel (antes estaba al revés: el cursor se veía oscuro y el resto azul). Se agregó `itemSpacing: 1`, `showScrollIndicator` y mayor altura (`options × 3 + 1`, acotada a `BODY_H − 4`) para que cada opción tenga aire. Aplicado en `askSelect`, el welcome y el nav del dashboard. Verificado en PTY reconstruyendo el grid.
+
+---
+
 ## [2.9.12] — 2026-06-04
 
 ### Agregado

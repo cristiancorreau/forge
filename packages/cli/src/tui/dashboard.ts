@@ -249,9 +249,11 @@ async function runDashboardLoop(renderer: any, data: DashboardData): Promise<voi
   const nav = new SelectRenderable(renderer, {
     id: 'nav-sel', width: LEFT_W - 4, height: BODY_H - 3,
     options: SECTIONS, selectedIndex: 0,
-    backgroundColor: C.bgPanel, focusedBackgroundColor: '#1c3a5e', focusedTextColor: C.cyan,
-    selectedBackgroundColor: '#162032', selectedTextColor: C.yellow,
-    showDescription: true, descriptionColor: C.muted,
+    itemSpacing: 1, showScrollIndicator: true,
+    // Highlighted (cursor) row gets the bright background; others stay on panel.
+    backgroundColor: C.bgPanel, focusedBackgroundColor: C.bgPanel, focusedTextColor: C.white,
+    selectedBackgroundColor: '#1e3a5f', selectedTextColor: C.yellow,
+    showDescription: true, descriptionColor: C.muted, selectedDescriptionColor: C.cyan,
   });
   navPanel.add(nav);
 

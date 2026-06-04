@@ -259,19 +259,26 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
         ? Math.max(0, options.findIndex((o: any) => o.value === initialValue))
         : 0;
 
+      // itemSpacing gives each option breathing room (name + description +
+      // blank line ≈ 3 rows). The highlighted (cursor) row uses the bright
+      // selected* colors; non-selected rows stay on the panel background.
+      const rowsPerItem = 3;
       const sel = new SelectRenderable(renderer, {
         id: 'q-select',
         width: RIGHT_W - 4,
-        height: Math.min(options.length + 2, BODY_H - 8),
+        height: Math.min(options.length * rowsPerItem + 1, BODY_H - 4),
         options,
         selectedIndex: initIdx,
+        itemSpacing: 1,
+        showScrollIndicator: true,
         backgroundColor: C.bgPanel,
-        focusedBackgroundColor: '#1c3a5e',
-        focusedTextColor: C.cyan,
-        selectedBackgroundColor: '#162032',
+        focusedBackgroundColor: C.bgPanel,
+        focusedTextColor: C.white,
+        selectedBackgroundColor: C.bgFocus,
         selectedTextColor: C.yellow,
         showDescription: true,
         descriptionColor: C.muted,
+        selectedDescriptionColor: C.cyan,
       });
       contentPanel.add(sel);
       // focus() attaches the keypress handler so ↑↓ + Enter work
@@ -314,8 +321,9 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
       const go = new SelectRenderable(renderer, {
         id: 'q-select', width: RIGHT_W - 4, height: 3,
         options: [o('Comenzar configuración  →', 'go', 'Enter para continuar')],
-        backgroundColor: C.bgPanel, focusedBackgroundColor: '#1c3a5e', focusedTextColor: C.cyan,
-        selectedBackgroundColor: '#162032', selectedTextColor: C.yellow, showDescription: true, descriptionColor: C.muted,
+        backgroundColor: C.bgPanel, focusedBackgroundColor: C.bgPanel, focusedTextColor: C.white,
+        selectedBackgroundColor: C.bgFocus, selectedTextColor: C.yellow, showDescription: true,
+        descriptionColor: C.muted, selectedDescriptionColor: C.cyan,
       });
       contentPanel.add(go);
       go.focus();
