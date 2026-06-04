@@ -9,6 +9,7 @@ import {
 } from 'fs';
 import { join, basename, relative } from 'path';
 import { findProjectYaml, projectRoot } from '../lib/yaml.js';
+import { resolveForgeRoot } from '../lib/paths.js';
 import { bold, dim, green, red, yellow, cyan, gray, icons } from '../ui/colors.js';
 import { box } from '../ui/box.js';
 
@@ -17,12 +18,14 @@ const HELP = `Usage: forge wiki <subcommand> [options]
 Manage the project knowledge base in <projectRoot>/wiki/.
 
 Subcommands:
+  init [--force]    Scaffold the full templated wiki structure (idempotent)
   status            Show wiki structure: page counts, control files, index health
   ingest <file>     Copy a source file into wiki/raw/ for later AI compilation
   query <q>         Search wiki pages (simple text match over wiki/*.md)
   lint              Check wiki integrity: broken links, orphans, index coverage
 
 Options:
+  --force           (init) Overwrite existing control files (index.md, log.md)
   -h, --help        Show this help
 
 The wiki lives at <projectRoot>/wiki/ with index.md, log.md, raw/ and subdirs
@@ -30,8 +33,16 @@ The wiki lives at <projectRoot>/wiki/ with index.md, log.md, raw/ and subdirs
 sources is performed by the AI agent via the /wiki-ingest skill.
 `;
 
-const SUBDIRS = ['raw', 'concepts', 'entities', 'sources', 'synthesis'] as const;
+/** Subdirectories that get a curated _template.md seed (raw/ stays empty). */
+const TEMPLATED_SUBDIRS = ['concepts', 'entities', 'sources', 'synthesis'] as const;
+const SUBDIRS = ['raw', ...TEMPLATED_SUBDIRS] as const;
 const CONTROL_FILES = ['index.md', 'log.md'] as const;
+
+/** Minimal fallback seeds, used only when a bundled template is unavailable. */
+const FALLBACK_CONTROL: Record<(typeof CONTROL_FILES)[number], string> = {
+  'index.md': '# Wiki Index\n\n<!-- generado por forge wiki -->\n',
+  'log.md': '# Wiki Log\n\n<!-- ingesta registrada aquí -->\n',
+};
 
 /** Resolve the project root, falling back to cwd when no project.yaml exists. */
 function resolveProjectRoot(): string {
@@ -41,6 +52,21 @@ function resolveProjectRoot(): string {
 
 function wikiRoot(): string {
   return join(resolveProjectRoot(), 'wiki');
+}
+
+/**
+ * True for a real wiki page: any .md under the wiki except raw/ sources,
+ * the control files, and the `_template.md` scaffolding seeds (placeholders
+ * that `forge wiki init` lays down — they are not knowledge pages, so they
+ * must not count toward index coverage or trip the wikilink linter).
+ */
+function isWikiPage(root: string, path: string): boolean {
+  const sep = process.platform === 'win32' ? '\\' : '/';
+  if (path.startsWith(join(root, 'raw') + sep)) return false;
+  const name = basename(path);
+  if (name === '_template.md') return false;
+  if (CONTROL_FILES.includes(name as (typeof CONTROL_FILES)[number])) return false;
+  return true;
 }
 
 /** Recursively collect every .md file under a directory (absolute paths). */
@@ -151,9 +177,7 @@ function wikiStatus(): number {
   const indexPath = join(root, 'index.md');
   if (existsSync(indexPath)) {
     const indexContent = readFileSync(indexPath, 'utf-8');
-    const pages = collectMarkdown(root).filter(
-      p => !p.startsWith(join(root, 'raw')) && !CONTROL_FILES.includes(basename(p) as (typeof CONTROL_FILES)[number]),
-    );
+    const pages = collectMarkdown(root).filter(p => isWikiPage(root, p));
     const linked = pages.filter(p => {
       const rel = relative(root, p).replace(/\.md$/, '');
       const name = basename(p, '.md');
@@ -176,27 +200,114 @@ function wikiStatus(): number {
 // ingest
 // ---------------------------------------------------------------------------
 
-function ensureWikiStructure(root: string): boolean {
-  let created = false;
+/**
+ * Locate the bundled wiki templates directory (<forgeRoot>/templates/wiki/).
+ * Returns null if the forge root can't be resolved (e.g. running outside an
+ * install), so callers fall back to the minimal inline seeds.
+ */
+function wikiTemplatesDir(): string | null {
+  try {
+    return join(resolveForgeRoot(), 'templates', 'wiki');
+  } catch {
+    return null;
+  }
+}
+
+/** Copy a bundled template file when present; otherwise write `fallback`. */
+function seedFile(dest: string, templatePath: string | null, fallback: string, force = false): boolean {
+  if (existsSync(dest) && !force) return false;
+  if (templatePath && existsSync(templatePath)) {
+    try {
+      copyFileSync(templatePath, dest);
+      return true;
+    } catch {
+      // fall through to inline fallback
+    }
+  }
+  writeFileSync(dest, fallback, 'utf-8');
+  return true;
+}
+
+/**
+ * Scaffolds the full templated wiki structure under `root`:
+ *  - the 5 subdirs (raw/ stays empty; concepts/entities/sources/synthesis each
+ *    get their _template.md),
+ *  - index.md and log.md copied from the bundled templates/wiki/.
+ * Idempotent: existing files are never overwritten unless `force` is set (force
+ * only applies to the control files index.md/log.md). Returns true if anything
+ * was created or overwritten. Falls back to minimal seeds when a template is
+ * missing so the wiki is always usable.
+ */
+function scaffoldWiki(root: string, force = false): boolean {
+  const tplDir = wikiTemplatesDir();
+  let changed = false;
+
   for (const sub of SUBDIRS) {
     const dirPath = join(root, sub);
     if (!existsSync(dirPath)) {
       mkdirSync(dirPath, { recursive: true });
-      created = true;
+      changed = true;
     }
   }
-  const seeds: Array<[string, string]> = [
-    ['index.md', '# Wiki Index\n\n<!-- generado por forge wiki ingest -->\n'],
-    ['log.md', '# Wiki Log\n\n<!-- ingesta registrada aquí -->\n'],
+
+  // Control files: index.md, log.md (force may overwrite these).
+  for (const fname of CONTROL_FILES) {
+    const tpl = tplDir ? join(tplDir, fname) : null;
+    if (seedFile(join(root, fname), tpl, FALLBACK_CONTROL[fname], force)) changed = true;
+  }
+
+  // Subdir _template.md seeds (never force-overwritten — they are starting points).
+  for (const sub of TEMPLATED_SUBDIRS) {
+    const tpl = tplDir ? join(tplDir, sub, '_template.md') : null;
+    const dest = join(root, sub, '_template.md');
+    if (existsSync(dest)) continue;
+    if (tpl && existsSync(tpl)) {
+      try {
+        copyFileSync(tpl, dest);
+        changed = true;
+      } catch {
+        // a missing/unreadable subdir template is non-fatal
+      }
+    }
+  }
+
+  return changed;
+}
+
+/** Back-compat shim used by ingest: ensure the templated structure exists. */
+function ensureWikiStructure(root: string): boolean {
+  return scaffoldWiki(root, false);
+}
+
+/** Public scaffolder for other commands (e.g. forge init) — see scaffoldWiki. */
+export function scaffoldWikiStructure(projectRootDir: string, force = false): boolean {
+  return scaffoldWiki(join(projectRootDir, 'wiki'), force);
+}
+
+// ---------------------------------------------------------------------------
+// init
+// ---------------------------------------------------------------------------
+
+function wikiInit(force: boolean): number {
+  console.log(cyan(bold('forge wiki init')) + '\n');
+
+  const root = wikiRoot();
+  const existed = existsSync(root);
+  scaffoldWiki(root, force);
+
+  const lines = [
+    `index.md, log.md ${force ? '(reescritos)' : '(desde templates)'}`,
+    `subdirs: ${SUBDIRS.join(', ')}`,
+    `seeds: ${TEMPLATED_SUBDIRS.map(s => `${s}/_template.md`).join(', ')}`,
   ];
-  for (const [fname, content] of seeds) {
-    const fpath = join(root, fname);
-    if (!existsSync(fpath)) {
-      writeFileSync(fpath, content, 'utf-8');
-      created = true;
-    }
-  }
-  return created;
+  const title = existed && !force ? green('Wiki actualizado') : green('Wiki inicializado');
+  console.log(box(title, lines));
+
+  console.log(`\n  ${bold('Próximos pasos:')}`);
+  console.log(`    Agregar una fuente:  ${cyan('forge wiki ingest <archivo>')}`);
+  console.log(`    En Claude Code:      ${cyan('/wiki-ingest')} ${dim('compila el conocimiento')}`);
+  console.log(`                         ${cyan('/wiki-query')} ${dim('responde con citas · ')}${cyan('/wiki-lint')} ${dim('verifica integridad')}\n`);
+  return 0;
 }
 
 function wikiIngest(file: string | undefined): number {
@@ -220,7 +331,7 @@ function wikiIngest(file: string | undefined): number {
 
   const root = wikiRoot();
   if (ensureWikiStructure(root)) {
-    console.log(`  ${green('Estructura creada.')} wiki/ inicializado con index.md y log.md.\n`);
+    console.log(`  ${green('Estructura creada.')} wiki/ inicializado desde los templates.\n`);
   }
 
   const stamp = todayStamp();
@@ -278,8 +389,8 @@ function wikiQuery(queryArg: string | undefined): number {
   }
 
   const query = queryArg.toLowerCase();
-  // search wiki pages (exclude raw/ — those are unprocessed sources)
-  const pages = collectMarkdown(root).filter(p => !p.startsWith(join(root, 'raw') + (process.platform === 'win32' ? '\\' : '/')));
+  // search wiki pages (exclude raw/ sources, control files and template seeds)
+  const pages = collectMarkdown(root).filter(p => isWikiPage(root, p));
 
   interface Match {
     path: string;
@@ -361,13 +472,8 @@ function wikiLint(): number {
   const indexPath = join(root, 'index.md');
   const indexContent = existsSync(indexPath) ? readFileSync(indexPath, 'utf-8') : '';
 
-  // wiki pages = all .md except raw/ and control files
-  const sep = process.platform === 'win32' ? '\\' : '/';
-  const pages = collectMarkdown(root).filter(
-    p =>
-      !p.startsWith(join(root, 'raw') + sep) &&
-      !CONTROL_FILES.includes(basename(p) as (typeof CONTROL_FILES)[number]),
-  );
+  // wiki pages = all .md except raw/ sources, control files and template seeds
+  const pages = collectMarkdown(root).filter(p => isWikiPage(root, p));
 
   // 2. broken wikilinks [[ruta/nombre]]
   const linkRe = /\[\[([^\]]+)\]\]/g;
@@ -452,6 +558,8 @@ export async function wiki(args: string[]): Promise<number> {
   const rest = args.slice(1);
 
   switch (sub) {
+    case 'init':
+      return wikiInit(rest.includes('--force'));
     case 'status':
       return wikiStatus();
     case 'ingest':

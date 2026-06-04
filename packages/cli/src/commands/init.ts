@@ -54,6 +54,16 @@ import {
   generateKiroAgents, generateKiroCommands, generateKiroBranchGuardHook
 } from '../lib/generators/kiro.js';
 import type { ProjectYaml } from '../lib/yaml.js';
+import { scaffoldWikiStructure } from './wiki.js';
+
+/** Active skill ids that enable the project knowledge base (wiki). */
+const WIKI_SKILLS = ['wiki-ingest', 'wiki-query', 'wiki-lint'];
+
+/** True if the project's active skills include any wiki-* skill. */
+function hasWikiSkill(config: ProjectYaml): boolean {
+  const skills = Array.isArray(config.skills) ? config.skills : [];
+  return skills.some(s => WIKI_SKILLS.includes(s));
+}
 
 const HELP = `Usage: forge init [options]
 
@@ -518,6 +528,13 @@ export async function init(args: string[]): Promise<number> {
           }
         },
       },
+      // Knowledge base — only for projects that activate a wiki-* skill. Other
+      // projects don't get a wiki/ dir forced on them.
+      ...(hasWikiSkill(config) ? [{
+        title: 'wiki/ (knowledge base)',
+        tech: 'templated scaffold',
+        task: () => { scaffoldWikiStructure(projectRoot, false); },
+      }] : []),
       {
         title: '.forge/manifest.json',
         tech: 'sha256 tracking',
