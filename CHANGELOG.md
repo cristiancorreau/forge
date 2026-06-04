@@ -7,6 +7,28 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.10.0] — 2026-06-04
+
+### Agregado
+- **Skills `session-start` / `session-close` centralizados** (#29). Definidos en `core/skills/`, registrados en el catálogo y expuestos por el CLI (`forge session-start` / `forge session-close`); los templates de Claude Code, OpenCode y Codex referencian el skill central en vez de duplicar la lógica.
+- **Flujo de agentes Tier 3 (dominio)** (#31). El schema acepta `agents.specialized`; `forge scaffold --tier 3 --name <agente>` genera un agente Tier 3 conforme a `docs/agent-standard.md`; `forge validate` y `forge audit` verifican su existencia y el wizard de `forge init` los autodetecta.
+- **Hooks de guardrail ejecutables en todos los runtimes** (#32). Kiro suma hooks JSON `pre-bash-check` y `post-turn-check` (además del branch-guard); OpenCode y Codex obtienen un `.githooks/pre-commit` POSIX compartido (sin Python) con branch-guard y detección de debug.
+- **Barrera spec-first opt-in** (#28). Los hooks `pre-edit-check` exigen una spec `APPROVED` en `docs/specs/` (advierten por defecto; bloquean solo en `mode=enterprise`). Se agregan plantilla de PR, `CONTRIBUTING.md`, `docs/spec-gate-flow.md` y el workflow informativo `spec-gate.yml`.
+- **Dogfooding: forge se auto-hostea** (#27). `project.yaml`, `CLAUDE.md`, `.forge/manifest.json` y scaffold de `docs/specs/` en la raíz, validados por el propio CLI.
+
+### Cambiado
+- **CI principal migrado a la suite Node del CLI** (#24). `tests.yml` corre los tests del paquete publicado (Node 20/22 + Bun) en cada push/PR a `main`; el pytest legacy se movió a `tests-legacy.yml` (manual).
+
+### Corregido
+- **`hooks-registry.yaml` apuntaba a hooks `.py` inexistentes** (#23). Ahora referencia solo los hooks `.js/.sh` que el CLI instala, restaurando el contrato "sin Python".
+- **Versiones desincronizadas** (#25). `forge.py`, `manifest.json` y `packages/cli/package.json` quedan coherentes.
+
+### Documentación
+- README: `migrate`, `scaffold` y `teardown` marcados como disponibles (#26).
+- Deprecación de la CLI legacy de Python con `MIGRATION.md` y sunset en v3.0.0 (#30).
+
+---
+
 ## [2.9.13] — 2026-06-04
 
 ### Cambiado (UI)
