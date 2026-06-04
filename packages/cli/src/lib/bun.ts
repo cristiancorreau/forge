@@ -21,6 +21,20 @@ export interface BunResolveOptions {
   env?: NodeJS.ProcessEnv;
 }
 
+/** Inputs to the (pure) relaunch decision. Everything is injected so the matrix
+ * — darwin/win32/linux × bun present/absent × TTY × WT_SESSION × the force/no
+ * overrides — is unit-testable on any host without spawning a process. */
+export interface RelaunchDecisionOptions {
+  platform?: NodeJS.Platform;
+  env?: NodeJS.ProcessEnv;
+  /** Resolved bun binary path/command, or null when Bun isn't installed. */
+  bunPath?: string | null;
+  /** Whether both stdin and stdout are real TTYs (panels need a real terminal). */
+  isTTY?: boolean;
+  /** True when forge is already executing under the Bun runtime. */
+  alreadyBun?: boolean;
+}
+
 /**
  * Ordered list of candidate `bun` binaries for a platform. The first entry is
  * always the bare command name so a Bun already on PATH wins. On win32 the home
@@ -96,4 +110,100 @@ export function findBun(opts: BunResolveOptions = {}): string | null {
  */
 export function resolveCliEntry(metaUrl: string): string {
   return fileURLToPath(new URL('../cli.js', metaUrl));
+}
+
+/**
+ * True when the current win32 console is "capable" of an OpenTUI render — i.e.
+ * Windows Terminal (`WT_SESSION`) or any host advertising `TERM_PROGRAM`
+ * (VS Code's integrated terminal, etc.). Legacy conhost / PowerShell 5 set
+ * neither and would mangle the full-screen alt-screen UI, so we treat them as
+ * incapable and prefer the (improved) Node fallback there.
+ */
+function win32TerminalIsCapable(env: NodeJS.ProcessEnv): boolean {
+  return !!env.WT_SESSION || !!env.TERM_PROGRAM;
+}
+
+/**
+ * Pure decision: should forge re-launch itself under Bun to render an OpenTUI
+ * panel? Parameterised on platform/env/bunPath/isTTY/alreadyBun so the full
+ * matrix is unit-testable on any host.
+ *
+ * Gates (all must pass): not already under Bun, not already relaunched
+ * (`FORGE_BUN_RELAUNCH=1`), not opted out (`FORGE_NO_BUN=1`), a real TTY, and a
+ * resolved Bun binary. Beyond that:
+ *   - `FORGE_FORCE_BUN=1` forces the relaunch (skips the win32 terminal gate).
+ *   - On win32, only auto-relaunch when the console is capable (Windows Terminal
+ *     or `TERM_PROGRAM`); otherwise prefer the Node fallback to avoid a broken
+ *     OpenTUI render on a legacy console.
+ *   - On macOS/Linux, relaunch whenever Bun is present and we have a TTY.
+ */
+export function shouldRelaunchUnderBun(opts: RelaunchDecisionOptions = {}): boolean {
+  const platform = opts.platform ?? process.platform;
+  const env = opts.env ?? process.env;
+  const bunPath = opts.bunPath ?? null;
+  const isTTY = opts.isTTY ?? false;
+  const alreadyBun = opts.alreadyBun ?? false;
+
+  if (alreadyBun) return false;                        // we ARE Bun — nothing to do
+  if (env.FORGE_BUN_RELAUNCH === '1') return false;    // already relaunched (guard)
+  if (env.FORGE_NO_BUN === '1') return false;          // explicit opt-out
+  if (!isTTY) return false;                            // panels need a real TTY
+  if (!bunPath) return false;                          // Bun not installed
+
+  // Explicit force overrides the platform/terminal heuristic (once gated above).
+  if (env.FORGE_FORCE_BUN === '1') return true;
+
+  // Legacy Windows consoles can't render OpenTUI cleanly → prefer Node fallback.
+  if (platform === 'win32' && !win32TerminalIsCapable(env)) return false;
+
+  return true;
+}
+
+/**
+ * Spawn the resolved Bun binary to re-run the CLI entry, inheriting stdio and
+ * propagating the child's exit code to the caller. Sets the
+ * `FORGE_BUN_RELAUNCH=1` guard so the relaunched process won't recurse.
+ *
+ * `bunPath` must be the absolute path/command from {@link findBun} and
+ * `cliEntry` a real filesystem path from {@link resolveCliEntry} (fileURLToPath
+ * — valid on Windows). Returns the exit code to pass to `process.exit`.
+ */
+export function relaunchUnderBun(
+  bunPath: string,
+  cliEntry: string,
+  argv: string[],
+  env: NodeJS.ProcessEnv = process.env,
+): number {
+  const result = spawnSync(bunPath, [cliEntry, ...argv], {
+    stdio: 'inherit',
+    env: { ...env, FORGE_BUN_RELAUNCH: '1' },
+  });
+  return result.status ?? 0;
+}
+
+/** Inputs to the fallback-hint decision (injected for testability). */
+export interface FallbackHintOptions {
+  env?: NodeJS.ProcessEnv;
+  isTTY?: boolean;
+  alreadyBun?: boolean;
+}
+
+/** The one-line friendly hint shown when forge runs the Node fallback because
+ * Bun is absent (or gated). */
+export const BUN_FALLBACK_HINT =
+  'Tip: instalá Bun para el panel completo — https://bun.sh';
+
+/**
+ * Return the friendly Bun hint, or `null` when it shouldn't be shown. Shown only
+ * in a TTY, never under Bun (OpenTUI is already in use), and never when the user
+ * opted out (`FORGE_NO_BUN=1`) — there's no point nudging someone who disabled it.
+ */
+export function bunFallbackHint(opts: FallbackHintOptions = {}): string | null {
+  const env = opts.env ?? process.env;
+  const isTTY = opts.isTTY ?? false;
+  const alreadyBun = opts.alreadyBun ?? false;
+  if (alreadyBun) return null;
+  if (!isTTY) return null;
+  if (env.FORGE_NO_BUN === '1') return null;
+  return BUN_FALLBACK_HINT;
 }
