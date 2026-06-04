@@ -22,7 +22,7 @@ Setup
   init           Initialize forge in a project (wizard + post-install dashboard)
   generate       Generate runtime config files from project.yaml
   migrate        Migrate project.yaml from the v1 schema to v2 (--dry-run, --backup)
-  scaffold       Scaffold a new Tier 2 profile (profiles/<stack>/agents/<engineer>.md)
+  scaffold       Scaffold a new agent: Tier 2 profile, or Tier 3 domain agent (--tier 3)
   teardown       Cleanly uninstall forge from a project (manifest-driven)
 
 Inspect

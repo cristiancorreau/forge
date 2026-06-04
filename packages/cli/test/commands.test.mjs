@@ -334,6 +334,108 @@ skills:
     assert.match(stdout, /--engineer/);
   });
 
+  // Issue #31: Tier 3 domain-agent scaffolding.
+  test('scaffold --help documents the --tier 3 flag', () => {
+    const { status, stdout } = runForge(['scaffold', '--help']);
+    assert.equal(status, 0);
+    assert.match(stdout, /--tier/);
+    assert.match(stdout, /Tier 3/);
+  });
+
+  test('scaffold --tier 3 creates a tier:3 agent in .claude/agents/', (t) => {
+    const dir = makeTmpDir(t);
+    const { status, all } = runForge(
+      ['scaffold', '--tier', '3', '--name', 'dsar-specialist', '--description', 'Maneja DSAR.', '--scope-dir', 'src/dsar'],
+      { cwd: dir },
+    );
+    assert.equal(status, 0, `tier 3 scaffold should exit 0; output:\n${all}`);
+    const agentFile = join(dir, '.claude', 'agents', 'dsar-specialist.md');
+    assert.ok(existsSync(agentFile), 'tier 3 agent file missing');
+    const content = readFileSync(agentFile, 'utf-8');
+    // Frontmatter per docs/agent-standard.md.
+    assert.match(content, /^---\n/);
+    assert.match(content, /\nname: dsar-specialist\n/);
+    assert.match(content, /\ntier: 3\n/);
+    assert.match(content, /Maneja DSAR\./);
+    // Required sections.
+    assert.match(content, /## Tu trabajo/);
+    assert.match(content, /## Reglas/);
+    assert.match(content, /## No hagas/);
+  });
+
+  test('scaffold --tier 3 requires --name', (t) => {
+    const dir = makeTmpDir(t);
+    const { status } = runForge(['scaffold', '--tier', '3'], { cwd: dir });
+    assert.equal(status, 1, 'tier 3 scaffold without --name must exit 1');
+  });
+
+  test('scaffold --tier 3 does not overwrite without --force', (t) => {
+    const dir = makeTmpDir(t);
+    runForge(['scaffold', '--tier', '3', '--name', 'policy-engineer'], { cwd: dir });
+    const { status, all } = runForge(['scaffold', '--tier', '3', '--name', 'policy-engineer'], { cwd: dir });
+    assert.equal(status, 1, 'second scaffold without --force must exit 1');
+    assert.match(all, /ya existe/);
+  });
+
+  // Issue #31: the v2 schema must accept agents.specialized (was rejected before).
+  test('validate accepts agents.specialized when the agent file exists', (t) => {
+    const dir = makeTmpDir(t);
+    runForge(['scaffold', '--tier', '3', '--name', 'gcm-engineer'], { cwd: dir });
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Tier3 Project"
+  mode: "standard"
+agents:
+  specialized:
+    - gcm-engineer
+`,
+    );
+    const { status, stdout } = runForge(['validate'], { cwd: dir });
+    assert.equal(status, 0, `validate should accept agents.specialized; output:\n${stdout}`);
+    assert.match(stdout, /OK|válido/i);
+  });
+
+  // Issue #31: validate must flag a specialized agent that has no file.
+  test('validate fails when a specialized agent has no .claude/agents file', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Missing Tier3"
+  mode: "standard"
+agents:
+  specialized:
+    - ghost-agent
+`,
+    );
+    const { status, all } = runForge(['validate'], { cwd: dir });
+    assert.equal(status, 1, 'validate must exit 1 for a missing specialized agent');
+    assert.match(all, /ghost-agent/);
+    assert.match(all, /specialized/);
+  });
+
+  // Issue #31: audit must report consistency of agents.specialized.
+  test('audit reports a missing specialized agent as an error', (t) => {
+    const dir = makeTmpDir(t);
+    // Needs a .claude dir to enter the agent-checking branch.
+    runForge(['scaffold', '--tier', '3', '--name', 'banner-engineer'], { cwd: dir });
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Audit Tier3"
+  mode: "standard"
+agents:
+  specialized:
+    - banner-engineer
+    - ghost-agent
+`,
+    );
+    const { all } = runForge(['audit'], { cwd: dir });
+    assert.match(all, /banner-engineer/, 'present specialized agent should be acknowledged');
+    assert.match(all, /ghost-agent/, 'missing specialized agent should be flagged');
+  });
+
   test('teardown --dry-run lists artifacts without deleting', (t) => {
     const dir = makeTmpDir(t);
     writeProjectYaml(dir, VALID_V2_YAML);

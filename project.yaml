@@ -4,10 +4,10 @@
 # repo. Generado/validado con el CLI TypeScript de forge (forge validate).
 #
 # Nota sobre agentes especializados (Tier 3): los 7 agentes forge-* viven en
-# .claude/agents/ y se declaran aquí en agents.active. El schema v2
-# (core/schemas/project.schema.json) no admite una clave agents.specialized
-# (additionalProperties: false), por lo que se usa agents.active, que es la
-# lista canónica de agentes del proyecto.
+# .claude/agents/ y se declaran aquí en agents.specialized (issue #31). El schema
+# v2 (core/schemas/project.schema.json) ya admite agents.specialized: string[],
+# y forge validate/audit verifican que cada agente listado exista como archivo en
+# .claude/agents/<agente>.md. El orchestrator está implícito en todo proyecto forge.
 
 runtimes:
   active:
@@ -43,7 +43,7 @@ stack:
 agents:
   # Los 7 agentes especializados (Tier 3) que viven en .claude/agents/.
   # El orchestrator está implícito en todo proyecto forge.
-  active:
+  specialized:
     - forge-cli-engineer         # packages/cli/src — CLI TypeScript y dogfooding
     - forge-docs-engineer        # README, CHANGELOG, docs/ — documentación
     - forge-migration-engineer   # hooks/, workflows, manifest.json, forge.py — migración Python→TS

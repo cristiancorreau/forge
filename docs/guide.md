@@ -42,7 +42,7 @@ La CLI expone los siguientes comandos. Todos corren sobre Node/Bun, sin dependen
 | `forge wiki` | Gestiona el wiki del proyecto. | `status`, `ingest <file>`, `query <q>`, `lint` |
 | `forge skills` | Lista las 12 skills disponibles agrupadas por categoría. | `--json`, `--active` |
 | `forge aitmpl-search <query>` | Busca en el catálogo curado de frameworks, MCP servers y profiles. | `<query>` |
-| `forge scaffold` | Crea un nuevo profile Tier 2. | `--name <stack>`, `--engineer <agente>` |
+| `forge scaffold` | Crea un nuevo agente: profile Tier 2 o agente de dominio Tier 3. | `--tier <2\|3>`, `--name <slug>`, `--engineer <agente>`, `--scope-dir <dir>` |
 | `forge teardown` | Desinstala forge del proyecto de forma limpia. | `--dry-run` |
 
 ### Dashboard post-install
@@ -50,6 +50,55 @@ La CLI expone los siguientes comandos. Todos corren sobre Node/Bun, sin dependen
 Al finalizar `forge init`, forge abre un panel interactivo (OpenTUI sobre Bun) navegable por
 secciones: Overview, agentes instalados, workflow SDD, skills, runtimes e iconos/tech. En
 runtimes sin Bun se muestra un resumen estático. Salir con `q` o `Esc`.
+
+---
+
+## Crear un agente Tier 3
+
+Los agentes **Tier 3** conocen el negocio del proyecto (`dsar-specialist`, `gcm-engineer`,
+`policy-engineer`, `banner-engineer`). Viven en `.claude/agents/`, no provienen de forge, y se
+registran en `agents.specialized` del `project.yaml`.
+
+### Paso 1 — Generar el archivo del agente
+
+```bash
+forge scaffold --tier 3 --name dsar-specialist \
+  --description "Maneja DSAR bajo Ley 21.719. Scope: src/dsar." \
+  --scope-dir src/dsar
+```
+
+Crea `.claude/agents/dsar-specialist.md` con el frontmatter completo
+(`name`, `description`, `model`, `tools`, `tier: 3`) y las secciones obligatorias
+(`## Tu trabajo`, `## Reglas`, `## No hagas`, `## Workflow`) según `docs/agent-standard.md`,
+con comentarios guía para completar.
+
+### Paso 2 — Editar el archivo generado
+
+Reemplazá los placeholders: afiná el `description` en una línea (qué hace + scope exacto),
+completá `## Tu trabajo`, `## Reglas` y `## No hagas`. No uses `opus` por defecto: `sonnet`
+cubre el 90% de los casos.
+
+### Paso 3 — Registrar en project.yaml
+
+```yaml
+agents:
+  specialized:
+    - dsar-specialist
+```
+
+### Paso 4 — Validar la consistencia
+
+```bash
+forge validate
+```
+
+`forge validate` falla (exit 1, CI-safe) si un agente listado en `agents.specialized` no tiene
+su archivo en `.claude/agents/<agente>.md`. `forge audit` también reporta la consistencia entre
+los archivos instalados y la lista declarada (y nunca compara los Tier 3 contra forge, porque
+son propios del proyecto).
+
+> Si ya tenías agentes Tier 3 en `.claude/agents/`, `forge init` los auto-detecta (por su
+> frontmatter `tier: 3`) y pre-llena `agents.specialized` al generar el `project.yaml`.
 
 ---
 
