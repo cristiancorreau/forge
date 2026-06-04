@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.9.10] — 2026-06-04
+
+### Corregido
+- **Dashboard post-install: el panel derecho no cambiaba al navegar/Enter.** Los handlers leían `nav.selectedIndex`, pero `SelectRenderable` de OpenTUI no expone un getter `selectedIndex` (solo setter + `getSelectedIndex()`), así que devolvía `undefined` y todas las secciones renderizaban como índice 0 (siempre Overview). Ahora se usa el índice que el evento emite (`selectionChanged`/`itemSelected` pasan `(index, option)`), con fallback a `getSelectedIndex()`. Verificado en PTY: ↑↓ actualiza el panel en vivo y recorre agents → workflow → skills → runtimes → tech.
+
+### Notas
+- El welcome/tutorial del wizard ya aparecía al inicio desde 2.9.9 (verificado en PTY). Si no se veía, era una versión cacheada anterior vía `bunx` — usar `bunx @cristiancorreau/forge@latest`.
+
+---
+
 ## [2.9.9] — 2026-06-03
 
 ### Corregido

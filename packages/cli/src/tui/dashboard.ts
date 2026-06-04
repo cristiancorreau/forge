@@ -391,17 +391,17 @@ async function runDashboardLoop(renderer: any, data: DashboardData): Promise<voi
   renderSection(0);
   nav.focus();
 
-  // Re-render on Enter (robust). Also re-render on selectionChanged if available.
-  nav.on('itemSelected', () => {
-    const idx = nav.selectedIndex ?? 0;
-    renderSection(idx);
-  });
-  try {
-    nav.on('selectionChanged', () => {
-      const idx = nav.selectedIndex ?? 0;
-      renderSection(idx);
-    });
-  } catch {}
+  // OpenTUI's SelectRenderable emits (index, option) and exposes no
+  // `selectedIndex` getter (only a setter + getSelectedIndex()). Reading
+  // `nav.selectedIndex` returned undefined → every section rendered as index 0,
+  // so the right panel never changed. Use the emitted index instead, falling
+  // back to getSelectedIndex().
+  const sectionIdx = (idx: any): number =>
+    typeof idx === 'number' ? idx : (nav.getSelectedIndex?.() ?? 0);
+  // selectionChanged → live update while navigating with ↑↓.
+  // itemSelected → update on Enter.
+  nav.on('selectionChanged', (idx: any) => renderSection(sectionIdx(idx)));
+  nav.on('itemSelected',     (idx: any) => renderSection(sectionIdx(idx)));
 
   // Exit on q / Esc. Teardown (renderer.destroy + terminal restore) happens in
   // the caller's finally block, so the handler only detaches itself + resolves.
