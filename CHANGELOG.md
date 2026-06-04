@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.13.0] — 2026-06-04
+
+### Agregado
+- **Buscador + instalador del catálogo en `forge panel`.** Nueva sección "Catálogo": busca skills, profiles y templates en una sola búsqueda (con flag "ya instalado") e **instala desde el panel** — skills (→ `project.yaml.skills` + slash command), profiles (→ `agents.profiles` + agentes en `.claude/agents/`), templates (wiki/spec/architecture). La edición de `project.yaml` es **quirúrgica** (preserva comentarios) e **idempotente**, y el resultado siempre pasa `forge validate`. Disponible en OpenTUI (Bun) y en el fallback de Node.
+
+---
+
 ## [2.12.0] — 2026-06-04
 
 ### Agregado
