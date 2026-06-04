@@ -13,13 +13,38 @@ Wizard interactivo que detecta tu stack, instala agentes especializados, genera 
 
 ---
 
-## Quick start
+## Instalación
+
+forge corre con **Node.js 20+** (sin Python) y funciona con cualquier gestor.
+
+**Probar sin instalar** (one-off con `npx`):
 
 ```bash
 npx @cristiancorreau/forge init
 ```
 
-Sin instalación global. Sin Python. Solo Node.js.
+**Instalar el comando global `forge`** (para usar `forge init`, `forge doctor`, … directo):
+
+```bash
+npm install -g @cristiancorreau/forge     # npm
+pnpm add -g @cristiancorreau/forge        # pnpm  (requiere `pnpm setup` una vez)
+bun add -g @cristiancorreau/forge         # bun   (requiere ~/.bun/bin en el PATH)
+```
+
+Luego:
+
+```bash
+forge init
+forge doctor
+forge --version
+```
+
+> **El comando `forge` no se reconoce tras el install global?** El directorio de binarios
+> globales no está en tu `PATH`. `npx @cristiancorreau/forge <cmd>` siempre funciona sin
+> instalar; para el comando pelado:
+> - **npm:** `export PATH="$(npm prefix -g)/bin:$PATH"`
+> - **pnpm:** corré `pnpm setup` y reabrí la terminal
+> - **bun:** agregá `export PATH="$HOME/.bun/bin:$PATH"` a tu shell rc
 
 ---
 

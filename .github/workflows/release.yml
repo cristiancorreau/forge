@@ -80,6 +80,15 @@ jobs:
           node node_modules/.bin/forge --help
           node node_modules/.bin/forge doctor
 
+      - name: Smoke test — global install exposes the `forge` command
+        working-directory: packages/cli
+        run: |
+          TARBALL=$(ls *.tgz | head -1)
+          npm install -g "$GITHUB_WORKSPACE/packages/cli/$TARBALL"
+          # The bare command must resolve on PATH and run via its shebang (no explicit `node`).
+          forge --version
+          forge doctor
+
       - name: Publish
         working-directory: packages/cli
         run: npm publish --provenance --access public
