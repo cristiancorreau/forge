@@ -148,6 +148,8 @@ export function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>> |
   if (result.backendLanguage) stack.push(`  backend_language: ${result.backendLanguage}`);
   if (result.frontend) stack.push(`  frontend: ${result.frontend}`);
   if (result.frontendLanguage) stack.push(`  frontend_language: ${result.frontendLanguage}`);
+  if (result.mobile) stack.push(`  mobile: ${result.mobile}`);
+  if (result.mobileLanguage) stack.push(`  mobile_language: ${result.mobileLanguage}`);
   if (result.database) stack.push(`  database: ${result.database}`);
   if (result.orm) stack.push(`  orm: ${result.orm}`);
   if (result.packageManager) stack.push(`  package_manager: ${result.packageManager}`);
@@ -263,7 +265,7 @@ export function installHooks(forgeRoot: string, destDir: string, mode: string, f
 function buildSettings(language: string, mode: string): Record<string, unknown> {
   const allowList: string[] = [];
 
-  if (language === 'typescript') {
+  if (language === 'typescript' || language === 'javascript') {
     allowList.push('Bash(pnpm *)', 'Bash(npm *)', 'Bash(node *)', 'Bash(npx *)');
   } else if (language === 'python') {
     allowList.push('Bash(python3 *)', 'Bash(pip3 *)', 'Bash(pytest *)', 'Bash(ruff *)');
@@ -273,6 +275,14 @@ function buildSettings(language: string, mode: string): Record<string, unknown> 
     allowList.push('Bash(go *)');
   } else if (language === 'php') {
     allowList.push('Bash(composer *)', 'Bash(php *)');
+  } else if (language === 'rust') {
+    allowList.push('Bash(cargo *)', 'Bash(rustc *)');
+  } else if (language === 'java') {
+    allowList.push('Bash(mvn *)', 'Bash(./mvnw *)', 'Bash(gradle *)', 'Bash(./gradlew *)');
+  } else if (language === 'kotlin') {
+    allowList.push('Bash(gradle *)', 'Bash(./gradlew *)');
+  } else if (language === 'dart') {
+    allowList.push('Bash(flutter *)', 'Bash(dart *)');
   }
   allowList.push('Bash(git *)');
 

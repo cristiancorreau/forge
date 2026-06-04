@@ -22,7 +22,7 @@ import { generateCodexAgentsMd } from '../lib/generators/codex.js';
 import { scaffoldWikiStructure } from './wiki.js';
 import { analyzeProject, slugify, type ProjectAnalysis } from '../lib/project-analysis.js';
 import { generateWiki } from '../lib/wiki-autogen.js';
-import { languageLabel, deriveProjectLanguage, hasBackend, hasFrontend } from '../lib/wizard-flow.js';
+import { languageLabel, deriveProjectLanguage, hasBackend, hasFrontend, hasMobile } from '../lib/wizard-flow.js';
 import { VERSION } from '../version.js';
 import {
   defaultAgentsForMode, installCoreAgents, installHooks, installCommands,
@@ -112,15 +112,18 @@ function analysisToWizardResult(a: ProjectAnalysis, opts: AdoptOptions): WizardR
   const frontendLanguage = s.frontendLanguage
     ?? (hasFrontend(a.type) ? 'typescript' : undefined)
     ?? undefined;
-  const language = deriveProjectLanguage({ type: a.type, backendLanguage, frontendLanguage });
+  const mobileLanguage = s.mobileLanguage
+    ?? (hasMobile(a.type) ? (s.language ?? undefined) : undefined)
+    ?? undefined;
+  const language = deriveProjectLanguage({ type: a.type, backendLanguage, frontendLanguage, mobileLanguage });
 
   // Auto-detect profiles from the detected frameworks (mirrors the wizard).
   const PROFILE_MAP: Record<string, string> = {
     hono: 'hono-drizzle', nextjs: 'nextjs-admin', astro: 'astro',
-    fastapi: 'fastapi', rails: 'rails', laravel: 'laravel',
+    fastapi: 'fastapi', rails: 'rails', laravel: 'laravel', expo: 'expo',
   };
   const profiles: string[] = [];
-  for (const key of [s.backend, s.frontend]) {
+  for (const key of [s.backend, s.frontend, s.mobile]) {
     if (key && PROFILE_MAP[key]) profiles.push(PROFILE_MAP[key]);
   }
 
@@ -132,9 +135,11 @@ function analysisToWizardResult(a: ProjectAnalysis, opts: AdoptOptions): WizardR
     type: a.type,
     backendLanguage,
     frontendLanguage,
+    mobileLanguage,
     mode: opts.mode,
     backend: s.backend ?? undefined,
     frontend: s.frontend ?? undefined,
+    mobile: s.mobile ?? undefined,
     database: s.database ?? undefined,
     orm: s.orm ?? undefined,
     packageManager: s.packageManager ?? undefined,
@@ -156,6 +161,7 @@ function buildConfig(result: WizardResult): ProjectYaml {
     stack: {
       backend: result.backend, backend_language: result.backendLanguage,
       frontend: result.frontend, frontend_language: result.frontendLanguage,
+      mobile: result.mobile, mobile_language: result.mobileLanguage,
       database: result.database, orm: result.orm,
       package_manager: result.packageManager, testing: result.testing,
     },
@@ -172,6 +178,7 @@ function printDetectedSummary(a: ProjectAnalysis): void {
   lines.push(`${bold('Tipo')}: ${a.type}   ${bold('Lenguaje')}: ${a.stack.language ? languageLabel(a.stack.language) : '—'}   ${bold('Ecosistema')}: ${a.ecosystem}`);
   if (s.backend) lines.push(`${bold('Backend')}: ${s.backend}${s.backendLanguage ? ` (${s.backendLanguage})` : ''}`);
   if (s.frontend) lines.push(`${bold('Frontend')}: ${s.frontend}${s.frontendLanguage ? ` (${s.frontendLanguage})` : ''}`);
+  if (s.mobile) lines.push(`${bold('Mobile')}: ${s.mobile}${s.mobileLanguage ? ` (${s.mobileLanguage})` : ''}`);
   if (s.database || s.orm) lines.push(`${bold('Datos')}: ${[s.database, s.orm].filter(Boolean).join(' + ') || '—'}`);
   if (s.testing.length) lines.push(`${bold('Testing')}: ${s.testing.join(', ')}`);
   if (s.packageManager) lines.push(`${bold('Package manager')}: ${s.packageManager}`);

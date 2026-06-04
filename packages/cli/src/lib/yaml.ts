@@ -9,6 +9,10 @@ export interface ProjectStack {
   frontend?: string;
   /** Lenguaje del frontend (nuevo). Permite que back y front difieran. */
   frontend_language?: string;
+  /** Framework mobile (SPEC-039): flutter | react-native | expo. */
+  mobile?: string;
+  /** Lenguaje del mobile (SPEC-039): dart | typescript. */
+  mobile_language?: string;
   database?: string;
   orm?: string;
   package_manager?: string;
@@ -73,8 +77,8 @@ export interface ProjectYaml {
     slug?: string;
     description?: string;
     language?: string;
-    /** Tipo de proyecto (nuevo): solo frontend, solo backend o fullstack. */
-    type?: 'frontend' | 'backend' | 'fullstack';
+    /** Tipo de proyecto (nuevo): solo frontend, solo backend, fullstack o mobile. */
+    type?: 'frontend' | 'backend' | 'fullstack' | 'mobile';
     mode: 'startup' | 'standard' | 'enterprise';
     status?: string;
   };

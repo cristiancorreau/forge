@@ -82,7 +82,7 @@ describe('wizard-flow pure helpers (SPEC-037)', () => {
 
   test('framework list is filtered by language', () => {
     assert.deepEqual(backendFrameworksFor('typescript'), ['hono', 'express', 'nestjs', 'fastify']);
-    assert.deepEqual(backendFrameworksFor('python'), ['fastapi', 'django']);
+    assert.deepEqual(backendFrameworksFor('python'), ['fastapi', 'flask', 'django']);
     assert.deepEqual(backendFrameworksFor('ruby'), ['rails']);
     assert.deepEqual(backendFrameworksFor('go'), ['go-gin']);
     assert.deepEqual(backendFrameworksFor('php'), ['laravel']);

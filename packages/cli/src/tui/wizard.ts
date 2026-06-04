@@ -20,8 +20,8 @@ import { VERSION } from '../version.js';
 import { FORGE_BANNER } from '../ui/banner.js';
 import {
   type ProjectType,
-  hasBackend, hasFrontend,
-  backendFrameworksFor, frontendFrameworksFor,
+  hasBackend, hasFrontend, hasMobile,
+  backendFrameworksFor, frontendFrameworksFor, mobileFrameworksFor,
   deriveProjectLanguage,
 } from '../lib/wizard-flow.js';
 
@@ -92,7 +92,7 @@ const buildLines = (rows: Row[]) => {
 
 const STEPS = [
   'Project name','Project type',
-  'Backend','Frontend','Database','ORM',
+  'Backend','Frontend','Mobile','Database','ORM',
   'Package manager','Testing','Mode','Runtime','Confirm',
 ];
 
@@ -103,15 +103,21 @@ const PROJECT_TYPES = [
   o('Solo Frontend', 'frontend', 'UI / SPA / SSR'),
   o('Solo Backend',  'backend',  'API / servicio'),
   o('Fullstack',     'fullstack','frontend + backend (pueden diferir)'),
+  o('Mobile',        'mobile',   'app iOS/Android (Flutter, React Native)'),
 ];
 
 // Per-side language pickers. Backend supports every language; frontend is
 // TypeScript/JS today. The framework picker is FILTERED by the chosen language.
 const BACKEND_LANGS = [
   o('TypeScript','typescript','Recommended'), o('Python','python',''),
+  o('Java','java',''), o('Kotlin','kotlin',''), o('Rust','rust',''),
   o('Ruby','ruby',''), o('Go','go',''), o('PHP','php',''),
 ];
 const FRONTEND_LANGS = [o('TypeScript / JavaScript','typescript','Recommended')];
+const MOBILE_LANGS = [
+  o('Dart','dart','Flutter'),
+  o('TypeScript / JavaScript','typescript','React Native / Expo'),
+];
 
 const BACKEND_META: Record<string, { name: string; desc: string }> = {
   hono:    { name: 'Hono',    desc: 'Edge-ready, ultralight' },
@@ -119,7 +125,12 @@ const BACKEND_META: Record<string, { name: string; desc: string }> = {
   nestjs:  { name: 'NestJS',  desc: 'Enterprise' },
   fastify: { name: 'Fastify', desc: 'High performance' },
   fastapi: { name: 'FastAPI', desc: 'Async' },
+  flask:   { name: 'Flask',   desc: 'Micro-framework' },
   django:  { name: 'Django',  desc: 'Batteries included' },
+  springboot: { name: 'Spring Boot', desc: 'JVM, enterprise' },
+  axum:    { name: 'Axum',    desc: 'Tokio, async' },
+  actix:   { name: 'Actix-web', desc: 'High performance' },
+  rocket:  { name: 'Rocket',  desc: 'Ergonomic' },
   rails:   { name: 'Rails',   desc: 'Full-stack' },
   'go-gin': { name: 'Gin',    desc: 'Fast router' },
   laravel: { name: 'Laravel', desc: 'Full-stack PHP' },
@@ -129,6 +140,11 @@ const FRONTEND_META: Record<string, { name: string; desc: string }> = {
   astro:     { name: 'Astro',     desc: 'Content-first' },
   sveltekit: { name: 'SvelteKit', desc: 'Svelte' },
   nuxt:      { name: 'Nuxt',      desc: 'Vue' },
+};
+const MOBILE_META: Record<string, { name: string; desc: string }> = {
+  flutter:        { name: 'Flutter',      desc: 'Dart, cross-platform' },
+  'react-native': { name: 'React Native', desc: 'TypeScript/JS' },
+  expo:           { name: 'Expo',         desc: 'Managed React Native' },
 };
 
 /** Backend framework picker for a language + the "None / other" escape. */
@@ -144,6 +160,12 @@ function frontendOptionsFor(language: string): any[] {
   opts.push(o('None / other', 'none', ''));
   return opts;
 }
+function mobileOptionsFor(language: string): any[] {
+  const opts = mobileFrameworksFor(language).map(v =>
+    o(MOBILE_META[v]?.name ?? v, v, MOBILE_META[v]?.desc ?? ''));
+  opts.push(o('None / other', 'none', ''));
+  return opts;
+}
 
 const DATABASES = [o('PostgreSQL','postgresql','Recommended'), o('MySQL','mysql',''), o('SQLite','sqlite','Dev/embedded'), o('None','none','')];
 const ORMS: Record<string, any[]> = {
@@ -154,6 +176,10 @@ const ORMS: Record<string, any[]> = {
 const PKG: Record<string, any[]> = {
   typescript: [o('pnpm','pnpm','Recommended'), o('npm','npm',''), o('yarn','yarn',''), o('bun','bun','Ultra-fast')],
   python:     [o('pip','pip',''), o('poetry','poetry','')],
+  java:       [o('Maven','maven',''), o('Gradle','gradle','')],
+  kotlin:     [o('Gradle','gradle',''), o('Maven','maven','')],
+  rust:       [o('Cargo','cargo','')],
+  dart:       [o('pub','pub','Dart/Flutter')],
   ruby:       [o('bundler','bundler','')],
   go:         [o('go modules','go','')],
   php:        [o('composer','composer','')],
@@ -170,7 +196,7 @@ const MODES = [
   o('enterprise', 'enterprise','Compliance, multi-team, audits'),
 ];
 const RUNTIMES = [o('Claude Code','claude-code','Recommended'), o('OpenCode','opencode',''), o('Codex CLI','codex',''), o('Kiro IDE','kiro','')];
-const PROFILE_MAP: Record<string,string> = { hono:'hono-drizzle', nextjs:'nextjs-admin', astro:'astro', fastapi:'fastapi', rails:'rails', laravel:'laravel' };
+const PROFILE_MAP: Record<string,string> = { hono:'hono-drizzle', nextjs:'nextjs-admin', astro:'astro', fastapi:'fastapi', rails:'rails', laravel:'laravel', expo:'expo' };
 const toSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -394,11 +420,12 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
 
   // ── Project type FIRST (right after the name). Determines which sides run. ──
   const detectedType: ProjectType =
-    detected.backend && detected.frontend ? 'fullstack'
+    detected.mobile && !detected.frontend ? 'mobile'
+    : detected.backend && detected.frontend ? 'fullstack'
     : detected.frontend ? 'frontend'
     : detected.backend  ? 'backend'
     : 'fullstack';
-  ans.type = await askSelect('Project type', 'Frontend, Backend o Fullstack', PROJECT_TYPES, detectedType) as ProjectType;
+  ans.type = await askSelect('Project type', 'Frontend, Backend, Fullstack o Mobile', PROJECT_TYPES, detectedType) as ProjectType;
   currentStep = 2;
 
   // ── Backend: language → framework (filtered by language). Only if applicable. ──
@@ -417,14 +444,22 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   }
   currentStep = 4;
 
-  // Language used for ORM / package manager / testing: backend if present, else frontend.
-  const stackLanguage = ans.backendLanguage ?? ans.frontendLanguage ?? 'typescript';
+  // ── Mobile: language → framework (filtered by language). Only when type=mobile. ──
+  if (hasMobile(ans.type)) {
+    ans.mobileLanguage = await askSelect('Mobile language', 'Lenguaje del mobile', MOBILE_LANGS, detected.mobileLanguage ?? 'dart');
+    const mobile = await askSelect('Mobile framework', 'Select mobile (filtered by language)', mobileOptionsFor(ans.mobileLanguage), detected.mobile ?? 'none');
+    ans.mobile = mobile === 'none' ? undefined : mobile;
+  }
+  currentStep = 5;
+
+  // Language used for ORM / package manager / testing: backend → frontend → mobile.
+  const stackLanguage = ans.backendLanguage ?? ans.frontendLanguage ?? ans.mobileLanguage ?? 'typescript';
 
   // ── Database / ORM — only when there's a backend. ──
   if (hasBackend(ans.type)) {
     const database = await askSelect('Database', 'Select primary database', DATABASES, detected.database ?? 'postgresql');
     ans.database = database === 'none' ? undefined : database;
-    currentStep = 5;
+    currentStep = 6;
 
     if (ans.database) {
       const ormOpts = ORMS[ans.backendLanguage] ?? [o('None','none','')];
@@ -432,26 +467,27 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
       ans.orm = orm === 'none' ? undefined : orm;
     }
   }
-  currentStep = 6;
+  currentStep = 7;
 
   const pmOpts = PKG[stackLanguage] ?? [o('npm','npm','')];
   ans.packageManager = await askSelect('Package manager', 'Select package manager', pmOpts, detected.packageManager ?? 'pnpm');
-  currentStep = 7;
+  currentStep = 8;
 
   const testOpts = TESTING[stackLanguage] ?? [o('None','none','Skip')];
   const test = await askSelect('Testing', 'Select primary testing framework', testOpts, (detected.testing ?? [])[0] ?? 'none');
   ans.testing = test === 'none' ? [] : [test];
-  currentStep = 8;
-
-  ans.mode = await askSelect('Project mode', 'Determines agents and guardrails', MODES, 'standard');
   currentStep = 9;
 
-  ans.runtime = await askSelect('AI Runtime', 'Primary AI coding assistant', RUNTIMES, 'claude-code');
+  ans.mode = await askSelect('Project mode', 'Determines agents and guardrails', MODES, 'standard');
   currentStep = 10;
+
+  ans.runtime = await askSelect('AI Runtime', 'Primary AI coding assistant', RUNTIMES, 'claude-code');
+  currentStep = 11;
 
   // Derived legacy language (back-compat).
   ans.language = deriveProjectLanguage({
-    type: ans.type, backendLanguage: ans.backendLanguage, frontendLanguage: ans.frontendLanguage,
+    type: ans.type, backendLanguage: ans.backendLanguage,
+    frontendLanguage: ans.frontendLanguage, mobileLanguage: ans.mobileLanguage,
   });
 
   // ── Confirm ──
@@ -460,6 +496,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
 
   const backendStr  = ans.backend  ? ans.backend  + (ans.backendLanguage  ? ` (${ans.backendLanguage})`  : '') : '';
   const frontendStr = ans.frontend ? ans.frontend + (ans.frontendLanguage ? ` (${ans.frontendLanguage})` : '') : '';
+  const mobileStr   = ans.mobile   ? ans.mobile   + (ans.mobileLanguage   ? ` (${ans.mobileLanguage})`   : '') : '';
 
   // Each row is an array of parts (string literals + leaf StyledTexts).
   const summaryRows: Row[] = [
@@ -470,6 +507,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   ];
   if (backendStr)  summaryRows.push(['  ', fg(C.muted)('Backend:'),  '   ' + backendStr]);
   if (frontendStr) summaryRows.push(['  ', fg(C.muted)('Frontend:'), '  ' + frontendStr]);
+  if (mobileStr)   summaryRows.push(['  ', fg(C.muted)('Mobile:'),   '    ' + mobileStr]);
   if (ans.database) summaryRows.push(['  ', fg(C.muted)('Database:'), '  ' + ans.database + (ans.orm ? ' + ' + ans.orm : '')]);
   if (ans.testing?.length) summaryRows.push(['  ', fg(C.muted)('Testing:'),  '   ' + ans.testing.join(', ')]);
   summaryRows.push(['  ', fg(C.muted)('Runtime:'),  '   ' + ans.runtime]);
@@ -494,11 +532,13 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   const profiles: string[] = [];
   if (ans.backend  && PROFILE_MAP[ans.backend])  profiles.push(PROFILE_MAP[ans.backend]);
   if (ans.frontend && PROFILE_MAP[ans.frontend]) profiles.push(PROFILE_MAP[ans.frontend]);
+  if (ans.mobile   && PROFILE_MAP[ans.mobile])   profiles.push(PROFILE_MAP[ans.mobile]);
 
   return {
     name: ans.name, slug: ans.slug, description: '', language: ans.language,
     type: ans.type, backendLanguage: ans.backendLanguage, frontendLanguage: ans.frontendLanguage,
-    mode: ans.mode, backend: ans.backend, frontend: ans.frontend,
+    mobileLanguage: ans.mobileLanguage,
+    mode: ans.mode, backend: ans.backend, frontend: ans.frontend, mobile: ans.mobile,
     database: ans.database, orm: ans.orm, packageManager: ans.packageManager,
     testing: ans.testing, profiles: [...new Set(profiles)],
     // Default skills (the OpenTUI wizard doesn't ask for them yet).

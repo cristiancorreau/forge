@@ -27,14 +27,14 @@
           "type": ["string", "null"]
         },
         "language": {
-          "description": "Lenguaje principal del proyecto. Derivado del lenguaje backend (backend/fullstack) o frontend (frontend-only); 'mixed' cuando los lados difieren. Se mantiene por compatibilidad",
+          "description": "Lenguaje principal del proyecto. Derivado del lenguaje backend (backend/fullstack), frontend (frontend-only) o mobile (mobile); 'mixed' cuando los lados difieren. Se mantiene por compatibilidad",
           "type": ["string", "null"],
-          "enum": ["typescript", "python", "ruby", "go", "php", "mixed", null]
+          "enum": ["typescript", "javascript", "python", "java", "kotlin", "rust", "dart", "ruby", "go", "php", "mixed", null]
         },
         "type": {
-          "description": "Tipo de proyecto: solo frontend, solo backend o fullstack (nuevo). Opcional; se infiere para archivos antiguos",
+          "description": "Tipo de proyecto: solo frontend, solo backend, fullstack o mobile (SPEC-039). Opcional; se infiere para archivos antiguos",
           "type": ["string", "null"],
-          "enum": ["frontend", "backend", "fullstack", null]
+          "enum": ["frontend", "backend", "fullstack", "mobile", null]
         },
         "mode": {
           "description": "Modo operativo del proyecto: startup (velocidad), standard (balance), enterprise (compliance)",
@@ -83,12 +83,12 @@
         "backend": {
           "description": "Framework o runtime del backend",
           "type": ["string", "null"],
-          "enum": ["hono", "fastapi", "rails", "express", "laravel", "nestjs", "django", "go-gin", null]
+          "enum": ["hono", "fastapi", "flask", "rails", "express", "laravel", "nestjs", "fastify", "django", "springboot", "axum", "actix", "rocket", "go-gin", null]
         },
         "backend_language": {
           "description": "Lenguaje del backend (nuevo). Permite que backend y frontend usen lenguajes distintos",
           "type": ["string", "null"],
-          "enum": ["typescript", "python", "ruby", "go", "php", null]
+          "enum": ["typescript", "javascript", "python", "java", "kotlin", "rust", "ruby", "go", "php", null]
         },
         "frontend": {
           "description": "Framework del frontend",
@@ -98,7 +98,17 @@
         "frontend_language": {
           "description": "Lenguaje del frontend (nuevo). Permite que backend y frontend usen lenguajes distintos",
           "type": ["string", "null"],
-          "enum": ["typescript", "python", "ruby", "go", "php", null]
+          "enum": ["typescript", "javascript", "python", "ruby", "go", "php", null]
+        },
+        "mobile": {
+          "description": "Framework de mobile (SPEC-039): flutter (Dart), react-native o expo (TypeScript/JS)",
+          "type": ["string", "null"],
+          "enum": ["flutter", "react-native", "expo", null]
+        },
+        "mobile_language": {
+          "description": "Lenguaje del mobile (SPEC-039): dart (Flutter) o typescript (React Native/Expo)",
+          "type": ["string", "null"],
+          "enum": ["dart", "typescript", "javascript", null]
         },
         "database": {
           "description": "Motor de base de datos principal",
@@ -118,7 +128,7 @@
         "package_manager": {
           "description": "Gestor de paquetes del proyecto (nuevo en v2)",
           "type": ["string", "null"],
-          "enum": ["npm", "pnpm", "yarn", "bun", "pip", "poetry", "bundler", null]
+          "enum": ["npm", "pnpm", "yarn", "bun", "pip", "poetry", "cargo", "maven", "gradle", "pub", "bundler", null]
         },
         "monorepo": {
           "description": "Herramienta de monorepo si aplica (nuevo en v2)",

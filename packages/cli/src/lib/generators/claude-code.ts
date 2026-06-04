@@ -78,6 +78,10 @@ function devCommands(language: string): { dev: string; test: string; lint: strin
     case 'ruby': return { dev: 'rails server', test: 'bundle exec rspec', lint: 'rubocop', build: '# no aplica' };
     case 'go': return { dev: 'go run ./cmd/...', test: 'go test ./...', lint: 'golangci-lint run', build: 'go build ./...' };
     case 'php': return { dev: 'php artisan serve', test: './vendor/bin/pest', lint: 'vendor/bin/phpstan analyse', build: 'composer install --no-dev' };
+    case 'rust': return { dev: 'cargo run', test: 'cargo test', lint: 'cargo clippy', build: 'cargo build --release' };
+    case 'java': return { dev: './mvnw spring-boot:run', test: './mvnw test', lint: './mvnw checkstyle:check', build: './mvnw package' };
+    case 'kotlin': return { dev: './gradlew bootRun', test: './gradlew test', lint: './gradlew ktlintCheck', build: './gradlew build' };
+    case 'dart': return { dev: 'flutter run', test: 'flutter test', lint: 'flutter analyze', build: 'flutter build apk' };
     default: return { dev: '# ver documentación', test: '# ver documentación', lint: '# ver documentación', build: '# ver documentación' };
   }
 }
@@ -96,6 +100,7 @@ export function generateClaudeMd(config: ProjectYaml): string {
   // Fallback a project.language cuando los campos por lado no existen (archivos viejos).
   const backendStr  = stackWithLanguage(stack.backend,  stack.backend_language);
   const frontendStr = stackWithLanguage(stack.frontend, stack.frontend_language);
+  const mobileStr   = stackWithLanguage(stack.mobile,   stack.mobile_language);
   const { dev, test, lint, build } = devCommands(language);
   const specsPath = paths?.specs ?? 'docs/specs';
   const progressPath = paths?.progress ?? 'docs/progress.html';
@@ -118,7 +123,7 @@ ${description}
 
 - **Lenguaje**: ${language}
 - **Backend**: ${backendStr}
-- **Frontend**: ${frontendStr}
+- **Frontend**: ${frontendStr}${stack.mobile ? `\n- **Mobile**: ${mobileStr}` : ''}
 - **Base de datos**: ${stack.database ?? 'N/A'}
 - **Testing**: ${(stack.testing ?? []).join(', ')}
 

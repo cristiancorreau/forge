@@ -26,7 +26,7 @@ export function generateCodexAgentsMd(config: ProjectYaml): string {
 - **Nombre**: ${name}
 - **Lenguaje**: ${language}
 - **Backend**: ${stackWithLanguage(stack.backend, stack.backend_language)}
-- **Frontend**: ${stackWithLanguage(stack.frontend, stack.frontend_language)}
+- **Frontend**: ${stackWithLanguage(stack.frontend, stack.frontend_language)}${stack.mobile ? `\n- **Mobile**: ${stackWithLanguage(stack.mobile, stack.mobile_language)}` : ''}
 
 ## Agentes disponibles
 
