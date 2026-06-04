@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.12.0] — 2026-06-04
+
+### Agregado
+- **`forge panel` — panel interactivo de configuración, monitoreo, skills, hooks y templates.** `forge` sin subcomando abre el panel cuando hay `project.yaml`. Cinco secciones: Configuración (resumen de `project.yaml`), Monitoreo (`audit` + `doctor`), Skills (catálogo con búsqueda), Hooks (instalados + registry), Templates. Full-screen OpenTUI en Bun, fallback de menú en Node y snapshot en no-TTY. `audit`/`doctor` ahora exponen funciones de datos reutilizables (`runAudit`/`runDoctor`).
+
+### Cambiado
+- **Extensión de VS Code migrada al CLI TypeScript** (v0.6.0). De `python3 scripts/*.py` + submódulo `.agentic/` → `npx @cristiancorreau/forge` (setting `forge.cliCommand`), detección por `project.yaml`, comandos alineados con el CLI actual. Se removió el `.vsix` 0.5.0 obsoleto del repo (los `.vsix` pasan a ser artefactos gitignored).
+
+---
+
 ## [2.11.0] — 2026-06-04
 
 ### Agregado
