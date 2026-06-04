@@ -10,6 +10,7 @@ import { skills } from './commands/skills.js';
 import { aitmplSearch } from './commands/aitmpl-search.js';
 import { scaffold } from './commands/scaffold.js';
 import { teardown } from './commands/teardown.js';
+import { sessionStart, sessionClose } from './commands/session.js';
 
 import { VERSION } from './version.js';
 
@@ -30,6 +31,10 @@ Inspect
   doctor         Check environment, installed runtimes and project.yaml completeness
   skills         List available forge skills grouped by category
   aitmpl-search  Search the curated offline catalog (frameworks, MCP servers, profiles)
+
+Workflow
+  session-start  Open a work session (prints the /session-start skill steps)
+  session-close  Close a work session (prints the /session-close skill steps)
 
 Knowledge
   wiki           Manage the project knowledge base (status | ingest | query | lint)
@@ -85,6 +90,12 @@ switch (cmd) {
     break;
   case 'teardown':
     exitCode = await teardown(rest);
+    break;
+  case 'session-start':
+    exitCode = await sessionStart(rest);
+    break;
+  case 'session-close':
+    exitCode = await sessionClose(rest);
     break;
   case '-v':
   case '--version':

@@ -146,6 +146,69 @@ describe('forge CLI — parity suite', () => {
     }
   });
 
+  // Issue #29: the session lifecycle commands must be first-class skills, listed
+  // by the CLI catalog (not only adapter templates).
+  test('skills --json lists session-start and session-close', () => {
+    const { status, stdout } = runForge(['skills', '--json']);
+    assert.equal(status, 0);
+    const parsed = JSON.parse(stdout);
+    const ids = parsed.skills.map((s) => s.id);
+    assert.ok(ids.includes('session-start'), 'session-start must be in the skill catalog');
+    assert.ok(ids.includes('session-close'), 'session-close must be in the skill catalog');
+    // Each carries its slash command for runtime invocation.
+    const byId = Object.fromEntries(parsed.skills.map((s) => [s.id, s]));
+    assert.equal(byId['session-start'].command, '/session-start');
+    assert.equal(byId['session-close'].command, '/session-close');
+  });
+
+  test('skills (human output) shows the /session-start and /session-close commands', () => {
+    const { status, stdout } = runForge(['skills']);
+    assert.equal(status, 0);
+    assert.match(stdout, /\/session-start/);
+    assert.match(stdout, /\/session-close/);
+  });
+
+  test('--help registers the session-start and session-close commands', () => {
+    const { status, stdout } = runForge(['--help']);
+    assert.equal(status, 0);
+    assert.match(stdout, /session-start/);
+    assert.match(stdout, /session-close/);
+  });
+
+  test('session-start prints the central skill (scenarios A/B/C)', () => {
+    const { status, stdout } = runForge(['session-start']);
+    assert.equal(status, 0);
+    assert.match(stdout, /Escenario A/);
+    assert.match(stdout, /Escenario B/);
+    assert.match(stdout, /Escenario C/);
+  });
+
+  test('session-close prints the central skill (8-step pipeline)', () => {
+    const { status, stdout } = runForge(['session-close']);
+    assert.equal(status, 0);
+    assert.match(stdout, /Paso 1/);
+    assert.match(stdout, /Paso 8/);
+  });
+
+  test('session-start --json returns the skill id, command and body', () => {
+    const { status, stdout } = runForge(['session-start', '--json']);
+    assert.equal(status, 0);
+    const parsed = JSON.parse(stdout);
+    assert.equal(parsed.id, 'session-start');
+    assert.equal(parsed.command, '/session-start');
+    assert.equal(typeof parsed.body, 'string');
+    assert.ok(parsed.body.length > 0, 'skill body must not be empty');
+  });
+
+  test('session-close --json returns the skill id, command and body', () => {
+    const { status, stdout } = runForge(['session-close', '--json']);
+    assert.equal(status, 0);
+    const parsed = JSON.parse(stdout);
+    assert.equal(parsed.id, 'session-close');
+    assert.equal(parsed.command, '/session-close');
+    assert.equal(typeof parsed.body, 'string');
+  });
+
   test('doctor runs without crashing (exit 0 or 1)', () => {
     const { status } = runForge(['doctor']);
     assert.ok(
