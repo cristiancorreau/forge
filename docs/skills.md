@@ -1,11 +1,13 @@
 # Skills de forge
 
-forge incluye **12 skills** invocables como comandos slash. Cada skill encapsula un flujo de trabajo reutilizable (planificar una feature, migrar una base de datos, auditar seguridad, consultar el wiki, etc.) que se activa por un comando explícito o por triggers contextuales.
+forge incluye **14 skills** invocables como comandos slash. Cada skill encapsula un flujo de trabajo reutilizable (planificar una feature, migrar una base de datos, auditar seguridad, consultar el wiki, etc.) que se activa por un comando explícito o por triggers contextuales.
 
 ## Tabla resumen
 
 | Skill | Comando | Categoría | Trigger principal |
 |---|---|---|---|
+| session-start | `/session-start` | Sesión | Abre la sesión: detecta estado del repo y enruta |
+| session-close | `/session-close` | Sesión | Cierra la sesión: commit → daily note → sync → PR |
 | spec | `/spec` | Flujo de desarrollo | Al crear o actualizar una spec en `docs/specs/` |
 | new-feature | `/new-feature` | Flujo de desarrollo | Al comenzar cualquier feature nueva |
 | security-audit | `/security-audit` | Flujo de desarrollo | Al implementar/modificar endpoints o auth |
@@ -21,12 +23,26 @@ forge incluye **12 skills** invocables como comandos slash. Cada skill encapsula
 
 ---
 
+## Sesión
+
+### session-start
+- **Comando:** `/session-start`
+- **Propósito:** Abre la sesión de trabajo: detecta el estado del repo, identifica el escenario y enruta según corresponda. Es el primer paso del flujo de trabajo SDD, antes de cualquier edición de código.
+- **Trigger:** `/session-start`, "iniciar sesión", "arrancar sesión", "empezar a trabajar"; al abrir el editor y comenzar a trabajar.
+
+### session-close
+- **Comando:** `/session-close`
+- **Propósito:** Cierra la sesión de trabajo con un pipeline: commit, changeset, GitHub Projects, daily note, release notes, sync y PR. Es el último paso del flujo de trabajo SDD.
+- **Trigger:** `/session-close`, "cerrar sesión", "terminar sesión", "cerrar el día"; al terminar de trabajar en una rama de feature.
+
+---
+
 ## Flujo de desarrollo
 
 ### spec
 - **Comando:** `/spec`
 - **Propósito:** Redactar specs de features siguiendo la plantilla del framework forge. Se activa antes de escribir cualquier spec nueva.
-- **Trigger:** `/spec`; al crear una spec nueva en `docs/specs/`; al actualizar una spec existente tras cambios de implementación; al convertir un ticket/issue en spec formal.
+- **Trigger:** `/spec`, "crear spec", "redactar spec", "nueva spec"; al crear una spec nueva en `docs/specs/`; al actualizar una spec existente tras cambios de implementación; al convertir un ticket/issue en spec formal.
 
 ### new-feature
 - **Comando:** `/new-feature`
@@ -78,7 +94,7 @@ forge incluye **12 skills** invocables como comandos slash. Cada skill encapsula
 ### browser-test
 - **Comando:** `/browser-test`
 - **Propósito:** Automatización de navegador (agent-browser, CLI en Rust sobre CDP) para verificar UI en desarrollo, testear flujos críticos, capturar evidencia y diffs visuales, y testear responsive.
-- **Trigger:** `/browser-test`, "abrir en browser", "screenshot de", "verificar que"; antes de dar una tarea de UI por terminada; al inspeccionar una URL; al capturar evidencia de compliance.
+- **Trigger:** `/browser-test`, "abrir en browser", "screenshot de", "verificar que renderiza", "testear visualmente", "navegar a", "probar el flujo de", "ver cómo se ve", "revisar esta URL", "capturar pantalla de", "test visual", "open <url>"; antes de dar una tarea de UI por terminada; al inspeccionar una URL; al capturar evidencia de compliance.
 
 ---
 

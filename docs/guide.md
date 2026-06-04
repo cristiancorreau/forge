@@ -40,10 +40,12 @@ La CLI expone los siguientes comandos. Todos corren sobre Node/Bun, sin dependen
 | `forge doctor` | Detecta los runtimes instalados (binario + versión) y valida `project.yaml` v2. | — |
 | `forge migrate` | Migra `project.yaml` de v1 a v2. | `--dry-run`, `--backup` |
 | `forge wiki` | Gestiona el wiki del proyecto. | `status`, `ingest <file>`, `query <q>`, `lint` |
-| `forge skills` | Lista las 12 skills disponibles agrupadas por categoría. | `--json`, `--active` |
+| `forge skills` | Lista las 14 skills disponibles agrupadas por categoría. | `--json`, `--active` |
 | `forge aitmpl-search <query>` | Busca en el catálogo curado de frameworks, MCP servers y profiles. | `<query>` |
 | `forge scaffold` | Crea un nuevo agente: profile Tier 2 o agente de dominio Tier 3. | `--tier <2\|3>`, `--name <slug>`, `--engineer <agente>`, `--scope-dir <dir>` |
 | `forge teardown` | Desinstala forge del proyecto de forma limpia. | `--dry-run` |
+| `forge session-start` | Abre la sesión: detecta estado del repo y enruta. | — |
+| `forge session-close` | Cierra la sesión: commit → daily note → sync → PR. | — |
 
 ### Dashboard post-install
 
@@ -136,11 +138,11 @@ La extensión agrega tres vistas bajo el ícono forge:
 
 | Comando | Equivalente CLI |
 |---------|-----------------|
-| `forge: Setup Wizard` | `python3 .agentic/forge.py` → Nuevo proyecto |
-| `forge: Initialize Agents` | `forge-init.py --tool claude-code` |
-| `forge: Run Audit` | `forge-audit.py` |
-| `forge: Audit Specific Agent` | `forge-audit.py --only=<agent>` |
-| `forge: Search Catalog` | `aitmpl-search.py <query>` |
+| `forge: Setup Wizard` | `npx @cristiancorreau/forge init` |
+| `forge: Initialize Agents` | `npx @cristiancorreau/forge init` |
+| `forge: Run Audit` | `npx @cristiancorreau/forge audit` |
+| `forge: Audit Specific Agent` | `npx @cristiancorreau/forge audit --only <agent>` |
+| `forge: Search Catalog` | `npx @cristiancorreau/forge aitmpl-search <query>` |
 | `forge: Install` | `git submodule add ...` |
 
 ### Flujo de audit con selector de oportunidades
