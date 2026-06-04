@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.18.0] — 2026-06-04
+
+### Agregado
+- **Más tecnologías reconocidas** en detección, wizard y generadores: **FastAPI** y **Flask** (Python), **Spring Boot** (Java/Kotlin), **Rust** web (Axum/Actix/Rocket), **Flutter** (Dart) y **React Native/Expo**. Se suman los lenguajes `java`, `kotlin`, `dart` y `rust`, y un nuevo tipo de proyecto **mobile**. `forge adopt`/`forge init` detectan estas stacks y generan el `project.yaml` + entity pages del wiki correspondientes (p. ej. "Spring Boot (Java)", "Flutter (Dart)", "Axum (Rust)", "React Native (TypeScript)"). Cambios de schema **aditivos** (enums de lenguaje/tipo + `stack.mobile`/`stack.mobile_language`), backward-compatible. (Todavía sin profiles Tier 2 dedicados para estas stacks — es un paso siguiente.)
+
+---
+
 ## [2.17.0] — 2026-06-04
 
 ### Agregado
