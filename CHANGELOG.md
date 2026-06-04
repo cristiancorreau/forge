@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.15.0] — 2026-06-04
+
+### Agregado
+- **Paridad de UI en Windows / sin Bun.** Relanzamiento bajo Bun robusto y gateado mediante un helper compartido (`shouldRelaunchUnderBun`/`relaunchUnderBun`): en Windows solo auto-relanza al panel OpenTUI con una terminal capaz (Windows Terminal / `TERM_PROGRAM`); `FORGE_FORCE_BUN=1` fuerza y `FORGE_NO_BUN=1` desactiva; propaga el exit code y trae guard anti-reentrada. Cuando cae al fallback por falta de Bun, muestra un hint a https://bun.sh. Además, el **fallback de Node (`@clack`)** del wizard `forge init` y del `forge panel` quedó más rico (banner FORGE, pasos agrupados, caja de resumen) para una experiencia uniforme sin Bun.
+
+---
+
 ## [2.14.0] — 2026-06-04
 
 ### Agregado
