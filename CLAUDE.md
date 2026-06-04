@@ -14,6 +14,20 @@ Framework de desarrollo agéntico multi-runtime (Claude Code, OpenCode, Codex, K
 - **Base de datos**: N/A
 - **Testing**: node-test, pytest
 
+## Agentes y su scope
+
+| Agente | Scope | Cuándo usarlo |
+|--------|-------|---------------|
+| `forge-cli-engineer` | `/` | tareas de su dominio (ver `.claude/agents/forge-cli-engineer.md`) |
+| `forge-docs-engineer` | `/` | tareas de su dominio (ver `.claude/agents/forge-docs-engineer.md`) |
+| `forge-migration-engineer` | `/` | tareas de su dominio (ver `.claude/agents/forge-migration-engineer.md`) |
+| `forge-init-specialist` | `/` | tareas de su dominio (ver `.claude/agents/forge-init-specialist.md`) |
+| `forge-audit-specialist` | `/` | tareas de su dominio (ver `.claude/agents/forge-audit-specialist.md`) |
+| `forge-catalog-specialist` | `/` | tareas de su dominio (ver `.claude/agents/forge-catalog-specialist.md`) |
+| `forge-quality-reviewer` | `/` | tareas de su dominio (ver `.claude/agents/forge-quality-reviewer.md`) |
+
+> Invocar el agente del scope correcto, no el orchestrator, para tareas acotadas.
+
 ## Estructura
 
 ```
