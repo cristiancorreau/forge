@@ -1,3 +1,27 @@
+# Line endings — force LF for the text formats forge parses at runtime and in
+# the test suite. Without this, Git for Windows (autocrlf=true) checks these out
+# with CRLF, which breaks frontmatter regexes (^---\n...), YAML parsing and the
+# windows-latest CI. Keep .sh hooks LF too (they must stay POSIX-executable).
+* text=auto eol=lf
+*.md      text eol=lf
+*.ts      text eol=lf
+*.js      text eol=lf
+*.mjs     text eol=lf
+*.json    text eol=lf
+*.yaml    text eol=lf
+*.yml     text eol=lf
+*.sh      text eol=lf
+*.rules   text eol=lf
+
+# Binary assets — never normalize.
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.woff    binary
+*.woff2   binary
+
 docs/analysis/   export-ignore
 docs/plan/       export-ignore
 docs/feedback/   export-ignore

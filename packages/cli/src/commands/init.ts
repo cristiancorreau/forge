@@ -106,7 +106,7 @@ function detectTier3Agents(root: string): string[] {
     } catch {
       continue;
     }
-    const fm = content.match(/^---\n([\s\S]*?)\n---/);
+    const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (!fm) continue;
     if (/^\s*tier:\s*3\s*$/m.test(fm[1])) {
       found.push(basename(file, '.md'));

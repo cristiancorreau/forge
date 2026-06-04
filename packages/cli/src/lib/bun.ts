@@ -12,7 +12,7 @@
  * Everything is parameterised on `platform`/`env` so the resolution logic is
  * unit-testable on any OS (inject `'win32'` to assert the Windows candidate).
  */
-import { join } from 'path';
+import { posix as posixPath, win32 as win32Path } from 'path';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
@@ -33,18 +33,21 @@ export function bunCandidates(opts: BunResolveOptions = {}): string[] {
   const platform = opts.platform ?? process.platform;
   const env = opts.env ?? process.env;
 
+  // Build candidate paths with the TARGET platform's join (win32Path/posixPath),
+  // not the host's, so resolution is identical whether forge runs on Windows,
+  // macOS or Linux (and so the unit tests are host-independent).
   if (platform === 'win32') {
     const userProfile = env.USERPROFILE
-      ?? (env.HOMEDRIVE && env.HOMEPATH ? join(env.HOMEDRIVE, env.HOMEPATH) : '');
+      ?? (env.HOMEDRIVE && env.HOMEPATH ? win32Path.join(env.HOMEDRIVE, env.HOMEPATH) : '');
     const candidates = ['bun.exe', 'bun'];
-    if (userProfile) candidates.push(join(userProfile, '.bun', 'bin', 'bun.exe'));
+    if (userProfile) candidates.push(win32Path.join(userProfile, '.bun', 'bin', 'bun.exe'));
     return candidates;
   }
 
   const home = env.HOME ?? '';
   return [
     'bun',
-    ...(home ? [join(home, '.bun', 'bin', 'bun')] : []),
+    ...(home ? [posixPath.join(home, '.bun', 'bin', 'bun')] : []),
     '/opt/homebrew/bin/bun',
     '/usr/local/bin/bun',
   ];
