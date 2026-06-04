@@ -99,6 +99,43 @@ describe('forge assets — integrity', () => {
     assert.deepEqual(offenders, [], `skills/commands still reference Python/.agentic: ${offenders.join(', ')}`);
   });
 
+  // Issue #29: session-start/close must exist as central skills, and the adapter
+  // command templates must reference them instead of duplicating the full logic.
+  test('session-start and session-close ship as central skills with their core steps', () => {
+    const start = join(ASSETS, 'core', 'skills', 'session-start', 'SKILL.md');
+    const close = join(ASSETS, 'core', 'skills', 'session-close', 'SKILL.md');
+    assert.ok(existsSync(start), 'core/skills/session-start/SKILL.md missing from bundle');
+    assert.ok(existsSync(close), 'core/skills/session-close/SKILL.md missing from bundle');
+
+    const startBody = readFileSync(start, 'utf-8');
+    // session-start covers the three routing scenarios.
+    for (const sc of ['Escenario A', 'Escenario B', 'Escenario C']) {
+      assert.ok(startBody.includes(sc), `session-start must document ${sc}`);
+    }
+
+    const closeBody = readFileSync(close, 'utf-8');
+    // session-close documents the 8-step pipeline.
+    for (let step = 1; step <= 8; step++) {
+      assert.ok(closeBody.includes(`Paso ${step}`), `session-close must document Paso ${step}`);
+    }
+  });
+
+  test('adapter session-* templates reference the central skill (no duplicated logic)', () => {
+    const adapterFiles = ['claude-code', 'codex', 'opencode'].flatMap((rt) => [
+      join(ASSETS, 'adapters', rt, 'commands', 'session-start.md'),
+      join(ASSETS, 'adapters', rt, 'commands', 'session-close.md'),
+    ]);
+    for (const f of adapterFiles) {
+      assert.ok(existsSync(f), `${f.replace(ASSETS + '/', '')} missing`);
+      const body = readFileSync(f, 'utf-8');
+      assert.match(
+        body,
+        /core\/skills\/session-(start|close)\/SKILL\.md/,
+        `${f.replace(ASSETS + '/', '')} must point at the central skill`,
+      );
+    }
+  });
+
   test('wiki skills point at wiki/ (not docs/wiki/) to match the CLI', () => {
     const files = walk(join(ASSETS, 'core', 'skills'), f => f.endsWith('.md'))
       .concat(walk(join(ASSETS, 'adapters', 'claude-code', 'commands'), f => f.endsWith('.md')));

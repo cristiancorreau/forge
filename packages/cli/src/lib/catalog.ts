@@ -10,6 +10,8 @@ export interface SkillInfo { id: string; command: string; category: string; purp
 export interface RuntimeInfo { id: string; label: string; cmd: string[]; install: string; marker: string; }
 
 export const SKILLS: SkillInfo[] = [
+  { id: 'session-start',  command: '/session-start',  category: 'Sesión',     purpose: 'Abre la sesión: detecta estado del repo y enruta',    trigger: '"iniciar sesión", al empezar a trabajar' },
+  { id: 'session-close',  command: '/session-close',  category: 'Sesión',     purpose: 'Cierra la sesión: commit → daily note → sync → PR',   trigger: '"cerrar sesión", al terminar de trabajar' },
   { id: 'spec',           command: '/spec',           category: 'Desarrollo', purpose: 'Redacta specs siguiendo la plantilla forge',          trigger: 'antes de escribir una spec' },
   { id: 'new-feature',    command: '/new-feature',    category: 'Desarrollo', purpose: 'Checklist de feature de plan a deploy',               trigger: '"nueva feature", "implementar"' },
   { id: 'security-audit', command: '/security-audit', category: 'Desarrollo', purpose: 'Checklist de seguridad para endpoints y auth',        trigger: '"auditar seguridad", "revisar auth"' },

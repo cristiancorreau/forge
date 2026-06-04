@@ -3,6 +3,8 @@
 ## Mapa de skills y dependencias
 
 ```
+session-start  →  (sesión de trabajo)  →  session-close
+                        │
 new-feature ──────────────────────────────────────────────────┐
 │                                                              │
 ├── spec              (Fase 1 — verificar/crear spec)          │
@@ -26,6 +28,8 @@ wiki-lint   → health check + auto-reparación
 
 | Skill | Categoría | Requiere herramienta externa | Invocado por |
 |-------|-----------|------------------------------|--------------|
+| `session-start` | Sesión | No (`gh` opcional) | Usuario directo |
+| `session-close` | Sesión | No (`gh` opcional) | Usuario directo |
 | `spec` | Core | No | new-feature, orchestrator |
 | `phase-kickoff` | Core | No | orchestrator, new-feature |
 | `security-audit` | Universal | No | new-feature, security-auditor |
@@ -39,6 +43,11 @@ wiki-lint   → health check + auto-reparación
 | `obsidian-sync` | Integración | Obsidian + Local REST API | new-feature, local2prod |
 
 ## Categorías
+
+### Sesión — bookend del flujo de trabajo
+Generan los slash commands `/session-start` y `/session-close`. Abren y cierran el ciclo SDD:
+- **`session-start`**: detecta el estado del repo y enruta según el escenario (rama activa, main con PRs, main limpio)
+- **`session-close`**: pipeline de 8 pasos (commit → changeset → GitHub Projects → daily note → RELEASE-NOTES → cierre → sync → PR)
 
 ### Core — siempre presentes
 - **`spec`**: redactar specs siguiendo la plantilla obligatoria
