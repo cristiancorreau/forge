@@ -15,15 +15,20 @@ jobs:
         node-version: ['20', '22']
     steps:
       - uses: actions/checkout@v4
+      # Bun owns dependency resolution (bun.lock); OpenTUI requires Bun >= 1.3.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      # Node still runs the test suite (node:test) across the support matrix.
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Install CLI dependencies
+      - name: Install dependencies (Bun, frozen lockfile)
         working-directory: packages/cli
-        run: npm ci
+        run: bun install --frozen-lockfile
       - name: Build + run the CLI test suite
         working-directory: packages/cli
-        run: npm run build:all && npm test
+        run: bun run build:all && bun run test
 
   publish-npm:
     name: Publish to npm
@@ -35,22 +40,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Node provides npm for publishing with provenance (Bun has no equivalent).
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install CLI dependencies
+      - name: Install dependencies (Bun, frozen lockfile)
         working-directory: packages/cli
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Build assets + TypeScript
         working-directory: packages/cli
-        run: npm run build:all
+        run: bun run build:all
 
-      - name: Run CLI parity tests
+      - name: Run CLI tests
         working-directory: packages/cli
-        run: npm test
+        run: bun run test
 
       - name: Smoke test — pack
         working-directory: packages/cli
@@ -59,7 +69,7 @@ jobs:
           TARBALL=$(npm pack 2>/dev/null)
           echo "Packed: $TARBALL"
 
-      - name: Smoke test — install and run
+      - name: Smoke test — install and run (npm path)
         working-directory: packages/cli
         run: |
           TARBALL=$(ls *.tgz | head -1)

@@ -20,6 +20,8 @@ packages/cli/dist/
 packages/cli/assets/
 packages/cli/node_modules/
 packages/cli/*.tgz
+# Lockfile is Bun-only (bun.lock); npm's lockfile must not be committed
+packages/cli/package-lock.json
 packages/cli/README.md
 packages/cli/LICENSE
 packages/cli/CHANGELOG.md

@@ -7,6 +7,15 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.9.11] — 2026-06-04
+
+### Cambiado (infraestructura)
+- **CI migrado a Bun.** El `package-lock.json` de `packages/cli` estaba corrupto (la raíz declaraba 8 dependencias pero el árbol solo resolvía `@clack/*`), por lo que `npm ci` nunca instalaba `@opentui/core`. Se elimina ese lockfile y `bun.lock` pasa a ser el único lockfile. El workflow `release` ahora usa `oven-sh/setup-bun` + `bun install --frozen-lockfile`; Node sigue corriendo la suite de tests (matriz 20/22) y `npm publish --provenance` (Bun no soporta provenance).
+- `package-lock.json` de `packages/cli` añadido a `.gitignore` para que npm no lo regenere.
+- `build:all` invoca las herramientas directamente (`node scripts/build-assets.mjs && tsc`) en vez de `npm run`, para no depender del runner (Bun reescribe `npm run` a `bun run`).
+
+---
+
 ## [2.9.10] — 2026-06-04
 
 ### Corregido

@@ -1,6 +1,6 @@
 {
   "name": "@cristiancorreau/forge",
-  "version": "2.9.10",
+  "version": "2.9.11",
   "description": "Agentic development framework — multi-runtime support for Claude Code, OpenCode, Codex and Kiro",
   "author": "Cristian Correa <cristian@socialweb.cl>",
   "license": "Apache-2.0",
@@ -25,7 +25,7 @@
   "scripts": {
     "build": "tsc",
     "build:assets": "node scripts/build-assets.mjs",
-    "build:all": "npm run build:assets && npm run build",
+    "build:all": "node scripts/build-assets.mjs && tsc",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build:all",
     "test": "node --test test/commands.test.mjs test/assets.test.mjs"
