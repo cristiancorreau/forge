@@ -50,8 +50,8 @@ El wizard detecta y configura el proyecto en cinco pasos:
 | Browser testing | Automatización de navegador (agent-browser sobre CDP) para verificar UI, flujos críticos, evidencia y diffs visuales/responsive (`/browser-test`). | ✅ | Claude Code, OpenCode, Codex, Kiro |
 | DB migrations | Flujo seguro de migraciones compatible con Prisma, Drizzle, ActiveRecord, Alembic y Goose (`/db-migrate`). | ✅ | Claude Code, OpenCode, Codex, Kiro |
 | Deploy a producción | Publicación con gate `READY/SUCCESS` sobre Vercel, Railway, Fly.io, GitHub Actions y pipelines custom (`/local2prod`). | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| Migración v1→v2 | Portado de proyectos forge v1 a v2. Comando `migrate` aún sin portar. | ❌ | Claude Code, Kiro |
-| Scaffold / Teardown | Generación y desmontaje de estructura de proyecto. Comandos sin portar a la nueva CLI. | ❌ | Claude Code, OpenCode, Codex, Kiro |
+| Migración v1→v2 | Migración de `project.yaml` v1 a v2 con detección automática de versión, soporte `--dry-run` y `--backup` (`forge migrate`). | ✅ | Claude Code, OpenCode, Codex, Kiro |
+| Scaffold / Teardown | `forge scaffold` genera profiles Tier 2 (`--force`, `--description`, `--stack-details`) y `forge teardown` desinstala forge limpiamente vía manifest (`--dry-run`, `--keep-config`). Ambos en la CLI TypeScript con tests. | ✅ | Claude Code, OpenCode, Codex, Kiro |
 
 Leyenda: ✅ disponible · 🚧 parcial · ❌ pendiente.
 
