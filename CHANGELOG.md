@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.14.0] — 2026-06-04
+
+### Agregado
+- **Compatibilidad con Windows / PowerShell.** Resolver de Bun cross-platform (detecta `%USERPROFILE%\.bun\bin\bun.exe` + `where bun`); fallback **ASCII** de cajas/banners (`FORGE_ASCII=1`, o auto en Windows sin Windows Terminal) para consolas legacy; los hooks `post-turn-check` y `session-start` reescritos como Node `.js` (sin bash ni Python); paths y line-endings cross-platform (`.gitattributes` con `eol=lf`); y **CI en `windows-latest`** (Node 20/22) sumado a la matriz. La suite (127 tests) pasa en Windows real.
+
+---
+
 ## [2.13.0] — 2026-06-04
 
 ### Agregado

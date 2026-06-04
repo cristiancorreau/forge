@@ -1,6 +1,6 @@
 {
   "name": "forge",
-  "version": "2.13.0",
+  "version": "2.14.0",
   "description": "Agentic development framework for Claude Code, OpenCode, Codex and Kiro",
   "license": "Apache-2.0",
   "repository": "https://github.com/cristiancorreau/forge",
