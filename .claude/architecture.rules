@@ -1,0 +1,20 @@
+# Convenciones de arquitectura — forge
+
+Reglas específicas de arquitectura que Claude debe seguir en este proyecto.
+Editar directamente — no se regenera con forge-init.
+
+## Estructura de directorios
+
+<A completar por el equipo según el proyecto>
+
+## Convenciones de naming
+
+<A completar>
+
+## Patrones prohibidos
+
+<A completar: qué NO hacer en este codebase>
+
+## Decisiones de arquitectura (ADRs)
+
+Ver `docs/architecture/adr/` para decisiones formales e inmutables.

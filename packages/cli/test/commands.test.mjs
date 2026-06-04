@@ -15,7 +15,7 @@
 import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync, statSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -528,6 +528,137 @@ runtimes:
     const settings = readFileSync(join(dir, '.claude', 'settings.json'), 'utf-8');
     assert.match(settings, /node .claude\/hooks/);
     assert.doesNotMatch(settings, /python3/);
+  });
+
+  // Regression (dogfooding): re-running `init --force` over an existing
+  // `.claude/settings.json` must MERGE — preserving top-level keys forge does
+  // not manage (e.g. `env`) and existing `permissions.allow` entries — instead
+  // of overwriting the file and destroying them.
+  test('init --force preserves existing settings.json env and permissions', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Settings Merge"
+  mode: "enterprise"
+  language: "typescript"
+agents:
+  active:
+    - orchestrator
+runtimes:
+  active:
+    - claude-code
+`
+    );
+    // Seed a settings.json with a top-level `env` key forge does not manage and
+    // a pre-existing custom permission entry.
+    const claudeDir = join(dir, '.claude');
+    mkdirSync(claudeDir, { recursive: true });
+    writeFileSync(
+      join(claudeDir, 'settings.json'),
+      JSON.stringify(
+        {
+          env: { CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1' },
+          permissions: { allow: ['Bash(custom-tool *)'] },
+        },
+        null,
+        2,
+      ),
+      'utf-8',
+    );
+
+    const { status } = runForge(['init', '--force'], { cwd: dir });
+    assert.equal(status, 0, 'init --force should exit 0');
+
+    const settings = JSON.parse(readFileSync(join(claudeDir, 'settings.json'), 'utf-8'));
+    // Top-level `env` survived the re-init.
+    assert.equal(
+      settings.env?.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS,
+      '1',
+      'env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS must be preserved',
+    );
+    // Pre-existing permission kept, generated permissions added (union).
+    assert.ok(
+      settings.permissions.allow.includes('Bash(custom-tool *)'),
+      'existing permission entry must be preserved',
+    );
+    assert.ok(
+      settings.permissions.allow.includes('Bash(git *)'),
+      'forge-generated permission must be added',
+    );
+    // Hooks registry (forge-managed) is present.
+    assert.ok(settings.hooks?.PreToolUse, 'hooks registry must be written');
+  });
+
+  // Regression (dogfooding): the manifest build must include Tier 3
+  // (agents.specialized) agents, plus the installed hooks and slash commands —
+  // not just active/compliance agents.
+  test('init --force manifest includes specialized agents, hooks and commands', (t) => {
+    const dir = makeTmpDir(t);
+    // Provide a Tier 3 agent file so the specialized entry resolves on disk.
+    const agentsDir = join(dir, '.claude', 'agents');
+    mkdirSync(agentsDir, { recursive: true });
+    writeFileSync(
+      join(agentsDir, 'my-domain-agent.md'),
+      `---
+name: my-domain-agent
+description: Domain agent
+model: sonnet
+tier: 3
+---
+
+# My Domain Agent
+
+## Reglas
+- Stay in scope.
+
+## No hagas
+- No leaks.
+`,
+      'utf-8',
+    );
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Manifest Tier3"
+  mode: "enterprise"
+  language: "typescript"
+agents:
+  active:
+    - orchestrator
+  specialized:
+    - my-domain-agent
+runtimes:
+  active:
+    - claude-code
+`
+    );
+
+    const { status } = runForge(['init', '--force'], { cwd: dir });
+    assert.equal(status, 0, 'init --force should exit 0');
+
+    const manifest = JSON.parse(readFileSync(join(dir, '.forge', 'manifest.json'), 'utf-8'));
+    const files = Object.keys(manifest.files);
+    // Specialized (Tier 3) agent is tracked.
+    assert.ok(
+      files.includes('.claude/agents/my-domain-agent.md'),
+      'manifest must include the specialized Tier 3 agent',
+    );
+    // Active agent still tracked.
+    assert.ok(
+      files.includes('.claude/agents/orchestrator.md'),
+      'manifest must include the active agent',
+    );
+    // Installed hooks are tracked.
+    assert.ok(
+      files.some(f => f.startsWith('.claude/hooks/')),
+      'manifest must include installed hooks',
+    );
+    // Installed slash commands are tracked.
+    assert.ok(
+      files.some(f => f.startsWith('.claude/commands/')),
+      'manifest must include installed slash commands',
+    );
   });
 });
 

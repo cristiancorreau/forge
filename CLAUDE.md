@@ -12,21 +12,7 @@ Framework de desarrollo agéntico multi-runtime (Claude Code, OpenCode, Codex, K
 - **Backend**: N/A
 - **Frontend**: N/A
 - **Base de datos**: N/A
-- **Testing**: vitest, pytest
-
-## Agentes y su scope
-
-| Agente | Scope | Cuándo usarlo |
-|--------|-------|---------------|
-| `forge-cli-engineer` | `/` | implementación |
-| `forge-docs-engineer` | `/` | implementación |
-| `forge-migration-engineer` | `/` | implementación |
-| `forge-init-specialist` | `/` | implementación |
-| `forge-audit-specialist` | `/` | implementación |
-| `forge-catalog-specialist` | `/` | implementación |
-| `forge-quality-reviewer` | `/` | implementación |
-
-> Invocar el agente del scope correcto, no el orchestrator, para tareas acotadas.
+- **Testing**: node-test, pytest
 
 ## Estructura
 

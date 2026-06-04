@@ -115,7 +115,7 @@
           "type": ["array", "null"],
           "items": {
             "type": "string",
-            "enum": ["vitest", "jest", "pytest", "rspec", "phpunit", "playwright", "cypress"]
+            "enum": ["vitest", "jest", "node-test", "pytest", "rspec", "phpunit", "playwright", "cypress"]
           }
         }
       }

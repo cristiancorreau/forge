@@ -37,7 +37,7 @@ stack:
   package_manager: "npm"     # packages/cli usa npm; CI migrado a Bun para resolución
   monorepo: null             # packages/ + adapters/ + profiles/, sin herramienta de monorepo
   testing:
-    - vitest                 # tests del CLI TypeScript
+    - node-test              # tests del CLI TypeScript (node --test, runner built-in)
     - pytest                 # tests del legacy Python
 
 agents:
@@ -53,14 +53,14 @@ agents:
     - forge-quality-reviewer     # guardrail del equipo, poder de veto, gate spec-first
   # Modelo por rol — refleja el frontmatter `model:` de cada agente.
   by_role:
-    orchestrator: claude-opus-4-7         # coordinación de alto nivel
-    forge-cli-engineer: claude-sonnet-4-6
-    forge-docs-engineer: claude-sonnet-4-6
-    forge-migration-engineer: claude-sonnet-4-6
-    forge-init-specialist: claude-sonnet-4-6
-    forge-audit-specialist: claude-sonnet-4-6
-    forge-catalog-specialist: claude-sonnet-4-6
-    forge-quality-reviewer: claude-opus-4-7   # revisor con poder de veto
+    orchestrator: opus         # coordinación de alto nivel
+    forge-cli-engineer: sonnet
+    forge-docs-engineer: sonnet
+    forge-migration-engineer: sonnet
+    forge-init-specialist: sonnet
+    forge-audit-specialist: sonnet
+    forge-catalog-specialist: sonnet
+    forge-quality-reviewer: opus   # revisor con poder de veto
   compliance: []
   profiles: []
 
