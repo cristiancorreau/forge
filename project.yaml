@@ -1,0 +1,114 @@
+# project.yaml — Fuente de verdad del repositorio forge (dogfooding)
+#
+# El framework forge se aplica a sí mismo: esta es la configuración del propio
+# repo. Generado/validado con el CLI TypeScript de forge (forge validate).
+#
+# Nota sobre agentes especializados (Tier 3): los 7 agentes forge-* viven en
+# .claude/agents/ y se declaran aquí en agents.active. El schema v2
+# (core/schemas/project.schema.json) no admite una clave agents.specialized
+# (additionalProperties: false), por lo que se usa agents.active, que es la
+# lista canónica de agentes del proyecto.
+
+runtimes:
+  active:
+    - claude-code            # único runtime del repo — genera CLAUDE.md + .claude/
+
+project:
+  name: "forge"
+  slug: "forge"
+  description: "Framework de desarrollo agéntico multi-runtime (Claude Code, OpenCode, Codex, Kiro). CLI TypeScript + legacy Python en migración."
+  language: "mixed"          # TypeScript (packages/cli) + Python legacy (forge.py, scripts/)
+  mode: "enterprise"         # multi-runtime, governance completo, gate spec-first
+  status: "active"
+
+team:
+  name: "forge core"
+  members:
+    - name: "Cristian Correa"
+      role: "lead"
+      email: "cristian@socialweb.cl"
+
+stack:
+  backend: null              # forge es un framework/CLI, no consume un backend
+  frontend: null
+  database: null
+  orm: null
+  cache: null
+  package_manager: "npm"     # packages/cli usa npm; CI migrado a Bun para resolución
+  monorepo: null             # packages/ + adapters/ + profiles/, sin herramienta de monorepo
+  testing:
+    - vitest                 # tests del CLI TypeScript
+    - pytest                 # tests del legacy Python
+
+agents:
+  # Los 7 agentes especializados (Tier 3) que viven en .claude/agents/.
+  # El orchestrator está implícito en todo proyecto forge.
+  active:
+    - forge-cli-engineer         # packages/cli/src — CLI TypeScript y dogfooding
+    - forge-docs-engineer        # README, CHANGELOG, docs/ — documentación
+    - forge-migration-engineer   # hooks/, workflows, manifest.json, forge.py — migración Python→TS
+    - forge-init-specialist      # inicialización de forge en proyectos (forge init)
+    - forge-audit-specialist     # auditorías de proyectos forge (forge audit)
+    - forge-catalog-specialist   # catálogo: MCP servers, profiles, frameworks
+    - forge-quality-reviewer     # guardrail del equipo, poder de veto, gate spec-first
+  # Modelo por rol — refleja el frontmatter `model:` de cada agente.
+  by_role:
+    orchestrator: claude-opus-4-7         # coordinación de alto nivel
+    forge-cli-engineer: claude-sonnet-4-6
+    forge-docs-engineer: claude-sonnet-4-6
+    forge-migration-engineer: claude-sonnet-4-6
+    forge-init-specialist: claude-sonnet-4-6
+    forge-audit-specialist: claude-sonnet-4-6
+    forge-catalog-specialist: claude-sonnet-4-6
+    forge-quality-reviewer: claude-opus-4-7   # revisor con poder de veto
+  compliance: []
+  profiles: []
+
+skills:
+  # Forma simple (v2.9+): lista de ids de skills/comandos que el repo usa.
+  - audit                    # forge audit — auditar conformidad del repo
+  - generate                 # forge generate — regenerar configs de runtime
+  - validate                 # forge validate — validar project.yaml
+  - spec                     # /spec — redactar specs (gate spec-first, docs/specs/)
+  - new-feature              # /new-feature — checklist de feature de plan a deploy
+  - security-audit           # /security-audit — checklist de seguridad
+
+compliance:
+  frameworks: []             # forge es un framework, no procesa datos regulados
+  pii_handling: false
+  audit_logs: false
+
+deploy:
+  provider: "github-actions" # publicación a npm vía GitHub Actions
+  branch: "main"
+  project_id: null
+  production_url: null
+  smoke_tests: []
+
+paths:
+  specs: "docs/specs"
+  progress: null
+  migrations: null
+  tests: "tests/"
+
+github:
+  project:
+    number: null
+    owner: "cristiancorreau"
+    repo: "forge"
+    status_field_id: null
+    status_in_progress: null
+    status_done: null
+
+rules:
+  forbidden_in_production:
+    - "console.log"
+    - "TODO:"
+    - "FIXME:"
+  required_review_before_ship: true        # forge-quality-reviewer tiene poder de veto
+  require_spec_before_implementation: true  # gate spec-first no opcional (SDD)
+  conventional_commits: true
+  forbidden_patterns: []
+
+scripts:
+  check: "npm --prefix packages/cli run build && npm --prefix packages/cli test"

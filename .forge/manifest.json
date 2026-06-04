@@ -1,0 +1,43 @@
+{
+  "forgeVersion": "2.9.13",
+  "runtime": "claude-code",
+  "installedAt": "2026-06-04T02:50:28.359Z",
+  "files": {
+    ".claude/agents/forge-cli-engineer.md": {
+      "sha256": "3c88e236f0a62b10d2f18b21d2d5b7d9a1bed73f3360c555447225860f7f581f",
+      "installedAt": "2026-06-04T02:50:28.359Z"
+    },
+    ".claude/agents/forge-docs-engineer.md": {
+      "sha256": "d6ed45d93443e4b9ce66aa3a197f0db6cbfa2b2fbc09e1add6a95f4266d37ea1",
+      "installedAt": "2026-06-04T02:50:28.359Z"
+    },
+    ".claude/agents/forge-migration-engineer.md": {
+      "sha256": "99b025a7ac732fd5d8926c96c6e1b470251543f38c6019acdfc42e71cc087174",
+      "installedAt": "2026-06-04T02:50:28.359Z"
+    },
+    ".claude/agents/forge-init-specialist.md": {
+      "sha256": "d2b43446c6a09ccdf43155ef2025d6343d7070ad3248273d90bd73e23168bad0",
+      "installedAt": "2026-06-04T02:50:28.359Z"
+    },
+    ".claude/agents/forge-audit-specialist.md": {
+      "sha256": "a3a2fd6733d3b4658d841bb36cfff5ec8a5700610b8392879602e95e7543a540",
+      "installedAt": "2026-06-04T02:50:28.359Z"
+    },
+    ".claude/agents/forge-catalog-specialist.md": {
+      "sha256": "6d6c7ef20ae39854f2ad32894ef9d694dabc87ca3fb300d9d019a4abce67bb98",
+      "installedAt": "2026-06-04T02:50:28.359Z"
+    },
+    ".claude/agents/forge-quality-reviewer.md": {
+      "sha256": "8eeaf1997eee604b3a672e7c6448615d13f1fde0ff7fd98986b8491afc47fab8",
+      "installedAt": "2026-06-04T02:50:28.359Z"
+    },
+    ".claude/settings.json": {
+      "sha256": "dd0f39d2e3f139e178d9a5f27cd6f810fcd516799777d78f44d2102cfbfea8db",
+      "installedAt": "2026-06-04T02:50:28.359Z"
+    },
+    "CLAUDE.md": {
+      "sha256": "26357dadb183386aabc1b766df91dfee691b38fb12c545f43aaa3cd4f15a88b5",
+      "installedAt": "2026-06-04T02:50:28.359Z"
+    }
+  }
+}
