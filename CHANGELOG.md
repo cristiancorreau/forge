@@ -7,6 +7,21 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.11.0] — 2026-06-04
+
+### Agregado
+- **`forge wiki init` + estructura de wiki templada por defecto.** `ensureWikiStructure` ahora copia las plantillas de `templates/wiki/` (index, log, y un `_template.md` por subdir) en vez de stubs mínimos; nuevo subcomando `forge wiki init [--force]` (idempotente); `forge init` scaffoldea el wiki cuando hay un skill `wiki-*` activo (no lo fuerza en otros proyectos). Se agregó la plantilla faltante `synthesis/_template.md`.
+- **Tipo `integrations.obsidian`** (`vault_path`, `map`) en la interfaz `ProjectYaml`, alineado con el schema (`obsidian-sync` sigue siendo un skill, no un comando del CLI).
+
+### Documentación
+- README: sección **Instalación** con `npm` / `pnpm` / `bun` / `npx` y el comando global `forge`, con notas de PATH por gestor.
+- `docs/wiki.md`: estructura del wiki, comandos del CLI con ejemplos, relación CLI↔skills `/wiki-*`, y prerequisitos de `obsidian-sync`.
+
+### CI
+- Nuevo smoke test de release que hace `npm install -g` y corre el comando `forge` pelado (el anterior usaba `node node_modules/.bin/forge`, que enmascaraba problemas de shebang/PATH).
+
+---
+
 ## [2.10.1] — 2026-06-04
 
 ### Corregido
