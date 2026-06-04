@@ -15,6 +15,7 @@ import {
   dim as otDim,
 } from '@opentui/core';
 import { VERSION } from '../version.js';
+import { FORGE_BANNER } from '../ui/banner.js';
 
 /**
  * Restore the terminal to a sane state. OpenTUI enables alt-screen, mouse
@@ -209,7 +210,8 @@ async function runDashboardLoop(renderer: any, data: DashboardData): Promise<voi
 
   const W = renderer.root.width ?? process.stdout.columns ?? 120;
   const H = renderer.root.height ?? process.stdout.rows ?? 40;
-  const HEADER_H = 5, BOTTOM_H = 2;
+  // Header holds the 6-line FORGE banner + a status line → 7 rows + border.
+  const HEADER_H = 9, BOTTOM_H = 2;
   const BODY_H = H - HEADER_H - BOTTOM_H - 2;
   const LEFT_W = Math.max(26, Math.floor(W * 0.28));
   const RIGHT_W = W - LEFT_W - 1;
@@ -218,9 +220,13 @@ async function runDashboardLoop(renderer: any, data: DashboardData): Promise<voi
   const header = new BoxRenderable(renderer, {
     id: 'hdr', position: 'absolute', left: 0, top: 0, width: W, height: HEADER_H,
     border: true, borderStyle: 'double', borderColor: C.cyan, backgroundColor: C.bg,
-    flexDirection: 'column', paddingLeft: 1, paddingTop: 1,
+    flexDirection: 'column', paddingLeft: 1, paddingTop: 0,
   });
-  header.add(Text({ id: 'hdr-t', content: t`${boldCol(C.yellow, 'forge')}  ${otDim('v' + VERSION)}    ${fg(C.green)('✔ installed')} ${otDim('· ' + data.runtime + ' · ' + data.mode)}\n${fg(C.muted)('Post-install · ' + data.projectName)}\n${otDim('Tu proyecto está listo — explorá las secciones')}` }));
+  // FORGE banner (cyan) + single status line.
+  header.add(Text({ id: 'hdr-t', content: buildLines([
+    ...FORGE_BANNER.map(l => fg(C.cyan)(l)),
+    [otDim('v' + VERSION + '  '), fg(C.green)('✔ installed'), otDim(' · ' + data.runtime + ' · ' + data.mode + ' · '), fg(C.muted)(data.projectName)],
+  ]) }));
   renderer.root.add(header);
 
   // Nav (left) — SelectRenderable

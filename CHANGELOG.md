@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.9.12] — 2026-06-04
+
+### Agregado
+- **Banner ASCII de FORGE en los headers.** Nuevo módulo `src/ui/banner.ts` con el banner de 6 líneas, reutilizado en los tres headers: el estático (chalk/boxen del scrollback) y los de OpenTUI (wizard y dashboard). Los paneles OpenTUI crecieron a `HEADER_H = 9` para acomodar el banner + una línea (tagline/versión en el wizard; estado de instalación en el dashboard); el resto del layout se reposiciona solo. Verificado en PTY: banner alineado y navegación intacta.
+
+---
+
 ## [2.9.11] — 2026-06-04
 
 ### Cambiado (infraestructura)

@@ -17,6 +17,7 @@ import {
 import type { WizardResult } from '../lib/wizard.js';
 import { detectStack } from '../lib/detect.js';
 import { VERSION } from '../version.js';
+import { FORGE_BANNER } from '../ui/banner.js';
 
 /**
  * Restore the terminal to a sane state. OpenTUI enables alt-screen, mouse
@@ -131,7 +132,8 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   const W = renderer.root.width  ?? process.stdout.columns  ?? 120;
   const H = renderer.root.height ?? process.stdout.rows     ?? 40;
 
-  const HEADER_H = 5;
+  // Header holds the 6-line FORGE banner + a tagline → 7 content rows + border.
+  const HEADER_H = 9;
   const BOTTOM_H = 2;
   const BODY_H   = H - HEADER_H - BOTTOM_H - 2;
   const LEFT_W   = Math.max(24, Math.floor(W * 0.25));
@@ -143,12 +145,13 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
     width: W, height: HEADER_H,
     border: true, borderStyle: 'double', borderColor: C.cyan,
     backgroundColor: C.bg,
-    flexDirection: 'column', paddingLeft: 1, paddingTop: 1,
+    flexDirection: 'column', paddingLeft: 1, paddingTop: 0,
   });
-  // Single t-template (all leaves interpolated directly — no nested t-results)
-  header.add(Text({ id: 'hdr-t',
-    content: t`${boldCol(C.yellow, 'forge')}  ${otDim('v' + VERSION)}\n${fg(C.muted)('Configure any project for AI agents')}\n${otDim('Claude Code · OpenCode · Codex · Kiro')}`,
-  }));
+  // FORGE banner (cyan) + tagline. buildLines keeps it a single t-template.
+  header.add(Text({ id: 'hdr-t', content: buildLines([
+    ...FORGE_BANNER.map(l => fg(C.cyan)(l)),
+    [fg(C.muted)('Configure any project for AI agents'), otDim('   v' + VERSION)],
+  ]) }));
   renderer.root.add(header);
 
   // ── Steps panel (left) ──

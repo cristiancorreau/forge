@@ -1,11 +1,13 @@
 import boxen from 'boxen';
 import chalk from 'chalk';
 import { VERSION } from '../version.js';
+import { FORGE_BANNER } from './banner.js';
 
 export function printHeader(): void {
+  const banner = FORGE_BANNER.map(l => chalk.cyan(l)).join('\n');
   const content =
-    chalk.yellow.bold('forge') + '                        ' + chalk.dim('v' + VERSION) + '\n' +
-    chalk.dim('Configure any project for AI agents') + '\n' +
+    banner + '\n' +
+    chalk.dim('Configure any project for AI agents') + '  ' + chalk.dim('v' + VERSION) + '\n' +
     chalk.dim('Claude Code · OpenCode · Codex · Kiro');
 
   const output = boxen(content, {
