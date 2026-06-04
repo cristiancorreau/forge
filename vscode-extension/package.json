@@ -2,8 +2,8 @@
   "name": "forge-agent-framework",
   "publisher": "cristiancorreau",
   "displayName": "forge — Agent Framework",
-  "description": "Manage Forge v2 agent projects from VS Code — multi-runtime support (Claude Code, OpenCode, Kiro, Codex)",
-  "version": "0.5.0",
+  "description": "Manage Forge v2 agent projects from VS Code — drives the @cristiancorreau/forge CLI for multi-runtime support (Claude Code, OpenCode, Codex, Kiro)",
+  "version": "0.6.0",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -18,14 +18,9 @@
   "contributes": {
     "commands": [
       {
-        "command": "forge.openWizard",
-        "title": "forge: Setup Wizard",
-        "icon": "$(wand)"
-      },
-      {
         "command": "forge.init",
-        "title": "forge: Initialize Agents",
-        "icon": "$(tools)"
+        "title": "forge: Init Wizard",
+        "icon": "$(wand)"
       },
       {
         "command": "forge.audit",
@@ -33,44 +28,54 @@
         "icon": "$(check)"
       },
       {
-        "command": "forge.auditAgent",
-        "title": "forge: Audit Specific Agent",
-        "icon": "$(person)"
+        "command": "forge.doctor",
+        "title": "forge: Doctor",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "forge.generate",
+        "title": "forge: Generate Runtime Config",
+        "icon": "$(layers)"
+      },
+      {
+        "command": "forge.validate",
+        "title": "forge: Validate project.yaml",
+        "icon": "$(pass)"
+      },
+      {
+        "command": "forge.migrate",
+        "title": "forge: Migrate project.yaml to v2",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "forge.scaffold",
+        "title": "forge: Scaffold Agent",
+        "icon": "$(add)"
+      },
+      {
+        "command": "forge.skills",
+        "title": "forge: Skills (list / search)",
+        "icon": "$(extensions)"
+      },
+      {
+        "command": "forge.wikiStatus",
+        "title": "forge: Wiki Status",
+        "icon": "$(book)"
+      },
+      {
+        "command": "forge.wikiInit",
+        "title": "forge: Wiki Init",
+        "icon": "$(new-folder)"
       },
       {
         "command": "forge.searchCatalog",
-        "title": "forge: Search Catalog (MCP / Profiles)",
+        "title": "forge: Search Catalog (frameworks / MCP / profiles)",
         "icon": "$(search)"
       },
       {
         "command": "forge.showStatus",
         "title": "forge: Show Project Status",
         "icon": "$(info)"
-      },
-      {
-        "command": "forge.install",
-        "title": "forge: Install",
-        "icon": "$(cloud-download)"
-      },
-      {
-        "command": "forge.generateClaudeMd",
-        "title": "forge: Regenerate CLAUDE.md",
-        "icon": "$(file-text)"
-      },
-      {
-        "command": "forge.generateAll",
-        "title": "forge: Generate All Runtimes",
-        "icon": "$(layers)"
-      },
-      {
-        "command": "forge.validateProjectYaml",
-        "title": "forge: Validate project.yaml",
-        "icon": "$(pass)"
-      },
-      {
-        "command": "forge.migrateProjectYaml",
-        "title": "forge: Migrate project.yaml to v2",
-        "icon": "$(arrow-up)"
       }
     ],
     "viewsContainers": {
@@ -100,23 +105,13 @@
     },
     "viewsWelcome": [
       {
-        "view": "forgeActionsView",
-        "contents": "forge no está instalado en este proyecto.\n\nInstálalo como git submodule en .agentic/:\n[$(cloud-download) Install forge](command:forge.install)",
-        "when": "!forge.installed"
-      },
-      {
         "view": "forgeProjectView",
-        "contents": "forge no está instalado en este proyecto.\n\nInstálalo como git submodule en .agentic/:\n[$(cloud-download) Install forge](command:forge.install)",
-        "when": "!forge.installed"
-      },
-      {
-        "view": "forgeProjectView",
-        "contents": "No se encontró project.yaml en este workspace.\n\nEjecuta el wizard para configurar forge:\n[$(wand) Setup Wizard](command:forge.openWizard)\n\nO si ya tenés forge instalado como submodule:\n[$(tools) Initialize Agents](command:forge.init)",
-        "when": "forge.installed && !forge.active"
+        "contents": "No se encontró project.yaml en este workspace.\n\nEjecuta el wizard para inicializar forge:\n[$(wand) Init Wizard](command:forge.init)\n\nEl wizard usa el CLI @cristiancorreau/forge vía npx (no requiere instalación previa).",
+        "when": "!forge.active"
       },
       {
         "view": "forgeAgentsView",
-        "contents": "No hay agentes instalados en .claude/agents/.\n\nPrimero inicializa el proyecto:\n[$(tools) Initialize Agents](command:forge.init)",
+        "contents": "No hay agentes en .claude/agents/.\n\nInicializa el proyecto con el wizard:\n[$(wand) Init Wizard](command:forge.init)\n\nO genera la config de runtime:\n[$(layers) Generate](command:forge.generate)",
         "when": "forge.active"
       }
     ],
@@ -128,7 +123,7 @@
           "group": "navigation"
         },
         {
-          "command": "forge.openWizard",
+          "command": "forge.init",
           "when": "view == forgeProjectView",
           "group": "navigation"
         }
@@ -137,27 +132,15 @@
     "configuration": {
       "title": "forge",
       "properties": {
-        "forge.forgePath": {
+        "forge.cliCommand": {
           "type": "string",
-          "default": ".agentic",
-          "description": "Path to forge installation relative to workspace root"
-        },
-        "forge.tool": {
-          "type": "string",
-          "default": "claude-code",
-          "enum": [
-            "claude-code",
-            "opencode",
-            "kiro",
-            "codex",
-            "all"
-          ],
-          "description": "Target agentic tool"
+          "default": "npx @cristiancorreau/forge",
+          "markdownDescription": "Command used to invoke the forge CLI. Defaults to `npx @cristiancorreau/forge` (no global install required). Point it to a global `forge`, `pnpm dlx @cristiancorreau/forge`, or `bunx @cristiancorreau/forge` if you prefer."
         },
         "forge.autoAuditOnSave": {
           "type": "boolean",
           "default": false,
-          "description": "Automatically run audit when an agent file is saved"
+          "description": "Automatically refresh the audit status when an agent file or project.yaml is saved"
         }
       }
     }
