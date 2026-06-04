@@ -35,7 +35,7 @@ from typing import Optional
 # Versión y rutas
 # ---------------------------------------------------------------------------
 
-VERSION = "2.0.1"
+VERSION = "2.9.13"
 FORGE_DIR = Path(__file__).parent
 SCRIPTS = FORGE_DIR / "scripts"
 
