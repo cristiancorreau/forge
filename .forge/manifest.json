@@ -1,43 +1,107 @@
 {
   "forgeVersion": "2.10.0",
   "runtime": "claude-code",
-  "installedAt": "2026-06-04T02:50:28.359Z",
+  "installedAt": "2026-06-04T03:53:59.972Z",
   "files": {
+    "CLAUDE.md": {
+      "sha256": "a3ca153452c425f5a00888dddf653ed286a9c35c6cf074d19c381ce6dabb2d83",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/settings.json": {
+      "sha256": "5dc176100e8ea45c5ffb3ca228052fd53ac74c1b85d1fe9b3cbcc159b21c54c2",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/architecture.rules": {
+      "sha256": "49d31f69e83500f2c3337c9be5773c86eda92c834d6c04cccd7bbda5e7da3134",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
     ".claude/agents/forge-cli-engineer.md": {
       "sha256": "3c88e236f0a62b10d2f18b21d2d5b7d9a1bed73f3360c555447225860f7f581f",
-      "installedAt": "2026-06-04T02:50:28.359Z"
+      "installedAt": "2026-06-04T03:53:59.972Z"
     },
     ".claude/agents/forge-docs-engineer.md": {
       "sha256": "d6ed45d93443e4b9ce66aa3a197f0db6cbfa2b2fbc09e1add6a95f4266d37ea1",
-      "installedAt": "2026-06-04T02:50:28.359Z"
+      "installedAt": "2026-06-04T03:53:59.972Z"
     },
     ".claude/agents/forge-migration-engineer.md": {
       "sha256": "99b025a7ac732fd5d8926c96c6e1b470251543f38c6019acdfc42e71cc087174",
-      "installedAt": "2026-06-04T02:50:28.359Z"
+      "installedAt": "2026-06-04T03:53:59.972Z"
     },
     ".claude/agents/forge-init-specialist.md": {
       "sha256": "d2b43446c6a09ccdf43155ef2025d6343d7070ad3248273d90bd73e23168bad0",
-      "installedAt": "2026-06-04T02:50:28.359Z"
+      "installedAt": "2026-06-04T03:53:59.972Z"
     },
     ".claude/agents/forge-audit-specialist.md": {
       "sha256": "a3a2fd6733d3b4658d841bb36cfff5ec8a5700610b8392879602e95e7543a540",
-      "installedAt": "2026-06-04T02:50:28.359Z"
+      "installedAt": "2026-06-04T03:53:59.972Z"
     },
     ".claude/agents/forge-catalog-specialist.md": {
       "sha256": "6d6c7ef20ae39854f2ad32894ef9d694dabc87ca3fb300d9d019a4abce67bb98",
-      "installedAt": "2026-06-04T02:50:28.359Z"
+      "installedAt": "2026-06-04T03:53:59.972Z"
     },
     ".claude/agents/forge-quality-reviewer.md": {
-      "sha256": "8eeaf1997eee604b3a672e7c6448615d13f1fde0ff7fd98986b8491afc47fab8",
-      "installedAt": "2026-06-04T02:50:28.359Z"
+      "sha256": "75ef5973403d3f6a5d2c9c67caa1c115a5fe304b224ecabd4ce2d3b359b17c6b",
+      "installedAt": "2026-06-04T03:53:59.972Z"
     },
-    ".claude/settings.json": {
-      "sha256": "dd0f39d2e3f139e178d9a5f27cd6f810fcd516799777d78f44d2102cfbfea8db",
-      "installedAt": "2026-06-04T02:50:28.359Z"
+    ".claude/hooks/post-turn-check.sh": {
+      "sha256": "198b47cc6cbb45f68dc00d9f7ee755915926c5e5d40ca620f57dda95f0a14d3f",
+      "installedAt": "2026-06-04T03:53:59.972Z"
     },
-    "CLAUDE.md": {
-      "sha256": "26357dadb183386aabc1b766df91dfee691b38fb12c545f43aaa3cd4f15a88b5",
-      "installedAt": "2026-06-04T02:50:28.359Z"
+    ".claude/hooks/pre-bash-check.js": {
+      "sha256": "aab259dc8acc86c2c1127b78da86c69fb02c4a040d4266afe0eafdb58e4749db",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/hooks/pre-edit-check.js": {
+      "sha256": "f4f5f97f0dd7848701eb9ee17d266a58519d7f95ead083d766169c8a04757dae",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/hooks/session-start.sh": {
+      "sha256": "db7ad33753d7830a02caa1f17804449e9cfeb40748e4171bf99de94f088fb69b",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/commands/deploy-check.md": {
+      "sha256": "ce2a03badd274918ce133057e705e7dbb063844de32514215d569e19cd1996d4",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/commands/new-feature.md": {
+      "sha256": "34326c1c556a2393ace80d63e45c086efff73c7827b275ee46ba938d3e991613",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/commands/plan.md": {
+      "sha256": "ae8ecf1a5516abf53f14cea640d0f2517672643d9875a93176092a757dc24329",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/commands/review.md": {
+      "sha256": "409b10d54af4a3dc7b32d12c990bcf9954d2a43c673ffdd723fc5ea257943f3d",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/commands/session-close.md": {
+      "sha256": "20210b786d5e40bdbbadc8db8d52babbf81c9fcbef806f8aee60071a2f4c5ffe",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/commands/session-start.md": {
+      "sha256": "4bd6e34292c9bb1f14679f808abffd209edc0c531e57e63f3987a34c6c1dbc92",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/commands/ship.md": {
+      "sha256": "01add721805e64c506e24aa75a5c8b77c3be61a85da09ca26edbb9bdafacc08d",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/commands/wiki-ingest.md": {
+      "sha256": "b2858d80be62477effb6ef35275a6e6a7aa718dedecf31c8066a3c9e31379074",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/commands/wiki-lint.md": {
+      "sha256": "9e7b0e4d7de8949d26620e26d07383e36d4a9d4487cb3b5485eb0cd7b6d91e10",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/commands/wiki-query.md": {
+      "sha256": "fffa05fa2eea692a97c41c7b20909bd51406b4fe7c2e3389d5562f2869767540",
+      "installedAt": "2026-06-04T03:53:59.972Z"
+    },
+    ".claude/commands/work.md": {
+      "sha256": "92b62992f4017a1de41f2c24b544160a04ddb673203fa82aa4fcbc2c9ed6e323",
+      "installedAt": "2026-06-04T03:53:59.972Z"
     }
   }
 }

@@ -117,6 +117,27 @@ function detectTier3Agents(root: string): string[] {
   return found.sort();
 }
 
+/**
+ * Lista los archivos instalados en `<claudeDir>/<subdir>` (p. ej. hooks/ o
+ * commands/) como rutas RELATIVAS a `projectRoot`, usando separadores `/` para
+ * que el manifest sea estable entre plataformas. Devuelve [] si el dir no existe.
+ * Recorre subdirectorios (los slash commands pueden estar anidados).
+ */
+function listInstalledRelativeFiles(claudeDir: string, subdir: string, projectRoot: string): string[] {
+  const baseDir = join(claudeDir, subdir);
+  if (!existsSync(baseDir)) return [];
+  const out: string[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir)) {
+      const abs = join(dir, entry);
+      if (statSync(abs).isDirectory()) walk(abs);
+      else out.push(abs.slice(projectRoot.length + 1).split('\\').join('/'));
+    }
+  };
+  walk(baseDir);
+  return out.sort();
+}
+
 function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>>, specialized: string[] = []): string {
   if (!result) return '';
   const stack: string[] = [];
@@ -229,7 +250,7 @@ function installHooks(forgeRoot: string, destDir: string, mode: string, force: b
   }
 }
 
-function generateSettingsJson(language: string, mode: string): string {
+function buildSettings(language: string, mode: string): Record<string, unknown> {
   const allowList: string[] = [];
 
   if (language === 'typescript') {
@@ -256,7 +277,63 @@ function generateSettingsJson(language: string, mode: string): string {
     });
   }
 
-  return JSON.stringify({ permissions: { allow: allowList }, hooks }, null, 2);
+  return { permissions: { allow: allowList }, hooks };
+}
+
+/**
+ * Mezcla los settings generados por forge con un `.claude/settings.json` ya
+ * existente, preservando lo que forge NO gestiona:
+ *  - top-level keys que no son `permissions`/`hooks` (especialmente `env`),
+ *  - entradas previas en `permissions.allow` (unión sin duplicados).
+ * forge gestiona `hooks` (registry de guardrails) por completo, así que esa key
+ * se reemplaza siempre por la generada.
+ */
+function mergeSettings(
+  generated: Record<string, unknown>,
+  existing: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...existing };
+
+  // forge gestiona hooks por completo.
+  merged.hooks = generated.hooks;
+
+  // permissions.allow: unión de existentes + generadas (sin duplicar, orden estable).
+  const genPerms = (generated.permissions ?? {}) as { allow?: unknown };
+  const existPerms = (existing.permissions ?? {}) as Record<string, unknown> & { allow?: unknown };
+  const genAllow = Array.isArray(genPerms.allow) ? (genPerms.allow as string[]) : [];
+  const existAllow = Array.isArray(existPerms.allow) ? (existPerms.allow as string[]) : [];
+  const mergedAllow = [...existAllow];
+  for (const entry of genAllow) {
+    if (!mergedAllow.includes(entry)) mergedAllow.push(entry);
+  }
+  merged.permissions = { ...existPerms, allow: mergedAllow };
+
+  return merged;
+}
+
+/**
+ * Escribe `.claude/settings.json`. Si el archivo ya existe (y es JSON válido),
+ * mezcla preservando keys externas (`env`, etc.) y permisos previos. Si no
+ * existe o no se puede parsear, escribe los settings generados tal cual.
+ * Respeta `force`: con `force=false` no toca un archivo existente.
+ */
+function writeSettingsJson(path: string, language: string, mode: string, force: boolean): void {
+  const generated = buildSettings(language, mode);
+  if (existsSync(path)) {
+    if (!force) return;
+    let existing: Record<string, unknown> | null = null;
+    try {
+      existing = JSON.parse(readFileSync(path, 'utf-8')) as Record<string, unknown>;
+    } catch {
+      existing = null;
+    }
+    const out = existing && typeof existing === 'object'
+      ? mergeSettings(generated, existing)
+      : generated;
+    writeFileSync(path, JSON.stringify(out, null, 2), 'utf-8');
+    return;
+  }
+  writeFileSync(path, JSON.stringify(generated, null, 2), 'utf-8');
 }
 
 function installCommands(forgeRoot: string, destDir: string, force: boolean): void {
@@ -421,7 +498,7 @@ export async function init(args: string[]): Promise<number> {
       {
         title: 'settings.json',
         tech: 'permissions + hooks',
-        task: () => write(join(claudeDir, 'settings.json'), generateSettingsJson(language, mode), force),
+        task: () => writeSettingsJson(join(claudeDir, 'settings.json'), language, mode, force),
       },
       {
         title: 'docs/specs/ + architecture.rules',
@@ -445,12 +522,22 @@ export async function init(args: string[]): Promise<number> {
         title: '.forge/manifest.json',
         tech: 'sha256 tracking',
         task: () => {
+          const specializedAgents = config.agents?.specialized ?? [];
           const installedFiles = [
             'CLAUDE.md', '.claude/settings.json', '.claude/architecture.rules',
+            // Tier 1 (active) + compliance agents.
             ...allAgents.map(a => `.claude/agents/${a}.md`),
+            // Tier 3 (specialized) agents — must not be dropped from the manifest.
+            ...specializedAgents.map(a => `.claude/agents/${a}.md`),
+            // Installed guardrail hooks and slash commands (if present on disk).
+            ...listInstalledRelativeFiles(claudeDir, 'hooks', projectRoot),
+            ...listInstalledRelativeFiles(claudeDir, 'commands', projectRoot),
           ];
+          // De-dup while preserving order (an agent could appear in both lists).
+          const seen = new Set<string>();
+          const uniqueFiles = installedFiles.filter(f => (seen.has(f) ? false : seen.add(f)));
           const ts = new Date().toISOString();
-          saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, VERSION, ts));
+          saveManifest(projectRoot, buildManifest(runtime, uniqueFiles, projectRoot, VERSION, ts));
         },
       },
     ]);
