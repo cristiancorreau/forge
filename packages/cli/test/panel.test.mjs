@@ -334,13 +334,16 @@ describe('forge panel — CLI (non-TTY fallback)', () => {
     writeProjectYaml(dir, FULL_YAML);
     const res = spawnSync(process.execPath, [CLI, 'panel'], {
       cwd: dir, encoding: 'utf-8', input: '',
-      env: { ...process.env, FORGE_NO_BUN: '1' },
+      // Force Unicode (FORGE_ASCII=0) so this assertion is deterministic across
+      // platforms: on Windows without Windows Terminal the banner auto-degrades
+      // to ASCII (correct — covered by the FORGE_ASCII=1 test below).
+      env: { ...process.env, FORGE_NO_BUN: '1', FORGE_ASCII: '0' },
     });
     const out = stripAnsi((res.stdout ?? '') + (res.stderr ?? ''));
     assert.equal(res.status, 0, `panel should exit 0; output:\n${out}`);
     assert.match(out, /forge panel/);
-    // The Unicode block banner (default on macOS/Linux) is present.
-    assert.match(out, /█/, 'default snapshot should include the Unicode FORGE banner');
+    // With Unicode forced, the FORGE block banner is present.
+    assert.match(out, /█/, 'forced-Unicode snapshot should include the FORGE block banner');
   });
 
   // SPEC-036 Part 2 + SPEC-035: the static banner degrades to ASCII under
