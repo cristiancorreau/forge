@@ -4,84 +4,14 @@ import * as fs from 'fs';
 import { spawn } from 'child_process';
 
 // ---------------------------------------------------------------------------
-// Helpers
+// CLI invocation
+//
+// The extension drives the TypeScript CLI `@cristiancorreau/forge` (published on
+// npm) instead of the deprecated Python/git-submodule flow. The command is
+// configurable via the `forge.cliCommand` setting (default
+// `npx @cristiancorreau/forge`) so users can point to a global `forge`, `pnpm
+// dlx`, `bunx`, etc.
 // ---------------------------------------------------------------------------
-
-const FORGE_MARKER = path.join('scripts', 'forge-wizard.py');
-
-function isForgeRoot(dir: string): boolean {
-  return fs.existsSync(path.join(dir, FORGE_MARKER));
-}
-
-function findForgeDir(workspaceRoot: string): string | null {
-  // El workspace mismo es el repo de forge
-  if (isForgeRoot(workspaceRoot)) {
-    return workspaceRoot;
-  }
-  // Submodule como .agentic/ o forge/
-  for (const candidate of ['.agentic', 'forge']) {
-    const full = path.join(workspaceRoot, candidate);
-    if (fs.existsSync(full) && fs.statSync(full).isDirectory() && isForgeRoot(full)) {
-      return full;
-    }
-  }
-  return null;
-}
-
-function findProjectYaml(workspaceRoot: string): boolean {
-  return fs.existsSync(path.join(workspaceRoot, 'project.yaml'));
-}
-
-function resolveForgeDir(workspaceRoot: string): string | null {
-  const config = vscode.workspace.getConfiguration('forge');
-  const forgePath = config.get<string>('forgePath', '.agentic');
-
-  // Ruta explícita en settings (puede ser absoluta o relativa)
-  const explicit = path.isAbsolute(forgePath)
-    ? forgePath
-    : path.join(workspaceRoot, forgePath);
-  if (fs.existsSync(explicit) && isForgeRoot(explicit)) {
-    return explicit;
-  }
-
-  return findForgeDir(workspaceRoot);
-}
-
-async function requireForgeDir(workspaceRoot: string): Promise<string | null> {
-  const forgeDir = resolveForgeDir(workspaceRoot);
-  if (forgeDir) { return forgeDir; }
-
-  const choice = await vscode.window.showErrorMessage(
-    'forge no está instalado en este proyecto. Instálalo como git submodule en .agentic/',
-    'Ver instrucciones',
-    'Seleccionar carpeta forge…'
-  );
-
-  if (choice === 'Ver instrucciones') {
-    vscode.env.openExternal(vscode.Uri.parse('https://github.com/cristiancorreau/forge#instalaci%C3%B3n'));
-  } else if (choice === 'Seleccionar carpeta forge…') {
-    const picked = await vscode.window.showOpenDialog({
-      canSelectFiles: false,
-      canSelectFolders: true,
-      canSelectMany: false,
-      openLabel: 'Seleccionar carpeta de forge',
-    });
-    if (picked && picked[0]) {
-      const selected = picked[0].fsPath;
-      if (isForgeRoot(selected)) {
-        // Guardar en settings para la próxima vez
-        const rel = path.relative(workspaceRoot, selected);
-        await vscode.workspace.getConfiguration('forge').update(
-          'forgePath', rel, vscode.ConfigurationTarget.Workspace
-        );
-        return selected;
-      } else {
-        vscode.window.showErrorMessage('La carpeta seleccionada no parece ser una instalación de forge (falta scripts/forge-wizard.py).');
-      }
-    }
-  }
-  return null;
-}
 
 function getWorkspaceRoot(): string | null {
   const folders = vscode.workspace.workspaceFolders;
@@ -91,16 +21,41 @@ function getWorkspaceRoot(): string | null {
   return folders[0].uri.fsPath;
 }
 
-function runForgeCommand(
-  command: string[],
-  workspaceRoot: string
-): Promise<{ stdout: string; stderr: string; code: number }> {
+function findProjectYaml(workspaceRoot: string): boolean {
+  return fs.existsSync(path.join(workspaceRoot, 'project.yaml'));
+}
+
+/**
+ * The configured CLI command, split into argv tokens.
+ * e.g. "npx @cristiancorreau/forge" → ["npx", "@cristiancorreau/forge"]
+ */
+function getCliCommand(): string[] {
+  const config = vscode.workspace.getConfiguration('forge');
+  const raw = config.get<string>('cliCommand', 'npx @cristiancorreau/forge').trim();
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  return tokens.length > 0 ? tokens : ['npx', '@cristiancorreau/forge'];
+}
+
+interface CliResult {
+  stdout: string;
+  stderr: string;
+  code: number;
+}
+
+/**
+ * Run a forge subcommand non-interactively, capturing stdout/stderr.
+ * `subArgs` are the arguments after the CLI command (e.g. ['audit', '--json']).
+ */
+function runForge(subArgs: string[], workspaceRoot: string): Promise<CliResult> {
+  const cli = getCliCommand();
+  const argv = [...cli.slice(1), ...subArgs];
   return new Promise((resolve) => {
     let stdout = '';
     let stderr = '';
-    const proc = spawn(command[0], command.slice(1), {
+    const proc = spawn(cli[0], argv, {
       cwd: workspaceRoot,
       env: process.env,
+      shell: process.platform === 'win32',
     });
     proc.stdout.on('data', (chunk: Buffer | string) => {
       stdout += chunk.toString();
@@ -115,6 +70,38 @@ function runForgeCommand(
       resolve({ stdout: '', stderr: err.message, code: 1 });
     });
   });
+}
+
+/**
+ * Run a forge subcommand interactively in a VS Code integrated terminal.
+ * Used for the init wizard (TTY prompts).
+ */
+function runForgeInTerminal(subArgs: string[], workspaceRoot: string, name: string): void {
+  const cli = getCliCommand();
+  const terminal = vscode.window.createTerminal({ name, cwd: workspaceRoot });
+  terminal.show();
+  terminal.sendText([...cli, ...subArgs].join(' '));
+}
+
+async function requireWorkspace(): Promise<string | null> {
+  const root = getWorkspaceRoot();
+  if (!root) {
+    vscode.window.showErrorMessage('forge: No workspace open.');
+    return null;
+  }
+  return root;
+}
+
+async function requireProjectYaml(workspaceRoot: string): Promise<boolean> {
+  if (findProjectYaml(workspaceRoot)) { return true; }
+  const choice = await vscode.window.showWarningMessage(
+    'forge: No hay project.yaml en este workspace. Ejecuta el wizard de inicialización primero.',
+    'Run Init Wizard', 'Cancelar'
+  );
+  if (choice === 'Run Init Wizard') {
+    await vscode.commands.executeCommand('forge.init');
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -246,6 +233,9 @@ function parseSimpleYaml(content: string): Record<string, string> {
   const profiles = get('agents.profiles');
   if (profiles)           { result['profiles']     = profiles; }
 
+  const runtimes = get('runtimes.active');
+  if (runtimes)           { result['runtimes']     = runtimes; }
+
   return result;
 }
 
@@ -295,34 +285,25 @@ class ForgeActionItem extends vscode.TreeItem {
 class ForgeActionsProvider implements vscode.TreeDataProvider<ForgeActionItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
-  private installed: boolean;
-
-  constructor(installed: boolean) {
-    this.installed = installed;
-  }
-
-  setInstalled(val: boolean): void {
-    this.installed = val;
-    this.refresh();
-  }
 
   refresh(): void { this._onDidChangeTreeData.fire(); }
 
   getTreeItem(el: ForgeActionItem): vscode.TreeItem { return el; }
 
   getChildren(): ForgeActionItem[] {
-    if (!this.installed) { return []; }
     return [
-      new ForgeActionItem('Setup Wizard',     'forge.openWizard',       'wand',         'create / update project.yaml'),
-      new ForgeActionItem('Initialize',       'forge.init',             'tools',         'agents + CLAUDE.md + settings.json'),
-      new ForgeActionItem('Regenerate CLAUDE.md', 'forge.generateClaudeMd', 'file-text', 'refresh CLAUDE.md from project.yaml'),
-      new ForgeActionItem('Run Audit',        'forge.audit',            'check',        'verify agent conformance'),
-      new ForgeActionItem('Audit Agent…',     'forge.auditAgent',       'person',       'audit a single agent'),
-      new ForgeActionItem('Search Catalog',   'forge.searchCatalog',    'search',       'MCP servers & profiles'),
-      new ForgeActionItem('Show Status',      'forge.showStatus',       'info',         'audit summary'),
-      new ForgeActionItem('Generate All Runtimes', 'forge.generateAll', 'layers',       'generate for all runtimes'),
-      new ForgeActionItem('Validate project.yaml', 'forge.validateProjectYaml', 'pass', 'check project.yaml structure'),
-      new ForgeActionItem('Migrate to v2',    'forge.migrateProjectYaml', 'arrow-up',   'migrate project.yaml to Forge v2'),
+      new ForgeActionItem('Init Wizard',        'forge.init',          'wand',     'initialize forge in this project'),
+      new ForgeActionItem('Run Audit',          'forge.audit',         'check',    'audit project against the forge standard'),
+      new ForgeActionItem('Doctor',             'forge.doctor',        'pulse',    'check environment and runtimes'),
+      new ForgeActionItem('Generate',           'forge.generate',      'layers',   'generate runtime config files'),
+      new ForgeActionItem('Validate project.yaml', 'forge.validate',   'pass',     'validate project.yaml schema'),
+      new ForgeActionItem('Migrate to v2',      'forge.migrate',       'arrow-up', 'migrate project.yaml to v2'),
+      new ForgeActionItem('Scaffold Agent',     'forge.scaffold',      'add',      'scaffold a Tier 2/3 agent'),
+      new ForgeActionItem('Skills',             'forge.skills',        'extensions', 'list / search forge skills'),
+      new ForgeActionItem('Wiki Status',        'forge.wikiStatus',    'book',     'show wiki structure'),
+      new ForgeActionItem('Wiki Init',          'forge.wikiInit',      'new-folder', 'scaffold the wiki structure'),
+      new ForgeActionItem('Search Catalog',     'forge.searchCatalog', 'search',   'frameworks, MCP servers, profiles'),
+      new ForgeActionItem('Show Status',        'forge.showStatus',    'info',     'audit summary'),
     ];
   }
 }
@@ -365,6 +346,7 @@ class ForgeProjectProvider implements vscode.TreeDataProvider<ForgeProjectItem> 
     if (data['mode'])         { items.push(new ForgeProjectItem('Mode',        data['mode'],         'symbol-enum')); }
     if (data['status'])       { items.push(new ForgeProjectItem('Status',      data['status'],       'circle-filled')); }
     if (data['language'])     { items.push(new ForgeProjectItem('Language',    data['language'],     'symbol-namespace')); }
+    if (data['runtimes'])     { items.push(new ForgeProjectItem('Runtimes',    data['runtimes'],     'server-process')); }
     if (data['team'])         { items.push(new ForgeProjectItem('Team',        data['team'],         'organization')); }
     if (data['frontend'])     { items.push(new ForgeProjectItem('Frontend',    data['frontend'],     'browser')); }
     if (data['backend'])      { items.push(new ForgeProjectItem('Backend',     data['backend'],      'database')); }
@@ -437,20 +419,65 @@ class ForgeAgentsProvider implements vscode.TreeDataProvider<ForgeAgentItem> {
 }
 
 // ---------------------------------------------------------------------------
-// Output channels
+// Output channel
 // ---------------------------------------------------------------------------
 
-let auditChannel: vscode.OutputChannel | undefined;
-let initChannel: vscode.OutputChannel | undefined;
+let forgeChannel: vscode.OutputChannel | undefined;
 
-function getAuditChannel(): vscode.OutputChannel {
-  if (!auditChannel) { auditChannel = vscode.window.createOutputChannel('forge Audit'); }
-  return auditChannel;
+function getChannel(): vscode.OutputChannel {
+  if (!forgeChannel) { forgeChannel = vscode.window.createOutputChannel('forge'); }
+  return forgeChannel;
 }
 
-function getInitChannel(): vscode.OutputChannel {
-  if (!initChannel) { initChannel = vscode.window.createOutputChannel('forge Init'); }
-  return initChannel;
+function reportResult(channel: vscode.OutputChannel, result: CliResult): void {
+  if (result.stdout) { channel.appendLine(result.stdout); }
+  if (result.stderr) {
+    channel.appendLine('--- stderr ---');
+    channel.appendLine(result.stderr);
+  }
+  if (result.code !== 0) {
+    channel.appendLine(`\nProcess exited with code ${result.code}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Audit JSON shapes (from `forge audit --json`)
+// ---------------------------------------------------------------------------
+
+interface AuditSummary {
+  errors: number;
+  warnings: number;
+  ok: number;
+  info: number;
+}
+
+interface AuditIssue {
+  level: 'error' | 'warn' | 'ok' | 'info';
+  check: string;
+  message: string;
+}
+
+interface AuditJson {
+  summary?: AuditSummary;
+  issues?: AuditIssue[];
+}
+
+async function refreshStatusBar(workspaceRoot: string): Promise<void> {
+  const result = await runForge(['audit', '--json'], workspaceRoot);
+  try {
+    const parsed = JSON.parse(result.stdout) as AuditJson;
+    const summary = parsed.summary;
+    if (!summary) { updateStatusBar('idle'); return; }
+    if (summary.errors > 0) {
+      updateStatusBar('error', summary.errors);
+    } else if (summary.warnings > 0) {
+      updateStatusBar('warn', summary.warnings);
+    } else {
+      updateStatusBar('ok');
+    }
+  } catch {
+    updateStatusBar('idle');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -465,15 +492,13 @@ export function activate(context: vscode.ExtensionContext): void {
   statusBarItem.show();
 
   const root = getWorkspaceRoot();
-  const forgeInstalled = root ? resolveForgeDir(root) !== null : false;
   const hasProjectYaml = root ? findProjectYaml(root) : false;
 
   updateStatusBar('idle');
-  vscode.commands.executeCommand('setContext', 'forge.installed', forgeInstalled);
   vscode.commands.executeCommand('setContext', 'forge.active', hasProjectYaml);
 
   // Providers
-  const actionsProvider = new ForgeActionsProvider(forgeInstalled);
+  const actionsProvider = new ForgeActionsProvider();
   const projectProvider = new ForgeProjectProvider();
   const agentsProvider  = new ForgeAgentsProvider();
 
@@ -488,114 +513,30 @@ export function activate(context: vscode.ExtensionContext): void {
     const watcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(root, 'project.yaml')
     );
-    watcher.onDidChange(() => {
+    const onYaml = () => {
       projectProvider.refresh();
+      agentsProvider.refresh();
       vscode.commands.executeCommand('setContext', 'forge.active', true);
-      updateStatusBar('idle');
+      void refreshStatusBar(root);
       statusBarItem.show();
-    });
-    watcher.onDidCreate(() => {
-      projectProvider.refresh();
-      vscode.commands.executeCommand('setContext', 'forge.active', true);
-      updateStatusBar('idle');
-      statusBarItem.show();
-    });
+    };
+    watcher.onDidChange(onYaml);
+    watcher.onDidCreate(onYaml);
     context.subscriptions.push(watcher);
 
-    // Watch for forge installation (submodule add)
-    const forgeMarkerWatcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(root, '.agentic/scripts/forge-wizard.py')
-    );
-    forgeMarkerWatcher.onDidCreate(async () => {
-      vscode.commands.executeCommand('setContext', 'forge.installed', true);
-      actionsProvider.setInstalled(true);
-      const choice = await vscode.window.showInformationMessage(
-        'forge instalado correctamente. Ejecuta Setup Wizard para configurar el proyecto.',
-        'Setup Wizard'
-      );
-      if (choice === 'Setup Wizard') {
-        vscode.commands.executeCommand('forge.openWizard');
-      }
-    });
-    context.subscriptions.push(forgeMarkerWatcher);
+    if (hasProjectYaml) {
+      void refreshStatusBar(root);
+    }
   }
 
   // -------------------------------------------------------------------------
-  // Command: forge.openWizard
-  // -------------------------------------------------------------------------
-  context.subscriptions.push(
-    vscode.commands.registerCommand('forge.openWizard', async () => {
-      const workspaceRoot = getWorkspaceRoot();
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('forge: No workspace open.');
-        return;
-      }
-      const forgeDir = await requireForgeDir(workspaceRoot);
-      if (!forgeDir) { return; }
-
-      const wizardScript = path.join(forgeDir, 'scripts', 'forge-wizard.py');
-      const terminal = vscode.window.createTerminal({
-        name: 'forge wizard',
-        cwd: workspaceRoot,
-      });
-      terminal.show();
-      terminal.sendText(`python3 "${wizardScript}"`);
-    })
-  );
-
-  // -------------------------------------------------------------------------
-  // Command: forge.init
+  // Command: forge.init  (interactive wizard in an integrated terminal)
   // -------------------------------------------------------------------------
   context.subscriptions.push(
     vscode.commands.registerCommand('forge.init', async () => {
-      const workspaceRoot = getWorkspaceRoot();
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('forge: No workspace open.');
-        return;
-      }
-      const forgeDir = await requireForgeDir(workspaceRoot);
-      if (!forgeDir) { return; }
-
-      if (!findProjectYaml(workspaceRoot)) {
-        const choice = await vscode.window.showWarningMessage(
-          'forge: No hay project.yaml. ¿Quieres ejecutar el wizard primero?',
-          'Run Wizard', 'Cancelar'
-        );
-        if (choice === 'Run Wizard') {
-          await vscode.commands.executeCommand('forge.openWizard');
-        }
-        return;
-      }
-
-      const config = vscode.workspace.getConfiguration('forge');
-      const tool = config.get<string>('tool', 'claude-code');
-
-      const channel = getInitChannel();
-      channel.clear();
-      channel.show(true);
-      channel.appendLine(`Initializing forge project for tool: ${tool}\n`);
-
-      const initScript = path.join(forgeDir, 'scripts', 'forge-init.py');
-      const result = await runForgeCommand(
-        ['python3', initScript, '--tool', tool, '--forge', forgeDir],
-        workspaceRoot
-      );
-
-      channel.appendLine(result.stdout);
-      if (result.stderr) {
-        channel.appendLine('--- stderr ---');
-        channel.appendLine(result.stderr);
-      }
-      if (result.code !== 0) {
-        channel.appendLine(`\nProcess exited with code ${result.code}`);
-        vscode.window.showErrorMessage(`forge init failed. Check the 'forge Init' output channel.`);
-      } else {
-        vscode.window.showInformationMessage('forge: Project initialized successfully.');
-        projectProvider.refresh();
-        agentsProvider.refresh();
-        vscode.commands.executeCommand('setContext', 'forge.active', true);
-        await refreshStatusBar(workspaceRoot, forgeDir);
-      }
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+      runForgeInTerminal(['init'], workspaceRoot, 'forge init');
     })
   );
 
@@ -604,25 +545,17 @@ export function activate(context: vscode.ExtensionContext): void {
   // -------------------------------------------------------------------------
   context.subscriptions.push(
     vscode.commands.registerCommand('forge.audit', async () => {
-      const workspaceRoot = getWorkspaceRoot();
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('forge: No workspace open.');
-        return;
-      }
-      const forgeDir = await requireForgeDir(workspaceRoot);
-      if (!forgeDir) { return; }
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
 
-      const channel = getAuditChannel();
+      const channel = getChannel();
       channel.clear();
       channel.show(true);
       channel.appendLine('Running forge audit...\n');
 
-      const auditScript = path.join(forgeDir, 'scripts', 'forge-audit.py');
-
-      // Ejecutar audit normal (output legible) y JSON (para parsear acciones)
       const [textResult, jsonResult] = await Promise.all([
-        runForgeCommand(['python3', auditScript, '--forge', forgeDir], workspaceRoot),
-        runForgeCommand(['python3', auditScript, '--json', '--forge', forgeDir], workspaceRoot),
+        runForge(['audit'], workspaceRoot),
+        runForge(['audit', '--json'], workspaceRoot),
       ]);
 
       channel.appendLine(textResult.stdout);
@@ -631,138 +564,374 @@ export function activate(context: vscode.ExtensionContext): void {
         channel.appendLine(textResult.stderr);
       }
 
-      // Parsear resumen y oportunidades del JSON
-      let parsed: {
-        error?: string; error_code?: string; hint?: string;
-        summary?: AuditSummary;
-        opportunities?: AuditOpportunity[];
-      } = {};
-      try { parsed = JSON.parse(jsonResult.stdout); } catch { /* sin JSON */ }
+      let parsed: AuditJson = {};
+      try { parsed = JSON.parse(jsonResult.stdout) as AuditJson; } catch { /* sin JSON */ }
 
-      await refreshStatusBar(workspaceRoot, forgeDir);
+      await refreshStatusBar(workspaceRoot);
       agentsProvider.refresh();
 
-      // Error estructurado del script
-      if (parsed.error_code === 'NO_PROJECT_YAML') {
-        const choice = await vscode.window.showWarningMessage(
-          'forge: No hay project.yaml en este proyecto. Configura forge primero.',
-          'Run Setup Wizard', 'Ver output'
-        );
-        if (choice === 'Run Setup Wizard') { await vscode.commands.executeCommand('forge.openWizard'); }
-        if (choice === 'Ver output')       { channel.show(false); }
-        return;
-      }
-
       const summary = parsed.summary;
-      if (!summary) { return; }
-
-      const { errors = 0, warnings = 0, orphans = 0, agents_total = 0 } = summary;
-      const opportunities = (parsed.opportunities ?? []).filter(
-        (o: AuditOpportunity) => (o.type === 'profile' || o.type === 'skill') && o.slug
-      );
-
-      // Sin agentes instalados → ofrecer inicializar
-      if (agents_total === 0) {
-        const choice = await vscode.window.showWarningMessage(
-          'forge: No hay agentes instalados en este proyecto.',
-          'Initialize Agents', 'Run Setup Wizard'
-        );
-        if (choice === 'Initialize Agents') { await vscode.commands.executeCommand('forge.init'); }
-        if (choice === 'Run Setup Wizard')  { await vscode.commands.executeCommand('forge.openWizard'); }
+      if (!summary) {
+        vscode.window.showWarningMessage('forge: No se pudo parsear el resultado de la auditoría. Ver output channel.');
         return;
       }
 
-      // Hay errores/warnings → ofrecer fix
-      if (errors > 0 || warnings > 0 || orphans > 0) {
-        const actions: string[] = [];
-        if (errors > 0 || warnings > 0) { actions.push('Re-initialize Agents'); }
-        if (orphans > 0)                { actions.push('Run Setup Wizard'); }
-        if (opportunities.length > 0)  { actions.push('Agregar profiles/skills…'); }
-        actions.push('Ver output');
+      const { errors, warnings } = summary;
 
+      if (errors > 0 || warnings > 0) {
         const label = errors > 0
-          ? `forge: ${errors} error(s) y ${warnings} warning(s).`
-          : `forge: ${warnings} warning(s) en los agentes.`;
-
-        const choice = await vscode.window.showWarningMessage(label, ...actions);
-        if (choice === 'Re-initialize Agents')  { await vscode.commands.executeCommand('forge.init'); }
-        if (choice === 'Run Setup Wizard')       { await vscode.commands.executeCommand('forge.openWizard'); }
-        if (choice === 'Ver output')             { channel.show(false); }
-        if (choice === 'Agregar profiles/skills…') {
-          await showOpportunitiesPicker(opportunities, workspaceRoot, forgeDir);
-        }
+          ? `forge: ${errors} error(es) y ${warnings} warning(s).`
+          : `forge: ${warnings} warning(s) en la auditoría.`;
+        const choice = await vscode.window.showWarningMessage(label, 'Ver output', 'Run Doctor');
+        if (choice === 'Ver output') { channel.show(false); }
+        if (choice === 'Run Doctor') { await vscode.commands.executeCommand('forge.doctor'); }
         return;
       }
 
-      // Todo OK — si hay oportunidades, ofrecer seleccionarlas
-      if (opportunities.length > 0) {
-        const choice = await vscode.window.showInformationMessage(
-          `forge: Audit OK — ${opportunities.length} oportunidad(es) disponible(s).`,
-          'Ver y agregar…', 'Cerrar'
-        );
-        if (choice === 'Ver y agregar…') {
-          await showOpportunitiesPicker(opportunities, workspaceRoot, forgeDir);
-        }
+      vscode.window.showInformationMessage('forge: Audit OK — todo conforme.');
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.doctor
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.doctor', async () => {
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+
+      const channel = getChannel();
+      channel.clear();
+      channel.show(true);
+      channel.appendLine('Running forge doctor...\n');
+
+      const result = await runForge(['doctor'], workspaceRoot);
+      reportResult(channel, result);
+
+      if (result.code === 0) {
+        vscode.window.showInformationMessage('forge: Doctor OK.');
       } else {
-        vscode.window.showInformationMessage('forge: Audit OK — todo conforme.');
+        vscode.window.showWarningMessage('forge: Doctor encontró problemas. Ver output channel.');
       }
     })
   );
 
   // -------------------------------------------------------------------------
-  // Command: forge.auditAgent
+  // Command: forge.generate  (runtime selection)
   // -------------------------------------------------------------------------
   context.subscriptions.push(
-    vscode.commands.registerCommand('forge.auditAgent', async () => {
-      const workspaceRoot = getWorkspaceRoot();
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('forge: No workspace open.');
-        return;
-      }
-      const forgeDir = await requireForgeDir(workspaceRoot);
-      if (!forgeDir) { return; }
+    vscode.commands.registerCommand('forge.generate', async () => {
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+      if (!(await requireProjectYaml(workspaceRoot))) { return; }
 
-      const agentsDir = path.join(workspaceRoot, '.claude', 'agents');
-      if (!fs.existsSync(agentsDir)) {
-        vscode.window.showErrorMessage('forge: No hay agentes en .claude/agents/.');
-        return;
-      }
-
-      const agentFiles = fs.readdirSync(agentsDir).filter((f: string) => f.endsWith('.md'));
-      if (agentFiles.length === 0) {
-        vscode.window.showInformationMessage('forge: No se encontraron agentes.');
-        return;
-      }
-
-      const picks = agentFiles.map((f: string) => ({
-        label: path.basename(f, '.md'),
-        description: f,
-      }));
+      const picks: vscode.QuickPickItem[] = [
+        { label: 'auto-detect', description: 'detectar runtimes activos' },
+        { label: 'claude-code' },
+        { label: 'opencode' },
+        { label: 'codex' },
+        { label: 'kiro' },
+        { label: 'all', description: 'todos los runtimes' },
+      ];
       const selected = await vscode.window.showQuickPick(picks, {
-        placeHolder: 'Selecciona un agente para auditar',
-        matchOnDescription: true,
+        title: 'forge generate — selecciona runtime',
+        placeHolder: 'Runtime para generar la config',
       });
       if (!selected) { return; }
 
-      const channel = getAuditChannel();
+      const channel = getChannel();
       channel.clear();
       channel.show(true);
-      channel.appendLine(`Auditing agent: ${selected.label}\n`);
+      channel.appendLine(`Generating runtime config (${selected.label})...\n`);
 
-      const auditScript = path.join(forgeDir, 'scripts', 'forge-audit.py');
-      const result = await runForgeCommand(
-        ['python3', auditScript, `--only=${selected.label}`, '--forge', forgeDir],
-        workspaceRoot
+      const args = selected.label === 'auto-detect'
+        ? ['generate']
+        : ['generate', '--runtime', selected.label];
+      const result = await runForge(args, workspaceRoot);
+      reportResult(channel, result);
+
+      if (result.code === 0) {
+        vscode.window.showInformationMessage(`forge: Config generada (${selected.label}).`);
+        projectProvider.refresh();
+        agentsProvider.refresh();
+      } else {
+        vscode.window.showErrorMessage('forge: Generate falló. Ver output channel.');
+      }
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.validate
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.validate', async () => {
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+
+      const channel = getChannel();
+      channel.clear();
+      channel.appendLine('Validating project.yaml...\n');
+
+      const result = await runForge(['validate'], workspaceRoot);
+
+      if (result.code === 0) {
+        vscode.window.showInformationMessage('forge: project.yaml es válido.');
+      } else {
+        reportResult(channel, result);
+        channel.show(true);
+        vscode.window.showErrorMessage('forge: Validación de project.yaml falló. Ver output channel.');
+      }
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.migrate
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.migrate', async () => {
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+      if (!(await requireProjectYaml(workspaceRoot))) { return; }
+
+      const confirm = await vscode.window.showWarningMessage(
+        'forge: ¿Migrar project.yaml al esquema v2? Se creará un backup (project.yaml.bak).',
+        'Migrar', 'Dry run', 'Cancelar'
       );
+      if (confirm !== 'Migrar' && confirm !== 'Dry run') { return; }
 
-      channel.appendLine(result.stdout);
-      if (result.stderr) {
-        channel.appendLine('--- stderr ---');
-        channel.appendLine(result.stderr);
+      const channel = getChannel();
+      channel.clear();
+      channel.show(true);
+      channel.appendLine(confirm === 'Dry run'
+        ? 'Migrate (dry run)...\n'
+        : 'Migrating project.yaml to v2...\n');
+
+      const args = confirm === 'Dry run'
+        ? ['migrate', '--dry-run']
+        : ['migrate', '--backup'];
+      const result = await runForge(args, workspaceRoot);
+      reportResult(channel, result);
+
+      if (result.code === 0) {
+        if (confirm === 'Migrar') {
+          vscode.window.showInformationMessage('forge: project.yaml migrado a v2.');
+          projectProvider.refresh();
+        }
+      } else {
+        vscode.window.showErrorMessage('forge: Migración falló. Ver output channel.');
       }
-      if (result.code !== 0) {
-        channel.appendLine(`\nProcess exited with code ${result.code}`);
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.scaffold  (interactive prompts → terminal)
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.scaffold', async () => {
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+
+      const tierPick = await vscode.window.showQuickPick(
+        [
+          { label: 'Tier 2', description: 'profile de stack', tier: '2' },
+          { label: 'Tier 3', description: 'agente de dominio', tier: '3' },
+        ],
+        { title: 'forge scaffold — tier del agente', placeHolder: 'Selecciona el tier' }
+      );
+      if (!tierPick) { return; }
+
+      const name = await vscode.window.showInputBox({
+        prompt: tierPick.tier === '2' ? 'Slug del profile (ej: django)' : 'Nombre del agente (ej: dsar-specialist)',
+        placeHolder: tierPick.tier === '2' ? 'django' : 'dsar-specialist',
+      });
+      if (!name) { return; }
+
+      const args = ['scaffold', '--tier', tierPick.tier, '--name', name];
+
+      if (tierPick.tier === '2') {
+        const engineer = await vscode.window.showInputBox({
+          prompt: 'Engineer agent (ej: api-engineer)',
+          placeHolder: 'api-engineer',
+        });
+        if (!engineer) { return; }
+        args.push('--engineer', engineer);
+      } else {
+        const scopeDir = await vscode.window.showInputBox({
+          prompt: 'Directorio de scope (opcional)',
+          placeHolder: 'src/dsar',
+        });
+        if (scopeDir) { args.push('--scope-dir', scopeDir); }
       }
+
+      const description = await vscode.window.showInputBox({
+        prompt: 'Descripción (opcional)',
+      });
+      if (description) { args.push('--description', description); }
+
+      // Scaffold prints to stdout / writes files; run captured.
+      const channel = getChannel();
+      channel.clear();
+      channel.show(true);
+      channel.appendLine(`Scaffolding agent "${name}" (Tier ${tierPick.tier})...\n`);
+
+      const result = await runForge(args, workspaceRoot);
+      reportResult(channel, result);
+
+      if (result.code === 0) {
+        vscode.window.showInformationMessage(`forge: Agente "${name}" scaffolded.`);
+        agentsProvider.refresh();
+      } else {
+        vscode.window.showErrorMessage('forge: Scaffold falló. Ver output channel.');
+      }
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.skills  (list / search)
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.skills', async () => {
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+
+      const result = await runForge(['skills', '--json'], workspaceRoot);
+      let parsed: { skills?: SkillRow[]; total?: number; active?: number } = {};
+      try { parsed = JSON.parse(result.stdout); } catch { /* sin JSON */ }
+
+      const rows = parsed.skills ?? [];
+      if (rows.length === 0) {
+        const channel = getChannel();
+        channel.clear();
+        channel.show(true);
+        reportResult(channel, result);
+        vscode.window.showWarningMessage('forge: No se pudieron listar las skills. Ver output channel.');
+        return;
+      }
+
+      const items: vscode.QuickPickItem[] = rows.map((s) => ({
+        label: `${s.active ? '$(check) ' : ''}${s.command}`,
+        description: s.category,
+        detail: `${s.purpose}${s.trigger ? ' — ' + s.trigger : ''}`,
+      }));
+
+      const picked = await vscode.window.showQuickPick(items, {
+        title: `forge skills (${parsed.active ?? 0}/${parsed.total ?? rows.length} activas)`,
+        placeHolder: 'Buscar skills por nombre, categoría o trigger',
+        matchOnDescription: true,
+        matchOnDetail: true,
+      });
+
+      if (picked) {
+        const slug = picked.label.replace('$(check) ', '').trim();
+        vscode.env.clipboard.writeText(slug);
+        vscode.window.showInformationMessage(`forge: "${slug}" copiado al portapapeles.`);
+      }
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.wikiStatus
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.wikiStatus', async () => {
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+
+      const channel = getChannel();
+      channel.clear();
+      channel.show(true);
+      channel.appendLine('forge wiki status...\n');
+
+      const result = await runForge(['wiki', 'status'], workspaceRoot);
+      reportResult(channel, result);
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.wikiInit
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.wikiInit', async () => {
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+
+      const channel = getChannel();
+      channel.clear();
+      channel.show(true);
+      channel.appendLine('forge wiki init...\n');
+
+      const result = await runForge(['wiki', 'init'], workspaceRoot);
+      reportResult(channel, result);
+
+      if (result.code === 0) {
+        vscode.window.showInformationMessage('forge: Estructura de wiki creada.');
+      } else {
+        vscode.window.showErrorMessage('forge: wiki init falló. Ver output channel.');
+      }
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // Command: forge.searchCatalog  (aitmpl-search --json)
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.searchCatalog', async () => {
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+
+      const query = await vscode.window.showInputBox({
+        prompt: 'Buscar en el catálogo forge (frameworks, MCP servers, profiles, tools)',
+        placeHolder: 'ej: postgres, nextjs, laravel, playwright…',
+      });
+      if (query === undefined) { return; }
+
+      await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: 'forge: buscando…', cancellable: false },
+        async () => {
+          const args = query.trim()
+            ? ['aitmpl-search', query.trim(), '--json']
+            : ['aitmpl-search', '--list-categories', '--json'];
+          const result = await runForge(args, workspaceRoot);
+
+          let parsed: unknown;
+          try { parsed = JSON.parse(result.stdout); } catch { parsed = null; }
+
+          const results = extractCatalogResults(parsed);
+          if (results.length === 0) {
+            vscode.window.showWarningMessage(`forge: Sin resultados para "${query}".`);
+            return;
+          }
+
+          const items: vscode.QuickPickItem[] = results.map((r) => ({
+            label: r.name,
+            description: r.category,
+            detail: r.description,
+          }));
+
+          const picked = await vscode.window.showQuickPick(items, {
+            title: `forge catalog — "${query}" (${items.length} resultados)`,
+            placeHolder: 'Selecciona para ver detalle / abrir URL',
+            matchOnDetail: true,
+            matchOnDescription: true,
+          });
+
+          if (!picked) { return; }
+          const match = results.find(r => r.name === picked.label);
+          if (!match?.url) {
+            vscode.window.showInformationMessage(picked.label);
+            return;
+          }
+          const openChoice = await vscode.window.showInformationMessage(
+            picked.label, { modal: false }, 'Abrir URL', 'Copiar URL'
+          );
+          if (openChoice === 'Abrir URL') {
+            vscode.env.openExternal(vscode.Uri.parse(match.url));
+          } else if (openChoice === 'Copiar URL') {
+            vscode.env.clipboard.writeText(match.url);
+            vscode.window.showInformationMessage('URL copiada al portapapeles.');
+          }
+        }
+      );
     })
   );
 
@@ -771,21 +940,23 @@ export function activate(context: vscode.ExtensionContext): void {
   // -------------------------------------------------------------------------
   context.subscriptions.push(
     vscode.commands.registerCommand('forge.showStatus', async () => {
-      const workspaceRoot = getWorkspaceRoot();
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('forge: No workspace open.');
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+
+      if (!findProjectYaml(workspaceRoot)) {
+        const choice = await vscode.window.showInformationMessage(
+          'forge: No hay project.yaml en este workspace.',
+          'Init Wizard'
+        );
+        if (choice === 'Init Wizard') { await vscode.commands.executeCommand('forge.init'); }
         return;
       }
-      const forgeDir = await requireForgeDir(workspaceRoot);
-      if (!forgeDir) { return; }
 
-      const auditScript = path.join(forgeDir, 'scripts', 'forge-audit.py');
-      const result = await runForgeCommand(['python3', auditScript, '--json'], workspaceRoot);
-
+      const result = await runForge(['audit', '--json'], workspaceRoot);
       let summary: AuditSummary | null = null;
       try {
-        const parsed = JSON.parse(result.stdout);
-        summary = parsed.summary as AuditSummary;
+        const parsed = JSON.parse(result.stdout) as AuditJson;
+        summary = parsed.summary ?? null;
       } catch {
         vscode.window.showErrorMessage(
           `forge: Error al parsear la auditoría. ${result.stderr || result.stdout}`
@@ -793,310 +964,26 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      const errors    = summary?.errors ?? 0;
-      const warnings  = summary?.warnings ?? 0;
-      const conforming = summary?.conforming ?? 0;
+      const errors   = summary?.errors ?? 0;
+      const warnings = summary?.warnings ?? 0;
+      const ok       = summary?.ok ?? 0;
 
       const items: vscode.QuickPickItem[] = [
-        { label: `$(check) ${conforming} agente(s) conformes`,    kind: vscode.QuickPickItemKind.Default },
-        { label: `$(warning) ${warnings} advertencia(s)`,         kind: vscode.QuickPickItemKind.Default },
-        { label: `$(error) ${errors} error(es)`,                  kind: vscode.QuickPickItemKind.Default },
+        { label: `$(check) ${ok} check(s) OK`,          kind: vscode.QuickPickItemKind.Default },
+        { label: `$(warning) ${warnings} advertencia(s)`, kind: vscode.QuickPickItemKind.Default },
+        { label: `$(error) ${errors} error(es)`,        kind: vscode.QuickPickItemKind.Default },
         { label: '', kind: vscode.QuickPickItemKind.Separator },
-        { label: '$(output) Ver audit completo',                  kind: vscode.QuickPickItemKind.Default },
-        { label: '$(wand) Abrir Setup Wizard',                    kind: vscode.QuickPickItemKind.Default },
+        { label: '$(output) Ver audit completo',        kind: vscode.QuickPickItemKind.Default },
+        { label: '$(pulse) Run Doctor',                 kind: vscode.QuickPickItemKind.Default },
       ];
 
       const pick = await vscode.window.showQuickPick(items, {
-        title: `forge — ${summary?.project_name ?? 'status'}`,
+        title: 'forge — status',
         placeHolder: 'Selecciona una acción',
       });
 
-      if (pick?.label.includes('Ver audit'))   { await vscode.commands.executeCommand('forge.audit'); }
-      if (pick?.label.includes('Setup Wizard')) { await vscode.commands.executeCommand('forge.openWizard'); }
-    })
-  );
-
-  // -------------------------------------------------------------------------
-  // Command: forge.searchCatalog
-  // -------------------------------------------------------------------------
-  context.subscriptions.push(
-    vscode.commands.registerCommand('forge.searchCatalog', async () => {
-      const workspaceRoot = getWorkspaceRoot();
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('forge: No workspace open.');
-        return;
-      }
-      const forgeDir = await requireForgeDir(workspaceRoot);
-      if (!forgeDir) { return; }
-
-      // Pedir query al usuario
-      const query = await vscode.window.showInputBox({
-        prompt: 'Buscar en el catálogo forge (MCP servers, profiles, frameworks, tools)',
-        placeHolder: 'ej: postgres, nextjs, laravel, playwright…',
-      });
-      if (query === undefined) { return; }
-
-      const searchScript = path.join(forgeDir, 'scripts', 'aitmpl-search.py');
-
-      await vscode.window.withProgress(
-        { location: vscode.ProgressLocation.Notification, title: 'forge: buscando…', cancellable: false },
-        async () => {
-          const args = query.trim() ? ['python3', searchScript, query.trim()]
-                                    : ['python3', searchScript, '--list-categories'];
-          const result = await runForgeCommand(args, workspaceRoot);
-
-          if (result.code !== 0 || !result.stdout.trim()) {
-            vscode.window.showWarningMessage(`forge: Sin resultados para "${query}".`);
-            return;
-          }
-
-          // Parsear resultados de texto → QuickPick items
-          const lines = result.stdout.split('\n');
-          const items: vscode.QuickPickItem[] = [];
-          let current: { label: string; detail: string; url: string } | null = null;
-
-          for (const line of lines) {
-            // Línea de título: " 1. nombre del item"
-            const titleMatch = line.match(/^\s+\d+\.\s+(.+)$/);
-            if (titleMatch) {
-              if (current) { items.push({ label: current.label, detail: current.detail, description: current.url }); }
-              current = { label: titleMatch[1].trim(), detail: '', url: '' };
-              continue;
-            }
-            if (!current) { continue; }
-            // URL
-            if (line.trim().startsWith('http')) { current.url = line.trim(); continue; }
-            // Descripción / tags (acumular en detail)
-            const trimmed = line.trim();
-            if (trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('#')) {
-              current.detail += (current.detail ? ' ' : '') + trimmed;
-            }
-          }
-          if (current) { items.push({ label: current.label, detail: current.detail, description: current.url }); }
-
-          if (items.length === 0) {
-            vscode.window.showInformationMessage(`forge: Sin resultados para "${query}".`);
-            return;
-          }
-
-          const picked = await vscode.window.showQuickPick(items, {
-            title: `forge catalog — "${query}" (${items.length} resultados)`,
-            placeHolder: 'Selecciona para abrir la URL',
-            matchOnDetail: true,
-            matchOnDescription: true,
-          });
-
-          if (picked?.description) {
-            const openChoice = await vscode.window.showInformationMessage(
-              `${picked.label}`,
-              { modal: false },
-              'Abrir URL',
-              'Copiar URL'
-            );
-            if (openChoice === 'Abrir URL') {
-              vscode.env.openExternal(vscode.Uri.parse(picked.description));
-            } else if (openChoice === 'Copiar URL') {
-              vscode.env.clipboard.writeText(picked.description);
-              vscode.window.showInformationMessage('URL copiada al portapapeles.');
-            }
-          }
-        }
-      );
-    })
-  );
-
-  // -------------------------------------------------------------------------
-  // Command: forge.install
-  // -------------------------------------------------------------------------
-  context.subscriptions.push(
-    vscode.commands.registerCommand('forge.install', async () => {
-      const workspaceRoot = getWorkspaceRoot();
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('forge: No workspace open.');
-        return;
-      }
-
-      const gitDir = path.join(workspaceRoot, '.git');
-      if (!fs.existsSync(gitDir)) {
-        const choice = await vscode.window.showErrorMessage(
-          'forge: Este directorio no es un repositorio git. forge se instala como git submodule.',
-          'Inicializar git repo primero'
-        );
-        if (choice === 'Inicializar git repo primero') {
-          const terminal = vscode.window.createTerminal({ name: 'forge install', cwd: workspaceRoot });
-          terminal.show();
-          terminal.sendText('git init && git submodule add https://github.com/cristiancorreau/forge .agentic && git submodule update --init --recursive');
-        }
-        return;
-      }
-
-      const terminal = vscode.window.createTerminal({ name: 'forge install', cwd: workspaceRoot });
-      terminal.show();
-      terminal.sendText('git submodule add https://github.com/cristiancorreau/forge .agentic && git submodule update --init --recursive');
-      vscode.window.showInformationMessage(
-        'forge: Instalando en .agentic/ — el panel se actualizará automáticamente al terminar.'
-      );
-    })
-  );
-
-  // -------------------------------------------------------------------------
-  // Command: forge.generateClaudeMd
-  // -------------------------------------------------------------------------
-  context.subscriptions.push(
-    vscode.commands.registerCommand('forge.generateClaudeMd', async () => {
-      const workspaceRoot = getWorkspaceRoot();
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('forge: No workspace open.');
-        return;
-      }
-      const forgeDir = await requireForgeDir(workspaceRoot);
-      if (!forgeDir) { return; }
-
-      if (!findProjectYaml(workspaceRoot)) {
-        const choice = await vscode.window.showWarningMessage(
-          'forge: No hay project.yaml. ¿Quieres ejecutar el wizard primero?',
-          'Run Wizard', 'Cancelar'
-        );
-        if (choice === 'Run Wizard') {
-          await vscode.commands.executeCommand('forge.openWizard');
-        }
-        return;
-      }
-
-      const channel = getInitChannel();
-      channel.clear();
-      channel.show(true);
-      channel.appendLine('Generating CLAUDE.md from project.yaml...\n');
-
-      const generatorScript = path.join(forgeDir, 'adapters', 'claude-code', 'generate-claude-md.py');
-      const result = await runForgeCommand(
-        ['python3', generatorScript, '--force'],
-        workspaceRoot
-      );
-
-      channel.appendLine(result.stdout);
-      if (result.stderr) {
-        channel.appendLine('--- stderr ---');
-        channel.appendLine(result.stderr);
-      }
-
-      if (result.code !== 0) {
-        vscode.window.showErrorMessage('forge: Error al generar CLAUDE.md. Ver output channel.');
-      } else {
-        vscode.window.showInformationMessage('forge: CLAUDE.md generado correctamente.');
-        projectProvider.refresh();
-      }
-    })
-  );
-
-  // -------------------------------------------------------------------------
-  // Command: forge.generateAll
-  // -------------------------------------------------------------------------
-  context.subscriptions.push(
-    vscode.commands.registerCommand('forge.generateAll', async () => {
-      const workspaceRoot = getWorkspaceRoot();
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('forge: No workspace open.');
-        return;
-      }
-      const forgeDir = await requireForgeDir(workspaceRoot);
-      if (!forgeDir) { return; }
-
-      const channel = getInitChannel();
-      channel.clear();
-      channel.show(true);
-      channel.appendLine('Generating all runtimes...\n');
-
-      const script = path.join(forgeDir, 'scripts', 'forge-generate-all.py');
-      const result = await runForgeCommand(['python3', script], workspaceRoot);
-
-      channel.appendLine(result.stdout);
-      if (result.stderr) {
-        channel.appendLine('--- stderr ---');
-        channel.appendLine(result.stderr);
-      }
-      if (result.code !== 0) {
-        channel.appendLine(`\nProcess exited with code ${result.code}`);
-        vscode.window.showErrorMessage(`forge: Generate all runtimes failed. Check the 'forge Init' output channel.`);
-      } else {
-        vscode.window.showInformationMessage('forge: All runtimes generated successfully.');
-      }
-    })
-  );
-
-  // -------------------------------------------------------------------------
-  // Command: forge.validateProjectYaml
-  // -------------------------------------------------------------------------
-  context.subscriptions.push(
-    vscode.commands.registerCommand('forge.validateProjectYaml', async () => {
-      const workspaceRoot = getWorkspaceRoot();
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('forge: No workspace open.');
-        return;
-      }
-      const forgeDir = await requireForgeDir(workspaceRoot);
-      if (!forgeDir) { return; }
-
-      const channel = getInitChannel();
-      channel.clear();
-      channel.appendLine('Validating project.yaml...\n');
-
-      const script = path.join(forgeDir, 'scripts', 'forge-validate-project-yaml.py');
-      const result = await runForgeCommand(['python3', script], workspaceRoot);
-
-      if (result.code === 0) {
-        vscode.window.showInformationMessage('forge: project.yaml is valid.');
-      } else {
-        channel.appendLine(result.stdout);
-        if (result.stderr) {
-          channel.appendLine('--- stderr ---');
-          channel.appendLine(result.stderr);
-        }
-        channel.show(true);
-        vscode.window.showErrorMessage(`forge: project.yaml validation failed. Check the 'forge Init' output channel.`);
-      }
-    })
-  );
-
-  // -------------------------------------------------------------------------
-  // Command: forge.migrateProjectYaml
-  // -------------------------------------------------------------------------
-  context.subscriptions.push(
-    vscode.commands.registerCommand('forge.migrateProjectYaml', async () => {
-      const workspaceRoot = getWorkspaceRoot();
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('forge: No workspace open.');
-        return;
-      }
-      const forgeDir = await requireForgeDir(workspaceRoot);
-      if (!forgeDir) { return; }
-
-      const confirm = await vscode.window.showWarningMessage(
-        'forge: Migrate project.yaml to Forge v2 format? A backup will be created automatically.',
-        'Yes', 'No'
-      );
-      if (confirm !== 'Yes') { return; }
-
-      const channel = getInitChannel();
-      channel.clear();
-      channel.show(true);
-      channel.appendLine('Migrating project.yaml to Forge v2...\n');
-
-      const script = path.join(forgeDir, 'scripts', 'forge-migrate-project-yaml.py');
-      const result = await runForgeCommand(['python3', script, '--backup'], workspaceRoot);
-
-      channel.appendLine(result.stdout);
-      if (result.stderr) {
-        channel.appendLine('--- stderr ---');
-        channel.appendLine(result.stderr);
-      }
-      if (result.code !== 0) {
-        channel.appendLine(`\nProcess exited with code ${result.code}`);
-        vscode.window.showErrorMessage(`forge: Migration failed. Check the 'forge Init' output channel.`);
-      } else {
-        vscode.window.showInformationMessage('forge: project.yaml migrated to Forge v2 successfully.');
-        projectProvider.refresh();
-      }
+      if (pick?.label.includes('Ver audit')) { await vscode.commands.executeCommand('forge.audit'); }
+      if (pick?.label.includes('Doctor'))    { await vscode.commands.executeCommand('forge.doctor'); }
     })
   );
 
@@ -1111,126 +998,72 @@ export function activate(context: vscode.ExtensionContext): void {
       if (!workspaceRoot) { return; }
       const agentsDir = path.join(workspaceRoot, '.claude', 'agents');
       const docPath = doc.uri.fsPath;
-      if (!docPath.startsWith(agentsDir) || !docPath.endsWith('.md')) { return; }
-      const forgeDir = resolveForgeDir(workspaceRoot);
-      if (!forgeDir) { return; }
-      await refreshStatusBar(workspaceRoot, forgeDir);
+      const isAgent = docPath.startsWith(agentsDir) && docPath.endsWith('.md');
+      const isProjectYaml = docPath === path.join(workspaceRoot, 'project.yaml');
+      if (!isAgent && !isProjectYaml) { return; }
+      await refreshStatusBar(workspaceRoot);
       agentsProvider.refresh();
     })
   );
 }
 
 // ---------------------------------------------------------------------------
-// Opportunities picker (multi-select QuickPick → apply to project.yaml)
+// Skill row shape (from `forge skills --json`)
 // ---------------------------------------------------------------------------
 
-interface AuditSummary {
-  project_name?: string;
-  agents_total: number;
-  agents_declared: number;
-  ok: number;
-  errors: number;
-  warnings: number;
-  conforming: number;
-  orphans: number;
-}
-
-interface AuditOpportunity {
-  type: 'profile' | 'skill' | 'integration' | 'config' | 'wiki';
-  slug?: string;
-  msg: string;
-  fix?: string;
-}
-
-async function showOpportunitiesPicker(
-  opportunities: AuditOpportunity[],
-  workspaceRoot: string,
-  forgeDir: string
-): Promise<void> {
-  const profileOpps = opportunities.filter(o => o.type === 'profile');
-  const skillOpps   = opportunities.filter(o => o.type === 'skill');
-
-  const items: (vscode.QuickPickItem & { opp: AuditOpportunity })[] = [];
-
-  if (profileOpps.length > 0) {
-    items.push({ label: 'Profiles de stack', kind: vscode.QuickPickItemKind.Separator, opp: null! });
-    for (const o of profileOpps) {
-      const detail = o.msg.includes('→ provee:') ? o.msg.split('→ provee:')[1].trim() : o.msg;
-      items.push({ label: o.slug!, description: 'profile', detail, opp: o, picked: false });
-    }
-  }
-
-  if (skillOpps.length > 0) {
-    items.push({ label: 'Skills disponibles', kind: vscode.QuickPickItemKind.Separator, opp: null! });
-    for (const o of skillOpps) {
-      items.push({ label: o.slug!, description: 'skill', detail: o.msg, opp: o, picked: false });
-    }
-  }
-
-  const selected = await vscode.window.showQuickPick(
-    items.filter(i => i.kind !== vscode.QuickPickItemKind.Separator),
-    {
-      title: `forge — Oportunidades disponibles (${opportunities.length})`,
-      placeHolder: 'Seleccioná los profiles/skills a agregar a project.yaml',
-      canPickMany: true,
-      matchOnDescription: true,
-      matchOnDetail: true,
-    }
-  );
-
-  if (!selected || selected.length === 0) { return; }
-
-  const profilesToAdd = selected.filter(i => i.opp.type === 'profile').map(i => i.opp.slug!);
-  const skillsToAdd   = selected.filter(i => i.opp.type === 'skill').map(i => i.opp.slug!);
-
-  // Aplicar cambios a project.yaml via script Python auxiliar
-  const applyScript = path.join(forgeDir, 'scripts', 'forge-add-opportunities.py');
-  const args = ['python3', applyScript];
-  if (profilesToAdd.length > 0) { args.push('--profiles', ...profilesToAdd); }
-  if (skillsToAdd.length > 0)   { args.push('--skills',   ...skillsToAdd); }
-
-  const result = await runForgeCommand(args, workspaceRoot);
-
-  if (result.code !== 0) {
-    vscode.window.showErrorMessage(`forge: Error al actualizar project.yaml.\n${result.stderr}`);
-    return;
-  }
-
-  const added = [...profilesToAdd, ...skillsToAdd].join(', ');
-  const choice = await vscode.window.showInformationMessage(
-    `forge: Agregado a project.yaml: ${added}`,
-    'Initialize Agents', 'Cerrar'
-  );
-  if (choice === 'Initialize Agents') {
-    await vscode.commands.executeCommand('forge.init');
-  }
+interface SkillRow {
+  id: string;
+  command: string;
+  category: string;
+  purpose: string;
+  trigger: string;
+  active: boolean;
 }
 
 // ---------------------------------------------------------------------------
-// Refresh status bar from JSON audit
+// Catalog result extraction (from `forge aitmpl-search --json`)
+//
+// The JSON shape is tolerant: we accept an array of entries or an object whose
+// values/`results` field contain entries. Each entry contributes name +
+// optional category/description/url.
 // ---------------------------------------------------------------------------
 
-async function refreshStatusBar(workspaceRoot: string, forgeDir: string): Promise<void> {
-  const auditScript = path.join(forgeDir, 'scripts', 'forge-audit.py');
-  const result = await runForgeCommand(['python3', auditScript, '--json', '--forge', forgeDir], workspaceRoot);
-  try {
-    const parsed = JSON.parse(result.stdout);
-    const summary = parsed.summary as AuditSummary;
-    if (summary.errors > 0) {
-      updateStatusBar('error', summary.errors);
-    } else if (summary.warnings > 0) {
-      updateStatusBar('warn', summary.warnings);
-    } else {
-      updateStatusBar('ok');
-    }
-  } catch {
-    updateStatusBar('idle');
+interface CatalogResult {
+  name: string;
+  category: string;
+  description: string;
+  url: string;
+}
+
+function extractCatalogResults(parsed: unknown): CatalogResult[] {
+  if (!parsed) { return []; }
+
+  const rawEntries: unknown[] = Array.isArray(parsed)
+    ? parsed
+    : Array.isArray((parsed as { results?: unknown[] }).results)
+      ? (parsed as { results: unknown[] }).results
+      : typeof parsed === 'object'
+        ? Object.values(parsed as Record<string, unknown>).flatMap(v => Array.isArray(v) ? v : [])
+        : [];
+
+  const out: CatalogResult[] = [];
+  for (const e of rawEntries) {
+    if (!e || typeof e !== 'object') { continue; }
+    const obj = e as Record<string, unknown>;
+    const name = String(obj.name ?? obj.title ?? obj.slug ?? '').trim();
+    if (!name) { continue; }
+    out.push({
+      name,
+      category: String(obj.category ?? obj.type ?? '').trim(),
+      description: String(obj.description ?? obj.detail ?? '').trim(),
+      url: String(obj.url ?? obj.repository ?? '').trim(),
+    });
   }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
 
 export function deactivate(): void {
-  auditChannel?.dispose();
-  initChannel?.dispose();
+  forgeChannel?.dispose();
 }
