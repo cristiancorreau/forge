@@ -187,6 +187,8 @@ No hay `pip install`, no hay `requirements.txt`, no hay dependencias de sistema 
 ## Documentación
 
 - [Guía completa](docs/guide.md)
+- [Skills](docs/skills.md)
+- [Wiki / knowledge base](docs/wiki.md)
 - [Runtimes](docs/runtimes/)
 
 ---

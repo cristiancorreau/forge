@@ -85,6 +85,15 @@ export interface ProjectYaml {
   scripts?: Record<string, string>;
   /** Active skills (slash-command ids without the leading slash). */
   skills?: string[];
+  /** External integrations. obsidian-sync (a skill, not a CLI command) reads this. */
+  integrations?: {
+    obsidian?: {
+      /** Vault path relative to the repo root. */
+      vault_path?: string;
+      /** Code-area → vault-note mapping. */
+      map?: Record<string, string>;
+    };
+  };
 }
 
 export function findProjectYaml(start: string = process.cwd()): string | null {

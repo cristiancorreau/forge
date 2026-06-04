@@ -72,6 +72,9 @@ forge incluye **14 skills** invocables como comandos slash. Cada skill encapsula
 
 ## Wiki / conocimiento
 
+> Estructura del wiki, comandos `forge wiki` (init/status/ingest/query/lint) y su
+> relación con estos skills: ver [docs/wiki.md](wiki.md).
+
 ### wiki-ingest
 - **Comando:** `/wiki-ingest`
 - **Propósito:** Ingesta una fuente nueva en el wiki del proyecto. Almacena el original en `raw/`, compila conocimiento en páginas wiki, actualiza el índice y registra la operación.
