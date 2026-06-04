@@ -6,10 +6,56 @@
 'use strict';
 
 const { execSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const DEBUG = !['', '0', 'false', 'False'].includes(process.env.DEBUG || '');
 const dbg = msg => DEBUG && process.stdout.write(`[forge-hook-debug] ${msg}\n`);
+
+// ---------------------------------------------------------------------------
+// project.yaml — minimal loader (no YAML dependency, mirrors pre-bash-check.js)
+// Only needs `mode` and `rules.require_spec_before_implementation`, both of
+// which are flat or one-level-nested scalars.
+// ---------------------------------------------------------------------------
+function findRepoRoot(start) {
+  let dir = start;
+  for (let i = 0; i < 8; i++) {
+    if (fs.existsSync(path.join(dir, '.git')) || fs.existsSync(path.join(dir, 'project.yaml'))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return start;
+}
+
+function loadProjectYaml() {
+  try {
+    let dir = process.cwd();
+    for (let i = 0; i < 8; i++) {
+      const candidate = path.join(dir, 'project.yaml');
+      if (fs.existsSync(candidate)) {
+        return { text: fs.readFileSync(candidate, 'utf8'), root: dir };
+      }
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  } catch (e) { dbg(`project.yaml load error: ${e}`); }
+  return { text: '', root: findRepoRoot(process.cwd()) };
+}
+
+// Match either a top-level `mode: enterprise` or a nested `project.mode`.
+function isEnterpriseMode(text) {
+  return /^\s*mode\s*:\s*["']?enterprise["']?/m.test(text || '');
+}
+
+// The hard gate is opt-in: only escalates to a block when the project
+// explicitly enables `rules.require_spec_before_implementation`.
+function specGateRequired(text) {
+  return /require_spec_before_implementation\s*:\s*(true|yes|on)\b/i.test(text || '');
+}
 
 // ---------------------------------------------------------------------------
 // File classification
@@ -101,6 +147,49 @@ function detectSecrets(content) {
 }
 
 // ---------------------------------------------------------------------------
+// Spec gate (issue #28) — require an APPROVED spec in docs/specs/ before code
+// edits on a feature branch. BACKWARD-COMPATIBLE: warns by default, escalates
+// to a hard block ONLY when mode=enterprise AND require_spec_before_implementation.
+// ---------------------------------------------------------------------------
+const PROTECTED_BRANCHES = new Set(['main', 'master', 'develop']);
+
+// A spec file counts as APPROVED when a status/estado header line names APPROVED
+// on its own (not the template's "DRAFT | REVIEW | APPROVED | IMPLEMENTED" menu).
+function specIsApproved(content) {
+  const lines = content.split('\n');
+  for (const line of lines) {
+    if (!/^\s*>?\s*(estado|status)\s*:/i.test(line)) continue;
+    const value = line.replace(/^\s*>?\s*(estado|status)\s*:/i, '').trim();
+    if (/\bAPPROVED\b/i.test(value) && !value.includes('|')) return true;
+  }
+  return false;
+}
+
+// Returns true when docs/specs/ holds at least one APPROVED spec.
+function hasApprovedSpec(repoRoot) {
+  const specsDir = path.join(repoRoot, 'docs', 'specs');
+  let entries;
+  try { entries = fs.readdirSync(specsDir); } catch { return false; }
+  for (const name of entries) {
+    if (!name.endsWith('.md')) continue;
+    if (name === '_template.md' || name === 'README.md') continue;
+    try {
+      if (specIsApproved(fs.readFileSync(path.join(specsDir, name), 'utf8'))) return true;
+    } catch { /* ignore unreadable spec */ }
+  }
+  return false;
+}
+
+const SPEC_GATE_MSG =
+  `forge: no se encontró una spec APPROVED en docs/specs/.\n\n` +
+  `  El flujo spec-first (SDD) exige una spec aprobada antes de editar código.\n\n` +
+  `  Para crearla:\n` +
+  `    1. cp docs/specs/_template.md docs/specs/<id>-<slug>.md\n` +
+  `    2. completá Contexto, Decisión y Criterios de aceptación\n` +
+  `    3. pasá el encabezado a "Estado: APPROVED" tras la revisión\n\n` +
+  `  Detalle del gate: docs/spec-gate-flow.md\n`;
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 let raw = '';
@@ -135,6 +224,25 @@ process.stdin.on('end', () => {
         `  Ramas de documentación (.md, .yaml, .json) están permitidas en ${branch}.\n`
       );
       process.exit(2);
+    }
+
+    // 1b. Spec gate — require an APPROVED spec on feature branches.
+    if (!PROTECTED_BRANCHES.has(branch) && branch) {
+      const { text, root } = loadProjectYaml();
+      if (!hasApprovedSpec(root)) {
+        const block = isEnterpriseMode(text) && specGateRequired(text);
+        dbg(`spec gate: no APPROVED spec — ${block ? 'BLOCK (enterprise)' : 'WARN'}`);
+        if (block) {
+          process.stdout.write(SPEC_GATE_MSG);
+          process.exit(2);
+        }
+        warnings.push(
+          `Spec gate: no hay una spec APPROVED en docs/specs/.\n` +
+          `    El flujo spec-first lo recomienda antes de editar código.\n` +
+          `    (Solo advertencia; se vuelve bloqueante con mode=enterprise +\n` +
+          `     rules.require_spec_before_implementation. Ver docs/spec-gate-flow.md)`
+        );
+      }
     }
   }
 

@@ -1,0 +1,46 @@
+name: spec-gate
+
+# Spec gate (issue #28) — INFORMATIVE / non-blocking by default.
+#
+# Recuerda el flujo spec-first: cada PR debería referenciar una spec en
+# docs/specs/. Este workflow NUNCA falla por sí mismo: solo emite un aviso en
+# el resumen del job para no romper el CI verde ni bloquear merges por defecto.
+#
+# Hacerlo OBLIGATORIO (opt-in):
+#   1. Cambiá `continue-on-error: true` -> elimina la línea o ponela en false,
+#      y en el paso "Check spec reference" reemplazá el `exit 0` final por `exit 1`.
+#   2. En GitHub: Settings -> Branches -> Branch protection rule de `main` ->
+#      "Require status checks to pass before merging" -> agregá el check
+#      "spec-gate / spec-reference".
+# Ver docs/spec-gate-flow.md.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  spec-reference:
+    name: spec-reference
+    runs-on: ubuntu-latest
+    # Informative by default: the job reports but never blocks the merge.
+    continue-on-error: true
+    steps:
+      - name: Check spec reference in PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          echo "## Spec gate (informative)" >> "$GITHUB_STEP_SUMMARY"
+          if printf '%s' "$PR_BODY" | grep -Eiq 'docs/specs/[A-Za-z0-9._-]+\.md'; then
+            ref=$(printf '%s' "$PR_BODY" | grep -Eio 'docs/specs/[A-Za-z0-9._-]+\.md' | head -n1)
+            echo "OK: el PR referencia una spec ($ref)." >> "$GITHUB_STEP_SUMMARY"
+            echo "spec-gate: OK — referencia $ref"
+          else
+            echo "AVISO: el PR no referencia una spec en docs/specs/." >> "$GITHUB_STEP_SUMMARY"
+            echo "El flujo spec-first lo recomienda. Ver docs/spec-gate-flow.md." >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning title=spec-gate::El PR no referencia una spec en docs/specs/ (informativo). Ver docs/spec-gate-flow.md."
+          fi
+          # Non-blocking by default. Para volverlo obligatorio, ver el encabezado.
+          exit 0

@@ -220,6 +220,118 @@ def check_secret_detection(file_path, content):
 
 
 # ---------------------------------------------------------------------------
+# Check 4 — Spec gate (issue #28)
+# Require an APPROVED spec in docs/specs/ before editing code on a feature
+# branch. BACKWARD-COMPATIBLE: warns by default, escalates to a hard block ONLY
+# when mode == "enterprise" AND rules.require_spec_before_implementation is set.
+# ---------------------------------------------------------------------------
+
+PROTECTED_BRANCHES = {"main", "master", "develop"}
+
+
+def find_repo_root():
+    """Walk up from cwd to find the repo root (.git or project.yaml)."""
+    path = os.getcwd()
+    for _ in range(8):
+        if os.path.isdir(os.path.join(path, ".git")) or os.path.isfile(
+            os.path.join(path, "project.yaml")
+        ):
+            return path
+        parent = os.path.dirname(path)
+        if parent == path:
+            break
+        path = parent
+    return os.getcwd()
+
+
+SPEC_STATUS_RE = re.compile(r"^\s*>?\s*(estado|status)\s*:", re.IGNORECASE)
+
+
+def spec_is_approved(content):
+    """A spec is APPROVED when a status/estado header names APPROVED on its own
+    (not the template's 'DRAFT | REVIEW | APPROVED | IMPLEMENTED' menu)."""
+    for line in content.splitlines():
+        if not SPEC_STATUS_RE.match(line):
+            continue
+        value = SPEC_STATUS_RE.sub("", line).strip()
+        if "APPROVED" in value.upper() and "|" not in value:
+            return True
+    return False
+
+
+def has_approved_spec(repo_root):
+    """Return True if docs/specs/ holds at least one APPROVED spec."""
+    specs_dir = os.path.join(repo_root, "docs", "specs")
+    try:
+        names = os.listdir(specs_dir)
+    except OSError:
+        return False
+    for name in names:
+        if not name.endswith(".md") or name in ("_template.md", "README.md"):
+            continue
+        try:
+            with open(os.path.join(specs_dir, name), encoding="utf-8") as f:
+                if spec_is_approved(f.read()):
+                    return True
+        except OSError:
+            continue
+    return False
+
+
+SPEC_GATE_MSG = (
+    "forge: no se encontró una spec APPROVED en docs/specs/.\n\n"
+    "  El flujo spec-first (SDD) exige una spec aprobada antes de editar código.\n"
+    "  Para crearla: cp docs/specs/_template.md docs/specs/<id>-<slug>.md y\n"
+    "  pasá su encabezado a 'Estado: APPROVED'. Detalle: docs/spec-gate-flow.md"
+)
+
+
+def check_spec_gate(file_path, project):
+    """Returns ('block', msg) | ('warn', msg) | None.
+
+    Only applies to code files (caller guarantees this) on a feature branch.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        branch = result.stdout.strip()
+    except Exception as e:
+        dbg(f"spec gate git branch error: {e}")
+        return None
+
+    if not branch or branch in PROTECTED_BRANCHES:
+        return None
+
+    repo_root = find_repo_root()
+    if has_approved_spec(repo_root):
+        return None
+
+    project_section = project.get("project", {})
+    mode = project.get("mode") or (
+        project_section.get("mode") if isinstance(project_section, dict) else ""
+    )
+    rules = project.get("rules", {})
+    require_spec = False
+    if isinstance(rules, dict):
+        raw = str(rules.get("require_spec_before_implementation", "")).lower()
+        require_spec = raw in ("true", "yes", "on")
+
+    if mode == "enterprise" and require_spec:
+        return ("block", SPEC_GATE_MSG)
+    return (
+        "warn",
+        "forge: spec gate — no hay una spec APPROVED en docs/specs/. "
+        "El flujo spec-first lo recomienda antes de editar código (solo "
+        "advertencia; bloqueante con mode=enterprise + "
+        "rules.require_spec_before_implementation). Ver docs/spec-gate-flow.md",
+    )
+
+
+# ---------------------------------------------------------------------------
 # project.yaml — custom forbidden patterns + enterprise mode
 # ---------------------------------------------------------------------------
 
@@ -283,6 +395,16 @@ def main():
         if block_msg:
             print(block_msg, flush=True)
             sys.exit(2)
+
+        # Check 1b — Spec gate (only for code files, not exempt paths)
+        if is_code_file(file_path) and not is_exempt_from_branch_guard(file_path):
+            gate = check_spec_gate(file_path, project)
+            if gate:
+                level, msg = gate
+                print(msg, flush=True)
+                if level == "block":
+                    sys.exit(2)
+                # warn — fall through
 
         # Check 2 — Debug statements
         warn_msg = check_debug_statements(file_path, new_content)

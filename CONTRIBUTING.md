@@ -1,5 +1,27 @@
 # Contribuir a forge
 
+## Flujo spec-first (SDD)
+
+forge se desarrolla **spec-first**: ningún cambio de código no trivial arranca
+sin una spec aprobada. El gate es **backward-compatible y opt-in** (advierte por
+defecto; bloquea solo en `mode: enterprise` con
+`rules.require_spec_before_implementation: true`). Detalle completo en
+[`docs/spec-gate-flow.md`](docs/spec-gate-flow.md).
+
+1. **Crear la spec** — `cp docs/specs/_template.md docs/specs/<id>-<slug>.md` y
+   completá Contexto, Decisión, Alternativas y Criterios de aceptación (estado
+   inicial `DRAFT`).
+2. **Aprobar** — pasá el encabezado a `Estado: APPROVED` (vía Planner-Critic si
+   el proyecto es enterprise).
+3. **Rama feature** — `git checkout -b feat/<tema>`, referenciando el spec ID en
+   los mensajes de commit (ej: `[SPEC-028] ...`).
+4. **Editar código** — el hook `pre-edit-check` valida que exista una spec
+   APPROVED en `docs/specs/`.
+5. **Abrir PR** — usá la plantilla; referenciá la spec (`docs/specs/<id>.md`).
+   El check `spec-gate` lo verifica (informativo por defecto).
+6. **Review** — ejecutá `/review` y mergeá solo con veredicto APPROVED.
+7. **Cerrar** — pasá la spec a `Estado: IMPLEMENTED`.
+
 ## Cómo contribuir
 
 ### Reportar issues
