@@ -1,6 +1,9 @@
 import * as p from '@clack/prompts';
+import chalk from 'chalk';
 import { detectStack } from './detect.js';
 import { SKILLS } from './catalog.js';
+import { forgeBanner } from '../ui/banner.js';
+import { VERSION } from '../version.js';
 
 export interface WizardResult {
   name: string;
@@ -108,10 +111,36 @@ function check<T>(v: T | symbol): T {
   return v as T;
 }
 
+/**
+ * Print the FORGE banner above the @clack wizard so the Node fallback opens with
+ * the same brand surface as the OpenTUI panel and the static header. Respects
+ * `FORGE_ASCII` (block glyphs degrade to an ASCII banner on legacy consoles) and
+ * `NO_COLOR` (chalk handles it). Printed once, before `p.intro`.
+ */
+function printWizardBanner(): void {
+  const banner = forgeBanner().map(l => chalk.cyan(l)).join('\n');
+  process.stdout.write(
+    '\n' + banner + '\n' +
+    chalk.dim('Configure any project for AI agents') + '  ' + chalk.dim('v' + VERSION) + '\n' +
+    chalk.dim('Claude Code · OpenCode · Codex · Kiro') + '\n',
+  );
+}
+
+/**
+ * A short labelled section divider inside the @clack flow, so the ~8 questions
+ * read as grouped steps ("1/4 Proyecto", "2/4 Stack", …) instead of a flat list.
+ */
+function step(n: number, total: number, label: string): void {
+  p.note(chalk.cyan(`Paso ${n}/${total}`) + chalk.dim('  ·  ') + chalk.bold(label), 'forge');
+}
+
 // ─── Main wizard ─────────────────────────────────────────────────────────────
 
 export async function runWizard(): Promise<WizardResult | null> {
-  p.intro(' forge — Configuración de proyecto ');
+  // Banner first so the Node fallback opens with the FORGE brand surface, same as
+  // the OpenTUI panel. Then the @clack intro.
+  printWizardBanner();
+  p.intro(chalk.cyan(' forge — Configuración de proyecto '));
 
   // Welcome / tutorial shown BEFORE configuration.
   p.note(
@@ -148,6 +177,7 @@ export async function runWizard(): Promise<WizardResult | null> {
   }
 
   // ── Proyecto ──
+  step(1, 4, 'Proyecto');
   const name = check(await p.text({
     message: 'Nombre del proyecto',
     placeholder: 'Mi Proyecto',
@@ -168,6 +198,7 @@ export async function runWizard(): Promise<WizardResult | null> {
   }));
 
   // ── Tech stack ──
+  step(2, 4, 'Stack técnico');
   const language = check(await p.select({
     message: 'Lenguaje principal',
     initialValue: detected.language ?? 'typescript',
@@ -255,6 +286,8 @@ export async function runWizard(): Promise<WizardResult | null> {
     testing = v;
   }
 
+  // ── Runtime ──
+  step(3, 4, 'Runtime de IA');
   const runtime = check(await p.select({
     message: 'Runtime de IA',
     initialValue: 'claude-code',
@@ -267,6 +300,7 @@ export async function runWizard(): Promise<WizardResult | null> {
   })) as string;
 
   // ── Skills ──
+  step(4, 4, 'Skills');
   const skills = check(await p.multiselect({
     message: 'Skills a instalar',
     initialValues: DEFAULT_SKILLS,
@@ -279,23 +313,25 @@ export async function runWizard(): Promise<WizardResult | null> {
   })) as string[];
 
   // ── Confirmación ──
+  // Tidy, label-aligned summary box (right-padded keys so the values line up).
+  const row = (k: string, v: string) => `  ${chalk.dim(k.padEnd(10))} ${v}`;
   const summary = [
-    `  Nombre:   ${name}`,
-    `  Lenguaje: ${language}  Modo: ${mode}`,
-    backend  ? `  Backend:  ${backend}` : '',
-    frontend ? `  Frontend: ${frontend}` : '',
-    database ? `  Base de datos: ${database}${orm ? ' + ' + orm : ''}` : '',
-    testing.length ? `  Testing:  ${testing.join(', ')}` : '',
-    `  Runtime:  ${runtime}`,
-    skills.length ? `  Skills:   ${skills.join(', ')}` : '',
+    row('Nombre', chalk.bold(name)),
+    row('Lenguaje', `${language}   ${chalk.dim('Modo:')} ${mode}`),
+    backend  ? row('Backend', backend) : '',
+    frontend ? row('Frontend', frontend) : '',
+    database ? row('Base de datos', `${database}${orm ? ' + ' + orm : ''}`) : '',
+    testing.length ? row('Testing', testing.join(', ')) : '',
+    row('Runtime', runtime),
+    skills.length ? row('Skills', skills.join(', ')) : '',
   ].filter(Boolean).join('\n');
 
-  p.note(summary, 'Configuración seleccionada');
+  p.note(summary, 'Resumen de configuración');
 
   const confirmed = check(await p.confirm({ message: '¿Instalar con esta configuración?' }));
   if (!confirmed) { p.cancel('Cancelado.'); return null; }
 
-  p.outro('Configuración lista. Instalando...');
+  p.outro(chalk.green('✔') + ' Configuración lista — instalando forge…');
 
   // Auto-detect profiles
   const profiles: string[] = [];

@@ -1,7 +1,9 @@
 import { spawnSync } from 'child_process';
 import * as p from '@clack/prompts';
 import { resolveForgeRoot } from '../lib/paths.js';
-import { findBun, resolveCliEntry } from '../lib/bun.js';
+import {
+  findBun, resolveCliEntry, shouldRelaunchUnderBun, relaunchUnderBun, bunFallbackHint,
+} from '../lib/bun.js';
 import { findProjectYaml } from '../lib/yaml.js';
 import { runAudit } from './audit.js';
 import { runDoctor } from './doctor.js';
@@ -14,6 +16,8 @@ import {
 } from '../lib/catalog-install.js';
 import { bold, dim, green, cyan, gray, yellow, red, icons } from '../ui/colors.js';
 import { box } from '../ui/box.js';
+import { forgeBanner } from '../ui/banner.js';
+import { VERSION } from '../version.js';
 
 const HELP = `Usage: forge panel
 
@@ -36,26 +40,47 @@ const isBun = typeof (globalThis as any).Bun !== 'undefined';
  * If running under Node with a TTY, re-launch the CLI under Bun (if available)
  * so the OpenTUI panel can render. Returns false if it couldn't re-launch (the
  * caller then uses the @clack fallback); exits the process if it did.
- * Bun discovery is cross-platform (lib/bun.ts).
+ *
+ * The decision (platform gates, Windows terminal capability, the
+ * FORGE_NO_BUN/FORGE_FORCE_BUN overrides, the FORGE_BUN_RELAUNCH guard) lives in
+ * the shared, unit-tested lib/bun.ts helper so init and panel stay in sync.
  */
 function tryReLaunchWithBun(): boolean {
   if (isBun) return false;
-  if (process.env.FORGE_NO_BUN === '1') return false;
-  if (process.env.FORGE_BUN_RELAUNCH === '1') return false; // already relaunched
-  if (!process.stdin.isTTY || !process.stdout.isTTY) return false;
+  const isTTY = !!(process.stdin.isTTY && process.stdout.isTTY);
   const bun = findBun();
-  if (!bun) return false;
+  if (!shouldRelaunchUnderBun({ bunPath: bun, isTTY, alreadyBun: isBun })) {
+    return false;
+  }
   // fileURLToPath (not URL.pathname) so the entry path is valid on Windows.
   const cliPath = resolveCliEntry(import.meta.url);
-  const result = spawnSync(bun, [cliPath, 'panel'], {
-    stdio: 'inherit',
-    env: { ...process.env, FORGE_BUN_RELAUNCH: '1' },
-  });
-  process.exit(result.status ?? 0);
+  process.exit(relaunchUnderBun(bun as string, cliPath, ['panel']));
 }
 
 function forgeRootOrNull(): string | null {
   try { return resolveForgeRoot(); } catch { return null; }
+}
+
+/**
+ * FORGE banner + tagline for the Node panel fallback (interactive menu and the
+ * non-interactive snapshot). Mirrors the static header / wizard banner so the
+ * "no Bun" experience is uniform. Respects FORGE_ASCII (block glyphs degrade to
+ * the ASCII banner) and NO_COLOR (the colors helper disables ANSI).
+ */
+function printPanelBanner(subtitle: string): void {
+  const banner = forgeBanner().map(l => cyan(l)).join('\n');
+  process.stdout.write(
+    '\n' + banner + '\n' +
+    bold('forge panel') + dim('  ·  ' + subtitle) + dim('  v' + VERSION) + '\n\n',
+  );
+}
+
+/**
+ * A consistent section heading for the row-based sections (Skills, Catálogo) that
+ * aren't wrapped in a box(). Mirrors the `► title` style of the static header.
+ */
+function sectionTitle(title: string, subtitle = ''): void {
+  console.log(cyan(bold('► ' + title)) + (subtitle ? dim('  ' + subtitle) : '') + '\n');
 }
 
 // ─── Node fallback (@clack/prompts) ───────────────────────────────────────────
@@ -132,6 +157,8 @@ async function skillsSearchSection(root: string): Promise<void> {
     placeholder: 'wiki, deploy, security…',
   });
   if (p.isCancel(q)) return;
+  console.log('');
+  sectionTitle('Skills');
   printSkillRows(searchSkills(String(q ?? ''), root));
 }
 
@@ -166,6 +193,8 @@ async function catalogSearchInstallSection(root: string): Promise<void> {
 
   const forgeRoot = forgeRootOrNull();
   const items = searchCatalog(forgeRoot, root, String(q ?? ''));
+  console.log('');
+  sectionTitle('Catálogo', '(skills · profiles · templates)');
   printCatalogRows(items);
   if (items.length === 0) return;
 
@@ -237,14 +266,15 @@ function printTemplatesSection(): void {
  * (piped/CI) so the panel never crashes and still surfaces useful information.
  */
 function printStaticSnapshot(root: string): number {
-  console.log(cyan(bold('forge panel')) + dim(' — snapshot (sin TTY interactiva)') + '\n');
+  printPanelBanner('snapshot (sin TTY interactiva)');
   printConfigSection(root);
   console.log('');
   printMonitorSection(root);
   console.log('');
+  sectionTitle('Skills', '(catálogo de la CLI)');
   printSkillRows(searchSkills('', root));
   console.log('');
-  console.log(cyan(bold('Catálogo — buscar e instalar')) + dim(' (skills · profiles · templates)') + '\n');
+  sectionTitle('Catálogo — buscar e instalar', '(skills · profiles · templates)');
   printCatalogRows(searchCatalog(forgeRootOrNull(), root, ''));
   console.log('');
   printHooksSection(root);
@@ -260,7 +290,8 @@ async function runClackFallback(root: string): Promise<number> {
     return printStaticSnapshot(root);
   }
 
-  p.intro(' forge panel ');
+  printPanelBanner('panel interactivo');
+  p.intro(cyan(' forge panel '));
   if (!findProjectYaml(root)) {
     p.note('No hay project.yaml en este directorio. El panel muestra el catálogo\nglobal; ejecutá `forge init` para configurar el proyecto.', 'Aviso');
   }
@@ -328,9 +359,15 @@ export async function panel(args: string[]): Promise<number> {
     }
   }
 
-  // On Node with Bun installed + a TTY, re-launch under Bun for OpenTUI.
+  // On Node with a capable terminal + Bun installed, re-launch under Bun for
+  // OpenTUI. Exits the process on success; returns false → Node fallback below.
   if (!isBun && process.stdout.isTTY) {
-    tryReLaunchWithBun(); // exits the process on success
+    tryReLaunchWithBun();
+    // Didn't relaunch (no Bun, gated, or already relaunched) → nudge toward the
+    // full panel (once, TTY-only, not under Bun, not when opted out).
+    const isTTY = !!(process.stdin.isTTY && process.stdout.isTTY);
+    const hint = bunFallbackHint({ isTTY, alreadyBun: isBun });
+    if (hint) console.log(dim('  ' + hint));
   }
 
   // Node fallback (no Bun, or not a TTY): @clack menu.

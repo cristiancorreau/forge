@@ -326,4 +326,35 @@ describe('forge panel — CLI (non-TTY fallback)', () => {
     assert.equal(res.status, 0);
     assert.match(stripAnsi(res.stdout), /\bpanel\b/);
   });
+
+  // SPEC-036 Part 2: the Node snapshot now opens with the FORGE banner + a
+  // labelled "forge panel" line, mirroring the static header / wizard banner.
+  test('snapshot renders the FORGE banner + a forge panel title (Part 2)', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, FULL_YAML);
+    const res = spawnSync(process.execPath, [CLI, 'panel'], {
+      cwd: dir, encoding: 'utf-8', input: '',
+      env: { ...process.env, FORGE_NO_BUN: '1' },
+    });
+    const out = stripAnsi((res.stdout ?? '') + (res.stderr ?? ''));
+    assert.equal(res.status, 0, `panel should exit 0; output:\n${out}`);
+    assert.match(out, /forge panel/);
+    // The Unicode block banner (default on macOS/Linux) is present.
+    assert.match(out, /█/, 'default snapshot should include the Unicode FORGE banner');
+  });
+
+  // SPEC-036 Part 2 + SPEC-035: the static banner degrades to ASCII under
+  // FORGE_ASCII=1 — no Unicode block glyphs leak into a legacy console.
+  test('snapshot honours FORGE_ASCII=1 (ASCII banner, no block glyphs)', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, FULL_YAML);
+    const res = spawnSync(process.execPath, [CLI, 'panel'], {
+      cwd: dir, encoding: 'utf-8', input: '',
+      env: { ...process.env, FORGE_NO_BUN: '1', FORGE_ASCII: '1' },
+    });
+    const out = stripAnsi((res.stdout ?? '') + (res.stderr ?? ''));
+    assert.equal(res.status, 0, `panel should exit 0; output:\n${out}`);
+    assert.match(out, /forge panel/);
+    assert.doesNotMatch(out, /[█╗╝╔╚║═]/, 'FORGE_ASCII=1 must not emit block glyphs');
+  });
 });

@@ -1,10 +1,11 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync, copyFileSync, readdirSync, statSync } from 'fs';
 import { join, basename } from 'path';
-import { spawnSync } from 'child_process';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
 import { resolveForgeRoot } from '../lib/paths.js';
-import { findBun, resolveCliEntry } from '../lib/bun.js';
+import {
+  findBun, resolveCliEntry, shouldRelaunchUnderBun, relaunchUnderBun, bunFallbackHint,
+} from '../lib/bun.js';
 import { boxenBorderStyle } from '../ui/ascii.js';
 import { VERSION } from '../version.js';
 
@@ -13,22 +14,24 @@ const isBun = typeof (globalThis as any).Bun !== 'undefined';
 
 // If running under Node.js with a TTY, re-launch the CLI under Bun (if available)
 // so the OpenTUI panel wizard can render. Returns without exiting if not possible.
-// Bun discovery is cross-platform (see lib/bun.ts): on Windows it looks under
+// The relaunch decision (platform gates, Windows terminal capability, the
+// FORGE_NO_BUN/FORGE_FORCE_BUN overrides, the FORGE_BUN_RELAUNCH guard) lives in
+// the shared, unit-tested lib/bun.ts helper so init and panel stay in sync.
+// Bun discovery is cross-platform: on Windows it looks under
 // %USERPROFILE%\.bun\bin\bun.exe and uses `where`, on POSIX `which`/~/.bun.
 function tryReLaunchWithBun(args: string[]): void {
   if (isBun) return;
-  if (process.env.FORGE_NO_BUN === '1') return; // explicit opt-out
-  if (!process.stdin.isTTY || !process.stdout.isTTY) return; // panels need a real TTY
+  const isTTY = !!(process.stdin.isTTY && process.stdout.isTTY);
   const bun = findBun();
-  if (!bun) return; // Bun not installed → fall back to clack
-  // cli.js is one level up from dist/commands/init.js (fileURLToPath, not
-  // URL.pathname, so the entry path is valid on Windows).
-  const cliPath = resolveCliEntry(import.meta.url);
-  const result = spawnSync(bun, [cliPath, 'init', ...args], {
-    stdio: 'inherit',
-    env: { ...process.env, FORGE_BUN_RELAUNCH: '1' },
-  });
-  process.exit(result.status ?? 0);
+  if (shouldRelaunchUnderBun({ bunPath: bun, isTTY, alreadyBun: isBun })) {
+    // cli.js is one level up from dist/commands/init.js (fileURLToPath, not
+    // URL.pathname, so the entry path is valid on Windows).
+    const cliPath = resolveCliEntry(import.meta.url);
+    process.exit(relaunchUnderBun(bun as string, cliPath, ['init', ...args]));
+  }
+  // Not relaunching → nudge toward the full OpenTUI panel (once, TTY-only).
+  const hint = bunFallbackHint({ isTTY, alreadyBun: isBun });
+  if (hint) process.stdout.write(dim('  ' + hint) + '\n');
 }
 import { buildManifest, saveManifest } from '../lib/lock.js';
 import { dim } from '../ui/colors.js';
