@@ -4,38 +4,26 @@ import { spawnSync } from 'child_process';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
 import { resolveForgeRoot } from '../lib/paths.js';
+import { findBun, resolveCliEntry } from '../lib/bun.js';
+import { boxenBorderStyle } from '../ui/ascii.js';
 import { VERSION } from '../version.js';
 
 // OpenTUI panels require Bun runtime
 const isBun = typeof (globalThis as any).Bun !== 'undefined';
 
-// Locate a usable `bun` binary: PATH first, then the standard install location.
-function findBun(): string | null {
-  const candidates = [
-    'bun',
-    join(process.env.HOME ?? '', '.bun', 'bin', 'bun'),
-    '/opt/homebrew/bin/bun',
-    '/usr/local/bin/bun',
-  ];
-  for (const bin of candidates) {
-    try {
-      const r = spawnSync(bin, ['--version'], { encoding: 'utf8', timeout: 2000 });
-      if (r.status === 0) return bin;
-    } catch { /* try next */ }
-  }
-  return null;
-}
-
 // If running under Node.js with a TTY, re-launch the CLI under Bun (if available)
 // so the OpenTUI panel wizard can render. Returns without exiting if not possible.
+// Bun discovery is cross-platform (see lib/bun.ts): on Windows it looks under
+// %USERPROFILE%\.bun\bin\bun.exe and uses `where`, on POSIX `which`/~/.bun.
 function tryReLaunchWithBun(args: string[]): void {
   if (isBun) return;
   if (process.env.FORGE_NO_BUN === '1') return; // explicit opt-out
   if (!process.stdin.isTTY || !process.stdout.isTTY) return; // panels need a real TTY
   const bun = findBun();
   if (!bun) return; // Bun not installed → fall back to clack
-  // cli.js is one level up from dist/commands/init.js
-  const cliPath = new URL('../cli.js', import.meta.url).pathname;
+  // cli.js is one level up from dist/commands/init.js (fileURLToPath, not
+  // URL.pathname, so the entry path is valid on Windows).
+  const cliPath = resolveCliEntry(import.meta.url);
   const result = spawnSync(bun, [cliPath, 'init', ...args], {
     stdio: 'inherit',
     env: { ...process.env, FORGE_BUN_RELAUNCH: '1' },
@@ -244,8 +232,10 @@ function installHooks(forgeRoot: string, destDir: string, mode: string, force: b
   const hooksDir = join(forgeRoot, 'core', 'hooks');
   if (!existsSync(hooksDir)) return;
 
-  // JS hooks (zero Python dependency)
-  const universal = ['pre-edit-check.js', 'post-turn-check.sh', 'session-start.sh'];
+  // JS hooks (zero Python dependency, cross-platform — run via `node`, so they
+  // work in PowerShell as well as bash). The .sh variants remain in the bundle
+  // as reference but the installed/registered command is the .js version.
+  const universal = ['pre-edit-check.js', 'post-turn-check.js', 'session-start.js'];
   const standard = ['pre-bash-check.js'];
 
   for (const hook of universal) {
@@ -276,9 +266,11 @@ function buildSettings(language: string, mode: string): Record<string, unknown> 
   }
   allowList.push('Bash(git *)');
 
+  // All guardrail hooks run via `node` (cross-platform: no bash/python needed),
+  // so the registered commands work in PowerShell, macOS and Linux alike.
   const hooks: Record<string, unknown[]> = {
     PreToolUse: [{ matcher: '.*', hooks: [{ type: 'command', command: 'node .claude/hooks/pre-edit-check.js' }] }],
-    Stop: [{ hooks: [{ type: 'command', command: 'bash .claude/hooks/post-turn-check.sh' }] }],
+    Stop: [{ hooks: [{ type: 'command', command: 'node .claude/hooks/post-turn-check.js' }] }],
   };
   if (mode === 'standard' || mode === 'enterprise') {
     (hooks.PreToolUse as Array<Record<string, unknown>>).push({
@@ -606,7 +598,7 @@ export async function init(args: string[]): Promise<number> {
     nextSteps.map((s, i) => importChalk.default.dim(`  ${i + 1}. ${s}`)).join('\n');
 
   process.stdout.write('\n' + import_boxen.default(summaryContent, {
-    borderStyle: 'round',
+    borderStyle: boxenBorderStyle('round') as 'round' | 'classic',
     borderColor: 'green',
     padding: { top: 0, bottom: 0, left: 1, right: 1 },
     margin: { top: 0, bottom: 1, left: 0, right: 0 },

@@ -8,11 +8,19 @@ on:
 
 jobs:
   test-cli:
-    name: CLI tests (Node ${{ matrix.node-version }})
-    runs-on: ubuntu-latest
+    name: CLI tests (${{ matrix.os }}, Node ${{ matrix.node-version }})
+    runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      # Keep running the other matrix legs if one fails — we want to see whether
+      # a failure is Windows-specific or universal.
+      fail-fast: false
       matrix:
+        # windows-latest is the real verifier for the Windows/PowerShell
+        # compatibility work (SPEC-035): the panels' interactive OpenTUI render
+        # can't be exercised here, but the Node test suite covers the platform
+        # logic (Bun resolver, ASCII fallback, paths, hooks) and the
+        # non-interactive snapshot end-to-end on a real Windows runner.
+        os: [ubuntu-latest, windows-latest]
         node-version: ['20', '22']
     steps:
       - uses: actions/checkout@v4

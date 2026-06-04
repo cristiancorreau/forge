@@ -183,7 +183,7 @@ function detectRuntimes(): Record<string, { installed: boolean; version: string 
     try {
       const proc = (globalThis as any).Bun.spawnSync(rt.cmd, { stdout: 'pipe', stderr: 'pipe' });
       const out = (proc.stdout ? new TextDecoder().decode(proc.stdout) : '').trim();
-      result[rt.id] = { installed: proc.exitCode === 0, version: out.split('\n')[0].slice(0, 20) };
+      result[rt.id] = { installed: proc.exitCode === 0, version: out.split(/\r?\n/)[0].slice(0, 20) };
     } catch {
       result[rt.id] = { installed: false, version: '' };
     }

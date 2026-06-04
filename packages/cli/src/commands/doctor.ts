@@ -128,7 +128,7 @@ function probeRuntime(cmd: string[]): RuntimeProbe {
       if (res.error || res.status === null) return { installed: false };
     }
     const out = `${res.stdout ?? ''}${res.stderr ?? ''}`.trim();
-    const firstLine = out.split('\n')[0]?.trim();
+    const firstLine = out.split(/\r?\n/)[0]?.trim();
     return { installed: true, version: firstLine || undefined };
   } catch {
     return { installed: false };
