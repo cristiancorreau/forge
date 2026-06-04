@@ -26,6 +26,8 @@ As of mid-2026, however, Kiro remains in limited preview. Adoption metrics are l
 | Compliance rules | `compliance.md` generated when frameworks are active | Working |
 | Core commands | `commands.md` describes 6 Forge commands for Kiro's agent context | Working |
 | Branch guard hook | `.kiro/hooks/pre-edit-branch-guard.json` | Working |
+| Pre-bash-check hook | `.kiro/hooks/pre-bash-check.json` blocks destructive commands | Working |
+| Post-turn debug detection hook | `.kiro/hooks/post-turn-check.json` warns about debug statements | Working |
 
 ### What does not work
 
@@ -82,19 +84,20 @@ As of mid-2026, however, Kiro remains in limited preview. Adoption metrics are l
 
 ### Prerequisites
 
-```bash
-pip install pyyaml   # only external dependency
-```
+Ninguno fuera de Node.js 20+. La CLI es 100% TypeScript desde v2.8.0 (sin Python).
 
 ### Usage
 
 ```bash
 # From any directory inside the project (walks up to find project.yaml)
-python3 path/to/forge/adapters/kiro/generate-steering.py
+npx @cristiancorreau/forge generate --runtime kiro
 
 # Force overwrite existing steering files
-python3 path/to/forge/adapters/kiro/generate-steering.py --force
+npx @cristiancorreau/forge generate --runtime kiro --force
 ```
+
+> El adapter Python `adapters/kiro/generate-steering.py` está **deprecado** y será
+> removido en v3.0.0; usar la CLI. Ver [MIGRATION.md](../../MIGRATION.md).
 
 ### Output
 
@@ -108,6 +111,8 @@ python3 path/to/forge/adapters/kiro/generate-steering.py --force
     commands.md     ← 6 core Forge commands for Kiro's agent context
   hooks/
     pre-edit-branch-guard.json  ← warns when editing on main/master
+    pre-bash-check.json         ← blocks destructive commands (DROP TABLE, --force-reset, git push --force, rm -rf /)
+    post-turn-check.json        ← warns about debug statements (console.log, debugger, binding.pry, var_dump, dd)
 ```
 
 ### project.yaml fields used

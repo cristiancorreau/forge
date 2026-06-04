@@ -21,10 +21,9 @@ OpenCode es un agente de coding open-source para la terminal, compatible con Cla
 ```bash
 # Instalar OpenCode
 npm install -g opencode-ai   # o segun la instruccion oficial de opencode.ai
-
-# Dependencia Python del adapter
-pip install pyyaml
 ```
+
+La CLI de forge es 100% TypeScript desde v2.8.0: no requiere Python.
 
 ### Agregar Forge al proyecto
 
@@ -40,8 +39,11 @@ git clone https://github.com/cristiancorreau/forge .agentic
 
 ```bash
 # Desde la raiz del proyecto (requiere project.yaml)
-python3 .agentic/adapters/opencode/generate-agents-md.py
+npx @cristiancorreau/forge generate --runtime opencode
 ```
+
+> El adapter Python `adapters/opencode/generate-agents-md.py` está **deprecado** y
+> será removido en v3.0.0; usar la CLI. Ver [MIGRATION.md](../../MIGRATION.md).
 
 Esto genera `AGENTS.md` en la raiz del proyecto con el roster de agentes, stack del proyecto, reglas globales de seguridad y guardrails de compliance.
 
@@ -143,13 +145,13 @@ Claude Code tiene un sistema de hooks que interceptan herramientas en tiempo rea
 
 | Hook Claude Code | Efecto | Equivalente en OpenCode |
 |-----------------|--------|------------------------|
-| `PreToolUse:Edit` — branch guard | Bloquea edicion en main antes de ejecutar la herramienta | **No existe.** Guardrail embebido en AGENTS.md |
-| `PreToolUse:Bash` — debug detection | Detecta `console.log`/`print` antes del commit | **No existe.** Guardrail embebido en AGENTS.md |
+| `PreToolUse:Edit` — branch guard | Bloquea edicion en main antes de ejecutar la herramienta | Guardrail embebido en AGENTS.md **+ reforzado en commit** por `.githooks/pre-commit` |
+| `PreToolUse:Bash` — debug detection | Detecta `console.log`/`print` antes del commit | Guardrail embebido en AGENTS.md **+ reforzado en commit** por `.githooks/pre-commit` |
 | `PreToolUse:Bash` — produccion safety | Bloquea comandos destructivos sin confirmacion | **No existe.** Guardrail embebido en AGENTS.md |
 | `Stop` — resumen de sesion | Al terminar la sesion, ejecuta script de persistencia | Reemplazado por el flujo `/session-close` |
-| `pre-commit` git hook | Inyecta stats en progress.html | **Compatible.** El hook git funciona igual en OpenCode |
+| `pre-commit` git hook | Inyecta stats en progress.html | **Compatible.** El `.githooks/pre-commit` compartido (POSIX, sin Python) refuerza branch guard y debug detection en cada commit |
 
-**Mecanismo alternativo:** `generate-agents-md.py` incluye secciones de guardrail en el AGENTS.md generado. Esto convierte las reglas de hooks en instrucciones de sistema que el modelo sigue durante la sesion. Ver `adapters/opencode/HOOKS.md` para el texto exacto de cada guardrail y como incluirlos.
+**Mecanismo alternativo:** `npx @cristiancorreau/forge generate --runtime opencode` incluye secciones de guardrail en el AGENTS.md generado y, además, escribe un git hook compartido `.githooks/pre-commit` (POSIX, sin Python) que refuerza branch guard y detección de debug en cada commit. Activarlo una vez con `git config core.hooksPath .githooks`. Esto convierte las reglas de hooks en instrucciones de sistema que el modelo sigue durante la sesion, respaldadas por el git hook. Ver `adapters/opencode/HOOKS.md` para el texto exacto de cada guardrail y como incluirlos.
 
 La seguridad en OpenCode depende de que AGENTS.md este bien escrito y cargado en contexto — no de ejecucion automatica de scripts. Para proyectos con requerimientos de compliance estrictos, esta diferencia es relevante.
 

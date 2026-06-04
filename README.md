@@ -43,7 +43,7 @@ El wizard detecta y configura el proyecto en cinco pasos:
 | Agentes Tier 1 (universal) | Agentes definidos por output, no por stack: `orchestrator`, `backend-engineer`, `frontend-engineer`, `test-engineer`, `docs-writer`, `compliance-reviewer`, `security-auditor`. Sirven en cualquier proyecto. | ✅ | Claude Code, OpenCode, Codex, Kiro |
 | Agentes Tier 2 (stack) | Mismo rol que Tier 1 con instrucciones del stack: Hono+Drizzle, FastAPI, Express, NestJS, Django, Go-Gin, Laravel, Rails, Next.js, Expo, Astro, SvelteKit, Nuxt/Vue, WordPress, Playwright. | ✅ | Claude Code, OpenCode, Codex, Kiro |
 | Agentes Tier 3 (dominio) | Agentes que conocen el negocio (`dsar-specialist`, `gcm-engineer`, `policy-engineer`, `banner-engineer`). Viven en el proyecto y se registran en `agents.specialized`. | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| Hooks de guardrail (sin Python) | Guardrails de pre-edit/branch-guard, detección de debug, secretos y prod-safety, ejecutados por el runtime. | 🚧 | Claude Code, Codex, Kiro |
+| Hooks de guardrail (sin Python) | Guardrails de pre-edit/branch-guard, detección de debug, secretos y prod-safety, ejecutados por el runtime. | 🚧 | Claude Code, OpenCode, Codex, Kiro |
 | Operaciones reversibles | Manifest SHA-256 + dry-run para instalaciones reversibles y verificables. | 🚧 | Claude Code, OpenCode, Codex, Kiro |
 | Multi-runtime | Un mismo proyecto forge se adapta a varios runtimes con sus marcadores de detección y niveles de soporte. | ✅ | Claude Code (completo), OpenCode, Codex, Kiro |
 | Auto-detección de stack | Detección por marcadores (`CLAUDE.md`+`.claude/`, `AGENTS.md`+`.opencode/`, `.codex/`, `.kiro/`) para activar profiles y adapters. | 🚧 | Claude Code, OpenCode, Codex, Kiro |
@@ -65,10 +65,18 @@ Leyenda: ✅ disponible · 🚧 parcial · ❌ pendiente.
 | Comando | Qué hace |
 |---------|----------|
 | `forge init` | Wizard completo: detecta stack, instala agentes, hooks y genera configuración |
+| `forge generate` | Regenera configuración nativa de cada runtime desde `project.yaml` sin ejecutar el wizard completo |
+| `forge migrate` | Migra `project.yaml` del schema v1 al v2 (`--dry-run`, `--backup`) |
+| `forge scaffold` | Genera un agente nuevo: profile Tier 2 o agente de dominio Tier 3 (`--tier 3`, `--name`) |
+| `forge teardown` | Desinstala forge del proyecto de forma limpia vía manifest (`--dry-run`, `--keep-config`) |
 | `forge audit` | Verifica el estado del proyecto contra el manifest; detecta archivos modificados o faltantes |
-| `forge generate` | Regenera configuración desde el estado actual del proyecto sin ejecutar el wizard completo |
 | `forge validate` | Valida que los archivos generados cumplan el esquema esperado |
 | `forge doctor` | Health-check del entorno: Node.js, git, runtime de IA activo, permisos |
+| `forge skills` | Lista los skills disponibles agrupados por categoría |
+| `forge aitmpl-search` | Busca en el catálogo curado offline (frameworks, MCP servers, profiles) |
+| `forge session-start` | Abre una sesión de trabajo: detecta estado del repo y enruta |
+| `forge session-close` | Cierra una sesión de trabajo: commit → daily note → sync → PR |
+| `forge wiki` | Gestiona la knowledge base del proyecto (`status` \| `ingest` \| `query` \| `lint`) |
 
 > **Dashboard post-install.** Cuando `forge init` corre con Bun, al terminar abre un dashboard interactivo navegable con OpenTUI: panel con paneles para explorar agentes instalados, skills, profiles activos y estado del manifest sin salir de la terminal. Con Node.js el wizard cae al flujo de prompts estándar.
 
@@ -115,7 +123,7 @@ Detalle completo en [docs/tiers.md](docs/tiers.md).
 
 ## Skills
 
-forge incluye 12 skills invocables que encapsulan flujos completos: `spec` (redacta specs SDD), `new-feature` (kickoff de feature spec-first), `security-audit`, `db-migrate`, `local2prod` (deploy con gate de producción), `browser-test`, `phase-kickoff`, `obsidian-sync`, `aitmpl-search` y la familia `wiki-*` (`wiki-ingest`, `wiki-lint`, `wiki-query`) para la knowledge base del proyecto. Se invocan como slash commands (`/spec`, `/new-feature`, `/db-migrate`, …) y se mapean por runtime.
+forge incluye 14 skills invocables que encapsulan flujos completos: `session-start` (abre sesión), `session-close` (cierra sesión), `spec` (redacta specs SDD), `new-feature` (kickoff de feature spec-first), `security-audit`, `db-migrate`, `local2prod` (deploy con gate de producción), `browser-test`, `phase-kickoff`, `obsidian-sync`, `aitmpl-search` y la familia `wiki-*` (`wiki-ingest`, `wiki-lint`, `wiki-query`) para la knowledge base del proyecto. Se invocan como slash commands (`/spec`, `/new-feature`, `/db-migrate`, …) y se mapean por runtime.
 
 Catálogo completo en [docs/skills.md](docs/skills.md).
 
@@ -139,7 +147,7 @@ No hay `pip install`, no hay `requirements.txt`, no hay dependencias de sistema 
 | SDD spec-first con gate | ✅ spec `APPROVED` obligatoria, veto del orchestrator | ❌ | ✅ núcleo del producto |
 | Agentes especializados por tier | ✅ Tier 1/2/3 (universal, stack, dominio) | ❌ | ❌ |
 | Profiles por stack | ✅ 15+ stacks (Hono, FastAPI, Django, Rails, Laravel, Go, WordPress, Expo…) | 🚧 parcial | ❌ |
-| Skills invocables | ✅ 12+ skills | ✅ foco central | 🚧 limitado |
+| Skills invocables | ✅ 14+ skills | ✅ foco central | 🚧 limitado |
 | Multi-runtime | ✅ Claude Code, OpenCode, Codex, Kiro | 🚧 principalmente Claude Code | 🚧 Claude Code + parcial |
 | Compliance con veto (GDPR/LGPD/CCPA) | ✅ `compliance-reviewer` vinculante | ❌ | ❌ |
 | Hooks de guardrail (branch/secrets/prod) | 🚧 parcial, sin Python | ❌ | ❌ |

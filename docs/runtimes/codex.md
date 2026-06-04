@@ -17,28 +17,28 @@ A diferencia de Claude Code (que usa `.claude/` y slash commands), Codex no tien
 ## Instalación rápida
 
 ```bash
-bash scripts/setup-codex.sh
+# Inicializar forge en el proyecto (genera project.yaml + agentes + hooks)
+npx @cristiancorreau/forge init
+
+# Generar la configuración nativa de Codex (AGENTS.md + .codex/)
+npx @cristiancorreau/forge generate --runtime codex
 ```
 
-El script hace lo siguiente en orden:
+`forge generate --runtime codex` lee `project.yaml` y produce:
 
-- **[OK] git y python3** — verifica que ambas herramientas están en PATH
-- **[OK] pyyaml** — instala el paquete si no está disponible
-- **[OK] project.yaml** — verifica que el proyecto está inicializado con Forge
-- **[OK] forge/** — localiza el directorio de forge (submódulo o path relativo)
-- **[OK] .codex/** — crea el directorio y copia `codex.yaml` desde la plantilla
-- **[OK] forge-codex-start.sh** — instala el hook onStart en `.codex/`
-- **[OK] forge-codex-finish.sh** — instala el hook onFinish en `.codex/`
 - **[OK] AGENTS.md** — genera el archivo de contexto desde `project.yaml`
+- **[OK] .codex/** — crea el directorio y la configuración (`codex.yaml`, hooks onStart/onFinish)
 
-Al finalizar, el script imprime los próximos pasos:
+Al finalizar, commitear los archivos generados:
 
 ```bash
 git add AGENTS.md .codex/
 git commit -m 'chore(codex): initialize Forge v2 Codex adapter'
 ```
 
-Si `project.yaml` no existe todavía, ejecutar primero `python3 scripts/forge-wizard.py`.
+> Los scripts Python (`scripts/setup-codex.sh`, `forge-wizard.py`,
+> `generate-codex-config.py`) están **deprecados** y serán removidos en v3.0.0;
+> usar la CLI TypeScript. Ver [MIGRATION.md](../../MIGRATION.md).
 
 ---
 
@@ -48,7 +48,7 @@ Si `project.yaml` no existe todavía, ejecutar primero `python3 scripts/forge-wi
 
 Codex CLI carga `AGENTS.md` desde la raíz del repositorio al inicio de cada sesión. Es el equivalente de `CLAUDE.md` en Claude Code, pero orientado a ejecución autónoma: incluye reglas de seguridad y límites de autonomía inline porque Codex no tiene un mecanismo de hooks que pueda bloquear acciones individuales.
 
-Forge genera `AGENTS.md` con `generate-codex-config.py`, que lee `project.yaml` y produce:
+Forge genera `AGENTS.md` con el comando CLI `npx @cristiancorreau/forge generate --runtime codex`, que lee `project.yaml` y produce:
 
 - **Stack** — lenguaje, backend, frontend, base de datos, testing
 - **Workflow SDD** — regla de spec antes que código, pasos de implementación
@@ -62,7 +62,7 @@ Forge genera `AGENTS.md` con `generate-codex-config.py`, que lee `project.yaml` 
 Para regenerar `AGENTS.md` después de cambiar `project.yaml`:
 
 ```bash
-python3 adapters/codex/generate-codex-config.py
+npx @cristiancorreau/forge generate --runtime codex
 ```
 
 ### Commands (plantillas de prompt, no slash commands)
