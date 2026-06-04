@@ -1,4 +1,15 @@
-# Team Install — Join a Project Using Forge
+# Team Install (Legacy — Deprecated) — Join a Project Using Forge
+
+> ⚠️ **[DEPRECATED]** — Esta guía describe el flujo **legacy** con Python (`python3 .agentic/forge.py`).
+> `forge.py` y `scripts/*.py` están deprecados y serán removidos en **v3.0.0**.
+>
+> **Alternativa recomendada (sin Python):** desde la raíz del proyecto, ejecutá
+>
+> ```bash
+> npx @cristiancorreau/forge init
+> ```
+>
+> La CLI TypeScript no requiere submódulos, Python ni `pip install`. Ver [MIGRATION.md](../MIGRATION.md) para el timeline de sunset y el mapeo de comandos.
 
 Get up and running in under 5 minutes.
 

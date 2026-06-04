@@ -12,6 +12,9 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 ### Cambiado (UI)
 - **Selects del wizard/dashboard: colores invertidos y más altos.** El item bajo el cursor ahora usa el fondo resaltado (`#1e3a5f`) con texto amarillo; las opciones no seleccionadas quedan sobre el fondo del panel (antes estaba al revés: el cursor se veía oscuro y el resto azul). Se agregó `itemSpacing: 1`, `showScrollIndicator` y mayor altura (`options × 3 + 1`, acotada a `BODY_H − 4`) para que cada opción tenga aire. Aplicado en `askSelect`, el welcome y el nav del dashboard. Verificado en PTY reconstruyendo el grid.
 
+### Deprecado
+- **`forge.py` y `scripts/*.py` (CLI legacy de Python).** La CLI es 100% TypeScript desde la v2.8.0; la implementación Python queda deprecada y será **removida en v3.0.0**. Usá `npx @cristiancorreau/forge` (Node/Bun, sin dependencias de Python) para todos los comandos. Timeline y guía de migración en [MIGRATION.md](MIGRATION.md).
+
 ---
 
 ## [2.9.12] — 2026-06-04

@@ -8,9 +8,10 @@
 
 ## Técnico
 - [ ] 464+ tests pasando
-- [ ] manifest.json version coherente con forge.py VERSION
+- [ ] manifest.json version coherente con `packages/cli/package.json` version
 - [ ] CHANGELOG.md actualizado
 - [ ] README.md completo con quick start funcional
+- [ ] No hay referencias a `forge.py` en docs públicas (solo notas históricas o deprecadas)
 
 ## Legal
 - [ ] LICENSE (Apache 2.0) presente en repo raíz
