@@ -6,8 +6,8 @@ import { forgeBanner } from '../ui/banner.js';
 import { VERSION } from '../version.js';
 import {
   type ProjectType,
-  hasBackend, hasFrontend,
-  backendFrameworksFor, frontendFrameworksFor,
+  hasBackend, hasFrontend, hasMobile,
+  backendFrameworksFor, frontendFrameworksFor, mobileFrameworksFor,
   deriveProjectLanguage,
 } from './wizard-flow.js';
 
@@ -15,17 +15,21 @@ export interface WizardResult {
   name: string;
   slug: string;
   description: string;
-  /** Derived legacy language (backend lang, frontend lang, or 'mixed'). */
+  /** Derived legacy language (backend lang, frontend lang, mobile lang, or 'mixed'). */
   language: string;
-  /** Project type: solo frontend, solo backend o fullstack. */
+  /** Project type: solo frontend, solo backend, fullstack o mobile. */
   type: ProjectType;
   /** Backend language (only when the project has a backend). */
   backendLanguage?: string;
   /** Frontend language (only when the project has a frontend). */
   frontendLanguage?: string;
+  /** Mobile language (SPEC-039, only when the project is mobile). */
+  mobileLanguage?: string;
   mode: 'startup' | 'standard' | 'enterprise';
   backend?: string;
   frontend?: string;
+  /** Mobile framework (SPEC-039): flutter | react-native | expo. */
+  mobile?: string;
   database?: string;
   orm?: string;
   packageManager?: string;
@@ -46,7 +50,12 @@ const BACKEND_META: Record<string, { label: string; hint?: string }> = {
   nestjs:  { label: 'NestJS',  hint: 'enterprise, opinionado' },
   fastify: { label: 'Fastify', hint: 'rápido, plugins' },
   fastapi: { label: 'FastAPI', hint: 'async' },
+  flask:   { label: 'Flask',   hint: 'micro-framework' },
   django:  { label: 'Django' },
+  springboot: { label: 'Spring Boot', hint: 'JVM, enterprise' },
+  axum:    { label: 'Axum',    hint: 'Tokio, async' },
+  actix:   { label: 'Actix-web', hint: 'alto rendimiento' },
+  rocket:  { label: 'Rocket',  hint: 'ergonómico' },
   rails:   { label: 'Rails' },
   'go-gin': { label: 'Gin' },
   laravel: { label: 'Laravel' },
@@ -59,9 +68,18 @@ const FRONTEND_META: Record<string, { label: string; hint?: string }> = {
   sveltekit: { label: 'SvelteKit',  hint: 'Svelte' },
 };
 
+const MOBILE_META: Record<string, { label: string; hint?: string }> = {
+  flutter:        { label: 'Flutter',      hint: 'Dart, multiplataforma' },
+  'react-native': { label: 'React Native', hint: 'TypeScript/JS' },
+  expo:           { label: 'Expo',         hint: 'React Native gestionado' },
+};
+
 const BACKEND_LANG_OPTS: p.Option<string>[] = [
   { value: 'typescript', label: 'TypeScript / JavaScript', hint: 'recomendado' },
   { value: 'python',     label: 'Python' },
+  { value: 'java',       label: 'Java' },
+  { value: 'kotlin',     label: 'Kotlin' },
+  { value: 'rust',       label: 'Rust' },
   { value: 'ruby',       label: 'Ruby' },
   { value: 'go',         label: 'Go' },
   { value: 'php',        label: 'PHP' },
@@ -69,6 +87,11 @@ const BACKEND_LANG_OPTS: p.Option<string>[] = [
 
 const FRONTEND_LANG_OPTS: p.Option<string>[] = [
   { value: 'typescript', label: 'TypeScript / JavaScript', hint: 'recomendado' },
+];
+
+const MOBILE_LANG_OPTS: p.Option<string>[] = [
+  { value: 'dart',       label: 'Dart', hint: 'Flutter' },
+  { value: 'typescript', label: 'TypeScript / JavaScript', hint: 'React Native / Expo' },
 ];
 
 /** Build a framework picker (filtered by language) + the "ninguno / otro" escape. */
@@ -83,6 +106,14 @@ function backendFrameworkOptions(language: string): p.Option<string>[] {
 function frontendFrameworkOptions(language: string): p.Option<string>[] {
   const opts = frontendFrameworksFor(language).map<p.Option<string>>(v => ({
     value: v, label: FRONTEND_META[v]?.label ?? v, hint: FRONTEND_META[v]?.hint,
+  }));
+  opts.push({ value: 'none', label: 'Ninguno / otro' });
+  return opts;
+}
+
+function mobileFrameworkOptions(language: string): p.Option<string>[] {
+  const opts = mobileFrameworksFor(language).map<p.Option<string>>(v => ({
+    value: v, label: MOBILE_META[v]?.label ?? v, hint: MOBILE_META[v]?.hint,
   }));
   opts.push({ value: 'none', label: 'Ninguno / otro' });
   return opts;
@@ -107,6 +138,10 @@ const PKG_MANAGERS: Record<string, p.Option<string>[]> = {
     { value: 'bun',  label: 'bun',  hint: 'ultra-rápido' },
   ],
   python:     [{ value: 'pip',    label: 'pip' }, { value: 'poetry', label: 'poetry' }],
+  java:       [{ value: 'maven',  label: 'Maven' }, { value: 'gradle', label: 'Gradle' }],
+  kotlin:     [{ value: 'gradle', label: 'Gradle' }, { value: 'maven', label: 'Maven' }],
+  rust:       [{ value: 'cargo',  label: 'Cargo' }],
+  dart:       [{ value: 'pub',    label: 'pub (Dart/Flutter)' }],
   ruby:       [{ value: 'bundler', label: 'bundler' }],
   go:         [{ value: 'go',     label: 'go modules' }],
   php:        [{ value: 'composer', label: 'composer' }],
@@ -131,6 +166,7 @@ const PROFILE_MAP: Record<string, string> = {
   fastapi: 'fastapi',
   rails:   'rails',
   laravel: 'laravel',
+  expo:    'expo',
 };
 
 // Skills pre-seleccionadas por defecto en el wizard.
@@ -209,6 +245,7 @@ export async function runWizard(): Promise<WizardResult | null> {
       detected.language    && `lenguaje: ${detected.language}`,
       detected.backend     && `backend: ${detected.backend}`,
       detected.frontend    && `frontend: ${detected.frontend}`,
+      detected.mobile      && `mobile: ${detected.mobile}`,
       detected.packageManager && `package manager: ${detected.packageManager}`,
       detected.testing.length && `testing: ${detected.testing.join(', ')}`,
     ].filter(Boolean) as string[];
@@ -240,7 +277,8 @@ export async function runWizard(): Promise<WizardResult | null> {
   // Determina qué lados (backend/frontend) se preguntan. Si se detectó stack,
   // se pre-selecciona el tipo inferido.
   const detectedType: ProjectType | undefined =
-    detected.backend && detected.frontend ? 'fullstack'
+    detected.mobile && !detected.frontend ? 'mobile'
+    : detected.backend && detected.frontend ? 'fullstack'
     : detected.frontend ? 'frontend'
     : detected.backend  ? 'backend'
     : undefined;
@@ -251,6 +289,7 @@ export async function runWizard(): Promise<WizardResult | null> {
       { value: 'frontend',  label: 'Solo Frontend', hint: 'UI / SPA / SSR' },
       { value: 'backend',   label: 'Solo Backend',  hint: 'API / servicio' },
       { value: 'fullstack', label: 'Fullstack',     hint: 'frontend + backend (pueden diferir)' },
+      { value: 'mobile',    label: 'Mobile',        hint: 'app iOS/Android (Flutter, React Native)' },
     ],
   })) as ProjectType;
 
@@ -291,9 +330,26 @@ export async function runWizard(): Promise<WizardResult | null> {
     frontend = frontendVal === 'none' ? undefined : frontendVal;
   }
 
+  // Mobile (nueva dimensión): lenguaje → framework. Solo cuando el tipo es mobile.
+  let mobileLanguage: string | undefined;
+  let mobile: string | undefined;
+  if (hasMobile(type)) {
+    mobileLanguage = check(await p.select({
+      message: 'Lenguaje del mobile',
+      initialValue: detected.mobileLanguage ?? 'dart',
+      options: MOBILE_LANG_OPTS,
+    })) as string;
+    const mobileVal = check(await p.select({
+      message: 'Framework mobile',
+      initialValue: detected.mobile ?? 'none',
+      options: mobileFrameworkOptions(mobileLanguage),
+    })) as string;
+    mobile = mobileVal === 'none' ? undefined : mobileVal;
+  }
+
   // Lenguaje para ORM / package manager / testing: el del backend si existe,
-  // si no el del frontend.
-  const stackLanguage = backendLanguage ?? frontendLanguage ?? 'typescript';
+  // si no el del frontend, si no el del mobile.
+  const stackLanguage = backendLanguage ?? frontendLanguage ?? mobileLanguage ?? 'typescript';
 
   // Database / ORM — solo cuando hay backend.
   let database: string | undefined;
@@ -357,8 +413,8 @@ export async function runWizard(): Promise<WizardResult | null> {
   })) as 'startup' | 'standard' | 'enterprise';
 
   // Lenguaje legacy derivado (back-compat): back/fullstack → backend lang,
-  // frontend-only → frontend lang, fullstack con lados distintos → 'mixed'.
-  const language = deriveProjectLanguage({ type, backendLanguage, frontendLanguage });
+  // frontend-only → frontend lang, mobile → mobile lang, lados distintos → 'mixed'.
+  const language = deriveProjectLanguage({ type, backendLanguage, frontendLanguage, mobileLanguage });
 
   // ── Runtime ──
   step(3, 4, 'Runtime de IA');
@@ -391,11 +447,13 @@ export async function runWizard(): Promise<WizardResult | null> {
   const row = (k: string, v: string) => `  ${chalk.dim(k.padEnd(14))} ${v}`;
   const backendStr  = backend  ? `${backend}${backendLanguage  ? ` (${backendLanguage})`  : ''}`  : '';
   const frontendStr = frontend ? `${frontend}${frontendLanguage ? ` (${frontendLanguage})` : ''}` : '';
+  const mobileStr   = mobile   ? `${mobile}${mobileLanguage     ? ` (${mobileLanguage})`    : ''}` : '';
   const summary = [
     row('Nombre', chalk.bold(name)),
     row('Tipo', `${type}   ${chalk.dim('Lenguaje:')} ${language}   ${chalk.dim('Modo:')} ${mode}`),
     backendStr  ? row('Backend', backendStr) : '',
     frontendStr ? row('Frontend', frontendStr) : '',
+    mobileStr   ? row('Mobile', mobileStr) : '',
     database ? row('Base de datos', `${database}${orm ? ' + ' + orm : ''}`) : '',
     testing.length ? row('Testing', testing.join(', ')) : '',
     row('Runtime', runtime),
@@ -411,14 +469,14 @@ export async function runWizard(): Promise<WizardResult | null> {
 
   // Auto-detect profiles
   const profiles: string[] = [];
-  for (const key of [backend, frontend]) {
+  for (const key of [backend, frontend, mobile]) {
     if (key && PROFILE_MAP[key]) profiles.push(PROFILE_MAP[key]);
   }
 
   return {
     name, slug, description: description || '', language, type,
-    backendLanguage, frontendLanguage, mode,
-    backend, frontend, database, orm, packageManager, testing,
+    backendLanguage, frontendLanguage, mobileLanguage, mode,
+    backend, frontend, mobile, database, orm, packageManager, testing,
     profiles: [...new Set(profiles)], skills, runtime, detected: hasDetection,
   };
 }

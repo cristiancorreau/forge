@@ -51,8 +51,8 @@ export interface ProjectAnalysis {
   description: string;
   /** Primary manifest path (relative, POSIX) that named the project, if any. */
   manifest: string | null;
-  /** Manifest ecosystem: npm | python | php | ruby | go | unknown. */
-  ecosystem: 'npm' | 'python' | 'php' | 'ruby' | 'go' | 'unknown';
+  /** Manifest ecosystem: npm | python | php | ruby | go | rust | jvm | dart | unknown. */
+  ecosystem: 'npm' | 'python' | 'php' | 'ruby' | 'go' | 'rust' | 'jvm' | 'dart' | 'unknown';
   stack: DetectedStack;
   type: ProjectType;
   dependencies: DependencyInfo[];
@@ -139,6 +139,42 @@ function resolveNameDescription(root: string): NameDesc {
   if (goMod) {
     const m = goMod.match(/^module\s+(\S+)/m);
     if (m) return { name: m[1], description: null, manifest: 'go.mod', ecosystem: 'go' };
+  }
+
+  // rust (Cargo.toml — [package] name/description)
+  const cargo = readText(join(root, 'Cargo.toml'));
+  if (cargo) {
+    const name = extractField(cargo, 'name');
+    const description = extractField(cargo, 'description');
+    return { name, description, manifest: 'Cargo.toml', ecosystem: 'rust' };
+  }
+
+  // dart / flutter (pubspec.yaml — name/description)
+  const pubspec = readText(join(root, 'pubspec.yaml'));
+  if (pubspec) {
+    const name = extractField(pubspec, 'name');
+    const description = extractField(pubspec, 'description');
+    return { name, description, manifest: 'pubspec.yaml', ecosystem: 'dart' };
+  }
+
+  // jvm (Spring Boot etc.) — pom.xml <artifactId> or a gradle build file.
+  const pom = readText(join(root, 'pom.xml'));
+  if (pom) {
+    // The project's own <artifactId> lives outside the <parent> block. Strip the
+    // <parent>…</parent> section first so we don't pick the parent's artifactId
+    // (e.g. spring-boot-starter-parent).
+    const own = pom.replace(/<parent>[\s\S]*?<\/parent>/, '');
+    const m = own.match(/<artifactId>([^<]+)<\/artifactId>/)
+      ?? pom.match(/<artifactId>([^<]+)<\/artifactId>/);
+    const nameTag = pom.match(/<name>([^<]+)<\/name>/);
+    return {
+      name: nameTag ? nameTag[1].trim() : (m ? m[1].trim() : null),
+      description: null, manifest: 'pom.xml', ecosystem: 'jvm',
+    };
+  }
+  if (existsSync(join(root, 'build.gradle.kts')) || existsSync(join(root, 'build.gradle'))) {
+    const manifest = existsSync(join(root, 'build.gradle.kts')) ? 'build.gradle.kts' : 'build.gradle';
+    return { name: null, description: null, manifest, ecosystem: 'jvm' };
   }
 
   // ruby (Gemfile has no name; *.gemspec might — fall back to the dir name).
@@ -263,6 +299,11 @@ const KEY_FILE_SPECS: Array<{ file: string; kind: KeyFile['kind'] }> = [
   { file: 'composer.json', kind: 'manifest' },
   { file: 'Gemfile', kind: 'manifest' },
   { file: 'go.mod', kind: 'manifest' },
+  { file: 'Cargo.toml', kind: 'manifest' },
+  { file: 'pubspec.yaml', kind: 'manifest' },
+  { file: 'pom.xml', kind: 'manifest' },
+  { file: 'build.gradle', kind: 'manifest' },
+  { file: 'build.gradle.kts', kind: 'manifest' },
   { file: 'Dockerfile', kind: 'dockerfile' },
   { file: 'docker-compose.yml', kind: 'dockerfile' },
   { file: '.env.example', kind: 'env-example' },
@@ -321,6 +362,9 @@ function resolveEntrypoints(root: string, ecosystem: ProjectAnalysis['ecosystem'
     'src/app.ts', 'src/app.js', 'index.ts', 'index.js', 'main.go',
     'app/main.py', 'main.py', 'app.py', 'manage.py', 'src/main.py',
     'cmd/main.go', 'config/application.rb',
+    'src/main.rs', 'src/lib.rs',                       // rust
+    'lib/main.dart',                                   // flutter / dart
+    'app.json', 'App.tsx', 'App.js', 'index.js',       // react-native / expo
   ];
   for (const c of candidates) {
     if (existsSync(join(root, c))) found.add(c.split('\\').join('/'));
@@ -361,8 +405,10 @@ export function analyzeProject(root: string): ProjectAnalysis {
     try { return detectStack(root); }
     catch {
       return {
-        language: null, backendLanguage: null, frontendLanguage: null, projectType: null,
-        backend: null, frontend: null, database: null, orm: null, packageManager: null,
+        language: null, backendLanguage: null, frontendLanguage: null, mobileLanguage: null,
+        projectType: null,
+        backend: null, frontend: null, mobile: null,
+        database: null, orm: null, packageManager: null,
         testing: [], hasDocker: false, isMonorepo: false,
       } as DetectedStack;
     }
@@ -375,7 +421,7 @@ export function analyzeProject(root: string): ProjectAnalysis {
   // Project type: prefer the stack's inference; fall back to the framework-based
   // inference so a bare repo still gets a sensible (backend) default.
   const type: ProjectType = stack.projectType
-    ?? inferProjectType({ backend: stack.backend, frontend: stack.frontend });
+    ?? inferProjectType({ backend: stack.backend, frontend: stack.frontend, mobile: stack.mobile });
 
   return {
     root,

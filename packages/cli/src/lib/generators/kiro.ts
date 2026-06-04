@@ -8,6 +8,10 @@ function devCommands(language: string): { dev: string; test: string; lint: strin
     case 'ruby': return { dev: 'rails server', test: 'bundle exec rspec', lint: 'rubocop' };
     case 'go': return { dev: 'go run ./cmd/...', test: 'go test ./...', lint: 'golangci-lint run' };
     case 'php': return { dev: 'php artisan serve', test: './vendor/bin/pest', lint: 'phpstan analyse' };
+    case 'rust': return { dev: 'cargo run', test: 'cargo test', lint: 'cargo clippy' };
+    case 'java': return { dev: './mvnw spring-boot:run', test: './mvnw test', lint: './mvnw checkstyle:check' };
+    case 'kotlin': return { dev: './gradlew bootRun', test: './gradlew test', lint: './gradlew ktlintCheck' };
+    case 'dart': return { dev: 'flutter run', test: 'flutter test', lint: 'flutter analyze' };
     default: return { dev: '# ver docs', test: '# ver docs', lint: '# ver docs' };
   }
 }
@@ -25,7 +29,7 @@ ${proj.description ?? ''}
 
 - Language: ${proj.language ?? 'N/A'}
 - Backend: ${stackWithLanguage(stack.backend, stack.backend_language)}
-- Frontend: ${stackWithLanguage(stack.frontend, stack.frontend_language)}
+- Frontend: ${stackWithLanguage(stack.frontend, stack.frontend_language)}${stack.mobile ? `\n- Mobile: ${stackWithLanguage(stack.mobile, stack.mobile_language)}` : ''}
 - Database: ${stack.database ?? 'N/A'}
 - ORM: ${stack.orm ?? 'N/A'}
 - Testing: ${(stack.testing ?? []).join(', ') || 'N/A'}

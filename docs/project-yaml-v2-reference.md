@@ -14,8 +14,8 @@
 | `mode` | string | — | **Requerido (v2).** `startup` \| `standard` \| `enterprise` |
 | `slug` | string \| null | null | Identificador lowercase sin espacios (ej: `mi-proyecto`) |
 | `description` | string \| null | null | Descripción breve del propósito |
-| `language` | string \| null | null | `typescript` \| `python` \| `ruby` \| `go` \| `php` \| `mixed`. Derivado del lenguaje backend (backend/fullstack) o frontend (frontend-only); `mixed` si los lados difieren |
-| `type` | string \| null | null | **[SPEC-037]** `frontend` \| `backend` \| `fullstack`. Tipo de proyecto. Opcional; se infiere para archivos antiguos |
+| `language` | string \| null | null | `typescript` \| `javascript` \| `python` \| `java` \| `kotlin` \| `rust` \| `dart` \| `ruby` \| `go` \| `php` \| `mixed`. Derivado del lenguaje backend (backend/fullstack), frontend (frontend-only) o mobile (mobile); `mixed` si los lados difieren |
+| `type` | string \| null | null | **[SPEC-037/039]** `frontend` \| `backend` \| `fullstack` \| `mobile`. Tipo de proyecto. Opcional; se infiere para archivos antiguos |
 | `status` | string \| null | null | `active` \| `paused` \| `maintenance` \| `archived` |
 
 ---
@@ -24,14 +24,16 @@
 
 | Campo | Tipo | Default | Descripción |
 |-------|------|---------|-------------|
-| `backend` | string \| null | null | Framework backend: `hono`, `fastapi`, `rails`, `express`, `laravel`, `nestjs`, `django`, `go-gin` |
-| `backend_language` | string \| null | null | **[SPEC-037]** Lenguaje del backend: `typescript` \| `python` \| `ruby` \| `go` \| `php`. Permite que back y front difieran |
+| `backend` | string \| null | null | Framework backend: `hono`, `fastapi`, `flask`, `rails`, `express`, `laravel`, `nestjs`, `fastify`, `django`, `springboot`, `axum`, `actix`, `rocket`, `go-gin` |
+| `backend_language` | string \| null | null | **[SPEC-037/039]** Lenguaje del backend: `typescript` \| `python` \| `java` \| `kotlin` \| `rust` \| `ruby` \| `go` \| `php`. Permite que back y front difieran |
 | `frontend` | string \| null | null | Framework frontend: `nextjs`, `nuxt`, `remix`, `rails-views`, `astro`, `sveltekit` |
 | `frontend_language` | string \| null | null | **[SPEC-037]** Lenguaje del frontend: `typescript`. Permite que back y front difieran |
+| `mobile` | string \| null | null | **[SPEC-039]** Framework mobile: `flutter` (Dart), `react-native` o `expo` (TypeScript/JS) |
+| `mobile_language` | string \| null | null | **[SPEC-039]** Lenguaje del mobile: `dart` \| `typescript` |
 | `database` | string \| null | null | `postgresql` \| `mysql` \| `sqlite` |
 | `orm` | string \| null | null | **[v2]** `drizzle` \| `prisma` \| `sequelize` \| `typeorm` \| `sqlalchemy` \| `active-record` |
 | `cache` | string \| null | null | `redis` \| `memcached` |
-| `package_manager` | string \| null | null | **[v2]** `npm` \| `pnpm` \| `yarn` \| `bun` \| `pip` \| `poetry` \| `bundler` |
+| `package_manager` | string \| null | null | **[v2/039]** `npm` \| `pnpm` \| `yarn` \| `bun` \| `pip` \| `poetry` \| `cargo` \| `maven` \| `gradle` \| `pub` \| `bundler` |
 | `monorepo` | string \| null | null | **[v2]** `turborepo` \| `nx` \| `lerna` |
 | `testing` | array \| null | null | Frameworks de testing: `vitest`, `jest`, `pytest`, `rspec`, `phpunit`, `playwright`, `cypress` |
 

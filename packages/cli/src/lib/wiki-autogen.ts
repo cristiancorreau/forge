@@ -50,8 +50,10 @@ function cell(s: string): string {
 function frameworkLabel(id: string): string {
   const map: Record<string, string> = {
     hono: 'Hono', express: 'Express', nestjs: 'NestJS', fastify: 'Fastify',
-    fastapi: 'FastAPI', django: 'Django', rails: 'Rails', laravel: 'Laravel',
+    fastapi: 'FastAPI', flask: 'Flask', django: 'Django', rails: 'Rails', laravel: 'Laravel',
+    springboot: 'Spring Boot', axum: 'Axum', actix: 'Actix-web', rocket: 'Rocket',
     nextjs: 'Next.js', astro: 'Astro', nuxt: 'Nuxt', sveltekit: 'SvelteKit',
+    flutter: 'Flutter', 'react-native': 'React Native', expo: 'Expo',
     drizzle: 'Drizzle ORM', prisma: 'Prisma', typeorm: 'TypeORM',
     vitest: 'Vitest', jest: 'Jest', playwright: 'Playwright', cypress: 'Cypress',
   };
@@ -149,6 +151,7 @@ function roleSentence(role: string): string {
   const map: Record<string, string> = {
     backend: 'el framework de backend',
     frontend: 'el framework de frontend',
+    mobile: 'el framework de mobile',
     orm: 'el ORM / capa de datos',
     testing: 'una herramienta de testing',
     dependency: 'una dependencia mayor',
@@ -269,6 +272,7 @@ function buildStackConcept(a: ProjectAnalysis, frameworkSlugs: string[]): WikiPa
   const row = (k: string, v: string) => rows.push(`| ${k} | ${cell(v)} |`);
   if (s.backend) row('Backend', `${frameworkLabel(s.backend)}${s.backendLanguage ? ` (${languageLabel(s.backendLanguage)})` : ''}`);
   if (s.frontend) row('Frontend', `${frameworkLabel(s.frontend)}${s.frontendLanguage ? ` (${languageLabel(s.frontendLanguage)})` : ''}`);
+  if (s.mobile) row('Mobile', `${frameworkLabel(s.mobile)}${s.mobileLanguage ? ` (${languageLabel(s.mobileLanguage)})` : ''}`);
   if (s.database) row('Base de datos', s.database);
   if (s.orm) row('ORM', frameworkLabel(s.orm));
   if (s.packageManager) row('Package manager', s.packageManager);
@@ -343,6 +347,7 @@ function buildOverviewSynthesis(a: ProjectAnalysis, pages: WikiPage[], rawSource
     a.stack.language ? `- Lenguaje base: ${languageLabel(a.stack.language)}` : '',
     a.stack.backend ? `- Backend: ${frameworkLabel(a.stack.backend)}` : '',
     a.stack.frontend ? `- Frontend: ${frameworkLabel(a.stack.frontend)}` : '',
+    a.stack.mobile ? `- Mobile: ${frameworkLabel(a.stack.mobile)}` : '',
     `- Directorios top-level: ${a.directories.length}`,
     `- Entrypoints detectados: ${a.entrypoints.length}`,
     '',
@@ -555,6 +560,7 @@ export function buildWikiPages(a: ProjectAnalysis): WikiPage[] {
   };
   addTool(a.stack.backend, 'backend');
   addTool(a.stack.frontend, 'frontend');
+  addTool(a.stack.mobile, 'mobile');
   addTool(a.stack.orm, 'orm');
   for (const t of a.stack.testing) addTool(t, 'testing');
   for (const dep of majorDependencies(a.dependencies, seen)) addTool(dep, 'dependency');
