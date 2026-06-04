@@ -196,7 +196,7 @@ const MODES = [
   o('enterprise', 'enterprise','Compliance, multi-team, audits'),
 ];
 const RUNTIMES = [o('Claude Code','claude-code','Recommended'), o('OpenCode','opencode',''), o('Codex CLI','codex',''), o('Kiro IDE','kiro','')];
-const PROFILE_MAP: Record<string,string> = { hono:'hono-drizzle', nextjs:'nextjs-admin', astro:'astro', fastapi:'fastapi', rails:'rails', laravel:'laravel', expo:'expo' };
+const PROFILE_MAP: Record<string,string> = { hono:'hono-drizzle', nextjs:'nextjs-admin', astro:'astro', fastapi:'fastapi', rails:'rails', laravel:'laravel', expo:'expo', springboot:'springboot', flutter:'flutter', flask:'flask', axum:'rust', actix:'rust', rocket:'rust' };
 const toSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 
 // ─── Main ─────────────────────────────────────────────────────────────────────

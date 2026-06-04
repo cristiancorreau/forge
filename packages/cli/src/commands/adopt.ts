@@ -121,6 +121,8 @@ function analysisToWizardResult(a: ProjectAnalysis, opts: AdoptOptions): WizardR
   const PROFILE_MAP: Record<string, string> = {
     hono: 'hono-drizzle', nextjs: 'nextjs-admin', astro: 'astro',
     fastapi: 'fastapi', rails: 'rails', laravel: 'laravel', expo: 'expo',
+    springboot: 'springboot', flutter: 'flutter', flask: 'flask',
+    axum: 'rust', actix: 'rust', rocket: 'rust',
   };
   const profiles: string[] = [];
   for (const key of [s.backend, s.frontend, s.mobile]) {

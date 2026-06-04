@@ -160,13 +160,19 @@ const TESTING_OPTS: Record<string, p.Option<string>[]> = {
 };
 
 const PROFILE_MAP: Record<string, string> = {
-  hono:    'hono-drizzle',
-  nextjs:  'nextjs-admin',
-  astro:   'astro',
-  fastapi: 'fastapi',
-  rails:   'rails',
-  laravel: 'laravel',
-  expo:    'expo',
+  hono:       'hono-drizzle',
+  nextjs:     'nextjs-admin',
+  astro:      'astro',
+  fastapi:    'fastapi',
+  rails:      'rails',
+  laravel:    'laravel',
+  expo:       'expo',
+  springboot: 'springboot',
+  flutter:    'flutter',
+  flask:      'flask',
+  axum:       'rust',
+  actix:      'rust',
+  rocket:     'rust',
 };
 
 // Skills pre-seleccionadas por defecto en el wizard.

@@ -66,7 +66,7 @@ El wizard detecta y configura el proyecto en cinco pasos:
 |---|---|---|---|
 | SDD (Spec-Driven Development) | Flujo spec-first: ninguna tarea de código arranca sin una spec `APPROVED`. El `orchestrator` rechaza spawnear agentes sin spec aprobada; el skill `/spec` redacta specs en `docs/specs/`. | ✅ | Claude Code, OpenCode, Codex, Kiro |
 | Agentes Tier 1 (universal) | Agentes definidos por output, no por stack: `orchestrator`, `backend-engineer`, `frontend-engineer`, `test-engineer`, `docs-writer`, `compliance-reviewer`, `security-auditor`. Sirven en cualquier proyecto. | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| Agentes Tier 2 (stack) | Mismo rol que Tier 1 con instrucciones del stack: Hono+Drizzle, FastAPI, Express, NestJS, Django, Go-Gin, Laravel, Rails, Next.js, Expo, Astro, SvelteKit, Nuxt/Vue, WordPress, Playwright. | ✅ | Claude Code, OpenCode, Codex, Kiro |
+| Agentes Tier 2 (stack) | Mismo rol que Tier 1 con instrucciones del stack: Hono+Drizzle, FastAPI, Flask, Express, NestJS, Django, Go-Gin, Spring Boot, Rust (Axum), Laravel, Rails, Next.js, Expo, Flutter, Astro, SvelteKit, Nuxt/Vue, WordPress, Playwright. | ✅ | Claude Code, OpenCode, Codex, Kiro |
 | Agentes Tier 3 (dominio) | Agentes que conocen el negocio (`dsar-specialist`, `gcm-engineer`, `policy-engineer`, `banner-engineer`). Viven en el proyecto y se registran en `agents.specialized`. | ✅ | Claude Code, OpenCode, Codex, Kiro |
 | Hooks de guardrail (sin Python) | Guardrails de pre-edit/branch-guard, detección de debug, secretos y prod-safety, ejecutados por el runtime. | 🚧 | Claude Code, OpenCode, Codex, Kiro |
 | Operaciones reversibles | Manifest SHA-256 + dry-run para instalaciones reversibles y verificables. | 🚧 | Claude Code, OpenCode, Codex, Kiro |
@@ -138,7 +138,7 @@ forge organiza agentes y configuración en tres niveles que se componen de lo ge
 
 **Tier 1 — core (universal).** Agentes definidos por su output, no por el stack: `orchestrator`, `backend-engineer`, `frontend-engineer`, `test-engineer`, `docs-writer`, `compliance-reviewer`, `security-auditor`. Sirven en cualquier proyecto sin modificación y son la base sobre la que se montan los demás tiers.
 
-**Tier 2 — profile (stack).** Los mismos roles que Tier 1 pero con instrucciones específicas del stack (Hono+Drizzle, FastAPI, Django, Rails, Laravel, Go-Gin, Next.js, Expo, Astro, SvelteKit, WordPress, Playwright…). Un proyecto puede activar varios profiles a la vez; ante una colisión, gana el profile.
+**Tier 2 — profile (stack).** Los mismos roles que Tier 1 pero con instrucciones específicas del stack (Hono+Drizzle, FastAPI, Flask, Django, Spring Boot, Rust/Axum, Rails, Laravel, Go-Gin, Next.js, Expo, Flutter, Astro, SvelteKit, WordPress, Playwright…). Un proyecto puede activar varios profiles a la vez; ante una colisión, gana el profile.
 
 **Tier 3 — project (dominio).** Agentes que conocen el negocio concreto del proyecto (`dsar-specialist`, `gcm-engineer`, `policy-engineer`, `banner-engineer`). Viven dentro del repositorio y se registran en `agents.specialized`.
 
