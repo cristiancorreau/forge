@@ -7,6 +7,22 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.10.1] — 2026-06-04
+
+### Corregido
+- **`forge init` preserva un `.claude/settings.json` existente** al regenerarlo: hace merge de `env` y de `permissions.allow` en vez de sobrescribir el archivo (antes perdía claves como `env`).
+- **`.forge/manifest.json` rastrea los agentes Tier 3 (`agents.specialized`)** además de `active`/`compliance`, junto con los hooks y slash commands instalados (antes los omitía).
+- **`CLAUDE.md` renderiza los agentes Tier 3 (`agents.specialized`)** en la tabla "Agentes y su scope"; un proyecto con equipo solo Tier 3 ya no queda sin tabla.
+- El schema de `project.yaml` acepta `node-test` en `stack.testing`.
+
+### Documentación
+- README y docs sincronizados con v2.10.0 (14 skills, tabla de comandos completa, hooks ejecutables multi-runtime, runtimes actualizados).
+
+### Interno
+- Dogfooding: el repo de forge se auto-aplica (hooks, slash commands, `architecture.rules`, `settings.json` con la registry de hooks); `forge audit` queda en 0 warnings.
+
+---
+
 ## [2.10.0] — 2026-06-04
 
 ### Agregado
