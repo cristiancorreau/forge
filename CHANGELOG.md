@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [2.19.0] — 2026-06-04
+
+### Agregado
+- **Profiles Tier 2 para Spring Boot, Flutter, Rust y Flask.** Agentes especializados por stack (siguiendo `docs/agent-standard.md`): `springboot` → `api-engineer` (Spring Boot 3 + Spring Data JPA + Maven/Gradle), `flutter` → `mobile-engineer` (Flutter 3 + Dart + Riverpod/Bloc + go_router), `rust` → `api-engineer` (Axum + Tokio + sqlx/SeaORM + cargo), `flask` → `api-engineer` (Flask 3 + blueprints + SQLAlchemy + pytest). Cableados en `PROFILE_MAP` (springboot/flutter/flask + axum/actix/rocket→rust), el `manifest.json`, el enum `agents.profiles` del schema y las docs. `forge adopt`/`forge init` activan el profile correcto al detectar/elegir estos frameworks.
+
+---
+
 ## [2.18.0] — 2026-06-04
 
 ### Agregado
