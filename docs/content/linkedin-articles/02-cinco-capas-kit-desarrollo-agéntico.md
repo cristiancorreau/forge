@@ -72,7 +72,7 @@ Claude Code, OpenCode, Kiro y Codex CLI son runtimes distintos con formatos dist
 
 La capa de Distribution genera la configuración correcta para cada runtime desde una única fuente de verdad. El mismo `project.yaml` produce el `CLAUDE.md` para Claude Code, el `AGENTS.md` para OpenCode, y los steering files para Kiro. El equipo no tiene que mantener cuatro archivos en sincronía manualmente.
 
-**Ejemplo concreto:** un equipo de cinco personas donde tres usan Claude Code y dos usan Kiro. El proyecto.yaml es el mismo. Cada developer ejecuta `forge-init.py --tool <su-runtime>` y obtiene la configuración correcta para su herramienta, con los mismos agentes, las mismas reglas, y el mismo estado del proyecto.
+**Ejemplo concreto:** un equipo de cinco personas donde tres usan Claude Code y dos usan Kiro. El proyecto.yaml es el mismo. Cada developer ejecuta `npx @cristiancorreau/forge generate --runtime <su-runtime>` y obtiene la configuración correcta para su herramienta, con los mismos agentes, las mismas reglas, y el mismo estado del proyecto.
 
 ---
 

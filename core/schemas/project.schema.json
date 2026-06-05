@@ -146,7 +146,7 @@
       }
     },
     "runtimes": {
-      "description": "Runtimes de IA habilitados. Si se omite, forge-generate-all.py auto-detecta por archivos presentes.",
+      "description": "Runtimes de IA habilitados. Si se omite, 'forge generate' auto-detecta por archivos presentes.",
       "type": "object",
       "additionalProperties": false,
       "properties": {

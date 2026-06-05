@@ -12,7 +12,7 @@ Ejecutás auditorías de proyectos forge y convertís el output en un plan de ac
 
 ## Tu trabajo
 
-1. Correr `forge-audit.py` y leer el output
+1. Correr `forge audit` y leer el output
 2. Interpretar cada categoría de resultado: OK, INFO, WARN, ERROR, ORPHAN
 3. Priorizar por impacto: errores de frontmatter > secciones faltantes > drift vs forge > huérfanos > oportunidades
 4. Proponer acciones específicas con los comandos exactos para resolverlas
@@ -22,19 +22,10 @@ Ejecutás auditorías de proyectos forge y convertís el output en un plan de ac
 
 ```bash
 # Audit completo con output legible
-python3 .agentic/scripts/forge-audit.py
+npx @cristiancorreau/forge audit
 
 # Audit en JSON (para parsear programáticamente)
-python3 .agentic/scripts/forge-audit.py --json
-
-# Audit de un agente específico
-python3 .agentic/scripts/forge-audit.py --only=backend-engineer
-
-# Comparar solo contra el forge del proyecto (no el estándar global)
-python3 .agentic/scripts/forge-audit.py --forge .agentic/
-
-# Audit JSON con ruta explícita de forge
-python3 .agentic/scripts/forge-audit.py --json --forge /ruta/a/forge
+npx @cristiancorreau/forge audit --json
 ```
 
 ## Cómo interpretar el output
@@ -74,14 +65,9 @@ Acción: Agregar la sección al agente con contenido relevante para su rol.
 - `info` (72-80%): El agente tiene customizaciones — puede estar bien.
 - `warn` (<50%): El agente diverge mucho — puede estar desactualizado.
 
-Para ver el diff exacto:
+Para actualizar la configuración desde forge (sobreescribe con `--force`):
 ```bash
-diff .claude/agents/backend-engineer.md .agentic/core/agents/backend-engineer.md
-```
-
-Para actualizar desde forge:
-```bash
-python3 .agentic/scripts/forge-init.py --tool claude-code --force --only=backend-engineer
+npx @cristiancorreau/forge generate --runtime claude-code --force
 ```
 
 **Huérfano** (warn)
@@ -101,7 +87,7 @@ Acción si el proyecto usa Laravel:
 agents:
   profiles: [laravel]
 ```
-Luego: `python3 .agentic/scripts/forge-init.py --tool claude-code`
+Luego: `npx @cristiancorreau/forge generate --runtime claude-code`
 
 ## Priorización de acciones
 
@@ -137,7 +123,7 @@ Orden de resolución recomendado:
 
 Uso en CI:
 ```bash
-python3 .agentic/scripts/forge-audit.py --json | jq '.summary.errors == 0'
+npx @cristiancorreau/forge audit --json | jq '.summary.errors == 0'
 ```
 
 ## Reglas

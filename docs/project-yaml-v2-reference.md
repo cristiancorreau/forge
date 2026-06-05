@@ -252,20 +252,20 @@ scripts:
 
 ## Migración desde v1
 
-Usar el script de migración automática:
+Usar el comando de migración automática del CLI:
 
 ```bash
 # Ver qué cambiaría (sin modificar el archivo)
-python3 .agentic/scripts/forge-migrate-project-yaml.py --dry-run
+npx @cristiancorreau/forge migrate --dry-run
 
-# Migrar con backup
-python3 .agentic/scripts/forge-migrate-project-yaml.py --backup
+# Migrar con backup (crea project.yaml.bak)
+npx @cristiancorreau/forge migrate --backup
 
 # Migrar directamente
-python3 .agentic/scripts/forge-migrate-project-yaml.py
+npx @cristiancorreau/forge migrate
 ```
 
-El script:
+El comando:
 1. Detecta si el archivo es v1 (ausencia de `rules`, `mcp`, `github` o `project.mode`)
 2. Agrega todas las secciones nuevas con valores `null` o defaults razonables
 3. Preserva todo el contenido existente sin modificarlo
@@ -274,26 +274,22 @@ El script:
 Después de migrar, validar con:
 
 ```bash
-python3 .agentic/scripts/forge-validate-project-yaml.py
+npx @cristiancorreau/forge validate
 ```
 
 Para output legible por máquina:
 
 ```bash
-python3 .agentic/scripts/forge-validate-project-yaml.py --json
+npx @cristiancorreau/forge validate --json
 ```
 
 ---
 
 ## JSON Schema
 
-El schema completo está en `core/schemas/project.schema.json` (Draft-07).
-
-Para validar con `jsonschema` instalado:
+El schema completo está en `core/schemas/project.schema.json` (Draft-07). El CLI lo valida
+con `ajv` (incluido en el bundle), sin dependencias externas:
 
 ```bash
-pip install jsonschema
-python3 .agentic/scripts/forge-validate-project-yaml.py
+npx @cristiancorreau/forge validate
 ```
-
-Sin `jsonschema`, el script hace validación manual de los campos críticos (tipos, enums, campos requeridos, formatos de URL y regex).

@@ -52,7 +52,7 @@ El runtime principal de forge. Genera:
 Soporta todos los agentes de forge (Tier 1 core, Tier 2 profiles, Tier 3 especializados),
 slash commands, teams paralelos y todas las integraciones.
 
-Adapter: `adapters/claude-code/generate-claude-md.py`
+Generador: `packages/cli/src/lib/generators/claude-code.ts`
 
 ---
 
@@ -74,7 +74,7 @@ Limitaciones respecto a Claude Code:
 - No hay slash commands propios de forge (OpenCode tiene su propio sistema de comandos)
 - Las instrucciones van en un único `AGENTS.md`, sin archivos separados por agente
 
-Adapter: `adapters/opencode/generate-agents-md.py`
+Generador: `packages/cli/src/lib/generators/opencode.ts`
 
 ---
 
@@ -95,7 +95,7 @@ Limitaciones:
 - No soporta slash commands de forge
 - No hay scope por agente (todo va en un único AGENTS.md)
 
-Adapter: `adapters/codex/generate-codex-config.py`
+Generador: `packages/cli/src/lib/generators/codex.ts`
 
 Referencia: https://github.com/openai/codex
 
@@ -120,33 +120,33 @@ Limitaciones:
 - Sin scope por agente en archivos separados
 - Los archivos existentes no se sobreescriben por defecto (usar `--force`)
 
-Adapter: `adapters/kiro/generate-steering.py`
+Generador: `packages/cli/src/lib/generators/kiro.ts`
 
 ---
 
-## forge-generate-all.py — Punto de entrada unificado
+## forge generate — Punto de entrada unificado
 
 Después de modificar `project.yaml` (cambio de modo, nuevo agente, nuevo profile), regenerar
 la configuración para todos los runtimes activos con un solo comando:
 
 ```bash
 # Regenerar todos los runtimes detectados automáticamente
-python3 scripts/forge-generate-all.py
+npx @cristiancorreau/forge generate
 
 # Regenerar solo un runtime específico
-python3 scripts/forge-generate-all.py --runtime claude-code
-python3 scripts/forge-generate-all.py --runtime kiro
+npx @cristiancorreau/forge generate --runtime claude-code
+npx @cristiancorreau/forge generate --runtime kiro
 
 # Ver qué se generaría sin escribir archivos
-python3 scripts/forge-generate-all.py --dry-run
+npx @cristiancorreau/forge generate --dry-run
 
 # Sobreescribir archivos existentes
-python3 scripts/forge-generate-all.py --force
+npx @cristiancorreau/forge generate --force
 ```
 
 ### Detección automática de runtimes
 
-El script detecta qué runtimes están instalados por los archivos presentes en el proyecto:
+El CLI detecta qué runtimes están instalados por los archivos presentes en el proyecto:
 
 | Directorio / archivo | Runtime detectado |
 |---------------------|------------------|
@@ -170,7 +170,7 @@ runtimes:
 ```
 project.yaml cambia
        ↓
-python3 scripts/forge-generate-all.py
+npx @cristiancorreau/forge generate
        ↓
   [claude-code] → CLAUDE.md
   [opencode]    → AGENTS.md (formato OpenCode)
@@ -179,8 +179,8 @@ python3 scripts/forge-generate-all.py
 git add -p && git commit
 ```
 
-### Relación con forge-init.py
+### Relación con forge init
 
-`forge-init.py` es para la configuración inicial de un proyecto (instala agentes, genera
-settings.json, copia comandos). `forge-generate-all.py` es para regenerar la capa de
-traducción `project.yaml → configs nativas` después de cambios, sin rehacer el init completo.
+`forge init` es para la configuración inicial de un proyecto (corre el wizard, instala
+agentes, genera settings.json, copia comandos). `forge generate` es para regenerar la capa
+de traducción `project.yaml → configs nativas` después de cambios, sin rehacer el init completo.
