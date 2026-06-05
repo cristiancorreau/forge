@@ -1,165 +1,77 @@
-# Team Install (Legacy — Deprecated) — Join a Project Using Forge
+# Team Install — Sumarte a un proyecto que usa forge
 
-> ⚠️ **[DEPRECATED]** — Esta guía describe el flujo **legacy** con Python (`python3 .agentic/forge.py`).
-> `forge.py` y `scripts/*.py` están deprecados y serán removidos en **v3.0.0**.
->
-> **Alternativa recomendada (sin Python):** desde la raíz del proyecto, ejecutá
->
-> ```bash
-> npx @cristiancorreau/forge init
-> ```
->
-> La CLI TypeScript no requiere submódulos, Python ni `pip install`. Ver [MIGRATION.md](../MIGRATION.md) para el timeline de sunset y el mapeo de comandos.
-
-Get up and running in under 5 minutes.
+Ponete en marcha en menos de 5 minutos. forge corre con **Node.js 20+** (sin
+submódulos, sin Python, sin `pip install`).
 
 ---
 
-## Prerequisites
+## Requisitos previos
 
-- **Python 3.9+** — `python3 --version`
+- **Node.js 20+** — `node --version`
 - **git** — `git --version`
 
 ---
 
-## Steps
+## Pasos
 
-### 1. Clone the repository
-
-If you haven't cloned yet, use `--recurse-submodules` to initialize forge at the same time:
+### 1. Cloná el repositorio
 
 ```bash
-git clone --recurse-submodules <url-del-repositorio>
+git clone <url-del-repositorio>
 cd <repositorio>
 ```
 
-If you already cloned without that flag, initialize the submodule manually:
+### 2. Adoptá / inicializá forge
+
+Si el proyecto **ya tiene** `project.yaml` (forge ya está adoptado), regenerá la
+configuración nativa del runtime:
 
 ```bash
-cd <repositorio>
-git submodule update --init --recursive
+npx @cristiancorreau/forge generate
 ```
 
-After this step, `.agentic/` should contain forge files (not be empty).
-
-### 2. Install Python dependencies
+Si el proyecto **todavía no usa** forge, corré el onboarding (detecta el stack,
+instala agentes, hooks y genera la configuración):
 
 ```bash
-pip3 install -r .agentic/requirements.txt
+npx @cristiancorreau/forge adopt    # repos existentes (brownfield)
+# o, para el wizard interactivo completo:
+npx @cristiancorreau/forge init
 ```
 
-This installs `pyyaml`, the only external dependency forge requires.
+Esto escribe `.claude/agents/`, `CLAUDE.md`, `.claude/settings.json`,
+`.claude/architecture.rules`, los slash commands y el manifest `.forge/`.
 
-### 3. Run forge init
+### 3. Verificá la instalación
 
 ```bash
-python3 .agentic/forge.py
+npx @cristiancorreau/forge doctor   # health-check del entorno y runtime activo
+npx @cristiancorreau/forge audit    # estado del proyecto vs el manifest
 ```
 
-Select **Inicializar agentes** from the menu. Forge will read `project.yaml` and populate `.claude/` with:
+### 4. Empezá tu primera sesión
 
-- `.claude/agents/` — all agents configured for this project (Tier 1 + Tier 2 profiles)
-- `.claude/commands/` — slash commands (`/new-feature`, `/review`, `/wiki-query`, etc.)
-- `.claude/settings.json` — Claude Code settings with hooks and permissions
-- `AGENTS.md` — agent roster at the repo root
-
-Non-interactive alternative (CI or scripted setup):
-
-```bash
-python3 .agentic/scripts/forge-init.py --tool claude-code
-```
-
-### 4. Verify the installation
-
-```bash
-ls .claude/agents/
-ls .claude/commands/
-```
-
-You should see the agents and commands listed in `project.yaml`. If the project uses profiles (e.g., `hono-drizzle`, `nextjs-admin`), their specialized agents appear alongside the universal ones.
-
-### 5. Start your first session
-
-Open Claude Code and run:
+Abrí tu runtime de IA (Claude Code, OpenCode, Codex o Kiro) y ejecutá:
 
 ```
 /session-start
 ```
 
-The orchestrator will greet you, summarize the active sprint, and assign initial tasks based on your role.
+El orchestrator te saluda, resume el sprint activo y asigna las tareas iniciales
+según tu rol.
 
 ---
 
-## Troubleshooting
+## Comando global (opcional)
 
-### Python not found
-
-```
-command not found: python3
-```
-
-Install Python 3.9+ from <https://www.python.org/downloads/> or via your package manager:
+Para usar `forge <cmd>` sin `npx`, instalá el binario global:
 
 ```bash
-# macOS (Homebrew)
-brew install python
-
-# Ubuntu / Debian
-sudo apt install python3
+npm install -g @cristiancorreau/forge     # npm
+pnpm add -g @cristiancorreau/forge        # pnpm (requiere `pnpm setup` una vez)
+bun add -g @cristiancorreau/forge         # bun  (requiere ~/.bun/bin en el PATH)
 ```
 
-Verify: `python3 --version`
-
----
-
-### Submodule not initialized — `.agentic/` is empty
-
-```
-No such file or directory: '.agentic/forge.py'
-```
-
-The submodule was not initialized during clone. Run:
-
-```bash
-git submodule update --init --recursive
-```
-
-Then retry from step 2.
-
----
-
-### forge.py not found at `.agentic/`
-
-If the team uses a different submodule path, check `project.yaml` or ask a team lead. Common alternatives:
-
-| Path | Command |
-|------|---------|
-| `.agentic/` | `python3 .agentic/forge.py` |
-| `forge/` | `python3 forge/forge.py` |
-| `.forge/` | `python3 .forge/forge.py` |
-
-You can also run the init script directly:
-
-```bash
-python3 .agentic/scripts/forge-init.py --tool claude-code
-```
-
----
-
-### pyyaml missing
-
-```
-ModuleNotFoundError: No module named 'yaml'
-```
-
-```bash
-pip3 install pyyaml
-# or
-pip3 install -r .agentic/requirements.txt
-```
-
----
-
-### Windows not supported
-
-The forge CLI uses `termios` and `tty`, which are Unix-only. Use **WSL (Windows Subsystem for Linux)** or run inside a Linux/macOS environment. The non-interactive init script (`forge-init.py`) works on WSL.
+Si el comando `forge` no se reconoce tras el install global, el directorio de
+binarios no está en tu `PATH`; ver [README.md](../README.md) para el detalle por
+gestor. `npx @cristiancorreau/forge <cmd>` siempre funciona sin instalar.

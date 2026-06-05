@@ -131,9 +131,9 @@ OpenCode utiliza un archivo `.opencode/config.json` para configuración a nivel 
 
 Dado que OpenCode no tiene hooks automáticos, el cumplimiento de los guardrails depende de:
 
-1. **AGENTS.md bien escrito**: incluir las secciones de guardrails del punto 2 en el AGENTS.md generado por `generate-agents-md.py`.
+1. **AGENTS.md bien escrito**: incluir las secciones de guardrails del punto 2 en el AGENTS.md generado por `npx @cristiancorreau/forge generate --runtime opencode`.
 2. **Disciplina de sesión**: usar `/session-start` al comenzar y `/session-close` al terminar para mantener el estado documentado.
-3. **Pre-commit git hook**: el hook de git en `hooks/pre-commit` funciona igual en OpenCode — instalarlo en el proyecto cliente con `git config core.hooksPath .githooks`.
+3. **Pre-commit git hook**: forge escribe un git hook compartido en `.githooks/pre-commit` (POSIX, sin Python) — instalarlo en el proyecto cliente con `git config core.hooksPath .githooks`.
 
 ---
 

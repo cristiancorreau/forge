@@ -7,11 +7,14 @@
 - [ ] No hay referencias a órganos del Estado vinculados a personas concretas
 
 ## Técnico
-- [ ] 464+ tests pasando
-- [ ] manifest.json version coherente con `packages/cli/package.json` version
+- [ ] Tests pasando (`cd packages/cli && npm run build:all && npm test`)
+- [ ] Coherencia de versión: las **4 fuentes** leen la misma versión —
+      `packages/cli/package.json`, `packages/cli/src/version.ts`, `manifest.json`
+      y `.forge/manifest.json`
 - [ ] CHANGELOG.md actualizado
 - [ ] README.md completo con quick start funcional
-- [ ] No hay referencias a `forge.py` en docs públicas (solo notas históricas o deprecadas)
+- [ ] No hay referencias a la CLI Python legacy (`forge.py` / `scripts/*.py`) en
+      docs públicas (solo notas históricas en CHANGELOG.md / MIGRATION.md)
 
 ## Legal
 - [ ] LICENSE (Apache 2.0) presente en repo raíz

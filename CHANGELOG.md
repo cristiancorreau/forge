@@ -7,6 +7,40 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.0.0] — 2026-06-05
+
+> **Release mayor / breaking.** Sunset de la CLI Python legacy (Epic #76).
+
+### Removido
+- **CLI Python legacy eliminada (breaking).** Se removieron `forge.py`, los 11
+  `scripts/*.py` (aitmpl-search, forge-add-opportunities, forge-audit,
+  forge-generate-all, forge-init, forge-migrate-project-yaml, forge-scaffold-profile,
+  forge-teardown, forge-validate-project-yaml, forge-wizard, token-stats), los 19
+  `tests/*.py` (suite pytest legacy), `requirements.txt`, `scripts/team-install.sh`
+  (helper del flujo legacy por submódulo) y el workflow CI `tests-legacy.yml`. La
+  CLI es 100% TypeScript desde la v2.8.0 y `npx @cristiancorreau/forge` es ahora la
+  **única** forma soportada de usar forge. La documentación (README, guía, runtimes,
+  team-install, RELEASE-CHECKLIST y MIGRATION) se actualizó para quitar el flujo
+  `python3 .agentic/...` y las notas de deprecación.
+
+  **Migración:** quien todavía invoque `python3 .agentic/forge.py` o cualquier
+  `scripts/*.py` debe migrar a `npx @cristiancorreau/forge` (ver
+  [MIGRATION.md](MIGRATION.md) para el mapeo de comandos). No requiere submódulo,
+  ni Python, ni `pip install`.
+
+  **Se mantiene `Python` como lenguaje de stack:** los profiles FastAPI / Flask /
+  Django y sus agentes Tier 2, la detección de `requirements.txt`/`pyproject.toml`
+  y la allowlist `Bash(python3 *)` para proyectos Python siguen intactos. Lo
+  removido es la *CLI* Python, no el soporte de Python como stack.
+
+### Cambiado
+- **Sync de versión en 4 fuentes** (ya no 5): `packages/cli/package.json`,
+  `packages/cli/src/version.ts`, `manifest.json` y `.forge/manifest.json`
+  (`forge.py` dejó de existir). `tests.yml` (Node 20/22 en ubuntu + windows-latest)
+  es el único gate de tests.
+
+---
+
 ## [2.19.0] — 2026-06-04
 
 ### Agregado

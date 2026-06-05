@@ -15,10 +15,10 @@
 #      Secciones: Stack, Tu trabajo, Reglas, Workflow, No hagas
 #   3. Agregar el profile en agents.profiles (ver abajo)
 #   4. Documentar el profile en la tabla Tier 2 de docs/agent-standard.md
-#   5. Correr: python3 .agentic/scripts/forge-init.py --tool claude-code
+#   5. Correr: npx @cristiancorreau/forge generate --runtime claude-code
 #
 # Atajo: usar el scaffold automático:
-#   python3 .agentic/scripts/forge-scaffold-profile.py --name <stack> --engineer <agent-name>
+#   npx @cristiancorreau/forge scaffold --tier 2 --name <stack> --engineer <agent-name>
 #
 # Convención de nombres (ver docs/agent-standard.md):
 #   El nombre del agente en el profile debe coincidir con el Tier 1 que extiende.
