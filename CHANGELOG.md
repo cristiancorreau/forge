@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.0.1] — 2026-06-05
+
+### Eliminado
+- **Limpieza de restos de Python tras el sunset** (#78). Se removió `hooks/pre-commit` (git hook bash que invocaba el ya-inexistente `token-stats.py` y mencionaba `.agentic/`; se bundleaba) junto con su entrada en `manifest.json` (`hooks: []`) y se sacó `hooks/` del copiado de assets; y las copias `.py` de los hooks (`core/hooks/pre-bash-check.py`, `pre-edit-check.py`) — las versiones `.js` son las que se usan. Se actualizaron las referencias instructivas restantes al CLI legacy en docs y config. **El bundle publicado ya no contiene ningún archivo Python.** (Python como lenguaje de stack se mantiene.)
+
+---
+
 ## [3.0.0] — 2026-06-05
 
 > **Release mayor / breaking.** Sunset de la CLI Python legacy (Epic #76).
