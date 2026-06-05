@@ -3,6 +3,7 @@ import { init } from './commands/init.js';
 import { adopt } from './commands/adopt.js';
 import { audit } from './commands/audit.js';
 import { generate } from './commands/generate.js';
+import { update } from './commands/update.js';
 import { validate } from './commands/validate.js';
 import { doctor } from './commands/doctor.js';
 import { migrate } from './commands/migrate.js';
@@ -26,6 +27,7 @@ Setup
   init           Initialize forge in a project (wizard + post-install dashboard)
   adopt          Onboard forge into an EXISTING codebase (analyze + auto-wiki)
   generate       Generate runtime config files from project.yaml
+  update         Update managed files to the bundled catalog (--dry-run, --force)
   migrate        Migrate project.yaml from the v1 schema to v2 (--dry-run, --backup)
   scaffold       Scaffold a new agent: Tier 2 profile, or Tier 3 domain agent (--tier 3)
   teardown       Cleanly uninstall forge from a project (manifest-driven)
@@ -76,6 +78,9 @@ switch (cmd) {
     break;
   case 'generate':
     exitCode = await generate(rest);
+    break;
+  case 'update':
+    exitCode = await update(rest);
     break;
   case 'validate':
     exitCode = await validate(rest);

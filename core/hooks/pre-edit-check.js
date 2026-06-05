@@ -60,7 +60,7 @@ function specGateRequired(text) {
 // ---------------------------------------------------------------------------
 // File classification
 // ---------------------------------------------------------------------------
-const CODE_EXTS = new Set(['.py','.ts','.js','.tsx','.jsx','.php','.rb','.go','.rs','.java','.cs','.cpp','.c','.sh']);
+const CODE_EXTS = new Set(['.py','.ts','.js','.tsx','.jsx','.php','.rb','.go','.rs','.java','.kt','.dart','.cs','.cpp','.c','.sh']);
 const NON_CODE_EXTS = new Set(['.md','.yaml','.yml','.json','.toml','.txt','.lock']);
 const ROOT_PROTECTED = new Set(['README.md','CLAUDE.md','CHANGELOG.md','AGENTS.md']);
 const PROTECTED_DIRS = ['docs/', '.claude/'];
@@ -104,6 +104,15 @@ const DEBUG_PATTERNS = [
   { re: /\bbinding\.pry\b/, lang: 'Ruby (binding.pry)' },
   { re: /\bbyebug\b/, lang: 'Ruby (byebug)' },
   { re: /\bp\s+\w+/, lang: 'Ruby (p)' },
+  // Java / Kotlin (issue #72)
+  { re: /\bSystem\.out\.print(ln)?\s*\(/, lang: 'Java/Kotlin (System.out.print)' },
+  { re: /\.printStackTrace\s*\(/, lang: 'Java/Kotlin (printStackTrace)' },
+  // Rust (issue #72) — the macro bang `!` keeps these from matching strings.
+  { re: /\bprintln!\s*\(/, lang: 'Rust (println!)' },
+  { re: /\beprintln!\s*\(/, lang: 'Rust (eprintln!)' },
+  { re: /\bdbg!\s*\(/, lang: 'Rust (dbg!)' },
+  // Dart / Flutter (issue #72) — plain `print(` is already covered above.
+  { re: /\bdebugPrint\s*\(/, lang: 'Dart/Flutter (debugPrint)' },
 ];
 
 function detectDebugStatements(content) {

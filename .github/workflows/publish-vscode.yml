@@ -1,0 +1,42 @@
+name: publish-vscode
+
+# Publishes the VS Code extension (vscode-extension/) to the Visual Studio
+# Marketplace. References #73.
+#
+# Trigger this manually from the Actions tab (workflow_dispatch) or by pushing a
+# `vscode-v*` tag (e.g. vscode-v0.6.0). Requires a repository secret VSCE_PAT: a
+# Personal Access Token for the `cristiancorreau` Marketplace publisher with the
+# "Marketplace > Manage" scope. See vscode-extension/README.md for the setup.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'vscode-v*'
+
+jobs:
+  publish:
+    name: Publish to VS Code Marketplace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The extension has no committed package-lock.json, so `npm install` is used
+      # instead of `npm ci`. Its only deps are devDeps (TypeScript + types).
+      - name: Install extension dependencies
+        working-directory: vscode-extension
+        run: npm install
+
+      - name: Compile the extension
+        working-directory: vscode-extension
+        run: npm run compile
+
+      - name: Publish with vsce
+        working-directory: vscode-extension
+        run: npx @vscode/vsce publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}

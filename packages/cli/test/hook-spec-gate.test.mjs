@@ -144,3 +144,57 @@ describe('pre-edit-check.js — spec gate (issue #28)', () => {
     }
   });
 });
+
+// Issue #72 — debug detection for the newer languages forge supports (Java/
+// Kotlin, Rust, Dart). The hook warns (exit 0) on a feature branch with an
+// APPROVED spec, so the only signal we assert is the "Debug statements" warning.
+describe('pre-edit-check.js — debug detection (issue #72)', () => {
+  // An APPROVED spec present keeps the spec gate quiet so the debug warning is
+  // the clean signal under test.
+  function makeDebugRepo() {
+    return makeRepo({
+      projectYaml: 'project:\n  mode: "standard"\n',
+      spec: APPROVED_SPEC,
+    });
+  }
+
+  const cases = [
+    { name: 'Java System.out.println', file: 'src/App.java', code: 'class A { void m() { System.out.println("x"); } }\n', lang: /Java\/Kotlin/ },
+    { name: 'Java printStackTrace', file: 'src/App.java', code: 'try {} catch (Exception e) { e.printStackTrace(); }\n', lang: /printStackTrace/ },
+    { name: 'Rust println!', file: 'src/main.rs', code: 'fn main() { println!("hello {}", x); }\n', lang: /Rust/ },
+    { name: 'Rust dbg!', file: 'src/main.rs', code: 'fn main() { let y = dbg!(compute()); }\n', lang: /Rust/ },
+    { name: 'Rust eprintln!', file: 'src/main.rs', code: 'fn main() { eprintln!("boom"); }\n', lang: /Rust/ },
+    { name: 'Dart debugPrint', file: 'lib/main.dart', code: "void main() { debugPrint('frame'); }\n", lang: /Dart\/Flutter/ },
+  ];
+
+  for (const c of cases) {
+    test(`${c.name} → triggers the debug warning`, () => {
+      const dir = makeDebugRepo();
+      try {
+        const { status, out } = runHook({ cwd: dir, filePath: c.file, newString: c.code });
+        assert.equal(status, 0, 'debug detection only warns, never blocks');
+        assert.match(out, /Debug statements/i, `expected a debug warning for ${c.name}; got:\n${out}`);
+        assert.match(out, c.lang, `expected the language label for ${c.name}; got:\n${out}`);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+  }
+
+  // Clean Rust code (no debug macros) must NOT trigger the warning — guards
+  // against the macro patterns over-matching ordinary code.
+  test('clean Rust code does not trigger the debug warning', () => {
+    const dir = makeDebugRepo();
+    try {
+      const { status, out } = runHook({
+        cwd: dir,
+        filePath: 'src/lib.rs',
+        newString: 'pub fn add(a: i32, b: i32) -> i32 { a + b }\n',
+      });
+      assert.equal(status, 0);
+      assert.doesNotMatch(out, /Debug statements/i, 'clean code must not warn');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

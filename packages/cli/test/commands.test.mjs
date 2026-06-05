@@ -15,7 +15,7 @@
 import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync, statSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, existsSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -31,6 +31,7 @@ const ALL_COMMANDS = [
   'init',
   'audit',
   'generate',
+  'update',
   'validate',
   'doctor',
   'migrate',
@@ -413,6 +414,80 @@ agents:
     assert.equal(status, 1, 'validate must exit 1 for a missing specialized agent');
     assert.match(all, /ghost-agent/);
     assert.match(all, /specialized/);
+  });
+
+  // Issue #71: agents.profiles must be resolved dynamically from profiles/, so
+  // laravel and wordpress (which exist on disk but were missing from the schema
+  // enum) must pass validate.
+  test('validate accepts agents.profiles: [laravel]', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Laravel Project"
+  mode: "standard"
+agents:
+  profiles:
+    - laravel
+`,
+    );
+    const { status, all } = runForge(['validate'], { cwd: dir });
+    assert.equal(status, 0, `laravel profile must validate; output:\n${all}`);
+  });
+
+  test('validate accepts agents.profiles: [wordpress]', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "WordPress Project"
+  mode: "standard"
+agents:
+  profiles:
+    - wordpress
+`,
+    );
+    const { status, all } = runForge(['validate'], { cwd: dir });
+    assert.equal(status, 0, `wordpress profile must validate; output:\n${all}`);
+  });
+
+  // Issue #71 anti-drift: EVERY directory under profiles/ must be accepted by
+  // validate. This catches future profiles added on disk but not wired into the
+  // schema enum — they must still validate via the dynamic filesystem check.
+  test('validate accepts every profile that exists under profiles/', (t) => {
+    const ASSETS_PROFILES = join(__dirname, '..', 'assets', 'profiles');
+    const profiles = readdirSync(ASSETS_PROFILES, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .sort();
+    assert.ok(profiles.length > 0, 'expected at least one profile directory');
+    for (const profile of profiles) {
+      const dir = makeTmpDir(t);
+      writeProjectYaml(
+        dir,
+        `project:\n  name: "Profile ${profile}"\n  mode: "standard"\nagents:\n  profiles:\n    - ${profile}\n`,
+      );
+      const { status, all } = runForge(['validate'], { cwd: dir });
+      assert.equal(status, 0, `profile '${profile}' must be accepted by validate; output:\n${all}`);
+    }
+  });
+
+  // Issue #71: a profile that is NOT a real directory must still be flagged.
+  test('validate fails when a profile does not exist under profiles/', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Bogus Profile"
+  mode: "standard"
+agents:
+  profiles:
+    - definitely-not-a-real-profile
+`,
+    );
+    const { status, all } = runForge(['validate'], { cwd: dir });
+    assert.equal(status, 1, 'validate must exit 1 for a non-existent profile');
+    assert.match(all, /definitely-not-a-real-profile/);
   });
 
   // Issue #31: audit must report consistency of agents.specialized.
