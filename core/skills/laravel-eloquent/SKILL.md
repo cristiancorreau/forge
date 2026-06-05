@@ -1,6 +1,6 @@
 # Skill: laravel-eloquent
 
-Eloquent productivo en Laravel 13: modelar relaciones, eager loading para evitar N+1, casts y
+Eloquent productivo en Laravel: modelar relaciones, eager loading para evitar N+1, casts y
 accessors modernos, scopes, recorridos eficientes de datasets grandes y búsqueda vectorial con
 pgvector. Activar al escribir o revisar modelos, queries o migraciones de Eloquent.
 
@@ -16,7 +16,7 @@ Triggers: /laravel-eloquent, "modelo eloquent", "relaciones eloquent", "evitar N
 - Al detectar o prevenir queries N+1 en controllers, resources o vistas.
 - Al recorrer datasets grandes sin reventar la memoria (`chunk`, `cursor`, `lazy`).
 - Al agregar o auditar índices y analizar planes de ejecución con `EXPLAIN`.
-- Al implementar búsqueda semántica con columnas vector / pgvector (nuevo en Laravel 13).
+- Al implementar búsqueda semántica con columnas vector / pgvector; verifica que tu versión de Laravel lo soporte de forma nativa.
 
 ---
 
@@ -28,7 +28,7 @@ Un modelo es una clase en `app/Models`. Genera el modelo con su migración, fact
 php artisan make:model Post -mfs
 ```
 
-Define las relaciones como métodos tipados. En Laravel 13 declara el tipo de retorno de la relación;
+Define las relaciones como métodos tipados. En Laravel declara el tipo de retorno de la relación;
 mejora el autocompletado y el análisis estático.
 
 ```php
@@ -375,10 +375,11 @@ dump($plan->toArray());
 
 ---
 
-## Búsqueda semántica con vector columns / pgvector (nuevo en Laravel 13)
+## Búsqueda semántica con vector columns / pgvector
 
-Laravel 13 integra columnas vectoriales sobre `pgvector` para búsqueda por similitud, alimentadas por
-el AI SDK de primera parte. Útil para RAG y búsqueda semántica.
+Las versiones recientes de Laravel integran columnas vectoriales sobre `pgvector` para búsqueda por
+similitud, alimentadas por un AI SDK first-party. Útil para RAG y búsqueda semántica; verifica que
+estas capacidades (columnas vector, AI SDK, embeddings) estén disponibles en tu versión instalada.
 
 **Migración** — habilita la extensión y declara la columna vector con su dimensión:
 

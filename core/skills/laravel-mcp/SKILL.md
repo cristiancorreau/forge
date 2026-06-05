@@ -1,9 +1,9 @@
 # Skill: laravel-mcp
 
-Laravel 13 para agentes y MCP: instala Laravel Boost (MCP de desarrollo), construye tu propio
+Laravel para agentes y MCP: instala Laravel Boost (MCP de desarrollo), construye tu propio
 servidor MCP con `laravel/mcp`, usa el AI SDK first-party (`laravel/ai`) para agentes con
 tool-calling y embeddings, y expón tu app a clientes de IA de forma segura. Actívalo cuando el
-proyecto sea Laravel 13 y haya que integrar IA, MCP o introspección por agentes.
+proyecto sea Laravel y haya que integrar IA, MCP o introspección por agentes.
 
 Triggers: /laravel-mcp, "laravel boost", "servidor mcp laravel", "exponer mi app a un agente",
 "laravel ai sdk", "agente laravel", "tool calling laravel", "embeddings laravel", "pgvector laravel",
@@ -19,9 +19,10 @@ Triggers: /laravel-mcp, "laravel boost", "servidor mcp laravel", "exponer mi app
 - Al implementar **búsqueda semántica / RAG** con embeddings y pgvector.
 - Al decidir **cómo exponer la app a agentes de forma segura** (auth, scopes, tools read-only).
 
-> Laravel 13 salió el 17 de marzo de 2026, requiere PHP 8.3+, y la documentación vive en `laravel.com/docs/13.x`.
-> Estructura slim: no existe `app/Http/Kernel.php` ni `app/Console/Kernel.php`. Todo el middleware se
-> configura en `bootstrap/app.php` dentro de `->withMiddleware(...)`.
+> Las versiones recientes de Laravel usan estructura slim: no existe `app/Http/Kernel.php` ni
+> `app/Console/Kernel.php`; todo el middleware se configura en `bootstrap/app.php` dentro de
+> `->withMiddleware(...)`. Verifica leyendo `bootstrap/app.php` y la documentación oficial de tu
+> versión instalada (`laravel.com/docs/{tu-versión}.x`), y confirma el requisito de PHP de tu versión.
 
 ---
 
@@ -222,7 +223,7 @@ Mcp::local('weather', WeatherServer::class);
 ## 3 — AI SDK (`laravel/ai`): agentes con tool-calling y structured output
 
 El AI SDK es el sucesor first-party de Prism: **AI SDK es a Prism lo que Eloquent es a Query Builder.**
-No uses Prism directamente para features nuevas en Laravel 13.
+No uses Prism directamente para features nuevas en Laravel.
 
 ```bash
 composer require laravel/ai
@@ -448,7 +449,7 @@ public function handle(Request $request): Response
 ## Señales de alerta — STOP y consultar
 
 ```
-✗ Crear o referenciar app/Http/Kernel.php — NO existe en Laravel 13. El middleware va en bootstrap/app.php.
+✗ Crear o referenciar app/Http/Kernel.php — las versiones recientes de Laravel usan estructura slim sin ese archivo; el middleware va en bootstrap/app.php (verifícalo leyendo bootstrap/app.php).
 ✗ Mezclar Laravel\Ai\Contracts\Tool (AI SDK) con Laravel\Mcp\Server\Tool (MCP) — son clases distintas.
 ✗ Usar Prism directamente para features nuevas — el AI SDK lo supersede.
 ✗ Instalar Boost sin --dev, o exponer boost:mcp a clientes externos — Boost es dev-only.
@@ -464,4 +465,4 @@ public function handle(Request $request): Response
 
 - Se apoya en `security-audit` para revisar la auth y los scopes de cualquier servidor MCP HTTP expuesto.
 - `db-migrate` cubre las migraciones (incluida la de pgvector) si la feature toca el schema.
-- `new-feature` lo invoca cuando una feature de Laravel 13 requiere integración de IA, MCP o RAG.
+- `new-feature` lo invoca cuando una feature de Laravel requiere integración de IA, MCP o RAG.

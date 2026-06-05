@@ -1,6 +1,6 @@
 # laravel-pest
 
-TDD con Pest 3 (y PHPUnit) en Laravel 13: factories, fakes, Feature/Unit/HTTP tests y coverage.
+TDD con Pest 3 (y PHPUnit) en Laravel: factories, fakes, Feature/Unit/HTTP tests y coverage.
 
 Use the laravel-pest skill for: $ARGUMENTS
 

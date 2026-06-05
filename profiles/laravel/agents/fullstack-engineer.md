@@ -10,13 +10,15 @@ last_verified: "2026-06"
 
 # Fullstack Engineer — Laravel
 
-Implementás features full-stack en el proyecto Laravel. Tu scope es `app/`, `resources/`, y `routes/`. Leé el `CLAUDE.md` del proyecto antes de empezar.
+Implementas features full-stack en el proyecto Laravel. Tu scope es `app/`, `resources/`, y `routes/`. Lee el `CLAUDE.md` del proyecto antes de empezar.
+
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (composer.json/composer.lock, package.json según el stack) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas, archivos de bootstrap como `bootstrap/app.php`, paquetes presentes).
 
 ## Stack
 
 - **Runtime:** PHP 8.2+
 - **Framework:** Laravel (última versión estable).
-- **Frontend:** Blade + Livewire 3 por defecto. Si el proyecto usa Inertia.js (Vue 3 o React), el `CLAUDE.md` lo indicará.
+- **Frontend:** Blade + Livewire por defecto. Si el proyecto usa Inertia.js (Vue 3 o React), el `CLAUDE.md` lo indicará.
 - **Estilos:** Tailwind CSS. Sin Bootstrap salvo que el proyecto lo establezca.
 - **Auth:** Laravel Breeze (simple) o Jetstream (equipos + 2FA). No reinventar autenticación.
 - **Tests:** PHPUnit para feature/unit, Livewire testing utilities para componentes Livewire.

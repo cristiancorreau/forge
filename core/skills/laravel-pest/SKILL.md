@@ -1,9 +1,9 @@
 # Skill: laravel-pest
 
-TDD con Pest 3 en Laravel 13: estructura `tests/Feature` y `tests/Unit`, `RefreshDatabase`,
+TDD con Pest 3 en Laravel: estructura `tests/Feature` y `tests/Unit`, `RefreshDatabase`,
 factories y states, datasets, expectations, HTTP tests, fakes (`Mail`, `Queue`, `Event`,
 `Http`, `Storage`), time travel y coverage con umbral mínimo. Activar al escribir o correr
-tests en un proyecto Laravel 13.
+tests en un proyecto Laravel.
 
 Triggers: /laravel-pest, "escribir tests", "test con pest", "TDD en laravel",
 "feature test", "model factory", "mockear cola/mail/evento", "fake de http",
@@ -20,7 +20,8 @@ Triggers: /laravel-pest, "escribir tests", "test con pest", "TDD en laravel",
 - Al verificar lógica dependiente del tiempo con time travel.
 - Al medir cobertura y exigir un umbral mínimo en CI.
 
-> Laravel 13 instala Pest 3 por defecto. Si el proyecto todavía usa PHPUnit puro, cada
+> Las versiones recientes de Laravel instalan Pest 3 por defecto; verifica el runner
+> declarado en `composer.json`. Si el proyecto todavía usa PHPUnit puro, cada
 > sección incluye la equivalencia. Pest corre sobre PHPUnit, así que ambos estilos
 > conviven en el mismo `tests/` sin conflicto.
 
@@ -28,7 +29,7 @@ Triggers: /laravel-pest, "escribir tests", "test con pest", "TDD en laravel",
 
 ## Estructura de tests
 
-Laravel 13 ubica los tests en dos carpetas, configuradas como suites en `phpunit.xml`:
+Laravel ubica los tests en dos carpetas, configuradas como suites en `phpunit.xml`:
 
 - `tests/Feature/` — ejercitan el framework completo (rutas, middleware, DB, container).
 - `tests/Unit/` — clases aisladas sin booteo de Laravel; rápidos, sin acceso a DB.
@@ -54,7 +55,7 @@ pest()->extend(PHPUnit\Framework\TestCase::class)
 expect()->extend('toBeOne', fn () => $this->toBe(1));
 ```
 
-Generar tests con artisan (Laravel 13 scaffoldea en formato Pest por defecto):
+Generar tests con artisan (las versiones recientes de Laravel scaffoldean en formato Pest por defecto):
 
 ```bash
 php artisan make:test ProductPurchaseTest --pest          # tests/Feature (default)
@@ -159,7 +160,7 @@ php artisan make:factory ProductFactory
 php artisan make:model Product -f          # modelo + factory de una vez
 ```
 
-Una factory en Laravel 13 declara `definition()` y opcionalmente `states` como métodos
+Una factory en Laravel declara `definition()` y opcionalmente `states` como métodos
 que devuelven `$this->state(...)`:
 
 ```php
@@ -244,7 +245,7 @@ $user = User::factory()
     ->create();
 ```
 
-El modelo debe usar el trait `HasFactory` (incluido por defecto en los modelos de Laravel 13):
+El modelo debe usar el trait `HasFactory` (incluido por defecto en los modelos de Laravel):
 
 ```php
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -372,8 +373,9 @@ Tabla de equivalencias frecuentes:
 ## HTTP tests
 
 Los Feature tests ejercitan rutas reales pasando por middleware y container. Recuerda que
-en Laravel 13 el middleware (incluido el de CSRF, `Illuminate\Foundation\Http\Middleware\ValidateCsrfToken`)
-se configura en `bootstrap/app.php` — no existe `app/Http/Kernel.php`.
+en las versiones recientes de Laravel el middleware (incluido el de CSRF, `Illuminate\Foundation\Http\Middleware\ValidateCsrfToken`)
+se configura en `bootstrap/app.php` — la estructura slim ya no expone `app/Http/Kernel.php`;
+verifica leyendo `bootstrap/app.php`.
 
 ```php
 it('crea un producto autenticado', function () {
@@ -424,7 +426,7 @@ $this->assertAuthenticated();
 $this->assertGuest();
 ```
 
-Autenticación en API token-based (Sanctum, el default de Laravel 13 para SPA/mobile):
+Autenticación en API token-based (Sanctum, el default de Laravel para SPA/mobile):
 
 ```php
 use Laravel\Sanctum\Sanctum;
@@ -678,7 +680,7 @@ XDEBUG_MODE=coverage ./vendor/bin/pest --coverage --min=80 --parallel
 - No fakees el servicio que estás probando: si testeas que un job hace su trabajo, ejecútalo.
 - No dependas del orden entre tests: cada uno arranca con DB limpia (`RefreshDatabase`).
 - No uses `now()` real en aserciones de tiempo: congela el reloj con `freezeTime()`/`travelTo()`.
-- No referencies `app/Http/Kernel.php` — no existe en Laravel 13 (el middleware va en `bootstrap/app.php`).
+- No referencies `app/Http/Kernel.php` — la estructura slim de Laravel ya no lo expone (el middleware va en `bootstrap/app.php`); verifica leyendo `bootstrap/app.php`.
 - No corras `--coverage` sin driver: el número será falso (0%) y no protege nada.
 - No metas llamadas HTTP reales en tests: `Http::fake()` + `Http::preventStrayRequests()`.
 - No uses SQLite en memoria si el código bajo prueba depende de Postgres (pgvector, JSON ops).

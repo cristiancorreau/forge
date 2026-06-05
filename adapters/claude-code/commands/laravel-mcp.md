@@ -1,6 +1,6 @@
 # laravel-mcp
 
-Laravel 13 para agentes y MCP: Laravel Boost, servidores laravel/mcp, AI SDK, embeddings y RAG con pgvector.
+Laravel para agentes y MCP: Laravel Boost, servidores laravel/mcp, AI SDK, embeddings y RAG con pgvector.
 
 Use the laravel-mcp skill for: $ARGUMENTS
 

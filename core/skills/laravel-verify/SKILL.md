@@ -1,6 +1,6 @@
 # Skill: laravel-verify
 
-Loop de verificación reproducible para Laravel 13 antes de commit/PR: formato (Pint),
+Loop de verificación reproducible para Laravel antes de commit/PR: formato (Pint),
 análisis estático (Larastan/PHPStan), tests con coverage (Pest), audit de dependencias
 y checks de configuración. Devuelve **PASA / FALLA** con acciones concretas.
 
@@ -11,12 +11,12 @@ Triggers: /laravel-verify, "verificar antes de commit", "loop de verificación l
 
 ## Cuándo usar este skill
 
-- Antes de cada `git commit` o de abrir un PR en un proyecto Laravel 13.
+- Antes de cada `git commit` o de abrir un PR en un proyecto Laravel.
 - Como gate de CI (GitHub Actions) en `pull_request` y `push`.
 - Como hook de pre-commit local para evitar romper `main`.
 - Cuando el `forge-quality-reviewer` pide la corrida completa de verificación.
 
-Requisitos del proyecto (Laravel 13 / PHP 8.3+):
+Requisitos del proyecto (Laravel / PHP 8.3+):
 
 ```bash
 composer require --dev laravel/pint larastan/larastan pestphp/pest \
@@ -132,7 +132,7 @@ No subas a nivel 9 de golpe en un código existente: te llenas de errores. Estra
 ./vendor/bin/phpstan analyse --level=7
 ```
 
-Metas razonables en Laravel 13: **level 6** como mínimo de merge, **level 8** como objetivo
+Metas razonables en Laravel: **level 6** como mínimo de merge, **level 8** como objetivo
 del proyecto. Niveles 9–10 (chequeo estricto de `mixed`/null) solo si el equipo se compromete.
 
 ### Baseline — congelar la deuda existente
@@ -158,9 +158,10 @@ Esto crea `phpstan-baseline.neon` (ya incluido en `phpstan.neon` arriba). Reglas
 porqué, o ignora ese identificador de error en `phpstan.neon` — pero esto es la excepción,
 no el patrón.
 
-> Laravel 13 (slim): incluye `bootstrap/app.php` en `paths` porque ahí vive la config de
-> middleware (`->withMiddleware(...)`). **No** existe `app/Http/Kernel.php` ni
-> `app/Console/Kernel.php` — no los referencies.
+> Las versiones recientes de Laravel usan estructura slim (sin `app/Http/Kernel.php` ni
+> `app/Console/Kernel.php`); verifica leyendo `bootstrap/app.php`, donde vive la config de
+> middleware (`->withMiddleware(...)`). Incluye `bootstrap/app.php` en `paths` por eso.
+> **No** referencies los Kernel legacy si tu proyecto ya usa la estructura slim.
 
 ---
 
@@ -200,7 +201,9 @@ código de la app, no vendor ni config):
 </source>
 ```
 
-Ejemplo de test Pest 3 sobre una API Resource de Laravel 13 (`toResource()` + JSON:API):
+Ejemplo de test Pest 3 sobre una API Resource de Laravel (`toResource()` + JSON:API). El
+método `toResource()` de auto-discovery existe en las versiones recientes; verifica que esté
+disponible en tu versión instalada:
 
 ```php
 <?php
@@ -210,7 +213,7 @@ use App\Models\Post;
 it('serializa el post via auto-discovery de resource', function () {
     $post = Post::factory()->create(['title' => 'Hola']);
 
-    // Laravel 13: toResource() autodescubre App\Http\Resources\PostResource
+    // toResource() autodescubre App\Http\Resources\PostResource en Laravel reciente
     $payload = $post->toResource()->toArray(request());
 
     expect($payload['title'])->toBe('Hola');
@@ -387,8 +390,9 @@ Notas:
 
 - `pcov` es más rápido que Xdebug para coverage en CI.
 - Cada paso es un step independiente: el log de Actions muestra exactamente cuál falló.
-- Si necesitas base de datos para Pest, agrega un servicio `postgres` (Laravel 13 con
-  pgvector usa `Schema::ensureVectorExtensionExists()` — usa la imagen `pgvector/pgvector`).
+- Si necesitas base de datos para Pest, agrega un servicio `postgres`. Las versiones recientes
+  de Laravel con pgvector usan `Schema::ensureVectorExtensionExists()`; usa la imagen
+  `pgvector/pgvector` y verifica que el helper esté disponible en tu versión instalada.
 
 ---
 
@@ -437,8 +441,9 @@ composer require --dev captainhook/captainhook   # hooks versionados en captainh
 - **No** silencies un error nuevo de PHPStan regenerando el baseline — el baseline solo
   congela deuda **vieja**; lo nuevo se arregla.
 - **No** bajes `--min=80` para que pase el coverage — cubre el código que escribiste.
-- **No** referencies `app/Http/Kernel.php` ni `app/Console/Kernel.php`: en Laravel 13 no
-  existen. La config de middleware vive en `bootstrap/app.php`.
+- **No** referencies `app/Http/Kernel.php` ni `app/Console/Kernel.php` si tu proyecto usa la
+  estructura slim de Laravel: ahí no existen. La config de middleware vive en
+  `bootstrap/app.php`; verifica leyendo ese archivo.
 - **No** uses `protected $casts` ni pares `getXAttribute()/setXAttribute()` — PHPStan +
   el preset de Pint te lo van a marcar; usa `casts(): array` y `Attribute::make()`.
 - **No** uses `checkMissingIterableValueType` en `phpstan.neon`: lo removió PHPStan 2.x.
