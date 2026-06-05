@@ -7,6 +7,21 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.1.0] — 2026-06-05
+
+> Cierre de los 5 follow-ups acumulados tras la migración a CLI TS (SPEC-043).
+
+### Agregado
+- **Comando `forge update [--dry-run] [--force]`** (#75). Re-sincroniza los archivos gestionados por forge (agentes, hooks, slash commands) con el catálogo bundleado **respetando tus ediciones locales**. Lee `.forge/manifest.json`, compara para cada archivo el hash en disco vs. el de instalación (¿lo editaste?) y vs. la fuente actual del catálogo: actualiza los no modificados, **preserva** los editados por el usuario (salvo `--force`), restaura los que falten y refresca el manifest. `--dry-run` imprime el plan sin escribir; es idempotente. Mapea `.claude/hooks/* → core/hooks/*`, `.claude/commands/* → adapters/claude-code/commands/*`, `.claude/agents/* → core/agents/*` (o el `agents/` de un profile); los archivos generados (CLAUDE.md, settings.json, architecture.rules) nunca se tocan.
+- **Detección de debug para Java/Kotlin, Rust y Dart** en `core/hooks/pre-edit-check.js` (#72). Nuevos patrones: `System.out.print(ln)?` / `printStackTrace(` (Java/Kotlin), `println!` / `eprintln!` / `dbg!` (Rust), `debugPrint(` (Dart/Flutter). Se agregaron `.kt` y `.dart` a la lista de extensiones de código para que el hook los clasifique como tales.
+- **Automatización de publicación de la extensión VS Code** (#73, References). `.github/workflows/publish-vscode.yml` (`workflow_dispatch` + tag `vscode-v*`) empaqueta y publica con `@vscode/vsce` usando el secret `VSCE_PAT`; documentado en `vscode-extension/README.md`. La primera publicación al Marketplace requiere que el maintainer cargue el PAT.
+- **Checklist de validación en Windows** (#74, References). `docs/windows-validation.md` con los pasos para validar el render OpenTUI en Windows real (Bun + Windows Terminal, conhost legacy, fallback `FORGE_ASCII` y Node).
+
+### Corregido
+- **`forge validate` ya no rechaza profiles válidos por drift del enum** (#71). La validación de `agents.profiles` ahora se resuelve **dinámicamente** desde el directorio `profiles/` del forge root: acepta cualquier profile que exista como directorio y solo marca los inexistentes. Además se agregaron `laravel` y `wordpress` al enum de `core/schemas/project.schema.json` (que pasa a ser documentación de referencia, ya que la validación es dinámica).
+
+---
+
 ## [3.0.1] — 2026-06-05
 
 ### Eliminado
