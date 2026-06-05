@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>forge — Framework de desarrollo agéntico multi-runtime</title>
+<meta name="description" content="forge configura cualquier proyecto para trabajar con agentes de IA en un comando. Multi-runtime: Claude Code, OpenCode, Codex y Kiro desde un solo project.yaml." />
+<meta name="theme-color" content="#0a0a0b" />
+<meta name="color-scheme" content="dark" />
+<link rel="canonical" href="https://cristiancorreau.github.io/forge/" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="forge" />
+<meta property="og:title" content="forge — Framework de desarrollo agéntico multi-runtime" />
+<meta property="og:description" content="Configura cualquier proyecto para trabajar con agentes de IA en un comando. Claude Code, OpenCode, Codex y Kiro desde un solo project.yaml." />
+<meta property="og:url" content="https://cristiancorreau.github.io/forge/" />
+<meta property="og:image" content="https://cristiancorreau.github.io/forge/assets/cli-preview.png" />
+<meta property="og:image:width" content="1120" />
+<meta property="og:image:height" content="700" />
+<meta property="og:image:alt" content="Panel interactivo OpenTUI de forge en la terminal" />
+<meta property="og:locale" content="es_ES" />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="forge — Framework de desarrollo agéntico multi-runtime" />
+<meta name="twitter:description" content="Configura cualquier proyecto para trabajar con agentes de IA en un comando. Claude Code, OpenCode, Codex y Kiro." />
+<meta name="twitter:image" content="https://cristiancorreau.github.io/forge/assets/cli-preview.png" />
+<meta name="twitter:image:alt" content="Panel interactivo OpenTUI de forge en la terminal" />
+
+<!-- Inline SVG favicon (ember anvil) -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0a0b'/%3E%3Cpath d='M8 18h16l-3 4H11z' fill='%23ff7a18'/%3E%3Cpath d='M16 6c2 3 4 4 4 7a4 4 0 0 1-8 0c0-1.4.7-2.4 1.6-3.4C14.8 8 16 7 16 6z' fill='%23ffb347'/%3E%3C/svg%3E" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "forge",
+  "description": "Framework de desarrollo agéntico multi-runtime. Configura cualquier proyecto para trabajar con agentes de IA en un comando.",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Node.js 20+",
+  "softwareVersion": "3.1.0",
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "url": "https://cristiancorreau.github.io/forge/"
+}
+</script>
+
+<style>
+  :root{
+    --bg:#0a0a0b;
+    --bg-2:#101012;
+    --panel:#141416;
+    --panel-2:#17171a;
+    --border:#26262b;
+    --border-soft:#1d1d21;
+    --text:#ededeb;
+    --muted:#b9b6b0;
+    --muted-2:#9a968f;
+    --ember:#ff7a18;
+    --ember-bright:#ffb347;
+    --ember-soft:rgba(255,122,24,.14);
+    --ember-line:rgba(255,122,24,.35);
+    --green:#5cd896;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,"Cascadia Code","Fira Code",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --maxw:1120px;
+    --radius:14px;
+  }
+
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    font-family:var(--sans);
+    color:var(--text);
+    background:var(--bg);
+    line-height:1.65;
+    font-size:clamp(15px,1vw + 13px,17px);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    background-image:
+      radial-gradient(900px 520px at 78% -8%, rgba(255,122,24,.16), transparent 62%),
+      radial-gradient(680px 460px at 6% 4%, rgba(255,122,24,.07), transparent 60%);
+    background-repeat:no-repeat;
+  }
+
+  a{color:var(--ember-bright);text-decoration:none}
+  a:hover{text-decoration:underline}
+  img{max-width:100%;height:auto;display:block}
+  code{font-family:var(--mono)}
+
+  :focus-visible{outline:2px solid var(--ember-bright);outline-offset:2px;border-radius:4px}
+
+  .wrap{width:100%;max-width:var(--maxw);margin-inline:auto;padding-inline:clamp(18px,4vw,32px)}
+
+  h1,h2,h3{font-family:var(--mono);line-height:1.12;letter-spacing:-.01em;margin:0}
+  .eyebrow{
+    font-family:var(--mono);font-size:.78rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--ember);margin:0 0 14px;font-weight:600;
+  }
+  .section{padding-block:clamp(56px,8vw,104px)}
+  .section-head{max-width:720px;margin-bottom:clamp(34px,5vw,52px)}
+  .section-head h2{font-size:clamp(1.55rem,3.2vw,2.5rem);margin-bottom:14px}
+  .section-head p{color:var(--muted);margin:0;font-size:clamp(1rem,1.4vw,1.12rem)}
+
+  /* ---------- skip link ---------- */
+  .skip{position:absolute;left:-999px;top:auto;background:var(--ember);color:#1a0c00;
+    padding:10px 16px;border-radius:8px;font-family:var(--mono);font-weight:700;z-index:200}
+  .skip:focus{left:16px;top:14px}
+
+  /* ---------- nav ---------- */
+  header.nav{
+    position:sticky;top:0;z-index:100;
+    background:rgba(10,10,11,.72);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border-soft);
+  }
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;gap:18px;height:62px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-weight:700;
+    font-size:1.12rem;color:var(--text);letter-spacing:-.02em}
+  .brand:hover{text-decoration:none}
+  .brand svg{width:26px;height:26px;flex:none}
+  .brand .v{font-size:.62rem;color:var(--ember);border:1px solid var(--ember-line);
+    padding:1px 6px;border-radius:999px;font-weight:600;letter-spacing:.04em}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-size:.95rem;font-family:var(--mono)}
+  .nav-links a:hover{color:var(--text);text-decoration:none}
+  .nav-cta{
+    font-family:var(--mono);font-weight:600;font-size:.9rem;
+    color:#1a0c00;background:linear-gradient(135deg,var(--ember-bright),var(--ember));
+    padding:8px 16px;border-radius:9px;border:1px solid rgba(255,179,71,.4);
+  }
+  .nav-cta:hover{text-decoration:none;filter:brightness(1.06)}
+  .nav-toggle{display:none;background:none;border:1px solid var(--border);border-radius:9px;
+    width:42px;height:42px;color:var(--text);cursor:pointer;align-items:center;justify-content:center}
+  .nav-toggle svg{width:22px;height:22px}
+
+  @media(max-width:780px){
+    .nav-links{
+      position:absolute;top:62px;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;
+      background:var(--bg-2);border-bottom:1px solid var(--border);
+      max-height:0;overflow:hidden;transition:max-height .28s ease;
+    }
+    .nav-links.open{max-height:360px}
+    .nav-links a,.nav-links .nav-cta{padding:15px clamp(18px,4vw,32px);border-top:1px solid var(--border-soft);
+      border-radius:0;background:none;color:var(--text);text-align:left}
+    .nav-links .nav-cta{color:var(--ember-bright);border:none;border-top:1px solid var(--border-soft)}
+    .nav-toggle{display:flex}
+  }
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;padding-top:clamp(48px,7vw,84px);padding-bottom:clamp(40px,6vw,72px)}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(32px,5vw,60px);align-items:center}
+  .hero-logo{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+  .hero-logo svg{width:52px;height:52px;flex:none;filter:drop-shadow(0 0 16px rgba(255,122,24,.5))}
+  .hero-logo .lock{font-family:var(--mono);font-weight:800;font-size:1.7rem;letter-spacing:-.03em}
+  .pill{
+    display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.78rem;
+    color:var(--ember-bright);background:var(--ember-soft);border:1px solid var(--ember-line);
+    padding:5px 13px;border-radius:999px;margin-bottom:20px;letter-spacing:.02em;
+  }
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--ember);
+    box-shadow:0 0 8px var(--ember)}
+  .hero h1{font-size:clamp(2.1rem,5.4vw,3.5rem);letter-spacing:-.02em;margin-bottom:18px}
+  .hero h1 .em{color:transparent;background:linear-gradient(120deg,var(--ember-bright),var(--ember));
+    -webkit-background-clip:text;background-clip:text}
+  .hero-sub{color:var(--muted);font-size:clamp(1.02rem,1.6vw,1.22rem);max-width:46ch;margin:0 0 28px}
+  .hero-sub strong{color:var(--text);font-weight:600}
+
+  .cta-row{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:26px}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-weight:600;
+    font-size:.98rem;padding:13px 22px;border-radius:11px;cursor:pointer;border:1px solid transparent;
+    transition:transform .15s ease,filter .15s ease,background .15s ease;
+  }
+  .btn:hover{text-decoration:none;transform:translateY(-1px)}
+  .btn-primary{color:#1a0c00;background:linear-gradient(135deg,var(--ember-bright),var(--ember));
+    box-shadow:0 8px 26px -10px rgba(255,122,24,.7)}
+  .btn-primary:hover{filter:brightness(1.07)}
+  .btn-ghost{color:var(--text);background:var(--panel);border-color:var(--border)}
+  .btn-ghost:hover{border-color:var(--ember-line);background:var(--panel-2)}
+  .btn svg{width:18px;height:18px}
+
+  /* install copy block */
+  .install{
+    display:flex;align-items:stretch;gap:0;background:var(--panel);
+    border:1px solid var(--border);border-radius:12px;overflow:hidden;max-width:520px;
+    font-family:var(--mono);
+  }
+  .install code{
+    flex:1;padding:13px 16px;font-size:.92rem;color:var(--text);white-space:nowrap;overflow-x:auto;
+    display:flex;align-items:center;gap:10px;
+  }
+  .install code .prompt{color:var(--ember);user-select:none}
+  .install .copy{
+    border:none;border-left:1px solid var(--border);background:var(--panel-2);color:var(--muted);
+    cursor:pointer;padding:0 16px;font-family:var(--mono);font-size:.82rem;display:flex;align-items:center;
+    gap:7px;transition:color .15s,background .15s;flex:none;
+  }
+  .install .copy:hover{color:var(--ember-bright);background:#1d1d20}
+  .install .copy svg{width:15px;height:15px}
+  .install .copy.copied{color:var(--green)}
+
+  /* terminal */
+  .terminal-shell{position:relative}
+  .terminal-shell::before{
+    content:"";position:absolute;inset:-22px -10px -28px;z-index:0;
+    background:radial-gradient(60% 60% at 50% 38%,rgba(255,122,24,.22),transparent 72%);
+    filter:blur(8px);pointer-events:none;
+  }
+  .terminal{
+    position:relative;z-index:1;background:#0d0d0f;border:1px solid var(--border);
+    border-radius:var(--radius);overflow:hidden;
+    box-shadow:0 30px 60px -28px rgba(0,0,0,.85),0 0 0 1px rgba(255,122,24,.06);
+  }
+  .term-bar{display:flex;align-items:center;gap:8px;padding:11px 14px;background:#131316;
+    border-bottom:1px solid var(--border)}
+  .term-bar .dots{display:flex;gap:7px}
+  .term-bar .dots i{width:11px;height:11px;border-radius:50%;display:block}
+  .term-bar .dots i:nth-child(1){background:#ff5f57}
+  .term-bar .dots i:nth-child(2){background:#febc2e}
+  .term-bar .dots i:nth-child(3){background:#28c840}
+  .term-bar .title{font-family:var(--mono);font-size:.76rem;color:var(--muted-2);margin-inline:auto}
+  .term-body{
+    font-family:var(--mono);font-size:.8rem;line-height:1.55;padding:16px 18px 20px;
+    color:#d6d3ce;overflow-x:auto;
+  }
+  .term-body pre{margin:0;white-space:pre}
+  .term-body .cmd{color:var(--text)}
+  .term-body .cmd .p{color:var(--ember)}
+  .term-body .ascii{color:var(--ember);text-shadow:0 0 14px rgba(255,122,24,.5);display:block;margin:4px 0 10px}
+  .term-body .ok{color:var(--green)}
+  .term-body .dim{color:var(--muted-2)}
+  .term-body .amber{color:var(--ember-bright)}
+  .term-body .sel{color:var(--text)}
+  .term-body .sel .mark{color:var(--ember)}
+  .cursor{display:inline-block;width:8px;height:1.05em;vertical-align:-2px;background:var(--ember);
+    margin-left:2px;animation:blink 1.05s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ---------- stats strip (ember + mono) ---------- */
+  .stats{
+    border-top:1px solid var(--border-soft);
+    border-bottom:1px solid var(--border-soft);
+    background:linear-gradient(180deg,rgba(255,122,24,.03),transparent);
+  }
+  .stats-inner{
+    display:grid;grid-template-columns:repeat(5,1fr);
+    padding-block:clamp(22px,3vw,34px);margin:0;
+  }
+  .stat{
+    display:flex;flex-direction:column-reverse;align-items:center;text-align:center;gap:6px;
+    padding-inline:12px;position:relative;margin:0;
+  }
+  .stat + .stat::before{
+    content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);
+    width:1px;height:54%;background:var(--border-soft);
+  }
+  .stat .n{
+    font-family:var(--mono);font-weight:800;letter-spacing:-.02em;
+    font-size:clamp(1.55rem,3.4vw,2.3rem);color:var(--ember);line-height:1;margin:0;
+  }
+  .stat .n .pre{color:var(--ember-bright);font-weight:600}
+  .stat .l{
+    font-family:var(--mono);font-size:.74rem;letter-spacing:.07em;color:var(--muted-2);
+    text-transform:uppercase;line-height:1.4;margin:0;
+  }
+  @media(max-width:720px){
+    .stats-inner{grid-template-columns:repeat(2,1fr);gap:26px 0}
+    .stat + .stat::before{display:none}
+    .stat:nth-child(odd)::after{
+      content:"";position:absolute;right:0;top:50%;transform:translateY(-50%);
+      width:1px;height:54%;background:var(--border-soft);
+    }
+    .stat:last-child{grid-column:1 / -1}
+  }
+
+  /* ---------- features ---------- */
+  .grid{display:grid;gap:18px}
+  .features{grid-template-columns:repeat(3,1fr)}
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--bg-2));
+    border:1px solid var(--border-soft);border-radius:var(--radius);padding:24px 22px;
+    transition:border-color .2s ease,transform .2s ease;
+  }
+  .card:hover{border-color:var(--ember-line);transform:translateY(-3px)}
+  .card .ic{
+    width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    background:var(--ember-soft);border:1px solid var(--ember-line);margin-bottom:16px;
+  }
+  .card .ic svg{width:22px;height:22px;stroke:var(--ember-bright);fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round}
+  .card h3{font-size:1.06rem;margin-bottom:8px;color:var(--text)}
+  .card p{margin:0;color:var(--muted);font-size:.95rem}
+
+  /* ---------- layers ---------- */
+  .layers{display:flex;flex-direction:column;gap:12px;counter-reset:layer}
+  .layer{
+    display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;
+    background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;padding:18px 22px;
+    position:relative;transition:border-color .2s ease;
+  }
+  .layer:hover{border-color:var(--ember-line)}
+  .layer .num{
+    font-family:var(--mono);font-weight:700;font-size:1.05rem;color:var(--ember);
+    width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    background:var(--ember-soft);border:1px solid var(--ember-line);flex:none;
+  }
+  .layer h3{font-family:var(--mono);font-size:1.05rem;margin-bottom:4px}
+  .layer h3 .tag{font-size:.72rem;color:var(--ember-bright);font-weight:500;margin-left:8px;
+    letter-spacing:.04em}
+  .layer p{margin:0;color:var(--muted);font-size:.94rem}
+
+  /* ---------- screenshot ---------- */
+  .shot-wrap{position:relative;border-radius:var(--radius);overflow:hidden;
+    border:1px solid var(--border);box-shadow:0 30px 70px -30px rgba(0,0,0,.85)}
+  .shot-wrap::after{content:"";position:absolute;inset:0;pointer-events:none;
+    box-shadow:inset 0 0 0 1px rgba(255,122,24,.06)}
+  .shot-glow{position:relative}
+  .shot-glow::before{content:"";position:absolute;inset:-30px;z-index:-1;
+    background:radial-gradient(50% 50% at 50% 40%,rgba(255,122,24,.2),transparent 70%);filter:blur(10px)}
+  figcaption{font-family:var(--mono);font-size:.82rem;color:var(--muted-2);
+    text-align:center;margin-top:14px}
+
+  /* ---------- runtimes ---------- */
+  .runtimes{grid-template-columns:repeat(4,1fr)}
+  .runtime{
+    display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;
+    background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;padding:26px 18px;
+    transition:border-color .2s,transform .2s;
+  }
+  .runtime:hover{border-color:var(--ember-line);transform:translateY(-3px)}
+  .runtime .rl{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    background:#0d0d0f;border:1px solid var(--border);font-family:var(--mono);font-weight:800;
+    color:var(--ember-bright);font-size:1.15rem}
+  .runtime b{font-family:var(--mono);font-size:.98rem;color:var(--text)}
+  .runtime span{font-size:.82rem;color:var(--muted-2);font-family:var(--mono)}
+
+  /* ---------- quickstart ---------- */
+  .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(22px,4vw,44px);align-items:center}
+  .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+  .steps li{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start}
+  .steps .sn{font-family:var(--mono);font-weight:700;color:var(--ember);width:34px;height:34px;flex:none;
+    border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--ember-soft);
+    border:1px solid var(--ember-line)}
+  .steps b{font-family:var(--mono);color:var(--text);display:block;margin-bottom:2px}
+  .steps p{margin:0;color:var(--muted);font-size:.94rem}
+  .code-block{background:#0d0d0f;border:1px solid var(--border);border-radius:var(--radius);
+    overflow:hidden}
+  .code-block .cb-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;
+    background:#131316;border-bottom:1px solid var(--border)}
+  .code-block .cb-bar span{font-family:var(--mono);font-size:.76rem;color:var(--muted-2)}
+  .code-block .copy{background:none;border:none;color:var(--muted);cursor:pointer;font-family:var(--mono);
+    font-size:.78rem;display:flex;align-items:center;gap:6px;transition:color .15s}
+  .code-block .copy:hover{color:var(--ember-bright)}
+  .code-block .copy.copied{color:var(--green)}
+  .code-block .copy svg{width:14px;height:14px}
+  .code-block pre{margin:0;padding:16px 18px;font-family:var(--mono);font-size:.85rem;line-height:1.7;
+    color:#d6d3ce;overflow-x:auto}
+  .code-block pre .p{color:var(--ember)}
+  .code-block pre .c{color:var(--muted-2)}
+  .code-block pre .ok{color:var(--green)}
+
+  /* visually-hidden live region */
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+  /* ---------- final cta ---------- */
+  .final{text-align:center;border-top:1px solid var(--border-soft);
+    background:radial-gradient(700px 320px at 50% 0%,rgba(255,122,24,.12),transparent 70%)}
+  .final h2{font-size:clamp(1.6rem,3.5vw,2.6rem);margin-bottom:14px}
+  .final p{color:var(--muted);max-width:54ch;margin:0 auto 28px;font-size:1.08rem}
+  .final .cta-row{justify-content:center}
+
+  /* ---------- footer ---------- */
+  footer.ft{border-top:1px solid var(--border-soft);background:var(--bg-2);padding-block:46px}
+  .ft-grid{display:flex;flex-wrap:wrap;justify-content:space-between;gap:32px}
+  .ft-brand{max-width:320px}
+  .ft-brand .brand{margin-bottom:12px}
+  .ft-brand p{color:var(--muted-2);font-size:.9rem;margin:0}
+  .ft-cols{display:flex;flex-wrap:wrap;gap:48px}
+  .ft-col h4{font-family:var(--mono);font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted-2);margin:0 0 14px}
+  .ft-col a{display:block;color:var(--muted);font-size:.92rem;margin-bottom:9px;font-family:var(--mono)}
+  .ft-col a:hover{color:var(--ember-bright);text-decoration:none}
+  .ft-bottom{margin-top:38px;padding-top:22px;border-top:1px solid var(--border-soft);
+    display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;
+    font-family:var(--mono);font-size:.82rem;color:var(--muted-2)}
+  .ft-bottom a{color:var(--muted)}
+
+  /* ---------- responsive ---------- */
+  @media(max-width:920px){
+    .hero-grid{grid-template-columns:1fr}
+    .terminal-shell{order:-1}
+    .features{grid-template-columns:repeat(2,1fr)}
+    .quick-grid{grid-template-columns:1fr}
+  }
+  @media(max-width:620px){
+    .features{grid-template-columns:1fr}
+    .runtimes{grid-template-columns:repeat(2,1fr)}
+    .layer{grid-template-columns:1fr;gap:10px}
+    .layer .num{margin-bottom:2px}
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .cursor{animation:none}
+    *{transition:none !important}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#main" aria-label="forge — inicio">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="7" fill="#141416"/>
+        <path d="M8 18h16l-3 4H11z" fill="#ff7a18"/>
+        <path d="M16 6c2 3 4 4 4 7a4 4 0 0 1-8 0c0-1.4.7-2.4 1.6-3.4C14.8 8 16 7 16 6z" fill="#ffb347"/>
+      </svg>
+      forge <span class="v">v3.1.0</span>
+    </a>
+    <nav class="nav-links" id="navLinks" aria-label="Principal">
+      <a href="#por-que">Por qué</a>
+      <a href="#capas">Arquitectura</a>
+      <a href="#quickstart">Quickstart</a>
+      <a href="https://github.com/cristiancorreau/forge" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="https://www.npmjs.com/package/@cristiancorreau/forge" target="_blank" rel="noopener noreferrer">npm</a>
+      <a class="nav-cta" href="#quickstart">Empezar</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navLinks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <div class="hero-logo">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M8 18h16l-3 4H11z" fill="#ff7a18"/>
+          <path d="M16 6c2 3 4 4 4 7a4 4 0 0 1-8 0c0-1.4.7-2.4 1.6-3.4C14.8 8 16 7 16 6z" fill="#ffb347"/>
+        </svg>
+        <span class="lock">forge</span>
+      </div>
+      <span class="pill"><span class="dot"></span>Agentic Development Framework · Apache-2.0</span>
+      <h1>Configura tu proyecto para <span class="em">agentes de IA</span> en un comando.</h1>
+      <p class="hero-sub">Un equipo de agentes, <strong>cualquier runtime</strong>. forge detecta tu stack, instala agentes especializados, hooks de guardrail y un manifest auditable — para <strong>Claude Code, OpenCode, Codex y Kiro</strong> desde un solo <code>project.yaml</code>.</p>
+
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#quickstart">
+          Empezar
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/cristiancorreau/forge" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.9 1.57 2.36 1.12 2.94.85.09-.66.35-1.12.63-1.38-2.22-.26-4.55-1.14-4.55-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.7 0 0 .84-.27 2.75 1.05A9.36 9.36 0 0 1 12 6.84c.85 0 1.71.12 2.51.34 1.91-1.32 2.75-1.05 2.75-1.05.55 1.4.2 2.44.1 2.7.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.48-.01 2.82 0 .27.18.6.69.49A10.02 10.02 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"/></svg>
+          Ver en GitHub
+        </a>
+      </div>
+
+      <div class="install" role="group" aria-label="Comando de instalación">
+        <code id="installCmd"><span class="prompt" aria-hidden="true">$</span>npx @cristiancorreau/forge init</code>
+        <button class="copy" id="copyInstall" type="button" data-copy="npx @cristiancorreau/forge init" aria-label="Copiar comando de instalación">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          <span class="lbl">Copiar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- terminal -->
+    <div class="terminal-shell">
+      <div class="terminal" aria-label="Vista previa de la CLI de forge">
+        <div class="term-bar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="title">forge init — ~/mi-proyecto</span>
+        </div>
+        <div class="term-body">
+<pre><span class="cmd"><span class="p">$ </span>npx @cristiancorreau/forge init</span>
+<span class="ascii"> ███████╗ ██████╗ ██████╗  ██████╗ ███████╗
+ ██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝
+ █████╗  ██║   ██║██████╔╝██║  ███╗█████╗
+ ██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝
+ ██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗
+ ╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</span>
+<span class="ok">✔</span> Stack detectado  <span class="amber">TypeScript · Node 20</span>
+<span class="ok">✔</span> Runtime          <span class="amber">Claude Code</span>
+<span class="dim">?</span> <span class="sel">Selecciona agentes para tu equipo</span>
+   <span class="sel"><span class="mark">◉</span> orchestrator        <span class="dim">tier&nbsp;1</span></span>
+   <span class="sel"><span class="mark">◉</span> backend-engineer    <span class="dim">tier&nbsp;1</span></span>
+   <span class="sel"><span class="mark">◉</span> compliance-reviewer <span class="dim">veto</span></span>
+   <span class="dim">◯ security-auditor</span>
+<span class="ok">✔</span> Agentes instalados <span class="dim">.claude/agents/</span>
+<span class="ok">✔</span> Hooks de guardrail <span class="dim">JS · sin Python</span>
+<span class="ok">✔</span> Manifest SHA-256   <span class="dim">.forge/manifest.json</span>
+<span class="ok">▲ forge listo.</span> <span class="dim">Corré</span> <span class="amber">/spec</span> <span class="dim">para tu primera feature.</span><span class="cursor" aria-hidden="true"></span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STATS STRIP (ember + mono) ============ -->
+<section class="stats" aria-label="forge en números">
+  <div class="wrap">
+    <dl class="stats-inner">
+      <div class="stat">
+        <dt class="l">comandos de CLI</dt>
+        <dd class="n">16</dd>
+      </div>
+      <div class="stat">
+        <dt class="l">stack profiles · tier 2</dt>
+        <dd class="n">19</dd>
+      </div>
+      <div class="stat">
+        <dt class="l">skills invocables</dt>
+        <dd class="n">12</dd>
+      </div>
+      <div class="stat">
+        <dt class="l">runtimes soportados</dt>
+        <dd class="n">4</dd>
+      </div>
+      <div class="stat">
+        <dt class="l">capas de arquitectura</dt>
+        <dd class="n">5</dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<!-- ============ POR QUÉ ============ -->
+<section class="section" id="por-que">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Por qué forge</p>
+      <h2>Gobernanza de agentes, no solo prompts.</h2>
+      <p>forge no es un archivo de reglas: es una capa de arquitectura, compliance y delegación que se regenera desde una sola fuente de verdad.</p>
+    </div>
+
+    <div class="grid features">
+      <article class="card">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="3.2"/><path d="M5.6 5.6l2.4 2.4M16 16l2.4 2.4M18.4 5.6L16 8M8 16l-2.4 2.4"/></svg></div>
+        <h3>Multi-runtime real</h3>
+        <p>Un <code>project.yaml</code> genera la config nativa de Claude Code, OpenCode, Codex CLI y Kiro mediante adaptadores de distribución.</p>
+      </article>
+
+      <article class="card">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <h3>Spec-first (SDD)</h3>
+        <p>Ninguna tarea de código sin una spec aprobada. El orchestrator vetea implementaciones sin spec en <code>docs/specs/</code>.</p>
+      </article>
+
+      <article class="card">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <h3>Compliance con veto</h3>
+        <p>El <code>compliance-reviewer</code> tiene poder de veto vinculante sobre GDPR, LGPD y CCPA antes de que el código avance.</p>
+      </article>
+
+      <article class="card">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg></div>
+        <h3>Guardrail hooks en JS</h3>
+        <p>Cero Python. Hooks puros en JavaScript: branch-guard y detección de debug, secrets y operaciones de producción.</p>
+      </article>
+
+      <article class="card">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3>Operaciones reversibles</h3>
+        <p>Manifest con SHA-256 y modo <code>--dry-run</code>: <code>update</code> re-sincroniza el catálogo preservando tus ediciones locales.</p>
+      </article>
+
+      <article class="card">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h5"/></svg></div>
+        <h3>Base de conocimiento</h3>
+        <p>Wiki del proyecto: <code>ingest</code>, <code>lint</code> y <code>query</code> con citas. 12 skills invocables y 16 comandos en la CLI.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LAS 5 CAPAS ============ -->
+<section class="section" id="capas" style="background:var(--bg-2);border-block:1px solid var(--border-soft)">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Arquitectura</p>
+      <h2>Las 5 capas de forge.</h2>
+      <p>Cada capa tiene una responsabilidad clara, de la memoria del proyecto a la distribución por runtime.</p>
+    </div>
+
+    <div class="layers">
+      <div class="layer">
+        <span class="num">01</span>
+        <div>
+          <h3>Memory <span class="tag">project.yaml</span></h3>
+          <p>El <code>project.yaml</code> es la única fuente de verdad: stack, equipo, agentes, skills y compliance. Todo se regenera desde acá.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <span class="num">02</span>
+        <div>
+          <h3>Knowledge <span class="tag">agentes + perfiles</span></h3>
+          <p>7 agentes Tier 1 universales, 19 perfiles de stack Tier 2 y agentes Tier 3 de proyecto. El conocimiento que el equipo necesita por dominio.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <span class="num">03</span>
+        <div>
+          <h3>Guardrail <span class="tag">compliance + seguridad</span></h3>
+          <p>Hooks que imponen cumplimiento y seguridad: branch-guard, detección de secrets, debug y operaciones de producción. Pura prevención.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <span class="num">04</span>
+        <div>
+          <h3>Delegation <span class="tag">orquestación</span></h3>
+          <p>El orchestrator coordina y despacha skills al agente correcto. La delegación es explícita y auditable, no implícita.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <span class="num">05</span>
+        <div>
+          <h3>Distribution <span class="tag">adaptadores</span></h3>
+          <p>Adaptadores por runtime traducen la config a Claude Code, OpenCode, Codex y Kiro. Escribís una vez, corre en cualquiera.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREENSHOT ============ -->
+<section class="section" id="panel">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Panel interactivo</p>
+      <h2>Configurá y monitoreá desde un panel.</h2>
+      <p>El comando <code>forge panel</code> abre un panel OpenTUI a pantalla completa con Bun — config, monitor, skills, hooks y templates. Con Node hace fallback a prompts de @clack; consolas legacy caen a ASCII.</p>
+    </div>
+    <figure class="shot-glow" style="margin:0">
+      <div class="shot-wrap">
+        <img src="./assets/cli-preview.png" width="1120" height="700" loading="lazy" decoding="async"
+             alt="Panel interactivo OpenTUI de forge mostrando la configuración del proyecto, los agentes instalados y el estado del runtime." />
+      </div>
+      <figcaption>forge panel — config, monitor, skills, hooks y templates en la terminal.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ RUNTIMES ============ -->
+<section class="section" id="runtimes" style="background:var(--bg-2);border-block:1px solid var(--border-soft)">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Distribution</p>
+      <h2>Un equipo, cuatro runtimes.</h2>
+      <p>Definís el equipo una vez en <code>project.yaml</code> y los adaptadores escriben la config nativa de cada herramienta.</p>
+    </div>
+    <div class="grid runtimes">
+      <div class="runtime">
+        <span class="rl" aria-hidden="true">CC</span>
+        <b>Claude Code</b>
+        <span>.claude/</span>
+      </div>
+      <div class="runtime">
+        <span class="rl" aria-hidden="true">OC</span>
+        <b>OpenCode</b>
+        <span>adaptador nativo</span>
+      </div>
+      <div class="runtime">
+        <span class="rl" aria-hidden="true">Cx</span>
+        <b>Codex CLI</b>
+        <span>adaptador nativo</span>
+      </div>
+      <div class="runtime">
+        <span class="rl" aria-hidden="true">Ki</span>
+        <b>Kiro</b>
+        <span>adaptador nativo</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ QUICKSTART ============ -->
+<section class="section" id="quickstart">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Quickstart</p>
+      <h2>De cero a un equipo de agentes.</h2>
+      <p>Un proyecto nuevo o uno que ya existe: forge se adapta a ambos. Requiere Node.js 20+ (con Bun se desbloquea el panel a pantalla completa).</p>
+    </div>
+
+    <div class="quick-grid">
+      <ol class="steps">
+        <li>
+          <span class="sn" aria-hidden="true">1</span>
+          <div>
+            <b>Instalá forge</b>
+            <p>Ejecutá <code>init</code> con npx, o instalá la CLI global con <code>npm i -g @cristiancorreau/forge</code>.</p>
+          </div>
+        </li>
+        <li>
+          <span class="sn" aria-hidden="true">2</span>
+          <div>
+            <b>Inicializá o adoptá</b>
+            <p><code>init</code> arranca el wizard en un proyecto nuevo; <code>adopt</code> incorpora forge a un codebase existente, lo analiza y genera la wiki.</p>
+          </div>
+        </li>
+        <li>
+          <span class="sn" aria-hidden="true">3</span>
+          <div>
+            <b>Trabajá spec-first</b>
+            <p>Corré <code>/spec</code> para tu primera feature. Sin spec aprobada, el orchestrator vetea la implementación.</p>
+          </div>
+        </li>
+        <li>
+          <span class="sn" aria-hidden="true">4</span>
+          <div>
+            <b>Mantené sincronizado</b>
+            <p><code>update</code> re-sincroniza los archivos gestionados con el catálogo preservando tus ediciones; <code>doctor</code> y <code>validate</code> verifican el estado.</p>
+          </div>
+        </li>
+      </ol>
+
+      <div class="code-block">
+        <div class="cb-bar">
+          <span>terminal</span>
+          <button class="copy" id="copyQuick" type="button" data-copy="# proyecto nuevo
+npx @cristiancorreau/forge init
+
+# proyecto existente
+npx @cristiancorreau/forge adopt
+
+# primera feature, spec-first
+/spec" aria-label="Copiar bloque de comandos del quickstart">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            <span class="lbl">Copiar</span>
+          </button>
+        </div>
+<pre><span class="c"># proyecto nuevo</span>
+<span class="p">$</span> npx @cristiancorreau/forge init
+
+<span class="c"># proyecto existente</span>
+<span class="p">$</span> npx @cristiancorreau/forge adopt
+
+<span class="c"># primera feature, spec-first</span>
+<span class="p">$</span> /spec
+<span class="ok">▲ forge — listo para construir.</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="section final">
+  <div class="wrap">
+    <p class="eyebrow">Empezá ahora</p>
+    <h2>Forjá tu equipo de agentes.</h2>
+    <p>Open source bajo Apache-2.0. Configura cualquier proyecto para trabajar con agentes de IA en un comando — sin lock-in de runtime.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://www.npmjs.com/package/@cristiancorreau/forge" target="_blank" rel="noopener noreferrer">
+        Instalar desde npm
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="https://github.com/cristiancorreau/forge" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.9 1.57 2.36 1.12 2.94.85.09-.66.35-1.12.63-1.38-2.22-.26-4.55-1.14-4.55-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.7 0 0 .84-.27 2.75 1.05A9.36 9.36 0 0 1 12 6.84c.85 0 1.71.12 2.51.34 1.91-1.32 2.75-1.05 2.75-1.05.55 1.4.2 2.44.1 2.7.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.48-.01 2.82 0 .27.18.6.69.49A10.02 10.02 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"/></svg>
+        Explorar el repo
+      </a>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="ft">
+  <div class="wrap">
+    <div class="ft-grid">
+      <div class="ft-brand">
+        <a class="brand" href="#main" aria-label="forge — inicio">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="7" fill="#141416"/>
+            <path d="M8 18h16l-3 4H11z" fill="#ff7a18"/>
+            <path d="M16 6c2 3 4 4 4 7a4 4 0 0 1-8 0c0-1.4.7-2.4 1.6-3.4C14.8 8 16 7 16 6z" fill="#ffb347"/>
+          </svg>
+          forge
+        </a>
+        <p>Framework de desarrollo agéntico multi-runtime. Configura cualquier proyecto para trabajar con agentes de IA en un comando.</p>
+      </div>
+      <div class="ft-cols">
+        <div class="ft-col">
+          <h4>Producto</h4>
+          <a href="#por-que">Por qué forge</a>
+          <a href="#capas">Arquitectura</a>
+          <a href="#panel">Panel</a>
+          <a href="#quickstart">Quickstart</a>
+        </div>
+        <div class="ft-col">
+          <h4>Recursos</h4>
+          <a href="https://github.com/cristiancorreau/forge" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://www.npmjs.com/package/@cristiancorreau/forge" target="_blank" rel="noopener noreferrer">npm</a>
+          <a href="https://github.com/cristiancorreau/forge/issues" target="_blank" rel="noopener noreferrer">Issues</a>
+          <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener noreferrer">Licencia Apache-2.0</a>
+        </div>
+      </div>
+    </div>
+    <div class="ft-bottom">
+      <span>© 2026 forge · Apache-2.0 · v3.1.0</span>
+      <span>Hecho con fuego, yunque y mucho dogfooding.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- visually-hidden live region for copy/menu announcements -->
+<div class="sr-only" role="status" aria-live="polite" id="srStatus"></div>
+
+<script>
+  (function () {
+    "use strict";
+
+    var srStatus = document.getElementById("srStatus");
+
+    function announce(msg) {
+      if (srStatus) srStatus.textContent = msg;
+    }
+
+    /* ---- clipboard with secure-context fallback ---- */
+    function legacyCopy(text) {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "absolute";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+        return navigator.clipboard.writeText(text).then(
+          function () { return true; },
+          function () { return legacyCopy(text); }
+        );
+      }
+      return Promise.resolve(legacyCopy(text));
+    }
+
+    function wireCopy(btn) {
+      if (!btn) return;
+      var lbl = btn.querySelector(".lbl");
+      var defaultText = lbl ? lbl.textContent : "Copiar";
+      btn.addEventListener("click", function () {
+        var payload = btn.dataset ? btn.dataset.copy : btn.getAttribute("data-copy");
+        if (payload == null) return;
+        Promise.resolve(copyText(payload)).then(function (ok) {
+          if (!ok) {
+            announce("No se pudo copiar el comando.");
+            return;
+          }
+          btn.classList.add("copied");
+          if (lbl) lbl.textContent = "Copiado";
+          announce("Comando copiado al portapapeles.");
+          window.setTimeout(function () {
+            btn.classList.remove("copied");
+            if (lbl) lbl.textContent = defaultText;
+          }, 1600);
+        });
+      });
+    }
+
+    wireCopy(document.getElementById("copyInstall"));
+    wireCopy(document.getElementById("copyQuick"));
+
+    /* ---- mobile nav toggle ---- */
+    var navToggle = document.getElementById("navToggle");
+    var navLinks = document.getElementById("navLinks");
+
+    if (navToggle && navLinks) {
+      navToggle.addEventListener("click", function () {
+        var open = navLinks.classList.toggle("open");
+        navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+        navToggle.setAttribute("aria-label", open ? "Cerrar menú" : "Abrir menú");
+      });
+
+      navLinks.addEventListener("click", function (e) {
+        var target = e.target;
+        if (target && target.tagName === "A" && navLinks.classList.contains("open")) {
+          navLinks.classList.remove("open");
+          navToggle.setAttribute("aria-expanded", "false");
+          navToggle.setAttribute("aria-label", "Abrir menú");
+        }
+      });
+    }
+  })();
+</script>
+</body>
+</html>
