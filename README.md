@@ -45,7 +45,7 @@ npx @cristiancorreau/forge init
 
 <img alt="Panel interactivo de forge en la terminal (OpenTUI): agentes, skills, hooks y profiles" width="780" src="docs/assets/cli-preview.png">
 
-<sub>El panel interactivo de forge (<code>forge panel</code>) requiere Bun (OpenTUI) — explorá agentes, skills, hooks y profiles sin salir de la terminal.</sub>
+<sub>El panel interactivo de forge (<code>forge panel</code>) requiere Bun (OpenTUI) — explora agentes, skills, hooks y profiles sin salir de la terminal.</sub>
 
 <br>
 
@@ -57,7 +57,7 @@ npx @cristiancorreau/forge init
 
 **forge** es un framework de _agentic development_ multi-runtime. Un solo comando analiza tu proyecto, instala un equipo de agentes especializados, cablea guardrails de seguridad y deja un `project.yaml` como **única fuente de verdad** desde la que se regenera la configuración nativa de cada runtime de IA.
 
-En vez de copiar y pegar reglas de agentes entre proyectos y entre herramientas, definís el equipo **una vez** y forge lo materializa para Claude Code, OpenCode, Codex CLI y Kiro.
+En vez de copiar y pegar reglas de agentes entre proyectos y entre herramientas, defines el equipo **una vez** y forge lo materializa para Claude Code, OpenCode, Codex CLI y Kiro.
 
 - 🤖 **Equipos de agentes multi-runtime** — 7 agentes universales + 19 profiles de stack
 - 📐 **Flujo SDD spec-first** — ninguna tarea de código sin una spec `APPROVED`
@@ -73,7 +73,7 @@ En vez de copiar y pegar reglas de agentes entre proyectos y entre herramientas,
 
 ### vs. reglas de agente hechas a mano
 
-- **Un `project.yaml`, cuatro runtimes** — escribís el equipo una vez, no cuatro.
+- **Un `project.yaml`, cuatro runtimes** — escribes el equipo una vez, no cuatro.
 - **Spec-first por defecto** — el `orchestrator` rechaza spawnear agentes sin spec aprobada.
 - **Guardrails ya cableados** — hooks de seguridad listos, sin instalar nada de Python.
 - **Regenerable** — `forge generate` reconstruye todo el equipo desde la fuente de verdad.
@@ -113,11 +113,11 @@ pnpm add -g @cristiancorreau/forge     # pnpm  (requiere `pnpm setup` una vez)
 bun add -g @cristiancorreau/forge      # bun   (requiere ~/.bun/bin en el PATH)
 ```
 
-¿El comando `forge` no se reconoce tras el install global? El directorio de binarios globales no está en tu `PATH`. `npx @cristiancorreau/forge <cmd>` siempre funciona sin instalar; para el comando pelado:
+¿El comando `forge` no se reconoce tras el install global? El directorio de binarios globales no está en tu `PATH`. `npx @cristiancorreau/forge <cmd>` siempre funciona sin instalar; para el comando a secas:
 
 - **npm:** `export PATH="$(npm prefix -g)/bin:$PATH"`
-- **pnpm:** corré `pnpm setup` y reabrí la terminal
-- **bun:** agregá `export PATH="$HOME/.bun/bin:$PATH"` a tu shell rc
+- **pnpm:** ejecuta `pnpm setup` y reabre la terminal
+- **bun:** agrega `export PATH="$HOME/.bun/bin:$PATH"` a tu shell rc
 
 </details>
 
@@ -126,19 +126,19 @@ bun add -g @cristiancorreau/forge      # bun   (requiere ~/.bun/bin en el PATH)
 ## Quickstart (30 s)
 
 ```bash
-# 1. Inicializá forge en tu proyecto
+# 1. Inicializa forge en tu proyecto
 #    (wizard: detecta stack, instala agentes + hooks, escribe el manifest)
 npx @cristiancorreau/forge init
 
-# 2. Verificá el entorno y la conformidad
+# 2. Verifica el entorno y la conformidad
 forge doctor
 forge validate
 
-# 3. Regenerá la configuración nativa de cada runtime desde project.yaml
+# 3. Regenera la configuración nativa de cada runtime desde project.yaml
 forge generate
 ```
 
-¿Ya tenés un codebase andando? Onboardealo sin arrancar de cero:
+¿Ya tienes un codebase en marcha? Intégralo sin partir de cero:
 
 ```bash
 forge adopt        # analiza el repo existente + auto-wiki
@@ -324,13 +324,13 @@ Sumado a los **guardrail hooks en JavaScript puro** (cero Python):
 
 <br>
 
-### Forjá tu equipo de agentes en un comando
+### Forja tu equipo de agentes en un comando
 
 ```bash
 npx @cristiancorreau/forge init
 ```
 
-**[Empezá en la landing →](https://cristiancorreau.github.io/forge/)**
+**[Empieza en la landing →](https://cristiancorreau.github.io/forge/)**
 
 <br>
 
