@@ -33,6 +33,21 @@ export const RUNTIMES: RuntimeInfo[] = [
   { id: 'kiro',        label: 'Kiro IDE',    cmd: ['kiro', '--version'],     install: 'descargar desde kiro.dev',           marker: '.kiro/steering/' },
 ];
 
+/**
+ * List the profile ids that physically exist as directories under the forge
+ * root's profiles/ tree. This is the source of truth for `forge validate`'s
+ * dynamic, anti-drift profile check (issue #71): any directory here is a valid
+ * profile, regardless of the hand-maintained enum in project.schema.json.
+ */
+export function listCatalogProfiles(forgeRoot: string): string[] {
+  const profDir = join(forgeRoot, 'profiles');
+  if (!existsSync(profDir)) return [];
+  return readdirSync(profDir, { withFileTypes: true })
+    .filter(e => e.isDirectory())
+    .map(e => e.name)
+    .sort();
+}
+
 /** List agent ids available in the forge assets tree (core + profiles). */
 export function listCatalogAgents(forgeRoot: string): { core: string[]; profiles: Record<string, string[]> } {
   const core: string[] = [];

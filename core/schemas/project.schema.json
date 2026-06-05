@@ -195,10 +195,12 @@
           "type": ["array", "null"],
           "items": {
             "type": "string",
+            "comment": "Lista de referencia. forge validate resuelve los profiles dinámicamente desde profiles/ (anti-drift); este enum se mantiene como documentación y para herramientas que no resuelven el filesystem. Mantener sincronizado con profiles/.",
             "enum": [
               "hono-drizzle", "nextjs-admin", "astro", "expo", "playwright-crawler",
               "fastapi", "express", "rails", "nestjs", "django", "vuenuxt",
-              "go-gin", "sveltekit", "springboot", "flutter", "rust", "flask"
+              "go-gin", "sveltekit", "springboot", "flutter", "rust", "flask",
+              "laravel", "wordpress"
             ]
           }
         }

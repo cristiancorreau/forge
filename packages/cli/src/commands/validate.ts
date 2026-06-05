@@ -10,6 +10,7 @@ const Ajv: any = require('ajv');
 const addFormats: any = require('ajv-formats');
 import { findProjectYaml, loadProjectYaml, projectRoot } from '../lib/yaml.js';
 import { resolveForgeRoot } from '../lib/paths.js';
+import { listCatalogProfiles } from '../lib/catalog.js';
 
 const HELP = `Usage: forge validate [options]
 
@@ -25,10 +26,47 @@ function loadSchema(forgeRoot: string): object | null {
   const schemaPath = join(forgeRoot, 'core', 'schemas', 'project.schema.json');
   if (!existsSync(schemaPath)) return null;
   try {
-    return JSON.parse(readFileSync(schemaPath, 'utf-8'));
+    const schema = JSON.parse(readFileSync(schemaPath, 'utf-8'));
+    // agents.profiles is validated DYNAMICALLY against profiles/ (issue #71),
+    // so we drop the hand-maintained enum before AJV compiles the schema. This
+    // prevents the enum drifting and rejecting a real profile (e.g. laravel,
+    // wordpress). The dynamic check in dynamicProfileErrors() does the real work.
+    const profilesItems = schema?.properties?.agents?.properties?.profiles?.items;
+    if (profilesItems && Array.isArray(profilesItems.enum)) {
+      delete profilesItems.enum;
+    }
+    return schema;
   } catch {
     return null;
   }
+}
+
+/**
+ * Validates agents.profiles against the profiles that physically exist under the
+ * forge root's profiles/ directory (issue #71). Accepts ANY real profile and
+ * flags only those that don't correspond to a real directory — keeping validate
+ * in sync with the catalog without depending on the hand-maintained enum.
+ */
+function dynamicProfileErrors(data: Record<string, unknown>, forgeRoot: string): string[] {
+  const errors: string[] = [];
+  const agents = (data.agents ?? null) as { profiles?: unknown } | null;
+  const profiles = agents?.profiles;
+  if (!Array.isArray(profiles)) return errors;
+
+  const available = new Set(listCatalogProfiles(forgeRoot));
+  // No profiles on disk (e.g. forge root not found) → can't validate, skip.
+  if (available.size === 0) return errors;
+
+  for (const name of profiles) {
+    if (typeof name !== 'string') continue;
+    if (!available.has(name)) {
+      errors.push(
+        `/agents/profiles: el profile '${name}' no existe en profiles/ ` +
+        `(disponibles: ${[...available].join(', ')})`,
+      );
+    }
+  }
+  return errors;
 }
 
 function businessWarnings(data: Record<string, unknown>): string[] {
@@ -105,6 +143,9 @@ export async function validate(args: string[]): Promise<number> {
         });
       }
     }
+    // Dynamic, anti-drift profile check (issue #71): accept any profile that
+    // exists as a directory under profiles/, regardless of the schema enum.
+    errors.push(...dynamicProfileErrors(data, forgeRoot));
   } catch {
     // schema not available — skip schema validation
   }
