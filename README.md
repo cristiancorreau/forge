@@ -1,191 +1,347 @@
-# forge
+<div align="center">
 
-[![tests](https://github.com/cristiancorreau/forge/actions/workflows/tests.yml/badge.svg)](https://github.com/cristiancorreau/forge/actions/workflows/tests.yml)
-[![npm](https://img.shields.io/npm/v/@cristiancorreau/forge)](https://www.npmjs.com/package/@cristiancorreau/forge)
-[![license](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
+<br>
 
-**Configura cualquier proyecto para trabajar con agentes IA en un comando.**
+<!-- forge — yunque + chispa (ember/amber). SVG inline en base64: se ve igual en tema claro y oscuro de GitHub. -->
+<picture>
+  <img alt="forge" height="96" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgNDQwIDEyMCIgZm9udC1mYW1pbHk9IidTRiBNb25vJywgJ0pldEJyYWlucyBNb25vJywgQ29uc29sYXMsIG1vbm9zcGFjZSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImVtYmVyIiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNGRkQyNkYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI0NSUiIHN0b3AtY29sb3I9IiNGRjlGMUMiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRTI1NTIyIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8IS0tIHl1bnF1ZSAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyOCwgMzApIj4KICAgIDwhLS0gY2hpc3BhcyAtLT4KICAgIDxnIGZpbGw9InVybCgjZW1iZXIpIj4KICAgICAgPGNpcmNsZSBjeD0iNDQiIGN5PSIyIiByPSIzLjIiLz4KICAgICAgPGNpcmNsZSBjeD0iNTYiIGN5PSIxMCIgcj0iMiIvPgogICAgICA8Y2lyY2xlIGN4PSI1MiIgY3k9Ii00IiByPSIxLjYiLz4KICAgIDwvZz4KICAgIDwhLS0gY3VlcnBvIGRlbCB5dW5xdWUgLS0+CiAgICA8cGF0aCBmaWxsPSJ1cmwoI2VtYmVyKSIgZD0iTTIgMjAgSDU4IEM1NCAzMiA0NCAzNiAzNiAzNiBMMzYgNDQgQzQ2IDQ0IDUyIDQ4IDUyIDU4IEgxMCBDMTAgNDggMTYgNDQgMjYgNDQgTDI2IDM2IEMxNiAzNCAxMCAyOCA4IDIwIFoiLz4KICAgIDxyZWN0IHg9IjIzIiB5PSI1OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSJ1cmwoI2VtYmVyKSIvPgogIDwvZz4KICA8IS0tIHdvcmRtYXJrIC0tPgogIDx0ZXh0IHg9IjExNiIgeT0iNzgiIGZvbnQtc2l6ZT0iNjQiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9InVybCgjZW1iZXIpIiBsZXR0ZXItc3BhY2luZz0iLTIiPmZvcmdlPC90ZXh0Pgo8L3N2Zz4K">
+</picture>
 
-Wizard interactivo que detecta tu stack, instala agentes especializados, genera guardrails y mantiene un manifest con SHA-256 para auditar cada cambio.
+<br>
+<br>
 
----
+### Configura cualquier proyecto para trabajar con agentes de IA en un solo comando
 
-## Instalación
+Un equipo de agentes, todos los runtimes — **Claude Code · OpenCode · Codex CLI · Kiro** desde un único `project.yaml`.
 
-forge corre con **Node.js 20+** y funciona con cualquier gestor.
+<br>
 
-**Probar sin instalar** (one-off con `npx`):
+[![npm version](https://img.shields.io/npm/v/@cristiancorreau/forge?style=for-the-badge&labelColor=0a0a0a&color=FF9F1C&logo=npm)](https://www.npmjs.com/package/@cristiancorreau/forge)
+[![CI tests](https://img.shields.io/github/actions/workflow/status/cristiancorreau/forge/tests.yml?branch=main&style=for-the-badge&labelColor=0a0a0a&color=FFD26F&label=tests)](https://github.com/cristiancorreau/forge/actions/workflows/tests.yml)
+[![license](https://img.shields.io/badge/license-Apache--2.0-FF9F1C?style=for-the-badge&labelColor=0a0a0a)](LICENSE)
+[![node](https://img.shields.io/badge/node-%3E%3D20-FFD26F?style=for-the-badge&labelColor=0a0a0a&logo=node.js&logoColor=white)](https://nodejs.org)
+
+<br>
+
+**[Landing](https://cristiancorreau.github.io/forge/)**
+&nbsp;&nbsp;•&nbsp;&nbsp;
+**[Documentación](docs/guide.md)**
+&nbsp;&nbsp;•&nbsp;&nbsp;
+**[npm](https://www.npmjs.com/package/@cristiancorreau/forge)**
+&nbsp;&nbsp;•&nbsp;&nbsp;
+**[Issues](https://github.com/cristiancorreau/forge/issues)**
+
+<br>
+
+</div>
 
 ```bash
 npx @cristiancorreau/forge init
 ```
 
-**Instalar el comando global `forge`** (para usar `forge init`, `forge doctor`, … directo):
+<div align="center">
+
+<br>
+
+<img alt="Panel interactivo de forge en la terminal (OpenTUI): agentes, skills, hooks y profiles" width="780" src="docs/assets/cli-preview.png">
+
+<sub>El panel interactivo de forge (<code>forge panel</code>) requiere Bun (OpenTUI) — explorá agentes, skills, hooks y profiles sin salir de la terminal.</sub>
+
+<br>
+
+</div>
+
+---
+
+## ¿Qué es forge?
+
+**forge** es un framework de _agentic development_ multi-runtime. Un solo comando analiza tu proyecto, instala un equipo de agentes especializados, cablea guardrails de seguridad y deja un `project.yaml` como **única fuente de verdad** desde la que se regenera la configuración nativa de cada runtime de IA.
+
+En vez de copiar y pegar reglas de agentes entre proyectos y entre herramientas, definís el equipo **una vez** y forge lo materializa para Claude Code, OpenCode, Codex CLI y Kiro.
+
+- 🤖 **Equipos de agentes multi-runtime** — 7 agentes universales + 19 profiles de stack
+- 📐 **Flujo SDD spec-first** — ninguna tarea de código sin una spec `APPROVED`
+- 🪝 **Guardrail hooks en JS puro** — branch-guard, debug, secretos y prod-safety, cero Python
+- 🔁 **Un `project.yaml`, cada CLI** — Claude Code, OpenCode, Codex, Kiro
+- ⚖️ **Compliance con veto vinculante** — revisor GDPR/LGPD/CCPA que bloquea el merge
+- 🔄 **Operaciones reversibles** — manifest SHA-256 + `--dry-run` para auditar cada cambio
+- 📚 **Knowledge base del proyecto** — wiki que ingesta, lintea y responde con citas
+
+---
+
+## ¿Por qué forge?
+
+### vs. reglas de agente hechas a mano
+
+- **Un `project.yaml`, cuatro runtimes** — escribís el equipo una vez, no cuatro.
+- **Spec-first por defecto** — el `orchestrator` rechaza spawnear agentes sin spec aprobada.
+- **Guardrails ya cableados** — hooks de seguridad listos, sin instalar nada de Python.
+- **Regenerable** — `forge generate` reconstruye todo el equipo desde la fuente de verdad.
+
+### vs. copiar y pegar agentes entre proyectos
+
+- **TIERs componibles** — universal → stack → dominio, con resolución de colisiones predecible.
+- **19 profiles de stack** listos — Next.js, FastAPI, Django, Rails, Laravel, Go, Rust, Flutter…
+- **Operaciones reversibles** — manifest SHA-256 detecta drift; `forge teardown` desinstala limpio.
+- **Drift bajo control** — `forge update` re-sincroniza con el catálogo preservando tus ediciones.
+
+---
+
+## Instalación
+
+forge corre con **Node.js 20+**. Con **Bun** se desbloquea el panel full-screen (OpenTUI, `@opentui/core`); en Node cae a prompts [@clack](https://github.com/bombshell-dev/clack); en consolas legacy, a ASCII.
+
+**Probar sin instalar:**
 
 ```bash
-npm install -g @cristiancorreau/forge     # npm
-pnpm add -g @cristiancorreau/forge        # pnpm  (requiere `pnpm setup` una vez)
-bun add -g @cristiancorreau/forge         # bun   (requiere ~/.bun/bin en el PATH)
+npx @cristiancorreau/forge init
 ```
 
-Luego:
+**Instalar el comando global `forge`:**
 
 ```bash
-forge init
+npm install -g @cristiancorreau/forge
+```
+
+<details>
+<summary>Otros gestores y troubleshooting de PATH</summary>
+
+<br>
+
+```bash
+pnpm add -g @cristiancorreau/forge     # pnpm  (requiere `pnpm setup` una vez)
+bun add -g @cristiancorreau/forge      # bun   (requiere ~/.bun/bin en el PATH)
+```
+
+¿El comando `forge` no se reconoce tras el install global? El directorio de binarios globales no está en tu `PATH`. `npx @cristiancorreau/forge <cmd>` siempre funciona sin instalar; para el comando pelado:
+
+- **npm:** `export PATH="$(npm prefix -g)/bin:$PATH"`
+- **pnpm:** corré `pnpm setup` y reabrí la terminal
+- **bun:** agregá `export PATH="$HOME/.bun/bin:$PATH"` a tu shell rc
+
+</details>
+
+---
+
+## Quickstart (30 s)
+
+```bash
+# 1. Inicializá forge en tu proyecto
+#    (wizard: detecta stack, instala agentes + hooks, escribe el manifest)
+npx @cristiancorreau/forge init
+
+# 2. Verificá el entorno y la conformidad
 forge doctor
-forge --version
+forge validate
+
+# 3. Regenerá la configuración nativa de cada runtime desde project.yaml
+forge generate
 ```
 
-> **El comando `forge` no se reconoce tras el install global?** El directorio de binarios
-> globales no está en tu `PATH`. `npx @cristiancorreau/forge <cmd>` siempre funciona sin
-> instalar; para el comando pelado:
-> - **npm:** `export PATH="$(npm prefix -g)/bin:$PATH"`
-> - **pnpm:** corré `pnpm setup` y reabrí la terminal
-> - **bun:** agregá `export PATH="$HOME/.bun/bin:$PATH"` a tu shell rc
+¿Ya tenés un codebase andando? Onboardealo sin arrancar de cero:
+
+```bash
+forge adopt        # analiza el repo existente + auto-wiki
+```
 
 ---
 
-## Cómo funciona
+## Las 5 capas
 
-El wizard detecta y configura el proyecto en cinco pasos:
+forge se organiza en cinco capas que van de la fuente de verdad a la materialización por runtime.
 
-1. **Detecta el stack** — lee `package.json`, lockfiles y `Dockerfile` para identificar framework, lenguaje y dependencias.
-2. **Selecciona agentes** — muestra un selector de flechas con los agentes disponibles para tu stack (TypeScript, Python, Ruby, Go, PHP).
-3. **Instala configuración** — escribe `.claude/agents/`, `CLAUDE.md`, `settings.json` y `architecture.rules` en el repositorio.
-4. **Instala hooks** — genera hooks de guardrail en JavaScript puro; sin dependencias de Python ni binarios externos.
-5. **Crea el manifest** — `forge/.forge/manifest.json` con SHA-256 de cada archivo gestionado para rastrear derivaciones futuras.
-
----
-
-## Funcionalidades
-
-| Funcionalidad | Descripción | Estado | Runtime |
-|---|---|---|---|
-| SDD (Spec-Driven Development) | Flujo spec-first: ninguna tarea de código arranca sin una spec `APPROVED`. El `orchestrator` rechaza spawnear agentes sin spec aprobada; el skill `/spec` redacta specs en `docs/specs/`. | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| Agentes Tier 1 (universal) | Agentes definidos por output, no por stack: `orchestrator`, `backend-engineer`, `frontend-engineer`, `test-engineer`, `docs-writer`, `compliance-reviewer`, `security-auditor`. Sirven en cualquier proyecto. | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| Agentes Tier 2 (stack) | Mismo rol que Tier 1 con instrucciones del stack: Hono+Drizzle, FastAPI, Flask, Express, NestJS, Django, Go-Gin, Spring Boot, Rust (Axum), Laravel, Rails, Next.js, Expo, Flutter, Astro, SvelteKit, Nuxt/Vue, WordPress, Playwright. | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| Agentes Tier 3 (dominio) | Agentes que conocen el negocio (`dsar-specialist`, `gcm-engineer`, `policy-engineer`, `banner-engineer`). Viven en el proyecto y se registran en `agents.specialized`. | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| Hooks de guardrail (sin Python) | Guardrails de pre-edit/branch-guard, detección de debug, secretos y prod-safety, ejecutados por el runtime. | 🚧 | Claude Code, OpenCode, Codex, Kiro |
-| Operaciones reversibles | Manifest SHA-256 + dry-run para instalaciones reversibles y verificables. | 🚧 | Claude Code, OpenCode, Codex, Kiro |
-| Multi-runtime | Un mismo proyecto forge se adapta a varios runtimes con sus marcadores de detección y niveles de soporte. | ✅ | Claude Code (completo), OpenCode, Codex, Kiro |
-| Auto-detección de stack | Detección por marcadores (`CLAUDE.md`+`.claude/`, `AGENTS.md`+`.opencode/`, `.codex/`, `.kiro/`) para activar profiles y adapters. | 🚧 | Claude Code, OpenCode, Codex, Kiro |
-| Skills | Biblioteca de skills invocables (`spec`, `new-feature`, `security-audit`, `db-migrate`, `local2prod`, `browser-test`, `wiki-*`, etc.). | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| Compliance (GDPR/LGPD/CCPA) | `compliance-reviewer` (Tier 1, model opus) revisa cada PR contra los marcos de compliance activos con poder de veto vinculante antes de mergear. | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| forge wiki (knowledge base) | Knowledge base del proyecto: ingesta fuentes, compila páginas, mantiene índice y responde queries citando páginas (`wiki-ingest` / `wiki-lint` / `wiki-query`). | 🚧 | Claude Code, OpenCode, Codex, Kiro |
-| Browser testing | Automatización de navegador (agent-browser sobre CDP) para verificar UI, flujos críticos, evidencia y diffs visuales/responsive (`/browser-test`). | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| DB migrations | Flujo seguro de migraciones compatible con Prisma, Drizzle, ActiveRecord, Alembic y Goose (`/db-migrate`). | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| Deploy a producción | Publicación con gate `READY/SUCCESS` sobre Vercel, Railway, Fly.io, GitHub Actions y pipelines custom (`/local2prod`). | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| Migración v1→v2 | Migración de `project.yaml` v1 a v2 con detección automática de versión, soporte `--dry-run` y `--backup` (`forge migrate`). | ✅ | Claude Code, OpenCode, Codex, Kiro |
-| Scaffold / Teardown | `forge scaffold` genera profiles Tier 2 (`--force`, `--description`, `--stack-details`) y `forge teardown` desinstala forge limpiamente vía manifest (`--dry-run`, `--keep-config`). Ambos en la CLI TypeScript con tests. | ✅ | Claude Code, OpenCode, Codex, Kiro |
-
-Leyenda: ✅ disponible · 🚧 parcial · ❌ pendiente.
-
----
-
-## Comandos
-
-| Comando | Qué hace |
-|---------|----------|
-| `forge init` | Wizard completo: detecta stack, instala agentes, hooks y genera configuración |
-| `forge generate` | Regenera configuración nativa de cada runtime desde `project.yaml` sin ejecutar el wizard completo |
-| `forge migrate` | Migra `project.yaml` del schema v1 al v2 (`--dry-run`, `--backup`) |
-| `forge scaffold` | Genera un agente nuevo: profile Tier 2 o agente de dominio Tier 3 (`--tier 3`, `--name`) |
-| `forge teardown` | Desinstala forge del proyecto de forma limpia vía manifest (`--dry-run`, `--keep-config`) |
-| `forge audit` | Verifica el estado del proyecto contra el manifest; detecta archivos modificados o faltantes |
-| `forge validate` | Valida que los archivos generados cumplan el esquema esperado |
-| `forge doctor` | Health-check del entorno: Node.js, git, runtime de IA activo, permisos |
-| `forge skills` | Lista los skills disponibles agrupados por categoría |
-| `forge aitmpl-search` | Busca en el catálogo curado offline (frameworks, MCP servers, profiles) |
-| `forge session-start` | Abre una sesión de trabajo: detecta estado del repo y enruta |
-| `forge session-close` | Cierra una sesión de trabajo: commit → daily note → sync → PR |
-| `forge wiki` | Gestiona la knowledge base del proyecto (`status` \| `ingest` \| `query` \| `lint`) |
-
-> **Dashboard post-install.** Cuando `forge init` corre con Bun, al terminar abre un dashboard interactivo navegable con OpenTUI: panel con paneles para explorar agentes instalados, skills, profiles activos y estado del manifest sin salir de la terminal. Con Node.js el wizard cae al flujo de prompts estándar.
-
----
-
-## Runtimes soportados
-
-| Runtime | Soporte |
-|---------|---------|
-| **Claude Code** | Completo — agentes, `CLAUDE.md`, `settings.json`, hooks |
-| **OpenCode** | `AGENTS.md` generado |
-| **Codex CLI** | `AGENTS.md` enriquecido para contexto de proyecto |
-| **Kiro** | Steering files |
-
----
-
-## Stacks soportados
-
-| Lenguaje | Frameworks |
-|----------|------------|
-| TypeScript | Hono, Next.js, NestJS, Astro |
-| Python | FastAPI, Django |
-| Ruby | Rails |
-| Go | Gin |
-| PHP | Laravel |
-
-Cada stack instala agentes especializados con reglas de arquitectura, convenciones de código y patrones específicos del framework.
+| Capa | Responsabilidad |
+|------|-----------------|
+| 🧠 **Memory** | `project.yaml` como única fuente de verdad — stack, equipo, skills, reglas. |
+| 📚 **Knowledge** | Agentes + profiles de stack que aportan el saber de cada rol y framework. |
+| 🛡️ **Guardrail** | Enforcement de compliance y seguridad: hooks, branch-guard, detección de secretos. |
+| 🎯 **Delegation** | Orquestación y despacho de skills: qué agente atiende qué tarea. |
+| 📡 **Distribution** | Adapters de runtime que traducen la fuente de verdad a Claude Code, OpenCode, Codex y Kiro. |
 
 ---
 
 ## Sistema de TIERs
 
-forge organiza agentes y configuración en tres niveles que se componen de lo general a lo específico. Cada tier hereda y especializa al anterior, y la resolución de colisiones favorece siempre al tier más concreto.
+Tres niveles componibles, de lo general a lo específico. Cada tier hereda y especializa al anterior; ante una colisión, gana el más concreto.
 
-**Tier 1 — core (universal).** Agentes definidos por su output, no por el stack: `orchestrator`, `backend-engineer`, `frontend-engineer`, `test-engineer`, `docs-writer`, `compliance-reviewer`, `security-auditor`. Sirven en cualquier proyecto sin modificación y son la base sobre la que se montan los demás tiers.
-
-**Tier 2 — profile (stack).** Los mismos roles que Tier 1 pero con instrucciones específicas del stack (Hono+Drizzle, FastAPI, Flask, Django, Spring Boot, Rust/Axum, Rails, Laravel, Go-Gin, Next.js, Expo, Flutter, Astro, SvelteKit, WordPress, Playwright…). Un proyecto puede activar varios profiles a la vez; ante una colisión, gana el profile.
-
-**Tier 3 — project (dominio).** Agentes que conocen el negocio concreto del proyecto (`dsar-specialist`, `gcm-engineer`, `policy-engineer`, `banner-engineer`). Viven dentro del repositorio y se registran en `agents.specialized`.
+| Tier | Qué es | Ejemplos |
+|------|--------|----------|
+| **Tier 1 — universal** | 7 agentes definidos por su _output_, no por el stack. Sirven en cualquier proyecto. | `orchestrator`, `backend-engineer`, `frontend-engineer`, `test-engineer`, `docs-writer`, `compliance-reviewer`, `security-auditor` |
+| **Tier 2 — stack** | Los mismos roles con instrucciones del framework. 19 profiles disponibles. | Next.js, FastAPI, Django, Rails, Laravel, Go-Gin, Rust, NestJS… |
+| **Tier 3 — dominio** | Agentes que conocen el negocio del proyecto. Viven en el repo, se registran en `agents.specialized`. | `dsar-specialist`, `gcm-engineer`, `policy-engineer`… |
 
 Detalle completo en [docs/tiers.md](docs/tiers.md).
 
 ---
 
+## Comandos
+
+Los 16 comandos de la CLI.
+
+| Comando | Qué hace |
+|---------|----------|
+| `forge init` | Wizard completo: detecta el stack, instala agentes y hooks, escribe el manifest. |
+| `forge adopt` | Onboarda forge en un codebase **existente** (análisis + auto-wiki). |
+| `forge generate` | Regenera la configuración nativa de cada runtime desde `project.yaml`. |
+| `forge update` | Re-sincroniza archivos gestionados con el catálogo preservando ediciones locales (drift SHA-256). |
+| `forge validate` | Valida que `project.yaml` y los archivos generados cumplan el esquema. |
+| `forge doctor` | Health-check del entorno: Node.js, git, runtime de IA activo, permisos. |
+| `forge migrate` | Migra `project.yaml` del schema v1 al v2 (`--dry-run`, `--backup`). |
+| `forge audit` | Verifica el proyecto contra el manifest; detecta archivos modificados o faltantes. |
+| `forge scaffold` | Genera un agente nuevo: profile Tier 2 o agente de dominio Tier 3. |
+| `forge teardown` | Desinstala forge del proyecto de forma limpia vía manifest (`--dry-run`, `--keep-config`). |
+| `forge skills` | Lista los skills disponibles agrupados por categoría. |
+| `forge aitmpl-search` | Busca en el catálogo curado offline (frameworks, MCP servers, profiles). |
+| `forge wiki` | Gestiona la knowledge base del proyecto (`status` \| `ingest` \| `query` \| `lint`). |
+| `forge panel` | Panel interactivo OpenTUI (config / monitor / skills / hooks / templates). |
+| `forge session-start` | Abre una sesión de trabajo: detecta el estado del repo y enruta. |
+| `forge session-close` | Cierra una sesión: commit → daily note → sync → PR. |
+
+> **Panel interactivo.** Con Bun, `forge panel` (y el dashboard post-`init`) abre un panel navegable OpenTUI para explorar agentes, skills, hooks y profiles sin salir de la terminal. Con Node cae al flujo de prompts estándar.
+
+---
+
+## Stacks / Profiles (19)
+
+Profiles Tier 2 listos para activar. Cada uno aporta reglas de arquitectura, convenciones de código y patrones del framework.
+
+<details open>
+<summary>Ver los 19 profiles</summary>
+
+<br>
+
+| TypeScript / JS | Python | PHP | Otros |
+|---|---|---|---|
+| `astro` | `django` | `laravel` | `go-gin` (Go) |
+| `express` | `fastapi` | `wordpress` | `rust` |
+| `hono-drizzle` | `flask` | | `springboot` (Java) |
+| `nestjs` | | | `rails` (Ruby) |
+| `nextjs-admin` | | | `flutter` (Dart) |
+| `sveltekit` | | | |
+| `vuenuxt` | | | |
+| `expo` | | | |
+| `playwright-crawler` | | | |
+
+</details>
+
+---
+
+## Runtimes
+
+Un mismo proyecto forge se adapta a cuatro runtimes, cada uno con su salida nativa.
+
+| Runtime | Soporte | Salida |
+|---------|---------|--------|
+| **Claude Code** | ✅ Completo | `CLAUDE.md`, `.claude/agents/`, `.claude/commands/`, `.claude/settings.json`, hooks |
+| **OpenCode** | ✅ Soportado | `AGENTS.md` generado desde la raíz |
+| **Codex CLI** | ✅ Soportado | `AGENTS.md` enriquecido para contexto de proyecto |
+| **Kiro** | 🔭 Monitoring | steering files (`.kiro/steering/*.md`) |
+
+Detalle por runtime en [docs/runtimes/](docs/runtimes/).
+
+---
+
 ## Skills
 
-forge incluye 14 skills invocables que encapsulan flujos completos: `session-start` (abre sesión), `session-close` (cierra sesión), `spec` (redacta specs SDD), `new-feature` (kickoff de feature spec-first), `security-audit`, `db-migrate`, `local2prod` (deploy con gate de producción), `browser-test`, `phase-kickoff`, `obsidian-sync`, `aitmpl-search` y la familia `wiki-*` (`wiki-ingest`, `wiki-lint`, `wiki-query`) para la knowledge base del proyecto. Se invocan como slash commands (`/spec`, `/new-feature`, `/db-migrate`, …) y se mapean por runtime.
+12 skills invocables que encapsulan flujos completos, mapeados por runtime y disparables como slash commands (`/spec`, `/new-feature`, `/db-migrate`…).
+
+| Skill | Para qué |
+|-------|----------|
+| `spec` | Redacta specs SDD en `docs/specs/`. |
+| `new-feature` | Kickoff de feature spec-first, de plan a deploy. |
+| `security-audit` | Checklist de auditoría de seguridad. |
+| `db-migrate` | Migraciones seguras (Prisma, Drizzle, ActiveRecord, Alembic, Goose). |
+| `local2prod` | Deploy con gate de producción multi-provider. |
+| `browser-test` | Verificación de UI y flujos críticos vía navegador. |
+| `phase-kickoff` | Arranque de una fase del roadmap. |
+| `obsidian-sync` | Sincronización con Obsidian. |
+| `aitmpl-search` | Busca en el catálogo curado offline. |
+| `wiki-ingest` | Ingesta fuentes a la knowledge base. |
+| `wiki-lint` | Lintea la consistencia de la wiki. |
+| `wiki-query` | Responde queries citando páginas de la wiki. |
+
+> Además, `session-start` y `session-close` están disponibles como comandos de la CLI.
 
 Catálogo completo en [docs/skills.md](docs/skills.md).
 
 ---
 
-## Node.js, sin dependencias de sistema
+## SDD: spec-first, no opcional
 
-Toda la CLI corre en Node.js 20+. Los hooks de guardrail son JavaScript puro: no hay dependencias de sistema fuera de Node.js.
+forge aplica **Spec-Driven Development** con un gate real, no una sugerencia:
+
+- Ninguna tarea de código arranca sin una spec en estado **`APPROVED`** dentro de `docs/specs/`.
+- El **`orchestrator` veta** spawnear agentes de implementación si no hay spec aprobada.
+- El skill `/spec` redacta la spec; `/new-feature` la lleva de plan a deploy.
+
+El resultado: el equipo de agentes no improvisa código sobre requisitos ambiguos — primero se acuerda el _qué_, después se genera el _cómo_.
+
+---
+
+## Compliance con veto vinculante
+
+El agente **`compliance-reviewer`** (Tier 1, model `opus`) revisa cada PR contra los marcos de compliance activos — **GDPR / LGPD / CCPA** — con **poder de veto vinculante** antes de mergear.
+
+Sumado a los **guardrail hooks en JavaScript puro** (cero Python):
+
+- 🚫 **branch-guard** — evita commits directos sobre ramas protegidas.
+- 🐛 **debug detection** — bloquea `console.log` / `print` de depuración.
+- 🔐 **secret detection** — frena secretos hardcodeados antes del commit.
+- 🚀 **prod-safety** — protege operaciones sensibles contra producción.
 
 ---
 
 ## Comparativa
 
 | Capacidad | forge | autoskills | cc-sdd |
-|---|---|---|---|
-| Enfoque principal | Framework de agentic development end-to-end (agentes + skills + profiles + wiki + compliance) | Librería/colección de skills reutilizables | Spec-Driven Development para Claude Code |
-| SDD spec-first con gate | ✅ spec `APPROVED` obligatoria, veto del orchestrator | ❌ | ✅ núcleo del producto |
-| Agentes especializados por tier | ✅ Tier 1/2/3 (universal, stack, dominio) | ❌ | ❌ |
-| Profiles por stack | ✅ 15+ stacks (Hono, FastAPI, Django, Rails, Laravel, Go, WordPress, Expo…) | 🚧 parcial | ❌ |
-| Skills invocables | ✅ 14+ skills | ✅ foco central | 🚧 limitado |
-| Multi-runtime | ✅ Claude Code, OpenCode, Codex, Kiro | 🚧 principalmente Claude Code | 🚧 Claude Code + parcial |
-| Compliance con veto (GDPR/LGPD/CCPA) | ✅ `compliance-reviewer` vinculante | ❌ | ❌ |
-| Hooks de guardrail (branch/secrets/prod) | 🚧 parcial, sin Python | ❌ | ❌ |
-| Knowledge base / wiki del proyecto | ✅ ingest/lint/query con citas | ❌ | ❌ |
-| Operaciones reversibles (manifest SHA-256, dry-run) | 🚧 parcial | ❌ | ❌ |
-| Auto-detección de stack | 🚧 parcial | ❌ | ❌ |
+|---|:---:|:---:|:---:|
+| Enfoque | Framework agentic end-to-end | Colección de skills | SDD para Claude Code |
+| SDD spec-first con gate | ✅ veto del orchestrator | ❌ | ✅ núcleo |
+| Agentes por tier (1/2/3) | ✅ | ❌ | ❌ |
+| Profiles de stack | ✅ 19 | 🚧 parcial | ❌ |
+| Skills invocables | ✅ 12 | ✅ foco central | 🚧 |
+| Multi-runtime | ✅ 4 runtimes | 🚧 sobre todo Claude Code | 🚧 |
+| Compliance con veto (GDPR/LGPD/CCPA) | ✅ vinculante | ❌ | ❌ |
+| Guardrail hooks (branch/secrets/prod) | ✅ sin Python | ❌ | ❌ |
+| Knowledge base / wiki con citas | ✅ ingest/lint/query | ❌ | ❌ |
+| Operaciones reversibles (SHA-256, dry-run) | ✅ | ❌ | ❌ |
 | Deploy con gate de producción | ✅ multi-provider | ❌ | ❌ |
-| Posicionamiento | Plataforma completa de orquestación de agentes, compliance-first y multi-runtime | Catálogo de skills sueltas | Especialista en disciplina de specs |
 
 ---
 
 ## Documentación
 
-- [Guía completa](docs/guide.md)
-- [Skills](docs/skills.md)
-- [Wiki / knowledge base](docs/wiki.md)
-- [Runtimes](docs/runtimes/)
+- 🌐 **[Landing](https://cristiancorreau.github.io/forge/)** — el pitch en una página.
+- 📖 **[Guía completa](docs/guide.md)**
+- 🧩 **[Skills](docs/skills.md)**
+- 🏗️ **[TIERs](docs/tiers.md)**
+- 📚 **[Wiki / knowledge base](docs/wiki.md)**
+- 📡 **[Runtimes](docs/runtimes/)**
+
+---
+
+<div align="center">
+
+<br>
+
+### Forjá tu equipo de agentes en un comando
+
+```bash
+npx @cristiancorreau/forge init
+```
+
+**[Empezá en la landing →](https://cristiancorreau.github.io/forge/)**
+
+<br>
+
+<sub>Hecho con fuego, yunque y mucho dogfooding.</sub>
+
+<br>
+
+</div>
 
 ---
 
 ## Licencia
 
-Apache 2.0 — Copyright [Cristian Correa](https://github.com/cristiancorreau), 2026.
+[Apache-2.0](LICENSE) — Copyright © 2026 [Cristian Correa](https://github.com/cristiancorreau).
