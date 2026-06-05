@@ -90,7 +90,7 @@ del mismo tipo de producto. Viven solo en el proyecto.
 
 **Regla de colisión Tier 1 vs Tier 2:** cuando un proyecto activa un profile que provee
 `api-engineer`, ese archivo tiene prioridad sobre el Tier 1 genérico.
-`forge-init.py` instala primero los de profiles, luego los de core (sin sobreescribir).
+`forge init` instala primero los de profiles, luego los de core (sin sobreescribir).
 
 ---
 

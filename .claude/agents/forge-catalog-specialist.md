@@ -15,27 +15,27 @@ Buscás en el catálogo curado de forge y ayudás a instalar o configurar lo que
 1. Buscar en el catálogo según el stack o tecnología del usuario
 2. Mostrar opciones relevantes con descripción e instrucciones de instalación
 3. Para MCP servers: ejecutar el comando de instalación correcto
-4. Para profiles: agregar al `project.yaml` y correr `forge-init`
+4. Para profiles: agregar al `project.yaml` y correr `forge generate`
 5. Para frameworks y herramientas: guiar al usuario a la URL correcta
 
 ## Comandos clave
 
 ```bash
 # Buscar por término libre
-python3 .agentic/scripts/aitmpl-search.py "postgres"
-python3 .agentic/scripts/aitmpl-search.py "laravel php"
-python3 .agentic/scripts/aitmpl-search.py "nextjs typescript"
+npx @cristiancorreau/forge aitmpl-search "postgres"
+npx @cristiancorreau/forge aitmpl-search "laravel php"
+npx @cristiancorreau/forge aitmpl-search "nextjs typescript"
 
 # Listar todas las categorías disponibles
-python3 .agentic/scripts/aitmpl-search.py --list-categories
+npx @cristiancorreau/forge aitmpl-search --list-categories
 
 # Filtrar por categoría
-python3 .agentic/scripts/aitmpl-search.py "database" --category mcp-server
-python3 .agentic/scripts/aitmpl-search.py "php" --category profile
-python3 .agentic/scripts/aitmpl-search.py --category framework
+npx @cristiancorreau/forge aitmpl-search "database" --category mcp-server
+npx @cristiancorreau/forge aitmpl-search "php" --category profile
+npx @cristiancorreau/forge aitmpl-search --category framework
 
 # Buscar con links a GitHub
-python3 .agentic/scripts/aitmpl-search.py "playwright" --github
+npx @cristiancorreau/forge aitmpl-search "playwright" --github
 ```
 
 ## Categorías del catálogo
@@ -68,7 +68,7 @@ Principales disponibles:
 
 Para ver todos:
 ```bash
-python3 .agentic/scripts/aitmpl-search.py --category mcp-server
+npx @cristiancorreau/forge aitmpl-search --category mcp-server
 ```
 
 ## Profiles disponibles (15 stacks)
@@ -95,7 +95,7 @@ python3 .agentic/scripts/aitmpl-search.py --category mcp-server
 
 1. Buscar el profile:
 ```bash
-python3 .agentic/scripts/aitmpl-search.py "laravel" --category profile
+npx @cristiancorreau/forge aitmpl-search "laravel" --category profile
 ```
 
 2. Agregar a `project.yaml`:
@@ -106,7 +106,7 @@ agents:
 
 3. Instalar los agentes del profile:
 ```bash
-python3 .agentic/scripts/forge-init.py --tool claude-code
+npx @cristiancorreau/forge generate --runtime claude-code
 ```
 
 ## Cómo instalar un MCP server
@@ -120,7 +120,7 @@ En Claude Code (terminal):
 
 O buscar instrucciones de instalación manual:
 ```bash
-python3 .agentic/scripts/aitmpl-search.py "postgres" --category mcp-server --github
+npx @cristiancorreau/forge aitmpl-search "postgres" --category mcp-server --github
 ```
 
 ## Workflow de búsqueda recomendado
@@ -142,5 +142,5 @@ python3 .agentic/scripts/aitmpl-search.py "postgres" --category mcp-server --git
 
 - No recomiendes MCP servers que no estén en el catálogo de forge — pueden no tener instalación directa.
 - No modifiques `project.yaml` con `profiles` sin mostrar al usuario qué agentes se instalarán.
-- No ejecutes `forge-init.py` automáticamente después de editar `project.yaml` — esperar confirmación.
+- No ejecutes `forge generate` automáticamente después de editar `project.yaml` — esperar confirmación.
 - No busques en internet — el catálogo es local y offline, no necesita conexión.

@@ -44,7 +44,7 @@ Un proyecto compone su equipo tomando lo universal de core, especializándolo co
 
 **Naming.** Igual al Tier 1 que extiende — **mismo nombre, distinto path**. El frontmatter incluye `profile: <stack>`.
 
-**Regla de colisión (profile gana sobre core).** Cuando un profile provee, por ejemplo, `api-engineer`, ese archivo tiene **prioridad sobre el Tier 1 genérico**. El instalador (`forge-init.py`) instala **primero los profiles y luego core sin sobreescribir**, de modo que la versión especializada del stack siempre prevalece sobre la genérica.
+**Regla de colisión (profile gana sobre core).** Cuando un profile provee, por ejemplo, `api-engineer`, ese archivo tiene **prioridad sobre el Tier 1 genérico**. El instalador (`forge init`) instala **primero los profiles y luego core sin sobreescribir**, de modo que la versión especializada del stack siempre prevalece sobre la genérica.
 
 Un proyecto puede activar **varios profiles** a la vez (por ejemplo, un profile de API + uno de frontend + uno de admin).
 
@@ -115,7 +115,7 @@ Un proyecto puede activar **varios profiles** a la vez (por ejemplo, un profile 
 
 El orden de instalación es lo que hace funcionar la **regla de colisión** (Tier 2 gana sobre Tier 1):
 
-1. **Profiles primero.** `forge-init.py` instala los agentes de los profiles activos (`profiles/<stack>/agents/`). Cada uno escribe su archivo (`api-engineer`, `frontend-engineer`, etc.) con las instrucciones del stack.
+1. **Profiles primero.** `forge init` instala los agentes de los profiles activos (`profiles/<stack>/agents/`). Cada uno escribe su archivo (`api-engineer`, `frontend-engineer`, etc.) con las instrucciones del stack.
 2. **Core después, sin sobreescribir.** Luego se instalan los agentes universales de `core/agents/`, pero **sin pisar** los archivos que ya colocó un profile. Así, donde un profile provee una versión especializada, esa prevalece; donde no hay profile para ese rol, queda la versión genérica de core.
 3. **Tier 3 lo aporta el proyecto.** Los agentes de dominio no los instala forge: viven en `proyecto/.claude/agents/` y se registran manualmente en `agents.specialized` de `project.yaml`.
 

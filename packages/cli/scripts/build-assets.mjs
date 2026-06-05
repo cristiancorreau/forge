@@ -16,7 +16,7 @@ const ASSETS    = join(CLI_DIR, 'assets');
 if (existsSync(ASSETS)) rmSync(ASSETS, { recursive: true });
 mkdirSync(ASSETS, { recursive: true });
 
-const DIRS  = ['core', 'adapters', 'profiles', 'templates', 'hooks'];
+const DIRS  = ['core', 'adapters', 'profiles', 'templates'];
 const FILES = ['manifest.json'];
 // Top-level package metadata (also copied to CLI root for npm)
 const META  = ['LICENSE', 'README.md', 'CHANGELOG.md'];

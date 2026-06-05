@@ -16,8 +16,8 @@ runtimes:
 project:
   name: "forge"
   slug: "forge"
-  description: "Framework de desarrollo agéntico multi-runtime (Claude Code, OpenCode, Codex, Kiro). CLI TypeScript + legacy Python en migración."
-  language: "mixed"          # TypeScript (packages/cli) + Python legacy (forge.py, scripts/)
+  description: "Framework de desarrollo agéntico multi-runtime (Claude Code, OpenCode, Codex, Kiro). CLI 100% TypeScript (npx @cristiancorreau/forge)."
+  language: "typescript"     # CLI 100% TypeScript (packages/cli); el Python legacy se removió en v3.0.0
   mode: "enterprise"         # multi-runtime, governance completo, gate spec-first
   status: "active"
 
@@ -38,7 +38,6 @@ stack:
   monorepo: null             # packages/ + adapters/ + profiles/, sin herramienta de monorepo
   testing:
     - node-test              # tests del CLI TypeScript (node --test, runner built-in)
-    - pytest                 # tests del legacy Python
 
 agents:
   # Los 7 agentes especializados (Tier 3) que viven en .claude/agents/.
@@ -46,7 +45,7 @@ agents:
   specialized:
     - forge-cli-engineer         # packages/cli/src — CLI TypeScript y dogfooding
     - forge-docs-engineer        # README, CHANGELOG, docs/ — documentación
-    - forge-migration-engineer   # hooks/, workflows, manifest.json, forge.py — migración Python→TS
+    - forge-migration-engineer   # core/hooks/, workflows, manifest.json — limpieza/consistencia del sunset Python (completado)
     - forge-init-specialist      # inicialización de forge en proyectos (forge init)
     - forge-audit-specialist     # auditorías de proyectos forge (forge audit)
     - forge-catalog-specialist   # catálogo: MCP servers, profiles, frameworks
@@ -89,7 +88,7 @@ paths:
   specs: "docs/specs"
   progress: null
   migrations: null
-  tests: "tests/"
+  tests: "packages/cli/test/"
 
 github:
   project:

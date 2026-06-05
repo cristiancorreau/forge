@@ -275,15 +275,7 @@
       "slash": "/wiki-query"
     }
   ],
-  "hooks": [
-    {
-      "id": "pre-commit",
-      "file": "hooks/pre-commit",
-      "trigger": "pre-commit",
-      "mode": "universal",
-      "description": "Injects token usage stats into docs/progress.html before every commit"
-    }
-  ],
+  "hooks": [],
   "schemas": [
     {
       "id": "project.yaml",

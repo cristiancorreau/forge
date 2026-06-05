@@ -1,7 +1,7 @@
 # project.yaml — Fuente de verdad del proyecto para forge
 # Renombrar a project.yaml en la raíz del repositorio del proyecto
 
-# Runtimes habilitados — forge-generate-all.py regenera configs para cada uno.
+# Runtimes habilitados — 'forge generate' regenera configs para cada uno.
 # Si se omite esta sección, se auto-detecta por archivos presentes en el proyecto:
 #   .claude/  → claude-code | .opencode/ → opencode | .kiro/ → kiro | AGENTS.md → codex
 runtimes:

@@ -36,7 +36,7 @@ export interface AuditReport {
 const REQUIRED_FRONTMATTER = ['name', 'description', 'model', 'tier'];
 const REQUIRED_SECTIONS = ['## Reglas', '## No hagas'];
 
-// Umbrales de similitud (escala 0-1). Calibrados igual que forge-audit.py:
+// Umbrales de similitud (escala 0-1). Calibración:
 // agentes Tier 1/2 sin modificar quedan ~0.95-1.0 vs forge;
 // especialización moderada cae a ~0.65-0.80; reescritura cae a <0.50.
 const SIMILARITY_OUTDATED = 0.5; // < 0.5 → agente desactualizado (warn)
