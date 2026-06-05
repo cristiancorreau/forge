@@ -59,7 +59,7 @@ describe('Python sunset — legacy Python CLI stays removed (SPEC-041)', () => {
     );
   });
 
-  test('version coherence: all 4 sources read 3.0.0', () => {
+  test('version coherence: 4 sources agree (post-sunset, no forge.py)', () => {
     const pkg = JSON.parse(
       readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'),
     );
@@ -74,13 +74,21 @@ describe('Python sunset — legacy Python CLI stays removed (SPEC-041)', () => {
       readFileSync(join(REPO_ROOT, '.forge', 'manifest.json'), 'utf-8'),
     );
 
-    assert.equal(pkg.version, '3.0.0', 'package.json version must be 3.0.0');
-    assert.match(versionTs, /VERSION = '3\.0\.0'/, 'version.ts VERSION must be 3.0.0');
-    assert.equal(manifest.version, '3.0.0', 'manifest.json version must be 3.0.0');
+    // Coherence, not a hardcoded value: every release stays green without
+    // touching this test. Post-sunset there are exactly 4 sources (forge.py gone).
+    const v = pkg.version;
+    assert.match(v, /^\d+\.\d+\.\d+$/, 'package.json version must be semver');
+    assert.ok(Number(v.split('.')[0]) >= 3, 'major must be >= 3 (post Python sunset)');
+    assert.match(
+      versionTs,
+      new RegExp(`VERSION = '${v.replace(/\./g, '\\.')}'`),
+      'version.ts must match package.json',
+    );
+    assert.equal(manifest.version, v, 'manifest.json must match package.json');
     assert.equal(
       forgeManifest.forgeVersion,
-      '3.0.0',
-      '.forge/manifest.json forgeVersion must be 3.0.0',
+      v,
+      '.forge/manifest.json must match package.json',
     );
   });
 });
