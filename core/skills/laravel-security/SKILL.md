@@ -1,6 +1,6 @@
 # Skill: laravel-security
 
-Seguridad de aplicaciones Laravel 13: auth, autorización, validación, mass assignment,
+Seguridad de aplicaciones Laravel: auth, autorización, validación, mass assignment,
 CSRF, rate limiting, inyección SQL, XSS, secrets, uploads y deploy seguro. Actívalo al
 crear o revisar cualquier endpoint, modelo, formulario o configuración que toque datos
 de usuario, autenticación o producción.
@@ -21,14 +21,15 @@ Triggers: /laravel-security, "seguridad laravel", "auth laravel", "policy larave
 - Al manejar secrets, uploads, queries crudas o cualquier `DB::raw`.
 - Antes de cada deploy a producción (`APP_DEBUG=false`, `key:generate`, HTTPS, headers).
 
-> Laravel 13 (marzo 2026, PHP 8.3+) tiene **estructura slim**: NO existe `app/Http/Kernel.php`.
-> Todo el middleware se configura en `bootstrap/app.php` dentro de `->withMiddleware()`.
+> Las versiones recientes de Laravel usan **estructura slim** (PHP 8.3+): NO existe
+> `app/Http/Kernel.php`. Todo el middleware se configura en `bootstrap/app.php` dentro de
+> `->withMiddleware()`. Verifica la estructura leyendo `bootstrap/app.php` en tu proyecto.
 
 ---
 
 ## 1. Autenticación — elegir el paquete correcto
 
-No uses Passport por defecto. La regla en 2026:
+No uses Passport por defecto. La regla general:
 
 | Paquete | Para qué | Cuándo |
 |---------|----------|--------|
@@ -120,14 +121,15 @@ public function update(UpdatePostRequest $request, Post $post)
 
     $post->update($request->validated());
 
-    return $post->toResource();          // nuevo en 13: auto-descubre PostResource
+    return $post->toResource();          // las versiones recientes auto-descubren PostResource
 }
 ```
 
-> En el esqueleto slim de Laravel 13 el controller base (`App\Http\Controllers\Controller`)
-> está vacío: NO incluye el trait `AuthorizesRequests`, así que `$this->authorize(...)` no
-> existe por defecto. Usa `Gate::authorize(...)` (funciona sin trait) o el middleware `can:`.
-> Si prefieres `$this->authorize(...)`, agrega `use AuthorizesRequests;` al controller base.
+> En el esqueleto slim de Laravel el controller base (`App\Http\Controllers\Controller`)
+> suele estar vacío: puede NO incluir el trait `AuthorizesRequests`, así que `$this->authorize(...)`
+> no existiría por defecto. Verifica leyendo el controller base de tu proyecto. Usa
+> `Gate::authorize(...)` (funciona sin trait) o el middleware `can:`. Si prefieres
+> `$this->authorize(...)`, agrega `use AuthorizesRequests;` al controller base.
 
 ```php
 // Atajos útiles para route model binding: autoriza vía la Policy antes del controller.
@@ -236,7 +238,8 @@ class Post extends Model
     // NUNCA pongas en $fillable: id, user_id, is_admin, role, email_verified_at, etc.
     // Esos campos se asignan a mano desde el servidor con valores de confianza.
 
-    // Laravel 13: define casts con el MÉTODO casts(), no la propiedad legacy $casts.
+    // En las versiones recientes de Laravel, define casts con el MÉTODO casts(),
+    // no la propiedad legacy $casts. Verifica el estilo soportado por tu versión.
     protected function casts(): array
     {
         return [
@@ -274,9 +277,10 @@ combinado con `Model::create($request->all())`.
 
 ## 5. CSRF — `PreventRequestForgery`
 
-En Laravel 13 el middleware de CSRF se llama **`PreventRequestForgery`** (renombrado desde
-`VerifyCsrfToken`) y ya está en el grupo `web` por defecto. NO hay `app/Http/Kernel.php`: si
-necesitas excluir rutas (p. ej. webhooks), se configura en `bootstrap/app.php`.
+En las versiones recientes de Laravel el middleware de CSRF se llama **`PreventRequestForgery`**
+(renombrado desde `VerifyCsrfToken`) y ya está en el grupo `web` por defecto. Con la estructura
+slim no hay `app/Http/Kernel.php`: si necesitas excluir rutas (p. ej. webhooks), se configura en
+`bootstrap/app.php`. Verifica el nombre del middleware en la documentación oficial de tu versión.
 
 ```php
 // bootstrap/app.php
@@ -648,7 +652,7 @@ Severidades (alineadas con el skill `security-audit`):
 
 ## Relación con otros skills
 
-- Complementa a `security-audit` (checklist agnóstico al stack) con la implementación concreta en Laravel 13.
+- Complementa a `security-audit` (checklist agnóstico al stack) con la implementación concreta en Laravel.
 - `new-feature` lo invoca cuando la feature toca auth, autorización o datos sensibles.
 - Lo puede invocar el agente `forge-audit-specialist` o un reviewer durante un PR.
 - Standalone: no depende de otros skills para ejecutarse.

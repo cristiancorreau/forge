@@ -168,18 +168,25 @@ describe('forge assets — integrity', () => {
     assert.deepEqual(offenders, [], `TUI files use VERSION without importing it: ${offenders.join(', ')}`);
   });
 
-  test('no agent embeds a hardcoded major framework version in prose', () => {
-    // Migration guides legitimately reference specific versions; skip them.
-    const agents = walk(join(ASSETS, 'core', 'agents'), f => f.endsWith('.md'))
+  // Version-resilience guard (RFC-002): forge-authored agents/skills/commands must
+  // NOT assert a major framework version in prose — it goes stale (Laravel 13 → 14).
+  // Agents detect the real version at use-time from the project manifest instead.
+  // Migration guides / upgrade specialists legitimately reference versions; skip them.
+  test('no agent, skill or command embeds a hardcoded major framework version', () => {
+    const targets = walk(join(ASSETS, 'core', 'agents'), f => f.endsWith('.md'))
       .concat(walk(join(ASSETS, 'profiles'), f => f.endsWith('.md') && slash(f).includes('/agents/')))
+      .concat(walk(join(ASSETS, 'core', 'skills'), f => f.endsWith('.md')))
+      .concat(walk(join(ASSETS, 'adapters'), f => f.endsWith('.md') && slash(f).includes('/commands/')))
       .filter(f => !f.includes('migration-specialist'));
-    // Patterns that go stale: "Next.js 15", "Astro 4.x", "Nuxt 3 ", "Laravel 10,", etc.
-    const stale = /Next\.js 1[0-9]\b|Astro [0-9]\.x|Nuxt [0-9] \(|Laravel 1[0-9],|NestJS 1[0-9]\+|Rails [0-9]\.x o/;
+    // A bare framework + major number is a staleness liability. Bites all 12
+    // frameworks, not just comma-suffixed forms (the old regex was a no-op).
+    const stale = /\b(Laravel|NestJS|Rails|Next\.js|Nuxt|Astro|SvelteKit|Livewire|Filament|Spring Boot|Flutter|Django) \d+\b/;
     const offenders = [];
-    for (const f of agents) {
+    for (const f of targets) {
       const content = readFileSync(f, 'utf-8');
-      if (stale.test(content)) offenders.push(f.replace(ASSETS + '/', ''));
+      const m = content.match(stale);
+      if (m) offenders.push(`${f.replace(ASSETS + '/', '')} (${m[0]})`);
     }
-    assert.deepEqual(offenders, [], `agents with stale hardcoded versions: ${offenders.join(', ')}`);
+    assert.deepEqual(offenders, [], `stale hardcoded versions found: ${offenders.join(', ')}`);
   });
 });

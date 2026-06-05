@@ -1,6 +1,6 @@
 # laravel-eloquent
 
-Eloquent en Laravel 13: modelos, relaciones, eager loading y prevención de N+1, casts, scopes y pgvector.
+Eloquent en Laravel: modelos, relaciones, eager loading y prevención de N+1, casts, scopes y pgvector.
 
 Use the laravel-eloquent skill for: $ARGUMENTS
 
