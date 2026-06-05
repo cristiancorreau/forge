@@ -24,6 +24,11 @@ export const SKILLS: SkillInfo[] = [
   { id: 'wiki-lint',      command: '/wiki-lint',      category: 'Wiki',       purpose: 'Verifica integridad del wiki (links, huérfanos)',     trigger: '"verificar wiki"' },
   { id: 'aitmpl-search',  command: '/aitmpl-search',  category: 'Catálogo',   purpose: 'Busca en el catálogo de frameworks/MCP/profiles',     trigger: '"buscar templates", "buscar MCP"' },
   { id: 'obsidian-sync',  command: '/obsidian-sync',  category: 'Integración',purpose: 'Sincroniza un vault de Obsidian con el código',       trigger: '"actualizar obsidian", "sync vault"' },
+  { id: 'laravel-eloquent',command: '/laravel-eloquent',category: 'Laravel',    purpose: 'Eloquent: relaciones, eager loading, evitar N+1, casts, pgvector',  trigger: '"modelo eloquent", "evitar N+1", "query lenta"' },
+  { id: 'laravel-pest',   command: '/laravel-pest',   category: 'Laravel',     purpose: 'TDD con Pest 3: factories, fakes, HTTP tests, coverage',           trigger: '"test laravel", "pest", "factory"' },
+  { id: 'laravel-security',command: '/laravel-security',category: 'Laravel',    purpose: 'Auth, policies, Form Requests, CSRF, rate limiting, deploy seguro', trigger: '"seguridad laravel", "auth laravel", "policy"' },
+  { id: 'laravel-verify', command: '/laravel-verify', category: 'Laravel',     purpose: 'Loop Pint + Larastan + Pest (coverage) + composer audit',          trigger: '"verificar laravel", "pint phpstan pest"' },
+  { id: 'laravel-mcp',    command: '/laravel-mcp',    category: 'Laravel',     purpose: 'Laravel 13 agents/MCP: Boost, laravel/mcp, AI SDK, embeddings/RAG', trigger: '"laravel mcp", "laravel boost", "laravel ai sdk"' },
 ];
 
 export const RUNTIMES: RuntimeInfo[] = [

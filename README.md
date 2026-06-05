@@ -243,7 +243,7 @@ Detalle por runtime en [docs/runtimes/](docs/runtimes/).
 
 ## Skills
 
-12 skills invocables que encapsulan flujos completos, mapeados por runtime y disparables como slash commands (`/spec`, `/new-feature`, `/db-migrate`…).
+12 skills **generales** que encapsulan flujos completos, mapeados por runtime y disparables como slash commands (`/spec`, `/new-feature`, `/db-migrate`…), más skills **por stack**.
 
 | Skill | Para qué |
 |-------|----------|
@@ -261,6 +261,8 @@ Detalle por runtime en [docs/runtimes/](docs/runtimes/).
 | `wiki-query` | Responde queries citando páginas de la wiki. |
 
 > Además, `session-start` y `session-close` están disponibles como comandos de la CLI.
+
+> **Skills por stack.** El profile **Laravel** suma 5 skills orientados a Laravel 13: `/laravel-eloquent`, `/laravel-pest`, `/laravel-security`, `/laravel-verify` y `/laravel-mcp` (Boost, `laravel/mcp`, AI SDK, embeddings/pgvector).
 
 Catálogo completo en [docs/skills.md](docs/skills.md).
 
