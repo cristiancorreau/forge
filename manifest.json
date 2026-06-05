@@ -133,7 +133,7 @@
     {
       "id": "laravel",
       "stack": "Laravel + PHP",
-      "agents": ["api-engineer", "fullstack-engineer", "migration-specialist"]
+      "agents": ["api-engineer", "fullstack-engineer", "migration-specialist", "laravel-specialist", "laravel-test-engineer"]
     },
     {
       "id": "nestjs",
@@ -196,6 +196,31 @@
       "id": "db-migrate",
       "dir": "core/skills/db-migrate",
       "description": "Database migration orchestration"
+    },
+    {
+      "id": "laravel-eloquent",
+      "dir": "core/skills/laravel-eloquent",
+      "description": "Eloquent (Laravel 13): relationships, eager loading, N+1, casts, scopes, pgvector"
+    },
+    {
+      "id": "laravel-mcp",
+      "dir": "core/skills/laravel-mcp",
+      "description": "Laravel 13 agents/MCP: Boost, laravel/mcp servers, AI SDK, embeddings/pgvector"
+    },
+    {
+      "id": "laravel-pest",
+      "dir": "core/skills/laravel-pest",
+      "description": "TDD with Pest 3 (and PHPUnit): factories, fakes, HTTP tests, coverage"
+    },
+    {
+      "id": "laravel-security",
+      "dir": "core/skills/laravel-security",
+      "description": "Laravel security: auth, policies, Form Requests, CSRF, rate limiting, secure deploy"
+    },
+    {
+      "id": "laravel-verify",
+      "dir": "core/skills/laravel-verify",
+      "description": "Laravel verification loop: Pint, Larastan/PHPStan, Pest coverage, composer audit"
     },
     {
       "id": "local2prod",
