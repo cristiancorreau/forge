@@ -7,8 +7,8 @@
 ## Qué es forge
 
 Framework reutilizable de agentes, skills y workflows para proyectos de software.
-Tecnología agnóstica (TypeScript, Python, Ruby, Go). Se integra en cada proyecto como
-**git submodule** en `.agentic/` y se configura con un único archivo `project.yaml`.
+Tecnología agnóstica (TypeScript, Python, Ruby, Go). Se instala en cada proyecto con
+`npx @cristiancorreau/forge` y se configura con un único archivo `project.yaml`.
 
 ```
 proyecto/
@@ -27,9 +27,7 @@ Desde la **v2.8.0** la CLI es 100% TypeScript (sin Python) y se ejecuta con
 
 ## Comandos
 
-La CLI expone los siguientes comandos. Todos corren sobre Node/Bun, sin dependencias de Python.[^python-deprecated]
-
-[^python-deprecated]: Todos los comandos son TypeScript desde la v2.8.0. El `forge.py` y los `scripts/*.py` legacy están deprecados en v2.x y serán removidos en v3.0.0; ver [MIGRATION.md](../MIGRATION.md).
+La CLI expone los siguientes comandos. Todos corren sobre Node/Bun (Node.js 20+).
 
 | Comando | Qué hace | Flags principales |
 |---------|----------|-------------------|
@@ -143,13 +141,13 @@ La extensión agrega tres vistas bajo el ícono forge:
 | `forge: Run Audit` | `npx @cristiancorreau/forge audit` |
 | `forge: Audit Specific Agent` | `npx @cristiancorreau/forge audit --only <agent>` |
 | `forge: Search Catalog` | `npx @cristiancorreau/forge aitmpl-search <query>` |
-| `forge: Install` | `git submodule add ...` |
+| `forge: Install` | `npx @cristiancorreau/forge init` |
 
 ### Flujo de audit con selector de oportunidades
 
 Cuando el audit detecta profiles o skills disponibles que el proyecto no usa, la extensión muestra un **QuickPick multi-select** con descripción de cada ítem. Al confirmar la selección:
 
-1. Llama a `scripts/forge-add-opportunities.py` para actualizar `project.yaml`
+1. Actualiza `project.yaml` con los profiles/skills elegidos
 2. Ofrece "Initialize Agents" para instalar los nuevos agentes inmediatamente
 
 ### Configuración
@@ -158,7 +156,6 @@ En `Settings > forge`:
 
 | Setting | Por defecto | Descripción |
 |---------|-------------|-------------|
-| `forge.forgePath` | `.agentic` | Ruta a la instalación de forge (relativa al workspace) |
 | `forge.tool` | `claude-code` | Runtime target (`claude-code`, `opencode`, `kiro`, `codex`, `all`) |
 | `forge.autoAuditOnSave` | `false` | Auditar automáticamente al guardar un archivo de agente |
 
@@ -175,21 +172,21 @@ En `Settings > forge`:
 
 ## Parte 1 — Proyecto nuevo (desde cero)
 
-### Paso 1 — Crear repositorio e integrar forge
+### Paso 1 — Crear repositorio
 
 ```bash
 git init mi-proyecto && cd mi-proyecto
-git submodule add https://github.com/cristiancorreau/forge .agentic
-pip3 install -r .agentic/requirements.txt   # pyyaml
 ```
 
-### Paso 2 — Configurar project.yaml
+### Paso 2 — Correr el wizard
 
 ```bash
-cp .agentic/templates/project.yaml.tpl project.yaml
+npx @cristiancorreau/forge init
 ```
 
-Editar el archivo con los datos del proyecto. Secciones clave:
+El wizard detecta el stack, te pregunta por agentes, profiles y skills, y genera
+`project.yaml` + la configuración del runtime. Si preferís configurar a mano
+`project.yaml` antes de inicializar, estas son las secciones clave:
 
 ```yaml
 project:
@@ -230,37 +227,29 @@ compliance:
   audit_logs: false
 ```
 
-### Paso 3 — Inicializar
+### Paso 3 — Regenerar la configuración (si editaste project.yaml a mano)
 
 ```bash
-python3 .agentic/scripts/forge-init.py --tool claude-code
+npx @cristiancorreau/forge generate
 ```
 
 Esto:
 - Instala agentes Tier 2 (profiles) → Tier 1 (core) en `.claude/agents/`
 - Genera `AGENTS.md` con el roster completo
 - Instala slash commands activos en `.claude/commands/`
-- Crea `docs/wiki/` si los skills wiki están activos
+- Crea `wiki/` si los skills wiki están activos
 
-### Paso 4 — Instalar pre-commit hook (opcional pero recomendado)
-
-```bash
-cp .agentic/hooks/pre-commit .githooks/pre-commit
-chmod +x .githooks/pre-commit
-git config core.hooksPath .githooks
-```
-
-### Paso 5 — Commit inicial
+### Paso 4 — Commit inicial
 
 ```bash
 git add .
 git commit -m "chore: init project with forge framework"
 ```
 
-### Paso 6 — Verificar con forge-audit
+### Paso 5 — Verificar con forge audit
 
 ```bash
-python3 .agentic/scripts/forge-audit.py --forge .agentic
+npx @cristiancorreau/forge audit
 ```
 
 Un proyecto nuevo recién inicializado debería mostrar **0 gaps**.
@@ -269,21 +258,20 @@ Un proyecto nuevo recién inicializado debería mostrar **0 gaps**.
 
 ## Parte 2 — Proyecto existente (ya tiene estructura)
 
-### Paso 1 — Agregar forge como submodule
+### Paso 1 — Adoptar forge (brownfield)
 
 ```bash
 # En la raíz del proyecto existente
-git submodule add https://github.com/cristiancorreau/forge .agentic
-pip3 install -r .agentic/requirements.txt
+npx @cristiancorreau/forge adopt
 ```
 
-### Paso 2 — Crear project.yaml desde el template
+`forge adopt` analiza el codebase, genera `project.yaml` desde lo que detecta
+(stack, ORM, testing, monorepo, docker) e instala la config de forge sin pisar
+archivos existentes (salvo `--force`).
 
-```bash
-cp .agentic/templates/project.yaml.tpl project.yaml
-# Editar con los datos reales del proyecto
-```
+### Paso 2 — Ajustar project.yaml
 
+`forge adopt` ya generó `project.yaml`; editalo con los datos reales del proyecto.
 Puntos críticos al configurar un proyecto existente:
 
 - `agents.active` → listar los agentes que ya tenés en `.claude/agents/`
@@ -291,10 +279,10 @@ Puntos críticos al configurar un proyecto existente:
 - `agents.specialized` → listar los agentes Tier 3 propios del proyecto
 - `skills.active` → solo los skills que querés usar activamente
 
-### Paso 3 — Auditar el estado actual (SIN inicializar todavía)
+### Paso 3 — Auditar el estado actual
 
 ```bash
-python3 .agentic/scripts/forge-audit.py --forge .agentic
+npx @cristiancorreau/forge audit
 ```
 
 El audit muestra:
@@ -303,10 +291,10 @@ El audit muestra:
 - **Similitud con forge**: qué tan parecidos son tus agentes a la versión forge
 - **Oportunidades**: skills o profiles de forge que no estás usando
 
-### Paso 4 — Inicializar (sin --force para preservar lo existente)
+### Paso 4 — Regenerar (sin --force para preservar lo existente)
 
 ```bash
-python3 .agentic/scripts/forge-init.py --tool claude-code
+npx @cristiancorreau/forge generate
 ```
 
 Con el comportamiento por defecto (**sin** `--force`):
@@ -328,7 +316,7 @@ Para cada gap reportado:
 ### Paso 6 — Verificar el resultado final
 
 ```bash
-python3 .agentic/scripts/forge-audit.py --forge .agentic
+npx @cristiancorreau/forge audit
 # Objetivo: 0 errores (✗). Las advertencias (⚠) son opcionales.
 ```
 
@@ -344,16 +332,19 @@ python3 .agentic/scripts/forge-audit.py --forge .agentic
 
 ### Proceso de actualización (sin romper nada)
 
-#### Paso 1 — Actualizar el submodule
+#### Paso 1 — Usar la última versión de forge
+
+`npx @cristiancorreau/forge@latest <cmd>` siempre resuelve la última versión
+publicada en npm. Si instalaste el binario global, actualizalo:
 
 ```bash
-git -C .agentic pull origin main
+npm install -g @cristiancorreau/forge@latest
 ```
 
 #### Paso 2 — Auditar antes de aplicar cambios
 
 ```bash
-python3 .agentic/scripts/forge-audit.py --forge .agentic
+npx @cristiancorreau/forge audit
 ```
 
 Leer el output con atención:
@@ -363,11 +354,11 @@ Leer el output con atención:
 
 #### Paso 3 — Actualizar agentes selectivamente
 
-**NUNCA** hacer `forge-init.py --force` sin revisar primero. Solo actualizar lo que el audit señala como desactualizado:
+**NUNCA** hacer `forge generate --force` sin revisar primero. Solo actualizar lo que el audit señala como desactualizado:
 
 ```bash
-# Actualizar un agente específico
-python3 .agentic/scripts/forge-init.py --tool claude-code --force --only=docs-writer
+# Regenerar con --force (revisar el diff antes de commitear)
+npx @cristiancorreau/forge generate --force
 
 # Ver qué cambió antes de aceptar
 git diff .claude/agents/docs-writer.md
@@ -383,19 +374,19 @@ Si forge agregó comandos o skills nuevos que querés usar:
 # 1. Activar en project.yaml
 #    skills.active: - nuevo-skill
 
-# 2. Reinstalar comandos
-python3 .agentic/scripts/forge-init.py --tool claude-code
+# 2. Regenerar la configuración
+npx @cristiancorreau/forge generate
 
 # 3. Si hay estructura nueva (ej. wiki)
-#    forge-init.py la crea automáticamente si no existe
+#    forge la crea automáticamente si no existe
 ```
 
-#### Paso 5 — Commit del bump de submodule
+#### Paso 5 — Commit de la actualización
 
 ```bash
-# Agrupar en el mismo commit: submodule + agentes actualizados
-git add .agentic .claude/agents/ .claude/commands/ project.yaml
-git commit -m "chore(forge): bump submodule to <hash> + update <agents>"
+# Agrupar en el mismo commit: agentes y comandos actualizados
+git add .claude/agents/ .claude/commands/ project.yaml
+git commit -m "chore(forge): update agents to forge <version>"
 ```
 
 ---
@@ -412,15 +403,15 @@ git commit -m "chore(forge): bump submodule to <hash> + update <agents>"
 
 ### Reglas específicas
 
-1. **`--force` requiere audit previo.** Correr forge-audit antes de cualquier `--force`.
+1. **`--force` requiere audit previo.** Correr `forge audit` antes de cualquier `--force`.
 
-2. **Actualizar submodule y agentes en commits separados** si hay muchos cambios. Un commit para el bump de `.agentic`, otro para los agentes actualizados. Facilita el revert si algo falla.
+2. **Actualizar forge y agentes en commits separados** si hay muchos cambios. Un commit para el bump de forge, otro para los agentes actualizados. Facilita el revert si algo falla.
 
-3. **Los agentes "extendidos" son fork intencional.** Si tu versión tiene más líneas que forge, es porque la personalizaste. forge-audit lo muestra como `→ info` (no error). No hay que "arreglarlo".
+3. **Los agentes "extendidos" son fork intencional.** Si tu versión tiene más líneas que forge, es porque la personalizaste. `forge audit` lo muestra como `→ info` (no error). No hay que "arreglarlo".
 
 4. **Nunca editar agentes Tier 1/2 directamente** sin antes pensar si el cambio debería ir en forge. Si el cambio es universal → llevarlo a forge. Si es específico del proyecto → documentarlo como fork intencional con un comentario en el agente.
 
-5. **Mantener `project.yaml` actualizado.** Cada vez que agregas un agente Tier 3, declararlo en `agents.specialized`. Cada vez que activas un skill, declararlo en `skills.active`. Esto permite que forge-audit tenga un panorama correcto.
+5. **Mantener `project.yaml` actualizado.** Cada vez que agregas un agente Tier 3, declararlo en `agents.specialized`. Cada vez que activas un skill, declararlo en `skills.active`. Esto permite que `forge audit` tenga un panorama correcto.
 
 6. **El wiki (`docs/wiki/raw/`) es inmutable.** Nunca editar archivos en `raw/`. Solo agregar nuevos.
 
@@ -526,15 +517,11 @@ forge/
 ├── templates/
 │   ├── project.yaml.tpl
 │   └── wiki/            ← index.md, log.md, _templates por tipo
-├── scripts/
-│   ├── forge-init.py
-│   ├── forge-audit.py
-│   ├── forge-wizard.py
-│   ├── forge-scaffold-profile.py
-│   ├── forge-teardown.py
-│   ├── forge-add-opportunities.py  ← aplica profiles/skills seleccionados
-│   ├── aitmpl-search.py            ← catálogo curado (MCP, profiles, tools)
-│   └── token-stats.py
+├── packages/
+│   └── cli/             ← CLI TypeScript (publicada como @cristiancorreau/forge)
+│       ├── src/         ← commands/ (init, generate, audit, adopt, …), lib/, tui/
+│       ├── scripts/     ← build-assets.mjs (empaqueta core/, profiles/, …)
+│       └── test/        ← suite node:test (commands, assets, adopt, wizard, …)
 ├── vscode-extension/    ← extensión oficial para VS Code
 │   ├── src/extension.ts
 │   └── package.json

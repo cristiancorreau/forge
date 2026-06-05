@@ -1,6 +1,6 @@
 # <NOMBRE_PROYECTO> — Contexto del proyecto
 
-Generado por forge v<VERSION>. Actualizar con `/forge generate-claude-md` o `python3 .agentic/scripts/forge-init.py --tool claude-code --force`.
+Generado por forge v<VERSION>. Actualizar con `npx @cristiancorreau/forge generate --runtime claude-code --force`.
 
 ## Stack
 

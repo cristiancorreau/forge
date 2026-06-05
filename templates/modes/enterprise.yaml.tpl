@@ -2,8 +2,8 @@
 # Roster completo, compliance activo, fases de sprint con specs, CI habilitado.
 # Renombrar a project.yaml en la raíz del repositorio.
 #
-# CI: ejecutar forge-audit con --json para integrar en pipelines:
-#   python3 .agentic/scripts/forge-audit.py --json | jq '.summary'
+# CI: ejecutar forge audit con --json para integrar en pipelines:
+#   npx @cristiancorreau/forge audit --json | jq '.summary'
 # Retorna código de salida 1 si hay errores de severidad "error" o "critical".
 
 project:
@@ -86,8 +86,8 @@ deploy:
   branch: "main"
 
 # Compliance enterprise: múltiples marcos regulatorios
-# forge-audit verifica automáticamente los frameworks listados aquí.
-# Usar --json en CI: python3 .agentic/scripts/forge-audit.py --json
+# forge audit verifica automáticamente los frameworks listados aquí.
+# Usar --json en CI: npx @cristiancorreau/forge audit --json
 compliance:
   frameworks:
     - gdpr                         # Unión Europea

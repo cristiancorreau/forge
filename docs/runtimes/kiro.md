@@ -2,7 +2,7 @@
 
 > **Status:** Monitoring  
 > **Last reviewed:** 2026-05  
-> **Adapter:** `adapters/kiro/generate-steering.py`
+> **Generator:** `npx @cristiancorreau/forge generate --runtime kiro`
 
 ## Evaluation summary
 
@@ -36,7 +36,7 @@ As of mid-2026, however, Kiro remains in limited preview. Adoption metrics are l
 | Forge slash commands | Kiro uses `.kiro/steering/` for context, not `.claude/commands/`. No command-invocation mechanism equivalent to Claude Code's `/command`. |
 | Agent spawning via Forge orchestrator | Kiro's agent-teams feature was not GA as of Aug 2025. The Forge orchestrator pattern (spawn + SendMessage + worktrees) is Claude Code-specific. |
 | Hooks parity | Kiro hooks fire on file-edit events; Forge hooks (Claude Code) fire on pre/post tool calls and session lifecycle. The semantics differ. |
-| Profile injection | `forge-init.py` installs `.claude/agents/` files — Kiro has no equivalent per-project agent-definition directory. |
+| Profile injection | `forge init` installs `.claude/agents/` files — Kiro has no equivalent per-project agent-definition directory. |
 | Memory / AGENTS.md | Kiro does not have a direct equivalent to `AGENTS.md` + project memory. Steering docs are a partial substitute. |
 
 ---
@@ -51,7 +51,7 @@ As of mid-2026, however, Kiro remains in limited preview. Adoption metrics are l
 | Scope | Multiple focused files, one topic each | Single file, all project context |
 | Persistence | Loaded on every interaction automatically | Loaded on every Claude Code session |
 | Customization | Per-file inclusion mode (`mode: auto` / `mode: agent`) | Sections within one file |
-| Generation | `generate-steering.py` reads `project.yaml` | `generate-claude-md.py` reads `project.yaml` |
+| Generation | `forge generate --runtime kiro` reads `project.yaml` | `forge generate --runtime claude-code` reads `project.yaml` |
 
 **Summary:** steering docs are functionally equivalent to CLAUDE.md but split across files. The Forge adapter maps each logical section to one steering file.
 
@@ -95,9 +95,6 @@ npx @cristiancorreau/forge generate --runtime kiro
 # Force overwrite existing steering files
 npx @cristiancorreau/forge generate --runtime kiro --force
 ```
-
-> El adapter Python `adapters/kiro/generate-steering.py` está **deprecado** y será
-> removido en v3.0.0; usar la CLI. Ver [MIGRATION.md](../../MIGRATION.md).
 
 ### Output
 
@@ -155,6 +152,6 @@ The following changes would be required to promote Kiro from "monitoring" to "fu
 1. **Kiro GA release** — stable hooks API, no breaking changes between builds.
 2. **Agent-teams parity** — Kiro must support multi-agent invocation so the Forge orchestrator pattern can run natively.
 3. **Command equivalent** — a `.kiro/commands/` directory or similar mechanism to register Forge slash commands.
-4. **forge-init.py Kiro mode** — a `--runtime kiro` flag that installs steering docs instead of (or alongside) CLAUDE.md + `.claude/agents/`.
+4. **forge Kiro install mode** — extend `forge init` so the `--runtime kiro` flag installs steering docs instead of (or alongside) CLAUDE.md + `.claude/agents/`.
 5. **Spec bridge** — a script that converts Forge specs (`docs/specs/`) to Kiro's three-file spec format and vice versa.
 6. **Session hook parity** — map Forge's `PreToolUse`/`PostToolUse` hooks to Kiro's `onBeforeEdit` where semantics overlap.

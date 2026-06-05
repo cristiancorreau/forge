@@ -89,7 +89,7 @@ for _i in 1 2 3 4 5 6; do
 done
 
 if [[ -z "$PROJECT_YAML" ]]; then
-    check "project.yaml" "warn: project.yaml no encontrado — ejecutar forge-wizard.py"
+    check "project.yaml" "warn: project.yaml no encontrado — ejecutar npx @cristiancorreau/forge init"
 else
     check "project.yaml" "ok"
 

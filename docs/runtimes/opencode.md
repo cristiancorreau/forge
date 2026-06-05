@@ -2,7 +2,7 @@
 
 > **Status:** Soportado
 > **Ultima revision:** 2026-05
-> **Adapter:** `adapters/opencode/generate-agents-md.py`
+> **Generator:** `npx @cristiancorreau/forge generate --runtime opencode`
 
 ---
 
@@ -23,38 +23,18 @@ OpenCode es un agente de coding open-source para la terminal, compatible con Cla
 npm install -g opencode-ai   # o segun la instruccion oficial de opencode.ai
 ```
 
-La CLI de forge es 100% TypeScript desde v2.8.0: no requiere Python.
+La CLI de forge corre con Node.js 20+ (sin dependencias de sistema adicionales).
 
-### Agregar Forge al proyecto
-
-```bash
-# Opcion A: como git submodule (recomendado)
-git submodule add https://github.com/cristiancorreau/forge .agentic
-
-# Opcion B: clonar directamente
-git clone https://github.com/cristiancorreau/forge .agentic
-```
-
-### Generar AGENTS.md
+### Generar AGENTS.md y los comandos Forge
 
 ```bash
 # Desde la raiz del proyecto (requiere project.yaml)
 npx @cristiancorreau/forge generate --runtime opencode
 ```
 
-> El adapter Python `adapters/opencode/generate-agents-md.py` está **deprecado** y
-> será removido en v3.0.0; usar la CLI. Ver [MIGRATION.md](../../MIGRATION.md).
-
-Esto genera `AGENTS.md` en la raiz del proyecto con el roster de agentes, stack del proyecto, reglas globales de seguridad y guardrails de compliance.
-
-### Instalar los comandos Forge
-
-Copiar los comandos de OpenCode al directorio de comandos del proyecto:
-
-```bash
-mkdir -p .opencode/commands
-cp .agentic/adapters/opencode/commands/*.md .opencode/commands/
-```
+Esto genera `AGENTS.md` en la raiz del proyecto (con el roster de agentes, stack
+del proyecto, reglas globales de seguridad y guardrails de compliance) e instala
+los comandos de OpenCode en `.opencode/commands/`.
 
 Los 6 comandos disponibles son:
 

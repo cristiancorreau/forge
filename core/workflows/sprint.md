@@ -28,13 +28,6 @@ Sprint N (14 días por defecto)
 
 El progreso se visualiza en `docs/progress.html`.
 
-Para actualizar manualmente:
-```bash
-python3 .agentic/scripts/token-stats.py --patch-html docs/progress.html
-```
-
-Se actualiza automáticamente en cada commit si el pre-commit hook está activo.
-
 ## Estado de las specs en CLAUDE.md
 
 Mantener esta sección actualizada:

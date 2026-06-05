@@ -36,10 +36,6 @@ git add AGENTS.md .codex/
 git commit -m 'chore(codex): initialize Forge v2 Codex adapter'
 ```
 
-> Los scripts Python (`scripts/setup-codex.sh`, `forge-wizard.py`,
-> `generate-codex-config.py`) están **deprecados** y serán removidos en v3.0.0;
-> usar la CLI TypeScript. Ver [MIGRATION.md](../../MIGRATION.md).
-
 ---
 
 ## Cómo funciona Forge en Codex
@@ -113,7 +109,7 @@ hooks:
 
 **forge-codex-start.sh** verifica al inicio de cada sesión:
 
-1. git y python3 disponibles en PATH
+1. git y node disponibles en PATH
 2. Branch actual no es `main` ni `master` (warn si lo es)
 3. Cambios sin commitear en el worktree (warn)
 4. `project.yaml` existe (warn si no)

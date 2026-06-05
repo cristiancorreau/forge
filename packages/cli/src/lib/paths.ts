@@ -14,7 +14,7 @@ function isForgeRoot(dir: string): boolean {
  * 1. FORGE_HOME env var
  * 2. assets/ next to the compiled CLI (npm package mode)
  * 3. Walk up from __dirname (dev mode)
- * 4. .agentic/ or forge/ in cwd (consumer project with submodule)
+ * 4. forge/ in cwd (consumer project with a vendored forge root)
  */
 export function resolveForgeRoot(): string {
   if (process.env.FORGE_HOME) {
@@ -36,11 +36,9 @@ export function resolveForgeRoot(): string {
     dir = parent;
   }
 
-  // consumer project: look for a vendored forge under .agentic/ or forge/
-  for (const candidate of ['.agentic', 'forge']) {
-    const p = join(process.cwd(), candidate);
-    if (isForgeRoot(p)) return p;
-  }
+  // consumer project: look for a vendored forge under forge/
+  const vendored = join(process.cwd(), 'forge');
+  if (isForgeRoot(vendored)) return vendored;
 
   throw new Error(
     'forge root not found. Set FORGE_HOME or install via: npx @cristiancorreau/forge'

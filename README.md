@@ -8,14 +8,11 @@
 
 Wizard interactivo que detecta tu stack, instala agentes especializados, genera guardrails y mantiene un manifest con SHA-256 para auditar cada cambio.
 
-> ⚠️ **Deprecation Notice**: `forge.py` y los scripts Python (`scripts/*.py`) están deprecados y serán removidos en **v3.0.0**.
-> Usa `npx @cristiancorreau/forge` para todos los comandos (Node/Bun, sin Python). Ver [MIGRATION.md](MIGRATION.md).
-
 ---
 
 ## Instalación
 
-forge corre con **Node.js 20+** (sin Python) y funciona con cualquier gestor.
+forge corre con **Node.js 20+** y funciona con cualquier gestor.
 
 **Probar sin instalar** (one-off con `npx`):
 
@@ -154,13 +151,9 @@ Catálogo completo en [docs/skills.md](docs/skills.md).
 
 ---
 
-## Sin Python requerido
+## Node.js, sin dependencias de sistema
 
-Toda la CLI corre en Node.js. Los hooks de guardrail son JavaScript puro.
-
-No hay `pip install`, no hay `requirements.txt`, no hay dependencias de sistema fuera de Node.js 20+.
-
-> El `forge.py` y los scripts `scripts/*.py` que aún viven en el repositorio son la implementación **legacy** y están **deprecados**: serán removidos en v3.0.0. No los necesitás para usar forge vía `npx @cristiancorreau/forge`. Ver [MIGRATION.md](MIGRATION.md).
+Toda la CLI corre en Node.js 20+. Los hooks de guardrail son JavaScript puro: no hay dependencias de sistema fuera de Node.js.
 
 ---
 
