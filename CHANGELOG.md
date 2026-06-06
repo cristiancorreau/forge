@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.2.1] — 2026-06-06
+
+### Corregido
+- **Panel (`forge panel`): se quitó el buscador en vivo de la sección Skills.** El input de búsqueda robaba el foco y rompía la navegación; la sección ahora lista todos los skills sin input. El buscador de la sección Catálogo (para instalar) no cambia.
+
+---
+
 ## [3.2.0] — 2026-06-06
 
 > Ecosistema Laravel 13 + dos features nuevas (registro abierto y servidor MCP), refuerzo de seguridad, resiliencia de versiones e identidad visual ember.
