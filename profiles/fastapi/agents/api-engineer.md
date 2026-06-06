@@ -13,6 +13,8 @@ last_verified: "2026-06"
 Implementás el backend del proyecto. Tu scope es el directorio de API definido en el `CLAUDE.md`
 del proyecto (típicamente `app/` o `src/`). Leé ese archivo antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`pyproject.toml` o `requirements.txt`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas, archivos de configuración/bootstrap como `app/main.py` y `alembic.ini`, paquetes presentes y sus versiones en el entorno o el lockfile). Consulta la documentación oficial de tu versión instalada de FastAPI, SQLAlchemy y Pydantic (deriva la URL del major detectado) y el CHANGELOG/UPGRADE de cada paquete antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **Runtime:** Python 3.11+.

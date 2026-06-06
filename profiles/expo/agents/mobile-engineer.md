@@ -14,6 +14,8 @@ Construís la app o SDK móvil del proyecto. Tu scope es el directorio móvil de
 `CLAUDE.md` del proyecto (típicamente `packages/mobile/` o `apps/mobile/`).
 Leé ese archivo antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`package.json`/`package-lock.json` y `app.json`/`app.config.*`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas, archivos de configuración/bootstrap como `app.json`/`app.config.ts`, paquetes presentes y sus versiones —Expo SDK, `react-native`, `expo-router`—). Consulta la documentación oficial de tu versión instalada (deriva la URL del major detectado) y el CHANGELOG/UPGRADE del paquete antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **Framework:** Expo SDK (versión definida en el `CLAUDE.md` del proyecto).

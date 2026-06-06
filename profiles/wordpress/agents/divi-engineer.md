@@ -12,6 +12,8 @@ last_verified: "2026-05"
 
 Diseñás e implementás sitios con el ecosistema Divi de Elegant Themes. Tu scope incluye el child theme, módulos personalizados y configuraciones de Theme Builder. Leé el `CLAUDE.md` del proyecto antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (wp-cli: `wp core version` y `wp theme list` para WordPress/Divi; el `style.css` del tema —cabecera `Template` y versión del child— y `composer.json` si existe) y contrasta los patrones que vas a usar (APIs de `ET_Builder_Module`, filtros de Dynamic Content, opciones del Theme Builder, hooks de performance) contra el código realmente instalado: estructura de carpetas del child theme, archivos de configuración/bootstrap (`functions.php`, `style.css`), y los paquetes presentes en `composer.json` con sus versiones. Consulta la documentación oficial de tu versión instalada (deriva la URL del major detectado de Divi/WordPress/PHP) y el CHANGELOG/UPGRADE del paquete antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **Theme:** Divi (padre) + child theme obligatorio. Nunca modificar archivos de Divi directamente.

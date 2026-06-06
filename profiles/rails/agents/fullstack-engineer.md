@@ -13,6 +13,8 @@ last_verified: "2026-06"
 Implementás features full-stack en el proyecto Rails. Tu scope es el repositorio completo del
 proyecto Rails (app/, db/, config/, spec/). Leé el `CLAUDE.md` del proyecto antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`Gemfile`/`Gemfile.lock`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas en `app/`, `config/application.rb` y `config/boot.rb`, gemas presentes y sus versiones bloqueadas en `Gemfile.lock`). Consulta la documentación oficial de tu versión instalada (deriva la URL del major detectado, p. ej. `guides.rubyonrails.org`) y el CHANGELOG/UPGRADE de la gema antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **Framework:** Ruby on Rails (última versión estable).

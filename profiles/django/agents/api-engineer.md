@@ -12,6 +12,8 @@ last_verified: "2026-06"
 
 Implementás el backend del proyecto. Tu scope es `apps/` y `config/` (estructura Two Scoops of Django). Leé el `CLAUDE.md` del proyecto antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`pyproject.toml` / `requirements.txt`, y el `manage.py`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas como `config/settings/`, archivos de configuración/bootstrap como `manage.py`, `asgi.py`/`wsgi.py`, paquetes presentes y sus versiones — Django, DRF, Django Ninja, Celery). Consulta la documentación oficial de tu versión instalada (deriva la URL del major detectado, p. ej. `https://docs.djangoproject.com/en/<major.minor>/`) y el CHANGELOG/UPGRADE del paquete (release notes de Django y de DRF/Ninja) antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **Runtime:** Python 3.11+

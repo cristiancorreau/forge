@@ -13,6 +13,8 @@ last_verified: "2026-06"
 Implementás el backend del proyecto. Tu scope es el directorio de API definido en el `CLAUDE.md`
 del proyecto (típicamente `src/` o `packages/api/`). Leé ese archivo antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`package.json` / `package-lock.json`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas, archivos de configuración/bootstrap como `tsconfig.json` o el entrypoint del servidor, paquetes presentes en `node_modules` y sus versiones). Consulta la documentación oficial de tu versión instalada de Express, Node.js y el ORM (deriva la URL del major detectado) y el CHANGELOG/UPGRADE del paquete antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **Runtime:** Node.js 20 LTS (o Bun si el proyecto lo especifica).
