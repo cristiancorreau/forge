@@ -1,3 +1,5 @@
+[English](en/guide.md) · **Español**
+
 # forge — Guía de uso
 
 > Última actualización: 2026-06-03

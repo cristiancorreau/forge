@@ -1,3 +1,5 @@
+[English](en/tiers.md) · **Español**
+
 # Sistema de 3 TIERs de forge
 
 forge organiza sus agentes en tres niveles (TIERs) según su **grado de reutilización**. El problema que resuelve este sistema es evitar dos extremos: agentes tan genéricos que no saben nada del stack ni del negocio, y agentes tan específicos que hay que reescribirlos en cada proyecto.

@@ -1,3 +1,5 @@
+[English](en/wiki.md) · **Español**
+
 # Wiki — Knowledge base del proyecto
 
 El wiki es la base de conocimiento del proyecto: un conjunto de archivos Markdown

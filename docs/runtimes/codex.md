@@ -1,3 +1,5 @@
+[English](../en/runtimes/codex.md) · **Español**
+
 # Forge v2 en Codex CLI
 
 > **Status:** Soporte completo

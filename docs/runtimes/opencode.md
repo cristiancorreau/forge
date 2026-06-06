@@ -1,3 +1,5 @@
+[English](../en/runtimes/opencode.md) · **Español**
+
 # Forge v2 en OpenCode
 
 > **Status:** Soportado
