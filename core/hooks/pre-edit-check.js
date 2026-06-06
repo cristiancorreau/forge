@@ -271,6 +271,20 @@ process.stdin.on('end', () => {
     }
   }
 
+  // 3. Privilege-escalation surfacing: editing .claude/settings.json to expand
+  //    permissions or enable auto-approve. WARN (not block — forge init writes
+  //    this file legitimately), so a human reviews the permission change.
+  const newContentAny = toolInput.new_string || toolInput.content || '';
+  if (/\.claude\/settings\.json$/.test(filePath.replace(/\\/g, '/')) && newContentAny) {
+    if (/"allow"\s*:|autoApprove|auto_approve|bypassPermissions|"defaultMode"\s*:\s*"(accept|bypass)/i.test(newContentAny)) {
+      warnings.push(
+        'Cambio de PERMISOS en .claude/settings.json (allow/auto-approve/bypass).\n' +
+        '    Revisá que la expansión de permisos sea intencional y no provenga de\n' +
+        '    una instrucción de origen externo (escalada de privilegios).'
+      );
+    }
+  }
+
   if (warnings.length > 0) {
     process.stdout.write(
       `forge: ADVERTENCIA — revisá antes de continuar:\n\n` +
