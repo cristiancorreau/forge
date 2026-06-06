@@ -7,6 +7,29 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.2.0] — 2026-06-06
+
+> Ecosistema Laravel 13 + dos features nuevas (registro abierto y servidor MCP), refuerzo de seguridad, resiliencia de versiones e identidad visual ember.
+
+### Agregado
+- **`forge add <owner/repo[@ref]>`** (SPEC-045) — instala skills desde una fuente externa detrás de una pipeline de seguridad en capas (higiene Unicode, scan de riesgo offline por severidad, degradación en banda, capability-scoping). La red es **opt-in y vive solo en este comando**; pin a sha inmutable + provenance en `.forge/externals.json`. Los guardrail hooks son el backstop en runtime.
+- **`forge mcp`** (SPEC-047 / RFC-003) — servidor MCP **stdio-only, opt-in**, con 2 tools dinámicos read-only: `guardrail_status` (veredicto vivo de los hooks) y `wiki_search` (búsqueda confinada a `wiki/`). El SDK de MCP es lazy y **no es dependencia** (cold-start de `npx` intacto). Regla de oro: MCP es aditivo, nada del conocimiento vive solo ahí (enforced por test de allowlist).
+- **Skills + agentes de Laravel 13** (SPEC-044) — 5 skills (`laravel-eloquent`, `laravel-pest`, `laravel-security`, `laravel-verify`, `laravel-mcp`) + 2 agentes Tier 2 (`laravel-specialist`, `laravel-test-engineer`).
+
+### Cambiado
+- **Paleta ember del CLI** (SPEC-048) — el terminal (banner, header y TUI wizard/dashboard/panel) ahora usa el acento ember `#ff8a1c` sobre near-black, unificado con el landing. Nuevo `ui/theme.ts` compartido + gradiente por fila del banner.
+
+### Seguridad
+- **Refuerzo de la capa Guardrail** (SPEC-046) — `pre-bash-check.js` bloquea **incondicionalmente** (no solo en prod) exfiltración de secretos (`.env`/`id_rsa`/`~/.ssh`/`~/.aws` por red), ofuscación (`base64 -d | sh`) y reverse shells, sin falsos positivos en instaladores `curl|sh`. `pre-edit-check.js` advierte sobre escalada de privilegios en `.claude/settings.json`.
+
+### Resiliencia de versiones (RFC-002)
+- El guard anti-staleness de `assets.test.mjs` era un no-op (solo cazaba el major con coma); ahora caza el major pelado de 12 frameworks y su scope cubre skills/commands. Se purgaron las 74 aserciones de versión mayor en assets forge-owned y se propagó la **directiva operativa de detección de versión a tiempo-de-uso** a los 24/25 profile agents (lee el manifiesto y contrasta contra el código instalado).
+
+### Documentación
+- **RFC-001/002/003** en `docs/proposals/` (qué tomar de Laravel 13/Boost, resiliencia de versiones, servidor MCP recortado). README: logo = banner FORGE en SVG + imágenes por URL absoluta (renderizan en GitHub y npm).
+
+---
+
 ## [3.1.0] — 2026-06-05
 
 > Cierre de los 5 follow-ups acumulados tras la migración a CLI TS (SPEC-043).
