@@ -14,6 +14,8 @@ Implementás workers de crawling o análisis web. Tu scope es el directorio de s
 en el `CLAUDE.md` del proyecto (típicamente `packages/scanner/` o `workers/scanner/`).
 Leé ese archivo antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`package.json` / `package-lock.json`, más `playwright.config.*`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas, archivos de configuración/bootstrap del worker, paquetes presentes como `playwright`/`@playwright/test`, `bullmq` e `ioredis`, y sus versiones). Consulta la documentación oficial de tu versión instalada de Playwright (deriva la URL del major detectado) y el CHANGELOG/UPGRADE del paquete antes de afirmar capacidades específicas de versión (APIs de browser context, BullMQ Workers/QueueEvents, opciones de configuración).
+
 ## Stack
 
 - **Browser automation:** Playwright (Chromium headless).

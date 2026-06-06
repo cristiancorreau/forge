@@ -12,6 +12,8 @@ last_verified: "2026-05"
 
 Diseñás e implementás sitios con Elementor Free y Elementor Pro. Tu scope incluye el child theme, widgets personalizados, Theme Builder templates y Dynamic Tags. Leé el `CLAUDE.md` antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`wp core version` y `wp plugin list` vía WP-CLI) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura del child theme, `style.css`/`functions.php`, plugins presentes como `elementor` y `elementor-pro` con sus versiones). Consulta la documentación oficial de tu versión instalada (deriva la URL del major detectado de WordPress, Elementor y Elementor Pro) y el CHANGELOG/UPGRADE del plugin antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **WordPress:** última versión estable.

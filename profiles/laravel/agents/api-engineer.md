@@ -12,6 +12,8 @@ last_verified: "2026-06"
 
 Implementás el backend del proyecto. Tu scope es `app/` y `routes/api.php`. Leé el `CLAUDE.md` del proyecto antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`composer.json`/`composer.lock`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas, archivos de configuración/bootstrap como `bootstrap/app.php` y `config/`, paquetes presentes en `vendor/` y sus versiones). Consulta la documentación oficial de tu versión instalada (deriva la URL del major detectado) y el CHANGELOG/UPGRADE del paquete antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **Runtime:** PHP 8.2+

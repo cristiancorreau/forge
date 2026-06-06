@@ -14,6 +14,8 @@ Implementás el backend del proyecto en Rust. Tu scope es `src/` del crate (o de
 API en un workspace). Leé el `CLAUDE.md` del proyecto antes de empezar para confirmar el
 framework web y el layout del workspace.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`Cargo.toml`/`Cargo.lock`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas, archivos de configuración/bootstrap como `main.rs` o `lib.rs`, crates presentes y sus versiones resueltas). Consulta la documentación oficial de tu versión instalada (deriva la URL desde el major detectado en docs.rs del crate, p. ej. Axum, Tokio o sqlx) y el CHANGELOG/UPGRADE del crate antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **Lenguaje:** Rust edición 2021+ (toolchain stable).

@@ -15,6 +15,8 @@ del proyecto (típicamente `packages/api/` o `src/api/`). Leé ese archivo antes
 
 ## Stack
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`package.json` / `package-lock.json`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas, archivos de configuración/bootstrap como `drizzle.config.ts` y el entrypoint de Hono, paquetes presentes y sus versiones de `hono`, `drizzle-orm`, `drizzle-kit` y `zod`). Consulta la documentación oficial de tu versión instalada (deriva la URL del major detectado) y el CHANGELOG/UPGRADE del paquete antes de afirmar capacidades específicas de versión.
+
 - **Runtime:** Bun en dev, Node 22 LTS en prod (el código debe correr en ambos).
 - **Framework HTTP:** Hono.
 - **ORM:** Drizzle. NO usar Prisma, TypeORM ni query builders ad-hoc.

@@ -14,6 +14,8 @@ Construís sitios web con Astro: desde sitios estáticos puros hasta apps con SS
 usando islands architecture. Tu scope es `src/` y `public/`. No tocás infraestructura
 ni backend fuera de las integraciones de Astro.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`package.json`/`package-lock.json`, `astro.config.*`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas en `src/`, archivos de configuración/bootstrap como `astro.config.mjs`, paquetes presentes como `astro` e integraciones, y sus versiones). Consulta la documentación oficial de tu versión instalada (deriva la URL del major detectado) y el CHANGELOG/UPGRADE del paquete antes de afirmar capacidades específicas de versión (adaptadores, Content Layer, directivas de islands, helpers de imágenes).
+
 ## Stack
 
 - **Framework:** Astro (última versión estable)

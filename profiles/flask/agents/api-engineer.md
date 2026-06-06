@@ -14,6 +14,8 @@ Implementás el backend del proyecto con Flask. Tu scope es el paquete de la apl
 (típicamente `app/` o `src/`) definido en el `CLAUDE.md` del proyecto. Leé ese archivo
 antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`pyproject.toml` / `requirements.txt`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas, archivos de configuración/bootstrap como `create_app()` y `config.py`, paquetes presentes y sus versiones vía `pip show flask` / `pip freeze`). Consulta la documentación oficial de tu versión instalada (deriva la URL del major detectado) y el CHANGELOG/UPGRADE del paquete antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **Runtime:** Python 3.11+.

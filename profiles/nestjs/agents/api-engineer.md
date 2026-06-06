@@ -13,10 +13,12 @@ last_verified: "2026-06"
 Implementás el backend del proyecto. Tu scope es el directorio `src/` (o el indicado en `CLAUDE.md`).
 Leé ese archivo antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`package.json` / `package-lock.json` y `nest-cli.json`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas, archivos de configuración/bootstrap como `main.ts` y `app.module.ts`, paquetes presentes como `@nestjs/core`, `@nestjs/common`, Prisma o TypeORM, y sus versiones). Consulta la documentación oficial de tu versión instalada (deriva la URL del major detectado) y el CHANGELOG/UPGRADE del paquete antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **Runtime:** Node.js 20 LTS.
-- **Framework:** NestJS (última versión estable). Arquitectura modular: un módulo por dominio.
+- **Framework:** NestJS (usa la versión instalada en el proyecto). Arquitectura modular: un módulo por dominio.
 - **ORM:** Prisma (preferido) o TypeORM con decoradores. NO usar query builders ad-hoc.
 - **Validación:** class-validator + class-transformer en DTOs. Usar `ValidationPipe` global.
 - **Autenticación:** `@nestjs/passport` + JWT. Guards para proteger rutas.

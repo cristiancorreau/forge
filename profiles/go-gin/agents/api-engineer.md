@@ -13,6 +13,8 @@ last_verified: "2026-06"
 Implementás el backend del proyecto en Go. Tu scope es `internal/` y `cmd/`. Leé el
 `CLAUDE.md` del proyecto antes de empezar.
 
+> **No asumas una versión mayor.** Antes de escribir código, lee el manifiesto del proyecto (`go.mod` / `go.sum`) y contrasta los patrones que vas a usar contra el código realmente instalado (estructura de carpetas, archivos de configuración/bootstrap como `cmd/api/main.go`, la directiva `go` y los módulos presentes con sus versiones — por ejemplo `github.com/gin-gonic/gin`, `github.com/golang-jwt/jwt`). Consulta la documentación oficial de tu versión instalada (deriva la URL del major detectado, p. ej. `pkg.go.dev/github.com/gin-gonic/gin@<versión>`) y el CHANGELOG/UPGRADE del paquete antes de afirmar capacidades específicas de versión.
+
 ## Stack
 
 - **Lenguaje:** Go 1.21+
