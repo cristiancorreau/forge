@@ -1,4 +1,4 @@
-[English](README.en.md) · **Español**
+**English** · [Español](README.es.md)
 
 <div align="center">
 
@@ -10,9 +10,9 @@
 <br>
 <br>
 
-### Configura cualquier proyecto para trabajar con agentes de IA en un solo comando
+### Set up any project to work with AI agents in a single command
 
-Un equipo de agentes, todos los runtimes — **Claude Code · OpenCode · Codex CLI · Kiro** desde un único `project.yaml`.
+One agent team, every runtime — **Claude Code · OpenCode · Codex CLI · Kiro** from a single `project.yaml`.
 
 <br>
 
@@ -25,7 +25,7 @@ Un equipo de agentes, todos los runtimes — **Claude Code · OpenCode · Codex 
 
 **[Landing](https://cristiancorreau.github.io/forge/)**
 &nbsp;&nbsp;•&nbsp;&nbsp;
-**[Documentación](docs/guide.md)**
+**[Documentation](docs/en/guide.md)**
 &nbsp;&nbsp;•&nbsp;&nbsp;
 **[npm](https://www.npmjs.com/package/@cristiancorreau/forge)**
 &nbsp;&nbsp;•&nbsp;&nbsp;
@@ -43,9 +43,9 @@ npx @cristiancorreau/forge init
 
 <br>
 
-<img alt="Panel interactivo de forge en la terminal (OpenTUI): agentes, skills, hooks y profiles" width="780" src="https://raw.githubusercontent.com/cristiancorreau/forge/main/docs/assets/cli-preview.png">
+<img alt="forge interactive panel in the terminal (OpenTUI): agents, skills, hooks and profiles" width="780" src="https://raw.githubusercontent.com/cristiancorreau/forge/main/docs/assets/cli-preview.png">
 
-<sub>El panel interactivo de forge (<code>forge panel</code>) requiere Bun (OpenTUI) — explora agentes, skills, hooks y profiles sin salir de la terminal.</sub>
+<sub>The forge interactive panel (<code>forge panel</code>) requires Bun (OpenTUI) — explore agents, skills, hooks and profiles without leaving the terminal.</sub>
 
 <br>
 
@@ -53,58 +53,58 @@ npx @cristiancorreau/forge init
 
 ---
 
-## ¿Qué es forge?
+## What is forge?
 
-**forge** es un framework de _agentic development_ multi-runtime. Un solo comando analiza tu proyecto, instala un equipo de agentes especializados, cablea guardrails de seguridad y deja un `project.yaml` como **única fuente de verdad** desde la que se regenera la configuración nativa de cada runtime de IA.
+**forge** is a multi-runtime _agentic development_ framework. A single command analyzes your project, installs a team of specialized agents, wires up security guardrails, and leaves a `project.yaml` as the **single source of truth** from which each AI runtime's native configuration is regenerated.
 
-En vez de copiar y pegar reglas de agentes entre proyectos y entre herramientas, defines el equipo **una vez** y forge lo materializa para Claude Code, OpenCode, Codex CLI y Kiro.
+Instead of copy-pasting agent rules across projects and across tools, you define the team **once** and forge materializes it for Claude Code, OpenCode, Codex CLI and Kiro.
 
-- 🤖 **Equipos de agentes multi-runtime** — 7 agentes universales + 19 profiles de stack
-- 📐 **Flujo SDD spec-first** — ninguna tarea de código sin una spec `APPROVED`
-- 🪝 **Guardrail hooks en JS puro** — branch-guard, debug, secretos y prod-safety, cero Python
-- 🔁 **Un `project.yaml`, cada CLI** — Claude Code, OpenCode, Codex, Kiro
-- ⚖️ **Compliance con veto vinculante** — revisor GDPR/LGPD/CCPA que bloquea el merge
-- 🔄 **Operaciones reversibles** — manifest SHA-256 + `--dry-run` para auditar cada cambio
-- 📚 **Knowledge base del proyecto** — wiki que ingesta, lintea y responde con citas
-
----
-
-## ¿Por qué forge?
-
-### vs. reglas de agente hechas a mano
-
-- **Un `project.yaml`, cuatro runtimes** — escribes el equipo una vez, no cuatro.
-- **Spec-first por defecto** — el `orchestrator` rechaza spawnear agentes sin spec aprobada.
-- **Guardrails ya cableados** — hooks de seguridad listos, sin instalar nada de Python.
-- **Regenerable** — `forge generate` reconstruye todo el equipo desde la fuente de verdad.
-
-### vs. copiar y pegar agentes entre proyectos
-
-- **TIERs componibles** — universal → stack → dominio, con resolución de colisiones predecible.
-- **19 profiles de stack** listos — Next.js, FastAPI, Django, Rails, Laravel, Go, Rust, Flutter…
-- **Operaciones reversibles** — manifest SHA-256 detecta drift; `forge teardown` desinstala limpio.
-- **Drift bajo control** — `forge update` re-sincroniza con el catálogo preservando tus ediciones.
+- 🤖 **Multi-runtime agent teams** — 7 universal agents + 19 stack profiles
+- 📐 **Spec-first SDD flow** — no code task without an `APPROVED` spec
+- 🪝 **Guardrail hooks in pure JS** — branch-guard, debug, secrets and prod-safety, zero Python
+- 🔁 **One `project.yaml`, every CLI** — Claude Code, OpenCode, Codex, Kiro
+- ⚖️ **Compliance with binding veto** — GDPR/LGPD/CCPA reviewer that blocks the merge
+- 🔄 **Reversible operations** — SHA-256 manifest + `--dry-run` to audit every change
+- 📚 **Project knowledge base** — wiki that ingests, lints and answers with citations
 
 ---
 
-## Instalación
+## Why forge?
 
-forge corre con **Node.js 20+**. Con **Bun** se desbloquea el panel full-screen (OpenTUI, `@opentui/core`); en Node cae a prompts [@clack](https://github.com/bombshell-dev/clack); en consolas legacy, a ASCII.
+### vs. hand-made agent rules
 
-**Probar sin instalar:**
+- **One `project.yaml`, four runtimes** — you write the team once, not four times.
+- **Spec-first by default** — the `orchestrator` refuses to spawn agents without an approved spec.
+- **Guardrails already wired** — security hooks ready to go, no Python to install.
+- **Regenerable** — `forge generate` rebuilds the entire team from the source of truth.
+
+### vs. copy-pasting agents across projects
+
+- **Composable TIERs** — universal → stack → domain, with predictable collision resolution.
+- **19 stack profiles** ready to go — Next.js, FastAPI, Django, Rails, Laravel, Go, Rust, Flutter…
+- **Reversible operations** — SHA-256 manifest detects drift; `forge teardown` uninstalls cleanly.
+- **Drift under control** — `forge update` re-syncs with the catalog while preserving your edits.
+
+---
+
+## Installation
+
+forge runs on **Node.js 20+**. With **Bun** you unlock the full-screen panel (OpenTUI, `@opentui/core`); on Node it falls back to [@clack](https://github.com/bombshell-dev/clack) prompts; on legacy consoles, to ASCII.
+
+**Try without installing:**
 
 ```bash
 npx @cristiancorreau/forge init
 ```
 
-**Instalar el comando global `forge`:**
+**Install the global `forge` command:**
 
 ```bash
 npm install -g @cristiancorreau/forge
 ```
 
 <details>
-<summary>Otros gestores y troubleshooting de PATH</summary>
+<summary>Other package managers and PATH troubleshooting</summary>
 
 <br>
 
@@ -113,11 +113,11 @@ pnpm add -g @cristiancorreau/forge     # pnpm  (requiere `pnpm setup` una vez)
 bun add -g @cristiancorreau/forge      # bun   (requiere ~/.bun/bin en el PATH)
 ```
 
-¿El comando `forge` no se reconoce tras el install global? El directorio de binarios globales no está en tu `PATH`. `npx @cristiancorreau/forge <cmd>` siempre funciona sin instalar; para el comando a secas:
+Is the `forge` command not recognized after the global install? The global binaries directory is not on your `PATH`. `npx @cristiancorreau/forge <cmd>` always works without installing; for the bare command:
 
 - **npm:** `export PATH="$(npm prefix -g)/bin:$PATH"`
-- **pnpm:** ejecuta `pnpm setup` y reabre la terminal
-- **bun:** agrega `export PATH="$HOME/.bun/bin:$PATH"` a tu shell rc
+- **pnpm:** run `pnpm setup` and reopen the terminal
+- **bun:** add `export PATH="$HOME/.bun/bin:$PATH"` to your shell rc
 
 </details>
 
@@ -138,7 +138,7 @@ forge validate
 forge generate
 ```
 
-¿Ya tienes un codebase en marcha? Intégralo sin partir de cero:
+Already have a codebase up and running? Integrate it without starting from scratch:
 
 ```bash
 forge adopt        # analiza el repo existente + auto-wiki
@@ -146,71 +146,71 @@ forge adopt        # analiza el repo existente + auto-wiki
 
 ---
 
-## Las 5 capas
+## The 5 layers
 
-forge se organiza en cinco capas que van de la fuente de verdad a la materialización por runtime.
+forge is organized into five layers that go from the source of truth to per-runtime materialization.
 
-| Capa | Responsabilidad |
+| Layer | Responsibility |
 |------|-----------------|
-| 🧠 **Memory** | `project.yaml` como única fuente de verdad — stack, equipo, skills, reglas. |
-| 📚 **Knowledge** | Agentes + profiles de stack que aportan el saber de cada rol y framework. |
-| 🛡️ **Guardrail** | Enforcement de compliance y seguridad: hooks, branch-guard, detección de secretos. |
-| 🎯 **Delegation** | Orquestación y despacho de skills: qué agente atiende qué tarea. |
-| 📡 **Distribution** | Adapters de runtime que traducen la fuente de verdad a Claude Code, OpenCode, Codex y Kiro. |
+| 🧠 **Memory** | `project.yaml` as the single source of truth — stack, team, skills, rules. |
+| 📚 **Knowledge** | Agents + stack profiles that bring the knowledge of each role and framework. |
+| 🛡️ **Guardrail** | Compliance and security enforcement: hooks, branch-guard, secret detection. |
+| 🎯 **Delegation** | Skill orchestration and dispatch: which agent handles which task. |
+| 📡 **Distribution** | Runtime adapters that translate the source of truth to Claude Code, OpenCode, Codex and Kiro. |
 
 ---
 
-## Sistema de TIERs
+## TIER system
 
-Tres niveles componibles, de lo general a lo específico. Cada tier hereda y especializa al anterior; ante una colisión, gana el más concreto.
+Three composable levels, from the general to the specific. Each tier inherits and specializes the previous one; on a collision, the most concrete one wins.
 
-| Tier | Qué es | Ejemplos |
+| Tier | What it is | Examples |
 |------|--------|----------|
-| **Tier 1 — universal** | 7 agentes definidos por su _output_, no por el stack. Sirven en cualquier proyecto. | `orchestrator`, `backend-engineer`, `frontend-engineer`, `test-engineer`, `docs-writer`, `compliance-reviewer`, `security-auditor` |
-| **Tier 2 — stack** | Los mismos roles con instrucciones del framework. 19 profiles disponibles. | Next.js, FastAPI, Django, Rails, Laravel, Go-Gin, Rust, NestJS… |
-| **Tier 3 — dominio** | Agentes que conocen el negocio del proyecto. Viven en el repo, se registran en `agents.specialized`. | `dsar-specialist`, `gcm-engineer`, `policy-engineer`… |
+| **Tier 1 — universal** | 7 agents defined by their _output_, not by the stack. Useful in any project. | `orchestrator`, `backend-engineer`, `frontend-engineer`, `test-engineer`, `docs-writer`, `compliance-reviewer`, `security-auditor` |
+| **Tier 2 — stack** | The same roles with framework-specific instructions. 19 profiles available. | Next.js, FastAPI, Django, Rails, Laravel, Go-Gin, Rust, NestJS… |
+| **Tier 3 — domain** | Agents that know the project's business. They live in the repo, registered under `agents.specialized`. | `dsar-specialist`, `gcm-engineer`, `policy-engineer`… |
 
-Detalle completo en [docs/tiers.md](docs/tiers.md).
+Full detail in [docs/en/tiers.md](docs/en/tiers.md).
 
 ---
 
-## Comandos
+## Commands
 
-Los 16 comandos de la CLI.
+The 16 CLI commands.
 
-| Comando | Qué hace |
+| Command | What it does |
 |---------|----------|
-| `forge init` | Wizard completo: detecta el stack, instala agentes y hooks, escribe el manifest. |
-| `forge adopt` | Onboarda forge en un codebase **existente** (análisis + auto-wiki). |
-| `forge generate` | Regenera la configuración nativa de cada runtime desde `project.yaml`. |
-| `forge update` | Re-sincroniza archivos gestionados con el catálogo preservando ediciones locales (drift SHA-256). |
-| `forge validate` | Valida que `project.yaml` y los archivos generados cumplan el esquema. |
-| `forge doctor` | Health-check del entorno: Node.js, git, runtime de IA activo, permisos. |
-| `forge migrate` | Migra `project.yaml` del schema v1 al v2 (`--dry-run`, `--backup`). |
-| `forge audit` | Verifica el proyecto contra el manifest; detecta archivos modificados o faltantes. |
-| `forge scaffold` | Genera un agente nuevo: profile Tier 2 o agente de dominio Tier 3. |
-| `forge teardown` | Desinstala forge del proyecto de forma limpia vía manifest (`--dry-run`, `--keep-config`). |
-| `forge skills` | Lista los skills disponibles agrupados por categoría. |
-| `forge aitmpl-search` | Busca en el catálogo curado offline (frameworks, MCP servers, profiles). |
-| `forge wiki` | Gestiona la knowledge base del proyecto (`status` \| `ingest` \| `query` \| `lint`). |
-| `forge panel` | Panel interactivo OpenTUI (config / monitor / skills / hooks / templates). |
-| `forge session-start` | Abre una sesión de trabajo: detecta el estado del repo y enruta. |
-| `forge session-close` | Cierra una sesión: commit → daily note → sync → PR. |
+| `forge init` | Full wizard: detects the stack, installs agents and hooks, writes the manifest. |
+| `forge adopt` | Onboards forge into an **existing** codebase (analysis + auto-wiki). |
+| `forge generate` | Regenerates each runtime's native configuration from `project.yaml`. |
+| `forge update` | Re-syncs managed files with the catalog while preserving local edits (SHA-256 drift). |
+| `forge validate` | Validates that `project.yaml` and the generated files conform to the schema. |
+| `forge doctor` | Environment health-check: Node.js, git, active AI runtime, permissions. |
+| `forge migrate` | Migrates `project.yaml` from schema v1 to v2 (`--dry-run`, `--backup`). |
+| `forge audit` | Verifies the project against the manifest; detects modified or missing files. |
+| `forge scaffold` | Generates a new agent: Tier 2 profile or Tier 3 domain agent. |
+| `forge teardown` | Cleanly uninstalls forge from the project via the manifest (`--dry-run`, `--keep-config`). |
+| `forge skills` | Lists the available skills grouped by category. |
+| `forge aitmpl-search` | Searches the curated offline catalog (frameworks, MCP servers, profiles). |
+| `forge wiki` | Manages the project knowledge base (`status` \| `ingest` \| `query` \| `lint`). |
+| `forge panel` | Interactive OpenTUI panel (config / monitor / skills / hooks / templates). |
+| `forge session-start` | Opens a work session: detects the repo state and routes. |
+| `forge session-close` | Closes a session: commit → daily note → sync → PR. |
 
-> **Panel interactivo.** Con Bun, `forge panel` (y el dashboard post-`init`) abre un panel navegable OpenTUI para explorar agentes, skills, hooks y profiles sin salir de la terminal. Con Node cae al flujo de prompts estándar.
+> **Interactive panel.** With Bun, `forge panel` (and the post-`init` dashboard) opens a navigable OpenTUI panel to explore agents, skills, hooks and profiles without leaving the terminal. With Node it falls back to the standard prompt flow.
 
 ---
 
 ## Stacks / Profiles (19)
 
-Profiles Tier 2 listos para activar. Cada uno aporta reglas de arquitectura, convenciones de código y patrones del framework.
+Tier 2 profiles ready to activate. Each one brings architecture rules, code conventions and framework patterns.
 
 <details open>
-<summary>Ver los 19 profiles</summary>
+<summary>See all 19 profiles</summary>
 
 <br>
 
-| TypeScript / JS | Python | PHP | Otros |
+| TypeScript / JS | Python | PHP | Others |
 |---|---|---|---|
 | `astro` | `django` | `laravel` | `go-gin` (Go) |
 | `express` | `fastapi` | `wordpress` | `rust` |
@@ -228,97 +228,97 @@ Profiles Tier 2 listos para activar. Cada uno aporta reglas de arquitectura, con
 
 ## Runtimes
 
-Un mismo proyecto forge se adapta a cuatro runtimes, cada uno con su salida nativa.
+A single forge project adapts to four runtimes, each with its native output.
 
-| Runtime | Soporte | Salida |
+| Runtime | Support | Output |
 |---------|---------|--------|
-| **Claude Code** | ✅ Completo | `CLAUDE.md`, `.claude/agents/`, `.claude/commands/`, `.claude/settings.json`, hooks |
-| **OpenCode** | ✅ Soportado | `AGENTS.md` generado desde la raíz |
-| **Codex CLI** | ✅ Soportado | `AGENTS.md` enriquecido para contexto de proyecto |
+| **Claude Code** | ✅ Complete | `CLAUDE.md`, `.claude/agents/`, `.claude/commands/`, `.claude/settings.json`, hooks |
+| **OpenCode** | ✅ Supported | `AGENTS.md` generated from the root |
+| **Codex CLI** | ✅ Supported | `AGENTS.md` enriched for project context |
 | **Kiro** | 🔭 Monitoring | steering files (`.kiro/steering/*.md`) |
 
-Detalle por runtime en [docs/runtimes/](docs/runtimes/).
+Per-runtime detail in [docs/en/runtimes/](docs/en/runtimes/).
 
 ---
 
 ## Skills
 
-12 skills **generales** que encapsulan flujos completos, mapeados por runtime y disparables como slash commands (`/spec`, `/new-feature`, `/db-migrate`…), más skills **por stack**.
+12 **general** skills that encapsulate complete flows, mapped per runtime and triggerable as slash commands (`/spec`, `/new-feature`, `/db-migrate`…), plus **per-stack** skills.
 
-| Skill | Para qué |
+| Skill | What it's for |
 |-------|----------|
-| `spec` | Redacta specs SDD en `docs/specs/`. |
-| `new-feature` | Kickoff de feature spec-first, de plan a deploy. |
-| `security-audit` | Checklist de auditoría de seguridad. |
-| `db-migrate` | Migraciones seguras (Prisma, Drizzle, ActiveRecord, Alembic, Goose). |
-| `local2prod` | Deploy con gate de producción multi-provider. |
-| `browser-test` | Verificación de UI y flujos críticos vía navegador. |
-| `phase-kickoff` | Arranque de una fase del roadmap. |
-| `obsidian-sync` | Sincronización con Obsidian. |
-| `aitmpl-search` | Busca en el catálogo curado offline. |
-| `wiki-ingest` | Ingesta fuentes a la knowledge base. |
-| `wiki-lint` | Lintea la consistencia de la wiki. |
-| `wiki-query` | Responde queries citando páginas de la wiki. |
+| `spec` | Drafts SDD specs in `docs/specs/`. |
+| `new-feature` | Spec-first feature kickoff, from plan to deploy. |
+| `security-audit` | Security audit checklist. |
+| `db-migrate` | Safe migrations (Prisma, Drizzle, ActiveRecord, Alembic, Goose). |
+| `local2prod` | Deploy with a multi-provider production gate. |
+| `browser-test` | UI and critical-flow verification via browser. |
+| `phase-kickoff` | Roadmap phase startup. |
+| `obsidian-sync` | Sync with Obsidian. |
+| `aitmpl-search` | Searches the curated offline catalog. |
+| `wiki-ingest` | Ingests sources into the knowledge base. |
+| `wiki-lint` | Lints the wiki's consistency. |
+| `wiki-query` | Answers queries citing wiki pages. |
 
-> Además, `session-start` y `session-close` están disponibles como comandos de la CLI.
+> In addition, `session-start` and `session-close` are available as CLI commands.
 
-> **Skills por stack.** El profile **Laravel** suma 5 skills orientados a Laravel 13: `/laravel-eloquent`, `/laravel-pest`, `/laravel-security`, `/laravel-verify` y `/laravel-mcp` (Boost, `laravel/mcp`, AI SDK, embeddings/pgvector).
+> **Per-stack skills.** The **Laravel** profile adds 5 Laravel 13-oriented skills: `/laravel-eloquent`, `/laravel-pest`, `/laravel-security`, `/laravel-verify` and `/laravel-mcp` (Boost, `laravel/mcp`, AI SDK, embeddings/pgvector).
 
-Catálogo completo en [docs/skills.md](docs/skills.md).
-
----
-
-## SDD: spec-first, no opcional
-
-forge aplica **Spec-Driven Development** con un gate real, no una sugerencia:
-
-- Ninguna tarea de código arranca sin una spec en estado **`APPROVED`** dentro de `docs/specs/`.
-- El **`orchestrator` veta** spawnear agentes de implementación si no hay spec aprobada.
-- El skill `/spec` redacta la spec; `/new-feature` la lleva de plan a deploy.
-
-El resultado: el equipo de agentes no improvisa código sobre requisitos ambiguos — primero se acuerda el _qué_, después se genera el _cómo_.
+Full catalog in [docs/en/skills.md](docs/en/skills.md).
 
 ---
 
-## Compliance con veto vinculante
+## SDD: spec-first, not optional
 
-El agente **`compliance-reviewer`** (Tier 1, model `opus`) revisa cada PR contra los marcos de compliance activos — **GDPR / LGPD / CCPA** — con **poder de veto vinculante** antes de mergear.
+forge enforces **Spec-Driven Development** with a real gate, not a suggestion:
 
-Sumado a los **guardrail hooks en JavaScript puro** (cero Python):
+- No code task starts without a spec in the **`APPROVED`** state inside `docs/specs/`.
+- The **`orchestrator` vetoes** spawning implementation agents if there is no approved spec.
+- The `/spec` skill drafts the spec; `/new-feature` takes it from plan to deploy.
 
-- 🚫 **branch-guard** — evita commits directos sobre ramas protegidas.
-- 🐛 **debug detection** — bloquea `console.log` / `print` de depuración.
-- 🔐 **secret detection** — frena secretos hardcodeados antes del commit.
-- 🚀 **prod-safety** — protege operaciones sensibles contra producción.
+The result: the agent team doesn't improvise code on top of ambiguous requirements — first the _what_ is agreed upon, then the _how_ is generated.
 
 ---
 
-## Comparativa
+## Compliance with binding veto
 
-| Capacidad | forge | autoskills | cc-sdd |
+The **`compliance-reviewer`** agent (Tier 1, model `opus`) reviews every PR against the active compliance frameworks — **GDPR / LGPD / CCPA** — with **binding veto power** before merging.
+
+On top of the **guardrail hooks in pure JavaScript** (zero Python):
+
+- 🚫 **branch-guard** — prevents direct commits on protected branches.
+- 🐛 **debug detection** — blocks `console.log` / `print` debug statements.
+- 🔐 **secret detection** — stops hardcoded secrets before the commit.
+- 🚀 **prod-safety** — protects sensitive operations against production.
+
+---
+
+## Comparison
+
+| Capability | forge | autoskills | cc-sdd |
 |---|:---:|:---:|:---:|
-| Enfoque | Framework agentic end-to-end | Colección de skills | SDD para Claude Code |
-| SDD spec-first con gate | ✅ veto del orchestrator | ❌ | ✅ núcleo |
-| Agentes por tier (1/2/3) | ✅ | ❌ | ❌ |
-| Profiles de stack | ✅ 19 | 🚧 parcial | ❌ |
-| Skills invocables | ✅ 12 | ✅ foco central | 🚧 |
-| Multi-runtime | ✅ 4 runtimes | 🚧 sobre todo Claude Code | 🚧 |
-| Compliance con veto (GDPR/LGPD/CCPA) | ✅ vinculante | ❌ | ❌ |
-| Guardrail hooks (branch/secrets/prod) | ✅ sin Python | ❌ | ❌ |
-| Knowledge base / wiki con citas | ✅ ingest/lint/query | ❌ | ❌ |
-| Operaciones reversibles (SHA-256, dry-run) | ✅ | ❌ | ❌ |
-| Deploy con gate de producción | ✅ multi-provider | ❌ | ❌ |
+| Focus | End-to-end agentic framework | Skills collection | SDD for Claude Code |
+| Spec-first SDD with gate | ✅ orchestrator veto | ❌ | ✅ core |
+| Agents by tier (1/2/3) | ✅ | ❌ | ❌ |
+| Stack profiles | ✅ 19 | 🚧 partial | ❌ |
+| Invokable skills | ✅ 12 | ✅ central focus | 🚧 |
+| Multi-runtime | ✅ 4 runtimes | 🚧 mostly Claude Code | 🚧 |
+| Compliance with veto (GDPR/LGPD/CCPA) | ✅ binding | ❌ | ❌ |
+| Guardrail hooks (branch/secrets/prod) | ✅ no Python | ❌ | ❌ |
+| Knowledge base / wiki with citations | ✅ ingest/lint/query | ❌ | ❌ |
+| Reversible operations (SHA-256, dry-run) | ✅ | ❌ | ❌ |
+| Deploy with production gate | ✅ multi-provider | ❌ | ❌ |
 
 ---
 
-## Documentación
+## Documentation
 
-- 🌐 **[Landing](https://cristiancorreau.github.io/forge/)** — el pitch en una página.
-- 📖 **[Guía completa](docs/guide.md)**
-- 🧩 **[Skills](docs/skills.md)**
-- 🏗️ **[TIERs](docs/tiers.md)**
-- 📚 **[Wiki / knowledge base](docs/wiki.md)**
-- 📡 **[Runtimes](docs/runtimes/)**
+- 🌐 **[Landing](https://cristiancorreau.github.io/forge/)** — the pitch on one page.
+- 📖 **[Full guide](docs/en/guide.md)**
+- 🧩 **[Skills](docs/en/skills.md)**
+- 🏗️ **[TIERs](docs/en/tiers.md)**
+- 📚 **[Wiki / knowledge base](docs/en/wiki.md)**
+- 📡 **[Runtimes](docs/en/runtimes/)**
 
 ---
 
@@ -326,17 +326,17 @@ Sumado a los **guardrail hooks en JavaScript puro** (cero Python):
 
 <br>
 
-### Forja tu equipo de agentes en un comando
+### Forge your agent team in a single command
 
 ```bash
 npx @cristiancorreau/forge init
 ```
 
-**[Empieza en la landing →](https://cristiancorreau.github.io/forge/)**
+**[Get started on the landing →](https://cristiancorreau.github.io/forge/)**
 
 <br>
 
-<sub>Hecho con fuego, yunque y mucho dogfooding.</sub>
+<sub>Made with fire, anvil and a lot of dogfooding.</sub>
 
 <br>
 
@@ -344,6 +344,6 @@ npx @cristiancorreau/forge init
 
 ---
 
-## Licencia
+## License
 
 [Apache-2.0](LICENSE) — Copyright © 2026 [Cristian Correa](https://github.com/cristiancorreau).

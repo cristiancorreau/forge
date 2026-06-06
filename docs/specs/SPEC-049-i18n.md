@@ -23,8 +23,8 @@ agrega i18n real (ES/EN) y documentación en ambos idiomas.
   extensible: más strings de comandos se pueden migrar a `t()` incrementalmente.
 
 ### Documentación
-- README bilingüe: `README.md` (ES) + `README.en.md` (EN), con selector de idioma
-  arriba en ambos.
+- README bilingüe: `README.md` (EN, idioma por defecto que ven GitHub y npm) +
+  `README.es.md` (ES), con selector de idioma arriba en ambos.
 - Docs user-facing traducidas a EN bajo `docs/en/` (guide, skills, tiers, wiki,
   runtimes/*), con selector en cada par ES/EN.
 
@@ -37,7 +37,7 @@ agrega i18n real (ES/EN) y documentación en ambos idiomas.
 - [ ] `forge --lang es --help` en español; `--lang en` / locale en → inglés.
 - [ ] `FORGE_LANG` y `--lang=es` funcionan; el TUI hereda el idioma vía `FORGE_LANG`.
 - [ ] Paridad de claves ES/EN (test). `t()` interpola `{version}`.
-- [ ] `README.en.md` + `docs/en/*` existen con selector de idioma.
+- [ ] `README.md` (EN, por defecto) + `README.es.md` + `docs/en/*` existen con selector de idioma.
 - [ ] `tsc` + `npm test` verdes (incl. windows).
 
 ## Impacto de compliance

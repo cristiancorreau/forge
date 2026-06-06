@@ -3,6 +3,8 @@
 
 # Claude Code worktrees
 .claude/worktrees/
+# Claude Code runtime locks (scheduled tasks, etc.)
+.claude/*.lock
 
 # Codex workspace
 .codex/
