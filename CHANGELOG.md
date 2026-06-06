@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.3.1] — 2026-06-06
+
+### Cambiado
+- **README por defecto en inglés.** `README.md` (la portada que ven GitHub y npm) pasa a inglés; la versión en español vive en `README.es.md`, accesible desde el selector de idioma. Links a docs intactos por idioma (EN → `docs/en/*`, ES → `docs/*`). Sin cambios de código.
+
+---
+
 ## [3.3.0] — 2026-06-06
 
 > Multi-idioma (ES/EN) en el CLI + documentación y README bilingües (SPEC-049).
