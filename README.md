@@ -2,10 +2,8 @@
 
 <br>
 
-<!-- forge — yunque + chispa (ember/amber). SVG inline en base64: se ve igual en tema claro y oscuro de GitHub. -->
-<picture>
-  <img alt="forge" height="96" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgNDQwIDEyMCIgZm9udC1mYW1pbHk9IidTRiBNb25vJywgJ0pldEJyYWlucyBNb25vJywgQ29uc29sYXMsIG1vbm9zcGFjZSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImVtYmVyIiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNGRkQyNkYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI0NSUiIHN0b3AtY29sb3I9IiNGRjlGMUMiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRTI1NTIyIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8IS0tIHl1bnF1ZSAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyOCwgMzApIj4KICAgIDwhLS0gY2hpc3BhcyAtLT4KICAgIDxnIGZpbGw9InVybCgjZW1iZXIpIj4KICAgICAgPGNpcmNsZSBjeD0iNDQiIGN5PSIyIiByPSIzLjIiLz4KICAgICAgPGNpcmNsZSBjeD0iNTYiIGN5PSIxMCIgcj0iMiIvPgogICAgICA8Y2lyY2xlIGN4PSI1MiIgY3k9Ii00IiByPSIxLjYiLz4KICAgIDwvZz4KICAgIDwhLS0gY3VlcnBvIGRlbCB5dW5xdWUgLS0+CiAgICA8cGF0aCBmaWxsPSJ1cmwoI2VtYmVyKSIgZD0iTTIgMjAgSDU4IEM1NCAzMiA0NCAzNiAzNiAzNiBMMzYgNDQgQzQ2IDQ0IDUyIDQ4IDUyIDU4IEgxMCBDMTAgNDggMTYgNDQgMjYgNDQgTDI2IDM2IEMxNiAzNCAxMCAyOCA4IDIwIFoiLz4KICAgIDxyZWN0IHg9IjIzIiB5PSI1OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSJ1cmwoI2VtYmVyKSIvPgogIDwvZz4KICA8IS0tIHdvcmRtYXJrIC0tPgogIDx0ZXh0IHg9IjExNiIgeT0iNzgiIGZvbnQtc2l6ZT0iNjQiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9InVybCgjZW1iZXIpIiBsZXR0ZXItc3BhY2luZz0iLTIiPmZvcmdlPC90ZXh0Pgo8L3N2Zz4K">
-</picture>
+<!-- forge — logo (ember/amber). PNG por URL absoluta: renderiza en GitHub y npm (data: URIs y rutas relativas no). -->
+<img alt="forge" height="92" src="https://raw.githubusercontent.com/cristiancorreau/forge/main/docs/assets/forge-logo.png">
 
 <br>
 <br>
@@ -43,7 +41,7 @@ npx @cristiancorreau/forge init
 
 <br>
 
-<img alt="Panel interactivo de forge en la terminal (OpenTUI): agentes, skills, hooks y profiles" width="780" src="docs/assets/cli-preview.png">
+<img alt="Panel interactivo de forge en la terminal (OpenTUI): agentes, skills, hooks y profiles" width="780" src="https://raw.githubusercontent.com/cristiancorreau/forge/main/docs/assets/cli-preview.png">
 
 <sub>El panel interactivo de forge (<code>forge panel</code>) requiere Bun (OpenTUI) — explora agentes, skills, hooks y profiles sin salir de la terminal.</sub>
 
