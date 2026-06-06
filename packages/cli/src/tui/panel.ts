@@ -294,20 +294,12 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
   function renderSkillsSection() {
     clearContent();
     content.add(Text({ id: 'skills-title', content: buildLines([
-      boldCol(C.white, 'Buscar skills'),
-      dimLeaf('Filtra por nombre, categoría, comando o trigger. Vacío = todas.'),
+      boldCol(C.white, 'Skills'),
+      dimLeaf('Skills del catálogo. Para instalar uno, usá la sección Catálogo.'),
     ]) }));
-    const input = new InputRenderable(renderer, {
-      id: 'skills-input', width: RIGHT_W - 4,
-      backgroundColor: C.bgInput, focusedBackgroundColor: C.bgFocus, focusedTextColor: C.cyan,
-      placeholder: 'Escribí para filtrar…', placeholderColor: C.muted,
-    });
-    content.add(input);
-    searchInput = input;
+    // The live search input was removed (it stole focus / broke navigation).
+    // The section now just lists every skill.
     renderSkills('');
-    input.on('input', () => renderSkills(input.value ?? ''));
-    input.on('change', () => renderSkills(input.value ?? ''));
-    input.focus();
   }
 
   // ── Section: Catálogo (search input + results Select + install on Enter) ──
