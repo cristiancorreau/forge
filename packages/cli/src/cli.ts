@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { init } from './commands/init.js';
 import { adopt } from './commands/adopt.js';
+import { add } from './commands/add.js';
 import { audit } from './commands/audit.js';
 import { generate } from './commands/generate.js';
 import { update } from './commands/update.js';
@@ -26,6 +27,7 @@ Setup
   panel          Open the interactive panel (config, monitor, skills, hooks, templates)
   init           Initialize forge in a project (wizard + post-install dashboard)
   adopt          Onboard forge into an EXISTING codebase (analyze + auto-wiki)
+  add            Install a skill from an external source (security pipeline, opt-in network)
   generate       Generate runtime config files from project.yaml
   update         Update managed files to the bundled catalog (--dry-run, --force)
   migrate        Migrate project.yaml from the v1 schema to v2 (--dry-run, --backup)
@@ -72,6 +74,9 @@ switch (cmd) {
     break;
   case 'adopt':
     exitCode = await adopt(rest);
+    break;
+  case 'add':
+    exitCode = await add(rest);
     break;
   case 'audit':
     exitCode = await audit(rest);
