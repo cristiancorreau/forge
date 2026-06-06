@@ -19,54 +19,17 @@ import { mcp } from './commands/mcp.js';
 import { findProjectYaml } from './lib/yaml.js';
 
 import { VERSION } from './version.js';
+import { resolveLang, setLang, t } from './lib/i18n.js';
 
-const HELP = `forge v${VERSION} — Agentic development framework
+const lang = resolveLang(process.argv);
+setLang(lang);
+process.env.FORGE_LANG = lang; // a Bun relaunch of the TUI inherits the chosen language
+const HELP = t('help.full', { version: VERSION });
 
-Usage: forge <command> [options]
-
-Setup
-  panel          Open the interactive panel (config, monitor, skills, hooks, templates)
-  init           Initialize forge in a project (wizard + post-install dashboard)
-  adopt          Onboard forge into an EXISTING codebase (analyze + auto-wiki)
-  add            Install a skill from an external source (security pipeline, opt-in network)
-  generate       Generate runtime config files from project.yaml
-  update         Update managed files to the bundled catalog (--dry-run, --force)
-  migrate        Migrate project.yaml from the v1 schema to v2 (--dry-run, --backup)
-  scaffold       Scaffold a new agent: Tier 2 profile, or Tier 3 domain agent (--tier 3)
-  teardown       Cleanly uninstall forge from a project (manifest-driven)
-
-Inspect
-  audit          Audit project against the forge standard
-  validate       Validate project.yaml schema (exit 1 on error, CI-safe)
-  doctor         Check environment, installed runtimes and project.yaml completeness
-  skills         List available forge skills grouped by category
-  aitmpl-search  Search the curated offline catalog (frameworks, MCP servers, profiles)
-
-Workflow
-  session-start  Open a work session (prints the /session-start skill steps)
-  session-close  Close a work session (prints the /session-close skill steps)
-
-Knowledge
-  wiki           Manage the project knowledge base (status | ingest | query | lint)
-  mcp            Run forge's MCP server (stdio, opt-in): live guardrail_status + wiki_search
-
-Options:
-  -v, --version   Show version
-  -h, --help      Show this help
-
-Run forge <command> --help for command-specific options.
-
-Examples:
-  npx @cristiancorreau/forge init
-  npx @cristiancorreau/forge adopt ./my-existing-repo --yes
-  npx @cristiancorreau/forge panel
-  npx @cristiancorreau/forge skills
-  npx @cristiancorreau/forge migrate --dry-run
-  npx @cristiancorreau/forge wiki status
-  npx @cristiancorreau/forge doctor
-`;
-
-const [, , cmd, ...rest] = process.argv;
+// Strip --lang (and its value) from the args used for command dispatch.
+const rawArgs = process.argv.slice(2).filter((a, i, arr) =>
+  a !== '--lang' && arr[i - 1] !== '--lang' && !a.startsWith('--lang='));
+const [cmd, ...rest] = rawArgs;
 
 let exitCode = 0;
 

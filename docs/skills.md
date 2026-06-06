@@ -1,3 +1,5 @@
+[English](en/skills.md) · **Español**
+
 # Skills de forge
 
 forge incluye **14 skills** invocables como comandos slash. Cada skill encapsula un flujo de trabajo reutilizable (planificar una feature, migrar una base de datos, auditar seguridad, consultar el wiki, etc.) que se activa por un comando explícito o por triggers contextuales.

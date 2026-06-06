@@ -1,4 +1,4 @@
-[English](../en/runtimes/kiro.md) · **Español**
+**English** · [Español](../../runtimes/kiro.md)
 
 # Kiro Runtime — Forge Support
 
@@ -86,7 +86,7 @@ As of mid-2026, however, Kiro remains in limited preview. Adoption metrics are l
 
 ### Prerequisites
 
-Ninguno fuera de Node.js 20+. La CLI es 100% TypeScript desde v2.8.0 (sin Python).
+None beyond Node.js 20+. The CLI is 100% TypeScript since v2.8.0 (no Python).
 
 ### Usage
 

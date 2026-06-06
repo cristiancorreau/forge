@@ -4,12 +4,13 @@ import { VERSION } from '../version.js';
 import { forgeBanner } from './banner.js';
 import { boxenBorderStyle } from './ascii.js';
 import { THEME, bannerRowColor } from './theme.js';
+import { t } from '../lib/i18n.js';
 
 export function printHeader(): void {
   const banner = forgeBanner().map((l, i) => chalk.hex(bannerRowColor(i))(l)).join('\n');
   const content =
     banner + '\n' +
-    chalk.dim('Configure any project for AI agents') + '  ' + chalk.dim('v' + VERSION) + '\n' +
+    chalk.dim(t('header.tagline')) + '  ' + chalk.dim('v' + VERSION) + '\n' +
     chalk.dim('Claude Code · OpenCode · Codex · Kiro');
 
   const output = boxen(content, {

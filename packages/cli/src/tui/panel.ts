@@ -21,6 +21,7 @@ import {
 import { VERSION } from '../version.js';
 import { FORGE_BANNER } from '../ui/banner.js';
 import { THEME, bannerRowColor } from '../ui/theme.js';
+import { t } from '../lib/i18n.js';
 import { resolveForgeRoot } from '../lib/paths.js';
 import { runAudit } from '../commands/audit.js';
 import { runDoctor } from '../commands/doctor.js';
@@ -105,17 +106,17 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
   const navPanel = new BoxRenderable(renderer, {
     id: 'nav', position: 'absolute', left: 0, top: HEADER_H + 1, width: LEFT_W, height: BODY_H,
     border: true, borderStyle: 'single', borderColor: C.dim, backgroundColor: C.bgPanel,
-    title: ' Secciones ', flexDirection: 'column', paddingLeft: 1, paddingTop: 1,
+    title: t('panel.title'), flexDirection: 'column', paddingLeft: 1, paddingTop: 1,
   });
   renderer.root.add(navPanel);
 
   const SECTIONS = [
-    o('Configuración', 'config',    'resumen del project.yaml'),
-    o('Monitoreo',     'monitor',   'audit + doctor'),
-    o('Skills',        'skills',    'buscar en el catálogo'),
-    o('Catálogo',      'catalog',   'buscar e instalar'),
-    o('Hooks',         'hooks',     'instalados + registry'),
-    o('Templates',     'templates', 'wiki / spec / modes'),
+    o(t('panel.sec.config'),    'config',    t('panel.sec.config.desc')),
+    o(t('panel.sec.monitor'),   'monitor',   t('panel.sec.monitor.desc')),
+    o(t('panel.sec.skills'),    'skills',    t('panel.sec.skills.desc')),
+    o(t('panel.sec.catalog'),   'catalog',   t('panel.sec.catalog.desc')),
+    o(t('panel.sec.hooks'),     'hooks',     t('panel.sec.hooks.desc')),
+    o(t('panel.sec.templates'), 'templates', t('panel.sec.templates.desc')),
   ];
 
   const nav = new SelectRenderable(renderer, {
@@ -142,7 +143,7 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     backgroundColor: C.bgPanel, paddingLeft: 1,
   });
   const bottomText = Text({ id: 'btm-t', content: buildLines([
-    dimLeaf('[↑↓] Sección   [Tab] Foco input/lista/nav   [Enter] Instalar (Catálogo)   [q/Esc] Salir'),
+    dimLeaf(t('panel.footer')),
   ]) });
   bottom.add(bottomText);
   renderer.root.add(bottom);

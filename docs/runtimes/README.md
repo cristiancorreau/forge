@@ -1,3 +1,5 @@
+[English](../en/runtimes/README.md) · **Español**
+
 # Runtimes soportados por forge
 
 forge genera configuración nativa para 4 runtimes de IA. Cada runtime tiene su propio adapter
