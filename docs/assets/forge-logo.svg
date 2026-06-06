@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="120" viewBox="0 0 440 120" font-family="'SF Mono', 'JetBrains Mono', Consolas, monospace">
+  <defs>
+    <linearGradient id="ember" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD26F"/>
+      <stop offset="45%" stop-color="#FF9F1C"/>
+      <stop offset="100%" stop-color="#E25522"/>
+    </linearGradient>
+  </defs>
+  <!-- yunque -->
+  <g transform="translate(28, 30)">
+    <!-- chispas -->
+    <g fill="url(#ember)">
+      <circle cx="44" cy="2" r="3.2"/>
+      <circle cx="56" cy="10" r="2"/>
+      <circle cx="52" cy="-4" r="1.6"/>
+    </g>
+    <!-- cuerpo del yunque -->
+    <path fill="url(#ember)" d="M2 20 H58 C54 32 44 36 36 36 L36 44 C46 44 52 48 52 58 H10 C10 48 16 44 26 44 L26 36 C16 34 10 28 8 20 Z"/>
+    <rect x="23" y="58" width="16" height="6" rx="2" fill="url(#ember)"/>
+  </g>
+  <!-- wordmark -->
+  <text x="116" y="78" font-size="64" font-weight="700" fill="url(#ember)" letter-spacing="-2">forge</text>
+</svg>
