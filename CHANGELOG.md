@@ -7,6 +7,20 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.3.0] — 2026-06-06
+
+> Multi-idioma (ES/EN) en el CLI + documentación y README bilingües (SPEC-049).
+
+### Agregado
+- **i18n del CLI (español / inglés)** (SPEC-049) — nuevo `lib/i18n.ts` con `resolveLang()` (precedencia `--lang <es|en>` > `FORGE_LANG` > locale del sistema `es*`→es > `en` por defecto), `t(key, vars)` con interpolación `{var}` y catálogo `MESSAGES` con paridad de claves ES/EN verificada por test. Superficies traducidas: el `--help` completo, el tagline del header y el chrome del panel (título, secciones de navegación y footer).
+- **Flag `--lang` y variable `FORGE_LANG`** — `forge --lang es` fuerza español, `forge --lang en` inglés; sin flag, se infiere del locale. El idioma se propaga vía `FORGE_LANG` para que el relaunch del TUI bajo Bun lo herede.
+- **Documentación bilingüe** — `README.en.md` + `docs/en/*` (guide, skills, tiers, wiki, runtimes/*) traducidos al inglés, con selector de idioma en cada par ES/EN.
+
+### Cambiado
+- El `--help`, el header y el panel dejan de tener strings hardcodeados y leen de `t()`, habilitando la migración incremental del resto de la salida de comandos a i18n.
+
+---
+
 ## [3.2.1] — 2026-06-06
 
 ### Corregido
