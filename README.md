@@ -2,8 +2,8 @@
 
 <br>
 
-<!-- forge — logo (ember/amber). PNG por URL absoluta: renderiza en GitHub y npm (data: URIs y rutas relativas no). -->
-<img alt="forge" height="92" src="https://raw.githubusercontent.com/cristiancorreau/forge/main/docs/assets/forge-logo.png">
+<!-- forge — logo SVG (vectorial, nítido). Ruta relativa: GitHub lo sirve como image/svg+xml. -->
+<img alt="forge" height="92" src="docs/assets/forge-logo.svg">
 
 <br>
 <br>
