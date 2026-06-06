@@ -15,6 +15,7 @@ import { scaffold } from './commands/scaffold.js';
 import { teardown } from './commands/teardown.js';
 import { sessionStart, sessionClose } from './commands/session.js';
 import { panel } from './commands/panel.js';
+import { mcp } from './commands/mcp.js';
 import { findProjectYaml } from './lib/yaml.js';
 
 import { VERSION } from './version.js';
@@ -47,6 +48,7 @@ Workflow
 
 Knowledge
   wiki           Manage the project knowledge base (status | ingest | query | lint)
+  mcp            Run forge's MCP server (stdio, opt-in): live guardrail_status + wiki_search
 
 Options:
   -v, --version   Show version
@@ -119,6 +121,9 @@ switch (cmd) {
     break;
   case 'panel':
     exitCode = await panel(rest);
+    break;
+  case 'mcp':
+    exitCode = await mcp(rest);
     break;
   case '-v':
   case '--version':
