@@ -18,6 +18,7 @@ import type { WizardResult } from '../lib/wizard.js';
 import { detectStack } from '../lib/detect.js';
 import { VERSION } from '../version.js';
 import { FORGE_BANNER } from '../ui/banner.js';
+import { THEME, bannerRowColor } from '../ui/theme.js';
 import {
   type ProjectType,
   hasBackend, hasFrontend, hasMobile,
@@ -44,18 +45,7 @@ function restoreTerminal(): void {
 }
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
-const C = {
-  cyan:    '#00e5ff',
-  yellow:  '#ffd740',
-  green:   '#69ff47',
-  muted:   '#546e7a',
-  dim:     '#37474f',
-  bg:      '#0d1117',
-  bgPanel: '#161b22',
-  bgInput: '#1f2937',
-  bgFocus: '#1e3a5f',
-  white:   '#e6edf3',
-};
+const C = THEME;
 
 // OpenTUI native styled text — NEVER embed raw ANSI escape codes in Text content,
 // OpenTUI computes layout width from the string and raw \x1b[...m sequences break it.
@@ -224,7 +214,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   });
   // FORGE banner (cyan) + tagline. buildLines keeps it a single t-template.
   header.add(Text({ id: 'hdr-t', content: buildLines([
-    ...FORGE_BANNER.map(l => fg(C.cyan)(l)),
+    ...FORGE_BANNER.map((l, i) => fg(bannerRowColor(i))(l)),
     [fg(C.muted)('Configure any project for AI agents'), otDim('   v' + VERSION)],
   ]) }));
   renderer.root.add(header);

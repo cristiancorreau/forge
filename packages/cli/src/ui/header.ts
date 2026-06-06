@@ -3,9 +3,10 @@ import chalk from 'chalk';
 import { VERSION } from '../version.js';
 import { forgeBanner } from './banner.js';
 import { boxenBorderStyle } from './ascii.js';
+import { THEME, bannerRowColor } from './theme.js';
 
 export function printHeader(): void {
-  const banner = forgeBanner().map(l => chalk.cyan(l)).join('\n');
+  const banner = forgeBanner().map((l, i) => chalk.hex(bannerRowColor(i))(l)).join('\n');
   const content =
     banner + '\n' +
     chalk.dim('Configure any project for AI agents') + '  ' + chalk.dim('v' + VERSION) + '\n' +
@@ -13,7 +14,7 @@ export function printHeader(): void {
 
   const output = boxen(content, {
     borderStyle: boxenBorderStyle('double') as 'double' | 'classic',
-    borderColor: 'cyan',
+    borderColor: THEME.cyan,
     padding: { top: 0, bottom: 0, left: 1, right: 1 },
     margin: { top: 1, bottom: 1, left: 0, right: 0 },
   });
@@ -48,7 +49,7 @@ export function printAgentList(agents: Array<{ name: string; tech: string }>): v
   printSection(`Agents to install (${agents.length})`);
   agents.forEach((a, i) => {
     const num = chalk.dim(String(i + 1).padStart(2) + '.');
-    const name = chalk.cyan(a.name.padEnd(30));
+    const name = chalk.hex(THEME.cyan)(a.name.padEnd(30));
     const tech = chalk.dim('← ' + a.tech);
     process.stdout.write(`  ${num} ${name} ${tech}\n`);
   });

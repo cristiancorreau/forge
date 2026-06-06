@@ -20,6 +20,7 @@ import {
 } from '@opentui/core';
 import { VERSION } from '../version.js';
 import { FORGE_BANNER } from '../ui/banner.js';
+import { THEME, bannerRowColor } from '../ui/theme.js';
 import { resolveForgeRoot } from '../lib/paths.js';
 import { runAudit } from '../commands/audit.js';
 import { runDoctor } from '../commands/doctor.js';
@@ -39,11 +40,7 @@ function restoreTerminal(): void {
   } catch {}
 }
 
-const C = {
-  cyan: '#00e5ff', yellow: '#ffd740', green: '#69ff47', red: '#ff5370',
-  muted: '#546e7a', dim: '#37474f', bg: '#0d1117', bgPanel: '#161b22',
-  bgInput: '#1f2937', bgFocus: '#1e3a5f', white: '#e6edf3',
-};
+const C = THEME;
 const boldCol = (hex: string, s: string) => fg(hex)(otBold(s));
 const dimLeaf = (s: string) => otDim(s);
 type Part = string | any;
@@ -98,7 +95,7 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     flexDirection: 'column', paddingLeft: 1, paddingTop: 0,
   });
   header.add(Text({ id: 'hdr-t', content: buildLines([
-    ...FORGE_BANNER.map(l => fg(C.cyan)(l)),
+    ...FORGE_BANNER.map((l, i) => fg(bannerRowColor(i))(l)),
     [otDim('v' + VERSION + '  panel  '), cfg.found ? fg(C.green)('● ' + cfg.name) : fg(C.muted)('sin project.yaml'),
      cfg.found ? otDim('  · ' + cfg.mode + ' · ' + cfg.language) : ''],
   ]) }));
