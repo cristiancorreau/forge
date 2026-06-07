@@ -11,9 +11,10 @@ appends the new v2 sections (mode, deploy fields, mcp, github, rules, scripts)
 preserving every existing value, and reports the changes.
 
 Options:
-  --dry-run   Show the diff without writing changes
-  --backup    Create project.yaml.bak before modifying
-  -h, --help  Show this help
+  --dry-run     Show the diff without writing changes
+  --no-backup   Skip the automatic project.yaml.bak (a backup is created by default)
+  --backup      Accepted for back-compat (a backup is the default now)
+  -h, --help    Show this help
 `;
 
 type YamlRecord = Record<string, unknown>;
@@ -30,6 +31,10 @@ function loadYamlRaw(path: string): { data: YamlRecord; raw: string } {
  * Criterion: if it has 'rules' OR 'mcp' OR 'github' OR 'project.mode' -> v2.
  */
 function detectVersion(data: YamlRecord): '1' | '2' {
+  // A real machine-readable schema_version wins when present.
+  if ('schema_version' in data) {
+    return String(data['schema_version']) === '1' ? '1' : '2';
+  }
   if ('rules' in data || 'mcp' in data || 'github' in data) return '2';
   const project = (data['project'] as YamlRecord | undefined) ?? {};
   if ('mode' in project) return '2';
@@ -45,10 +50,10 @@ function buildV2Yaml(data: YamlRecord, raw: string): string {
   const existingSections = new Set(Object.keys(data));
   const lines: string[] = [];
 
-  // Header
+  // Header (comment block). schema_version is written as a real top-level key
+  // in the return below, so it is machine-readable rather than just a comment.
   lines.push('# ---------------------------------------------------------------------------');
-  lines.push('# schema_version: "2"');
-  lines.push('# Las siguientes secciones fueron agregadas por forge migrate');
+  lines.push('# Las siguientes secciones fueron agregadas por forge migrate (schema_version: "2")');
   lines.push('# ---------------------------------------------------------------------------');
   lines.push('');
 
@@ -170,13 +175,17 @@ function buildV2Yaml(data: YamlRecord, raw: string): string {
     lines.push('');
   }
 
-  // Header (5 lines) + nothing else -> nothing to migrate.
-  if (lines.slice(5).every((l) => l === '')) {
-    return raw;
+  // Stamp a real, machine-readable schema_version key (not a comment) when absent.
+  const stamp = 'schema_version' in data ? '' : 'schema_version: "2"\n';
+
+  // Header (4 lines) + nothing else -> no new sections to append.
+  if (lines.slice(4).every((l) => l === '')) {
+    // Nothing to append; still stamp the version if the file lacks it.
+    return stamp ? stamp + raw : raw;
   }
 
   const additions = lines.join('\n');
-  return raw.replace(/\n+$/, '') + '\n\n' + additions + '\n';
+  return stamp + raw.replace(/\n+$/, '') + '\n\n' + additions + '\n';
 }
 
 /** Minimal line-based unified diff (added/removed lines only). */
@@ -211,7 +220,8 @@ export async function migrate(args: string[]): Promise<number> {
   }
 
   const dryRun = args.includes('--dry-run');
-  const backup = args.includes('--backup');
+  // Backup is the default safety net; --no-backup opts out. --backup still accepted.
+  const backup = !args.includes('--no-backup');
 
   const projectYamlPath = findProjectYaml(process.cwd());
   if (!projectYamlPath) {

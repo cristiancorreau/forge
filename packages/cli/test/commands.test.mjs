@@ -559,6 +559,43 @@ agents:
     assert.match(migrated, /schema_version|rules|mcp|github/);
   });
 
+  const V1_YAML = `project:
+  name: "Legacy"
+  language: "typescript"
+agents:
+  active:
+    - orchestrator
+`;
+
+  test('migrate creates a backup BY DEFAULT (no flag) and stamps a real schema_version', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, V1_YAML);
+    const { status } = runForge(['migrate'], { cwd: dir });
+    assert.equal(status, 0);
+    assert.ok(existsSync(join(dir, 'project.yaml.bak')), 'a backup must be created by default');
+    const migrated = readFileSync(join(dir, 'project.yaml'), 'utf-8');
+    // schema_version is a real top-level YAML key (column 0), not a comment.
+    assert.match(migrated, /^schema_version: ["']?2["']?\s*$/m);
+    assert.doesNotMatch(migrated, /^#\s*schema_version/m);
+  });
+
+  test('migrate --no-backup skips the backup', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, V1_YAML);
+    const { status } = runForge(['migrate', '--no-backup'], { cwd: dir });
+    assert.equal(status, 0);
+    assert.ok(!existsSync(join(dir, 'project.yaml.bak')), '--no-backup must not write a .bak');
+  });
+
+  test('a migrated file is re-detected as v2 via the machine-readable schema_version', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, V1_YAML);
+    runForge(['migrate', '--no-backup'], { cwd: dir });
+    const { status, stdout } = runForge(['migrate', '--dry-run'], { cwd: dir });
+    assert.equal(status, 0);
+    assert.match(stdout, /ya está en v2/);
+  });
+
   // End-to-end install pipeline: with an existing project.yaml, `init --force`
   // is non-interactive (no wizard) and installs the full claude-code setup.
   // This is the same code path the wizard reaches after collecting answers.
