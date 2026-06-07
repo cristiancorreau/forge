@@ -23,6 +23,11 @@
         "icon": "$(wand)"
       },
       {
+        "command": "forge.recommend",
+        "title": "forge: Recommend (stack-aware advisor)",
+        "icon": "$(lightbulb)"
+      },
+      {
         "command": "forge.audit",
         "title": "forge: Run Audit",
         "icon": "$(check)"

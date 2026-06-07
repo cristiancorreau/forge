@@ -293,6 +293,7 @@ class ForgeActionsProvider implements vscode.TreeDataProvider<ForgeActionItem> {
   getChildren(): ForgeActionItem[] {
     return [
       new ForgeActionItem('Init Wizard',        'forge.init',          'wand',     'initialize forge in this project'),
+      new ForgeActionItem('Recommend',          'forge.recommend',     'lightbulb', 'stack-aware advisor: best catalog items for this project'),
       new ForgeActionItem('Run Audit',          'forge.audit',         'check',    'audit project against the forge standard'),
       new ForgeActionItem('Doctor',             'forge.doctor',        'pulse',    'check environment and runtimes'),
       new ForgeActionItem('Generate',           'forge.generate',      'layers',   'generate runtime config files'),
@@ -936,6 +937,18 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   // -------------------------------------------------------------------------
+  // Command: forge.recommend  (stack-aware advisor, read-only, in a terminal)
+  // -------------------------------------------------------------------------
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.recommend', async () => {
+      const workspaceRoot = await requireWorkspace();
+      if (!workspaceRoot) { return; }
+      // Read-only by default; the user can re-run with --apply from the terminal.
+      runForgeInTerminal(['recommend'], workspaceRoot, 'forge recommend');
+    })
+  );
+
+  // -------------------------------------------------------------------------
   // Command: forge.showStatus
   // -------------------------------------------------------------------------
   context.subscriptions.push(
@@ -1050,7 +1063,8 @@ function extractCatalogResults(parsed: unknown): CatalogResult[] {
   for (const e of rawEntries) {
     if (!e || typeof e !== 'object') { continue; }
     const obj = e as Record<string, unknown>;
-    const name = String(obj.name ?? obj.title ?? obj.slug ?? '').trim();
+    // The unified catalog (SPEC-050) exposes `label`/`id`; older output used `name`.
+    const name = String(obj.label ?? obj.name ?? obj.title ?? obj.slug ?? obj.id ?? '').trim();
     if (!name) { continue; }
     out.push({
       name,
