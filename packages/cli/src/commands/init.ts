@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync, copyFileSync, readdirSync, statSync } from 'fs';
-import { join, basename } from 'path';
+import { join, basename, dirname } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
 import { resolveForgeRoot } from '../lib/paths.js';
@@ -45,6 +45,7 @@ import {
   generateKiroProduct, generateKiroStructure,
   generateKiroAgents, generateKiroCommands, generateKiroBranchGuardHook
 } from '../lib/generators/kiro.js';
+import { getRuntime } from '../lib/generators/registry.js';
 import type { ProjectYaml } from '../lib/yaml.js';
 import { scaffoldWikiStructure } from './wiki.js';
 
@@ -63,7 +64,10 @@ Initialize forge in a project. Launches an interactive wizard to configure
 project.yaml, then installs agents, hooks, and runtime configuration.
 
 Options:
-  --runtime <name>   Skip wizard for runtime selection: claude-code, opencode, codex, kiro
+  --runtime <name>   Skip wizard for runtime selection:
+                     Native: claude-code, opencode, codex, kiro
+                     Rules: cursor, windsurf, copilot, gemini, zed,
+                            cline, aider, continue, roo, amp, augment
   --force            Overwrite existing files without prompting
   --dry-run          Show what would be installed without writing files
   -h, --help         Show this help
@@ -598,6 +602,17 @@ export async function init(args: string[]): Promise<number> {
 
   } else if (runtime === 'kiro') {
     installKiro(forgeRoot, projectRoot, config, force);
+
+  } else {
+    // Rules-based and other registry runtimes: write each surface from the descriptor.
+    const descriptor = getRuntime(runtime);
+    if (descriptor) {
+      for (const surface of descriptor.surfaces(config)) {
+        const absPath = join(projectRoot, surface.path);
+        mkdirSync(dirname(absPath), { recursive: true });
+        write(absPath, surface.content, force);
+      }
+    }
   }
 
   // Interactive post-install dashboard (Bun + TTY). Explains the project,
