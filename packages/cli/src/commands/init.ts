@@ -3,6 +3,7 @@ import { join, basename } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
 import { resolveForgeRoot } from '../lib/paths.js';
+import { forgeMarker } from '../lib/marker.js';
 import {
   findBun, resolveCliEntry, shouldRelaunchUnderBun, relaunchUnderBun, bunFallbackHint,
 } from '../lib/bun.js';
@@ -170,7 +171,8 @@ export function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>> |
   // project.type only when known (the wizard always sets it); old flows omit it.
   const typeLine = result.type ? `  type: ${result.type}\n` : '';
 
-  return `project:
+  return `${forgeMarker()}
+project:
   name: "${result.name}"
   slug: "${result.slug}"
   description: "${result.description}"
