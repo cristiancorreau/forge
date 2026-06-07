@@ -296,7 +296,7 @@ Este agente puede invocar los slash commands definidos en `.claude/commands/` de
 
 ### Hooks activos en este stack
 - **`pre-edit-check.js`**: se ejecuta antes de cada edición. Detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php` del child theme, widgets personalizados y dynamic tags.
-- **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Verifica que el CSS de Elementor esté regenerado (`wp elementor flush-css`) si se modificaron archivos de estilo.
+- **`post-turn-check.js`**: se ejecuta al terminar cada turno. Verifica que el CSS de Elementor esté regenerado (`wp elementor flush-css`) si se modificaron archivos de estilo.
 
 ### APIs de terceros y seguridad
 Este agente interactúa con la API de Elementor Cloud y puede integrarse con APIs externas vía widgets personalizados, Dynamic Tags y Form Builder. El campo `last_verified` en el frontmatter indica cuándo fue revisado por última vez. El **security-auditor** debe:

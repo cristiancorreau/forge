@@ -13,7 +13,7 @@ Activar cuando el stack del proyecto es Astro, independientemente del adaptador 
 ## Hooks específicos del stack
 
 - **`pre-edit-check.py`**: detecta debug statements (`console.log`, `debugger`) en archivos `.astro`, `.ts` y `.tsx` antes de cada edición.
-- **`post-turn-check.sh`**: verifica que `astro build` pase sin errores de TypeScript ni warnings al terminar cada turno.
+- **`post-turn-check.js`**: verifica que `astro build` pase sin errores de TypeScript ni warnings al terminar cada turno.
 
 ## Activar en project.yaml
 

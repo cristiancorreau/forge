@@ -5,6 +5,11 @@
 **Propósito:** Convertir el plan de arquitectura (`forge-v2-plan.md`) en tareas ejecutables.
 **Audiencia:** Líder técnico designado y equipo de SocialWeb.
 
+> **Estado (actualizado):** Documento histórico. El grueso de las fases 0–2 ya se ejecutó: la
+> CLI v2 está implementada y publicada en npm (v2.9.13), con multi-runtime, hooks JS, manifest
+> SHA-256 y los comandos portados. Las tareas con fechas mayo–octubre 2026 reflejan el plan
+> original, no el avance real. Para el estado vigente, ver `README.md` y `RELEASE-CHECKLIST.md`.
+
 ---
 
 ## Cómo usar este documento

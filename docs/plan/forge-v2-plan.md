@@ -5,6 +5,13 @@
 **Estado:** Documento vivo, para iterar con el equipo de SocialWeb
 **Audiencia:** Equipo técnico de SocialWeb, mantenedores futuros del proyecto
 
+> **Estado (actualizado):** Documento histórico. Gran parte de la visión v2 ya está
+> implementada y publicada — la CLI npm (`@cristiancorreau/forge` v2.9.13) cubre agentes
+> Tier 1/2, multi-runtime (Claude Code/OpenCode/Codex/Kiro), skills, compliance, wiki y los
+> comandos `init/audit/generate/validate/doctor/migrate/scaffold/teardown/wiki`. Las fechas y
+> "preguntas abiertas" de abajo reflejan el planteamiento original de mayo 2026 y no el estado
+> actual. Consultar el `README.md` y la tabla de funcionalidades para el estado real.
+
 ---
 
 ## 1. Contexto y propósito

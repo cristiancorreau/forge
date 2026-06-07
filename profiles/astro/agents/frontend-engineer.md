@@ -68,7 +68,7 @@ Este agente puede invocar los slash commands definidos en `.claude/commands/` de
 
 ### Hooks activos en este stack
 - **`pre-edit-check.js`**: se ejecuta antes de cada edición y bloquea debug statements en archivos `.astro`, `.ts` y `.tsx`. No dejes `console.log`, `debugger` ni comentarios `// TODO` sin ticket.
-- **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Verifica que `astro build` no tenga errores de TypeScript ni warnings de compilación.
+- **`post-turn-check.js`**: se ejecuta al terminar cada turno. Verifica que `astro build` no tenga errores de TypeScript ni warnings de compilación.
 
 ### Reglas de scope
 - Tu scope es exclusivamente `src/` y `public/`. Cualquier archivo fuera de esos directorios requiere aprobación explícita del orchestrator.

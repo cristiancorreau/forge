@@ -63,7 +63,7 @@ Este agente puede invocar los slash commands definidos en `.claude/commands/` de
 
 ### Hooks activos en este stack
 - **`pre-edit-check.js`**: se ejecuta antes de cada edición. Detecta debug statements (`console.log`, `debugger`) en archivos `.ts` y `.tsx`.
-- **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Corre `tsc --noEmit` para verificar TypeScript estricto. El proyecto usa `strict: true` — cualquier error de tipos bloquea el turno. Corregir antes de reportar al orchestrator.
+- **`post-turn-check.js`**: se ejecuta al terminar cada turno. Corre `tsc --noEmit` para verificar TypeScript estricto. El proyecto usa `strict: true` — cualquier error de tipos bloquea el turno. Corregir antes de reportar al orchestrator.
 
 ### Reglas de scope
 - Tu scope es el directorio móvil definido en el `CLAUDE.md` del proyecto (típicamente `packages/mobile/` o `apps/mobile/`). No toques otros paquetes del monorepo.

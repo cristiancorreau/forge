@@ -102,5 +102,5 @@ Esperá aprobación antes de spawnear el team.
 
 **Hooks activos que el team debe respetar:**
 - `pre-edit-check.js`: bloquea edits en main y detecta credenciales hardcodeadas
-- `post-turn-check.sh`: corre typecheck al terminar cada turno
+- `post-turn-check.js`: corre typecheck al terminar cada turno
 - `pre-bash-check.js` (si mode=standard/enterprise): bloquea comandos destructivos en producción

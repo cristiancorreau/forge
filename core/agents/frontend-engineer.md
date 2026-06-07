@@ -64,7 +64,7 @@ Implementás el frontend del proyecto. Tu scope está definido en el `project.ya
 
 **Hooks que aplican a tu trabajo:**
 - `pre-edit-check.js`: detecta `console.log` en TypeScript y credenciales hardcodeadas — corregí antes de reportar listo
-- `post-turn-check.sh`: correrá `tsc` sobre los archivos que modificaste — asegurate de que typechecks pasan
+- `post-turn-check.js`: correrá `tsc` sobre los archivos que modificaste — asegurate de que typechecks pasan
 - `pre-bash-check.js` (en proyectos standard/enterprise): bloquea comandos destructivos en producción
 
 **Scope:** Operar solo en archivos de UI y componentes (ver `stack.frontend` en `project.yaml`). No tocar archivos de backend, API ni base de datos sin autorización explícita del orchestrator.

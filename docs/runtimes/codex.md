@@ -17,28 +17,25 @@ A diferencia de Claude Code (que usa `.claude/` y slash commands), Codex no tien
 ## Instalación rápida
 
 ```bash
-bash scripts/setup-codex.sh
+npx @cristiancorreau/forge init --runtime codex
 ```
 
-El script hace lo siguiente en orden:
+El comando hace lo siguiente en orden:
 
-- **[OK] git y python3** — verifica que ambas herramientas están en PATH
-- **[OK] pyyaml** — instala el paquete si no está disponible
-- **[OK] project.yaml** — verifica que el proyecto está inicializado con Forge
-- **[OK] forge/** — localiza el directorio de forge (submódulo o path relativo)
-- **[OK] .codex/** — crea el directorio y copia `codex.yaml` desde la plantilla
-- **[OK] forge-codex-start.sh** — instala el hook onStart en `.codex/`
-- **[OK] forge-codex-finish.sh** — instala el hook onFinish en `.codex/`
-- **[OK] AGENTS.md** — genera el archivo de contexto desde `project.yaml`
+- **`.codex/`** — crea el directorio del adapter
+- **`AGENTS.md`** — genera el archivo de contexto desde `project.yaml`
+- **`.codex/session-start.js`** — copia el hook onStart (JS puro, compartido con Claude Code)
+- **`.codex/post-turn-check.js`** — copia el hook onFinish (JS puro, compartido con Claude Code)
+- **`.codex/codex.yaml`** — escribe la config con los hooks de sesión cableados
 
-Al finalizar, el script imprime los próximos pasos:
+Al finalizar, commiteá lo generado:
 
 ```bash
 git add AGENTS.md .codex/
 git commit -m 'chore(codex): initialize Forge v2 Codex adapter'
 ```
 
-Si `project.yaml` no existe todavía, ejecutar primero `python3 scripts/forge-wizard.py`.
+Si `project.yaml` no existe todavía, `forge init` lanza primero el wizard para crearlo.
 
 ---
 
@@ -101,36 +98,35 @@ Codex CLI soporta tres eventos de hook configurables en `.codex/codex.yaml`:
 | `onFinish` | `Stop` | Al finalizar la sesión |
 | `onDiff` | (sin equivalente directo) | Cuando Codex aplica cambios al filesystem |
 
-Forge configura `onStart` y `onFinish`. El `.codex/codex.yaml` generado por el setup:
+Forge configura `onStart` y `onFinish`. `forge init --runtime codex` genera el
+`.codex/codex.yaml` y copia dos hooks en **JavaScript puro** (sin dependencia de
+Python, igual que los hooks de Claude Code):
 
 ```yaml
-model: o4-mini  # cambiar según preferencia: o4-mini | o3 | gpt-4o
+# .codex/codex.yaml — generado por forge v2 para Codex CLI
+# model: gpt-5-codex   # opcional — ajustar según preferencia
 
 hooks:
-  onStart:  bash .codex/forge-codex-start.sh
-  onFinish: bash .codex/forge-codex-finish.sh
+  onStart:  node .codex/session-start.js
+  onFinish: node .codex/post-turn-check.js
 ```
 
-**forge-codex-start.sh** verifica al inicio de cada sesión:
+**session-start.js** verifica al inicio de cada sesión:
 
-1. git y python3 disponibles en PATH
-2. Branch actual no es `main` ni `master` (warn si lo es)
-3. Cambios sin commitear en el worktree (warn)
-4. `project.yaml` existe (warn si no)
-5. `project.yaml` tiene `project.name` y `project.mode` (warn si faltan)
-6. Variables de entorno `PROD_*` / `PRODUCTION_*` activas (warn si hay)
+1. Branch actual no es `main` ni `master` (warn si lo es)
+2. Cambios sin commitear en el worktree (warn)
+3. `project.yaml` existe y tiene `project.name` / `project.mode` (warn si faltan)
+4. Variables de entorno `PROD_*` / `PRODUCTION_*` activas (warn si hay)
 
-Si todo está limpio, el hook no imprime nada. Si hay advertencias, las lista con etiquetas descriptivas. A diferencia de Claude Code, **el hook onStart no puede bloquear la sesión**: siempre termina con `exit 0`.
+Si todo está limpio, el hook no imprime nada. Si hay advertencias, las lista. A
+diferencia de Claude Code, **el hook onStart no puede bloquear la sesión**: el hook
+siempre termina con `exit 0` (Codex ignora su exit code).
 
-**forge-codex-finish.sh** corre al cerrar cada sesión:
+**post-turn-check.js** corre al cerrar cada sesión:
 
-1. Detecta archivos modificados o staged con `git diff`
-2. Lee `project.yaml` para encontrar el comando de check configurado (`scripts.check`)
-3. Si no hay comando configurado, auto-detecta por tipo de archivo:
-   - TypeScript/TSX: `tsc --noEmit` (o `pnpm turbo typecheck` en monorepos)
-   - Python: `python3 -m py_compile` por archivo
-   - PHP: `composer validate`
-   - Ruby: `bundle exec ruby -c`
+1. Detecta archivos modificados con `git status --porcelain`
+2. Lee `scripts.check` de `project.yaml` si está configurado
+3. Si no hay comando configurado, auto-detecta: `tsc --noEmit` (TypeScript) o `go build ./...` (Go)
 4. Imprime el resultado del check en la terminal
 5. Siempre termina con `exit 0`
 

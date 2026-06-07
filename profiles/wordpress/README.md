@@ -15,7 +15,7 @@ Activar cuando el proyecto es un sitio o aplicación WordPress. Usar `wp-enginee
 ## Hooks específicos del stack
 
 - **`pre-edit-check.py`**: detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php` antes de cada edición. Estos patrones nunca deben llegar a producción.
-- **`post-turn-check.sh`**: corre `composer test` (PHPUnit) y `./vendor/bin/phpcs --standard=WordPress` al terminar cada turno, si están configurados en el proyecto.
+- **`post-turn-check.js`**: corre `composer test` (PHPUnit) y `./vendor/bin/phpcs --standard=WordPress` al terminar cada turno, si están configurados en el proyecto.
 
 ### Nota de seguridad
 

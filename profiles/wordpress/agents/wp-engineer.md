@@ -203,7 +203,7 @@ Este agente puede invocar los slash commands definidos en `.claude/commands/` de
 
 ### Hooks activos en este stack
 - **`pre-edit-check.js`**: se ejecuta antes de cada edición. Detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php`. Estos nunca deben llegar a producción.
-- **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Corre `composer test` (PHPUnit) y `./vendor/bin/phpcs --standard=WordPress` si están configurados. Corregir errores antes de reportar.
+- **`post-turn-check.js`**: se ejecuta al terminar cada turno. Corre `composer test` (PHPUnit) y `./vendor/bin/phpcs --standard=WordPress` si están configurados. Corregir errores antes de reportar.
 
 ### APIs de terceros y seguridad
 Este agente puede interactuar con APIs externas (WooCommerce, ACF, Gravity Forms, servicios de email, pasarelas de pago). El campo `last_verified` en el frontmatter indica cuándo fue revisado por última vez. El **security-auditor** debe revisar periódicamente estos puntos de integración para verificar:

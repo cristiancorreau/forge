@@ -260,7 +260,7 @@ Este agente puede invocar los slash commands definidos en `.claude/commands/` de
 
 ### Hooks activos en este stack
 - **`pre-edit-check.js`**: se ejecuta antes de cada edición. Detecta patrones de debug PHP (`var_dump()`, `print_r()`, `error_log()`) en archivos `.php` del child theme y módulos personalizados.
-- **`post-turn-check.sh`**: se ejecuta al terminar cada turno. Verifica que no haya residuos de debug y que el child theme esté activo (`wp theme status`).
+- **`post-turn-check.js`**: se ejecuta al terminar cada turno. Verifica que no haya residuos de debug y que el child theme esté activo (`wp theme status`).
 
 ### APIs de terceros y seguridad
 Este agente interactúa con la API de Elegant Themes (actualizaciones de Divi) y puede integrarse con APIs externas vía módulos personalizados. El campo `last_verified` en el frontmatter de este agente indica cuándo fue revisado por última vez. El **security-auditor** debe:

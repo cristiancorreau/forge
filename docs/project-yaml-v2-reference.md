@@ -205,7 +205,7 @@ Comandos de verificación ejecutados automáticamente por hooks de Forge.
 
 | Campo | Tipo | Default | Descripción |
 |-------|------|---------|-------------|
-| `check` | string \| null | null | Comando ejecutado por `post-turn-check.sh` después de cada turno del agente |
+| `check` | string \| null | null | Comando ejecutado por `post-turn-check.js` después de cada turno del agente |
 
 #### Ejemplo `scripts`
 

@@ -5,6 +5,11 @@ Autor: Cristian Correa
 Repo público: https://github.com/cristiancorreau/forge  
 Paquete npm: `@cristiancorreau/forge`
 
+> **Estado (actualizado): COMPLETADO.** La distribución pública vía npm/npx ya es una realidad:
+> el paquete `@cristiancorreau/forge` está publicado (v2.9.13), `npx @cristiancorreau/forge init`
+> funciona, el repo es público en GitHub y hay CI/CD con release semántico (`.github/workflows/`).
+> El plan de abajo se conserva como referencia histórica del proceso.
+
 ---
 
 ## Objetivo
