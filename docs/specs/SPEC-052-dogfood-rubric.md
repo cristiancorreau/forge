@@ -1,6 +1,6 @@
 # SPEC-052 Dogfood — rúbrica, protocolo y harness before/after
 
-> Estado: APPROVED
+> Estado: IMPLEMENTED
 > Responsable: forge-cli-engineer
 > Creada: 2026-06-07 | Actualizada: 2026-06-07
 > Issue: #104 (Epic) · Depende de: SPEC-050 (catálogo unificado), SPEC-051 (`forge recommend`)
