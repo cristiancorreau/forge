@@ -128,6 +128,24 @@ describe('ui/ascii — useAscii()', () => {
     assert.equal(asciiMod.boxenBorderStyle('double', { env: { FORGE_ASCII: '0' } }), 'double');
     assert.equal(asciiMod.boxenBorderStyle('round', { env: { FORGE_ASCII: '0' } }), 'round');
   });
+
+  // OpenTUI BoxRenderable custom border chars (#74 — legacy Windows render).
+  test('tuiBorderChars returns an all-ASCII 12-glyph set in ASCII mode', () => {
+    const a = asciiMod.tuiBorderChars({ env: { FORGE_ASCII: '1' } });
+    assert.ok(a, 'ASCII mode must return a charset');
+    for (const k of ['topLeft', 'topRight', 'bottomLeft', 'bottomRight', 'horizontal', 'vertical', 'topT', 'bottomT', 'leftT', 'rightT', 'cross']) {
+      assert.equal(typeof a[k], 'string', `${k} present`);
+      assert.ok(/^[-+|]$/.test(a[k]), `${k} is a plain-ASCII glyph (got ${JSON.stringify(a[k])})`);
+    }
+  });
+
+  test('tuiBorderChars is undefined off ASCII mode (no-op → Unicode borderStyle kept)', () => {
+    assert.equal(asciiMod.tuiBorderChars({ platform: 'darwin', env: {} }), undefined);
+    assert.equal(asciiMod.tuiBorderChars({ platform: 'linux', env: {} }), undefined);
+    assert.equal(asciiMod.tuiBorderChars({ platform: 'win32', env: { WT_SESSION: '1' } }), undefined);
+    // legacy Windows console → ASCII charset
+    assert.ok(asciiMod.tuiBorderChars({ platform: 'win32', env: {} }));
+  });
 });
 
 // ── box renderer ─────────────────────────────────────────────────────────────

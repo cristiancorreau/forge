@@ -15,6 +15,7 @@ import {
   dim as otDim,
 } from '@opentui/core';
 import type { WizardResult } from '../lib/wizard.js';
+import { tuiBorderChars } from '../ui/ascii.js';
 import { detectStack } from '../lib/detect.js';
 import { VERSION } from '../version.js';
 import { FORGE_BANNER } from '../ui/banner.js';
@@ -208,7 +209,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   const header = new BoxRenderable(renderer, {
     id: 'hdr', position: 'absolute', left: 0, top: 0,
     width: W, height: HEADER_H,
-    border: true, borderStyle: 'double', borderColor: C.cyan,
+    border: true, customBorderChars: tuiBorderChars(), borderStyle: 'double', borderColor: C.cyan,
     backgroundColor: C.bg,
     flexDirection: 'column', paddingLeft: 1, paddingTop: 0,
   });
@@ -223,7 +224,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   const stepsPanel = new BoxRenderable(renderer, {
     id: 'stp', position: 'absolute',
     left: 0, top: HEADER_H + 1, width: LEFT_W, height: BODY_H,
-    border: true, borderStyle: 'single', borderColor: C.dim,
+    border: true, customBorderChars: tuiBorderChars(), borderStyle: 'single', borderColor: C.dim,
     backgroundColor: C.bgPanel,
     title: ' Steps ',
     flexDirection: 'column', paddingLeft: 1, paddingTop: 1,
@@ -234,7 +235,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   const contentPanel = new BoxRenderable(renderer, {
     id: 'cnt', position: 'absolute',
     left: LEFT_W + 1, top: HEADER_H + 1, width: RIGHT_W, height: BODY_H,
-    border: true, borderStyle: 'single', borderColor: C.cyan,
+    border: true, customBorderChars: tuiBorderChars(), borderStyle: 'single', borderColor: C.cyan,
     backgroundColor: C.bg,
     flexDirection: 'column', gap: 1, paddingLeft: 1, paddingRight: 1, paddingTop: 1,
   });
