@@ -22,6 +22,7 @@ import {
   type CatalogItem,
   PROFILE_META, getCuratedItems, scoreCatalog,
 } from './catalog-unified.js';
+import { forgeMarker } from './marker.js';
 
 // The data model + the search engine live in catalog-unified.ts (SPEC-050).
 // Re-export the model so existing importers (the panel) keep their import path.
@@ -413,7 +414,7 @@ export function installSkill(projectRoot: string, forgeRoot: string | null, id: 
     }
   } else {
     // No project.yaml yet → create a minimal one with the skill.
-    writeFileSync(yamlPath, `project:\n  name: "Project"\n  mode: standard\n\nskills:\n  - ${id}\n`, 'utf-8');
+    writeFileSync(yamlPath, `${forgeMarker()}\nproject:\n  name: "Project"\n  mode: standard\n\nskills:\n  - ${id}\n`, 'utf-8');
     changed.push(rel(projectRoot, yamlPath));
   }
 
@@ -472,7 +473,7 @@ export function installProfile(projectRoot: string, forgeRoot: string | null, na
   } else {
     writeFileSync(
       yamlPath,
-      `project:\n  name: "Project"\n  mode: standard\n\nagents:\n  profiles:\n    - ${name}\n`,
+      `${forgeMarker()}\nproject:\n  name: "Project"\n  mode: standard\n\nagents:\n  profiles:\n    - ${name}\n`,
       'utf-8',
     );
     changed.push(rel(projectRoot, yamlPath));
