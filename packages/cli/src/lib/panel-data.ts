@@ -31,15 +31,42 @@ export function loadActiveSkillIds(root: string): Set<string> {
 }
 
 /**
- * Filter the skill catalog by a free-text query. Matches (case-insensitive,
- * substring) against id, command, category, purpose and trigger. An empty query
- * returns the whole catalog. Each row is marked `active` if it is enabled in the
- * given project.yaml (resolved from `root`).
+ * Returns the unique skill categories from the catalog, sorted alphabetically.
+ * The `root` parameter is accepted for API consistency (future: per-project
+ * overrides) but is not used today since categories derive from the static SKILLS array.
  */
-export function searchSkills(query: string, root: string = process.cwd()): SkillRow[] {
+export function getSkillCategories(_root: string = process.cwd()): string[] {
+  const seen = new Set<string>();
+  for (const s of SKILLS) seen.add(s.category);
+  return [...seen].sort();
+}
+
+/**
+ * Filter the skill catalog by a free-text query and an optional category.
+ *
+ * - Matches (case-insensitive, substring) against id, command, category,
+ *   purpose and trigger. An empty query returns the whole catalog.
+ * - When `category` is provided, only skills whose `category` exactly matches
+ *   (case-insensitive) are included. Omitting `category` (or passing `undefined`)
+ *   preserves the previous behaviour (no category filter).
+ * - Each row is marked `active` if it is enabled in the project.yaml resolved
+ *   from `root`.
+ */
+export function searchSkills(
+  query: string,
+  root: string = process.cwd(),
+  category?: string,
+): SkillRow[] {
   const activeIds = loadActiveSkillIds(root);
   const q = query.trim().toLowerCase();
-  const rows = SKILLS.map(s => ({ ...s, active: activeIds.has(s.id) }));
+  const catFilter = category ? category.toLowerCase() : undefined;
+  let rows = SKILLS.map(s => ({ ...s, active: activeIds.has(s.id) }));
+
+  // Category pre-filter (exact, case-insensitive).
+  if (catFilter) {
+    rows = rows.filter(s => s.category.toLowerCase() === catFilter);
+  }
+
   if (!q) return rows;
   return rows.filter(s =>
     s.id.toLowerCase().includes(q) ||

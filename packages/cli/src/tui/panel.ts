@@ -283,7 +283,8 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     } else {
       for (const s of results) {
         const mark = s.active ? fg(C.green)('✔ ') : fg(C.muted)('· ');
-        rows.push(['  ', mark, boldCol(C.cyan, s.command.padEnd(16)), fg(C.muted)('[' + s.category + '] '), fg(C.white)(s.purpose)]);
+        const activeBadge = s.active ? fg(C.green)(' [active]') : '';
+        rows.push(['  ', mark, boldCol(C.cyan, s.command.padEnd(16)), fg(C.muted)('[' + s.category + ']'), activeBadge, fg(C.white)(' ' + s.purpose)]);
         rows.push(['                    ', dimLeaf('trigger: ' + s.trigger)]);
       }
     }
@@ -311,9 +312,13 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     catalogResults = searchCatalog(forgeRoot, root, query);
     const options = catalogResults.map((it: any, i: number) => {
       const mark = it.installed ? '✓ ' : '  ';
-      const tag = '[' + it.type + ']';
+      const typeColors: Record<string, string> = { skill: C.cyan, profile: C.yellow, template: C.green };
+      const typeCol = typeColors[it.type] ?? C.muted;
+      const tag = fg(typeCol)('[' + it.type + ']');
+      const installedBadge = it.installed ? fg(C.green)(' [instalado]') : '';
+      const desc = it.description.length > 80 ? it.description.slice(0, 79) + '…' : it.description;
       const state = it.installed ? ' · ya instalado' : '';
-      return o(`${mark}${it.label}  ${tag}`, String(i), it.description.slice(0, 60) + state);
+      return o(`${mark}${it.label}  ${tag}${installedBadge}`, String(i), desc + state);
     });
     if (catalogSelect) {
       try { catalogSelect.options = options.length ? options : [o('Sin resultados', '-1', '')]; } catch {}

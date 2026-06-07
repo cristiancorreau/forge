@@ -138,6 +138,81 @@ describe('panel-data — searchSkills', () => {
   });
 });
 
+describe('panel-data — getSkillCategories (SPEC-057)', () => {
+  test('returns a non-empty array of unique category strings', () => {
+    const cats = panelData.getSkillCategories(process.cwd());
+    assert.ok(Array.isArray(cats), 'getSkillCategories must return an array');
+    assert.ok(cats.length > 0, 'expected at least one category');
+    // Known categories from SKILLS static array.
+    assert.ok(cats.includes('Wiki'), 'Wiki category must be present');
+    assert.ok(cats.includes('Sesión'), 'Sesión category must be present');
+    assert.ok(cats.includes('Desarrollo'), 'Desarrollo category must be present');
+  });
+
+  test('categories are sorted alphabetically', () => {
+    const cats = panelData.getSkillCategories(process.cwd());
+    const sorted = [...cats].sort();
+    assert.deepEqual(cats, sorted, 'categories must be sorted alphabetically');
+  });
+
+  test('no duplicates in the returned array', () => {
+    const cats = panelData.getSkillCategories(process.cwd());
+    const unique = new Set(cats);
+    assert.equal(cats.length, unique.size, 'categories must not have duplicates');
+  });
+});
+
+describe('panel-data — searchSkills with category filter (SPEC-057)', () => {
+  test('category filter restricts results to that category only', (t) => {
+    const dir = makeTmpDir(t);
+    const rows = panelData.searchSkills('', dir, 'Wiki');
+    assert.ok(rows.length >= 3, 'expected at least 3 wiki skills');
+    assert.ok(rows.every(r => r.category === 'Wiki'), 'all rows must have category Wiki');
+  });
+
+  test('category filter + text query ANDs both conditions', (t) => {
+    const dir = makeTmpDir(t);
+    const rows = panelData.searchSkills('ingest', dir, 'Wiki');
+    assert.ok(rows.length >= 1, 'wiki-ingest must match');
+    assert.ok(rows.every(r => r.category === 'Wiki'));
+    assert.ok(rows.some(r => r.id === 'wiki-ingest'));
+  });
+
+  test('category filter excludes skills from other categories even if text matches', (t) => {
+    const dir = makeTmpDir(t);
+    // 'wiki' text would normally match wiki-* skills, but Sesión category excludes them.
+    const rows = panelData.searchSkills('wiki', dir, 'Sesión');
+    assert.equal(rows.length, 0, 'wiki text + Sesión category should return no results');
+  });
+
+  test('undefined category preserves full searchSkills behaviour', (t) => {
+    const dir = makeTmpDir(t);
+    const rowsNoCat = panelData.searchSkills('wiki', dir);
+    const rowsUndefinedCat = panelData.searchSkills('wiki', dir, undefined);
+    assert.deepEqual(rowsNoCat, rowsUndefinedCat, 'undefined category must be identical to omitting it');
+  });
+
+  test('SkillRow exposes category (string) and active (boolean) fields', (t) => {
+    const dir = makeTmpDir(t);
+    const rows = panelData.searchSkills('', dir);
+    assert.ok(rows.length > 0, 'expected rows');
+    for (const r of rows) {
+      assert.equal(typeof r.category, 'string', 'category must be a string');
+      assert.equal(typeof r.active, 'boolean', 'active must be a boolean');
+      assert.ok(r.category.length > 0, 'category must not be empty');
+    }
+  });
+
+  test('active badge reflects project.yaml when category filter is applied', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, FULL_YAML);
+    const rows = panelData.searchSkills('', dir, 'Wiki');
+    const byId = Object.fromEntries(rows.map(r => [r.id, r]));
+    assert.equal(byId['wiki-ingest'].active, true, 'wiki-ingest is active in FULL_YAML');
+    assert.equal(byId['wiki-query'].active, false, 'wiki-query is not in FULL_YAML');
+  });
+});
+
 describe('panel-data — listInstalledHooks', () => {
   test('lists registry hooks with event/matcher even when none are installed', (t) => {
     const dir = makeTmpDir(t);
