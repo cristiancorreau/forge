@@ -69,3 +69,30 @@ export function boxenBorderStyle(
 ): string {
   return useAscii(opts) ? 'classic' : unicodeStyle;
 }
+
+/**
+ * OpenTUI `BorderCharacters` shape (12 glyphs). Mirrored here so this
+ * dependency-light module doesn't import the OpenTUI types.
+ */
+export interface TuiBorderChars {
+  topLeft: string; topRight: string; bottomLeft: string; bottomRight: string;
+  horizontal: string; vertical: string;
+  topT: string; bottomT: string; leftT: string; rightT: string; cross: string;
+}
+
+const TUI_ASCII_BORDER: TuiBorderChars = {
+  topLeft: '+', topRight: '+', bottomLeft: '+', bottomRight: '+',
+  horizontal: '-', vertical: '|',
+  topT: '+', bottomT: '+', leftT: '+', rightT: '+', cross: '+',
+};
+
+/**
+ * Custom ASCII border characters for OpenTUI `BoxRenderable`s in ASCII mode
+ * (legacy Windows consoles mangle the Unicode box glyphs into mojibake). Returns
+ * `undefined` otherwise, so OpenTUI keeps the caller's Unicode `borderStyle`.
+ * Spread into box options as `customBorderChars: tuiBorderChars()` — additive and
+ * gated: a no-op on macOS/Linux/Windows Terminal.
+ */
+export function tuiBorderChars(opts: AsciiOptions = {}): TuiBorderChars | undefined {
+  return useAscii(opts) ? TUI_ASCII_BORDER : undefined;
+}

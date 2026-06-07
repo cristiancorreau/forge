@@ -19,6 +19,7 @@ import {
   dim as otDim,
 } from '@opentui/core';
 import { VERSION } from '../version.js';
+import { tuiBorderChars } from '../ui/ascii.js';
 import { FORGE_BANNER } from '../ui/banner.js';
 import { THEME, bannerRowColor } from '../ui/theme.js';
 import { t } from '../lib/i18n.js';
@@ -92,7 +93,7 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
   // Header
   const header = new BoxRenderable(renderer, {
     id: 'hdr', position: 'absolute', left: 0, top: 0, width: W, height: HEADER_H,
-    border: true, borderStyle: 'double', borderColor: C.cyan, backgroundColor: C.bg,
+    border: true, customBorderChars: tuiBorderChars(), borderStyle: 'double', borderColor: C.cyan, backgroundColor: C.bg,
     flexDirection: 'column', paddingLeft: 1, paddingTop: 0,
   });
   header.add(Text({ id: 'hdr-t', content: buildLines([
@@ -105,7 +106,7 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
   // Nav (left)
   const navPanel = new BoxRenderable(renderer, {
     id: 'nav', position: 'absolute', left: 0, top: HEADER_H + 1, width: LEFT_W, height: BODY_H,
-    border: true, borderStyle: 'single', borderColor: C.dim, backgroundColor: C.bgPanel,
+    border: true, customBorderChars: tuiBorderChars(), borderStyle: 'single', borderColor: C.dim, backgroundColor: C.bgPanel,
     title: t('panel.title'), flexDirection: 'column', paddingLeft: 1, paddingTop: 1,
   });
   renderer.root.add(navPanel);
@@ -132,7 +133,7 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
   // Content (right) — flex column so the skills search input can sit above text.
   const content = new BoxRenderable(renderer, {
     id: 'cnt', position: 'absolute', left: LEFT_W + 1, top: HEADER_H + 1, width: RIGHT_W, height: BODY_H,
-    border: true, borderStyle: 'single', borderColor: C.cyan, backgroundColor: C.bg,
+    border: true, customBorderChars: tuiBorderChars(), borderStyle: 'single', borderColor: C.cyan, backgroundColor: C.bg,
     flexDirection: 'column', gap: 1, paddingLeft: 1, paddingRight: 1, paddingTop: 1,
   });
   renderer.root.add(content);
