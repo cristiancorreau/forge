@@ -1,0 +1,289 @@
+{
+  "generated_by": "scripts/dogfood.mjs",
+  "spec": "SPEC-052",
+  "date": "2026-06-07",
+  "cli_entry": "/Users/skauch/Developer/Github/forge-public/packages/cli/dist/cli.js",
+  "run_tests": false,
+  "repos": [
+    {
+      "repo": "licitaciones-automation",
+      "path": "/Users/skauch/Developer/Github/licitaciones-automation",
+      "stack_esperado": {
+        "language": "python",
+        "backend": null,
+        "frontend": null,
+        "packageManager": null,
+        "note": "Python pip / requirements.txt"
+      },
+      "stack_detectado": {
+        "language": "python",
+        "backend": null,
+        "frontend": null,
+        "mobile": null,
+        "database": null,
+        "orm": null,
+        "testing": [],
+        "hasDocker": false
+      },
+      "deteccion_ok": true,
+      "deteccion_mismatches": [],
+      "recommendations": [
+        {
+          "type": "mcp-server",
+          "id": "git",
+          "label": "MCP — git",
+          "category": "mcp-server",
+          "installable": false,
+          "why": "detecte un repositorio git",
+          "signal": "git",
+          "installCommand": "uvx mcp-server-git --repository {REPO_PATH}"
+        }
+      ],
+      "plan_valido": true,
+      "plan_sha256": "a1f7ea828c2e3258ff2c750bddd6c5d2ff3be191a9b734fd85038a80bb874db0",
+      "tests_suite": {
+        "detected": false,
+        "runner": null,
+        "command": null
+      },
+      "tests_before": null,
+      "turns_to_green": null,
+      "guardrail_block_rate": null,
+      "error": null
+    },
+    {
+      "repo": "llm-council",
+      "path": "/Users/skauch/Developer/Github/llm-council",
+      "stack_esperado": {
+        "language": "python",
+        "backend": null,
+        "frontend": null,
+        "packageManager": null,
+        "note": "Python Poetry / pyproject.toml"
+      },
+      "stack_detectado": {
+        "language": "python",
+        "backend": "fastapi",
+        "frontend": null,
+        "mobile": null,
+        "database": null,
+        "orm": null,
+        "testing": [],
+        "hasDocker": false
+      },
+      "deteccion_ok": true,
+      "deteccion_mismatches": [],
+      "recommendations": [
+        {
+          "type": "profile",
+          "id": "fastapi",
+          "label": "fastapi",
+          "category": "profile",
+          "installable": true,
+          "why": "detecte el backend fastapi",
+          "signal": "backend:fastapi",
+          "installCommand": null
+        },
+        {
+          "type": "mcp-server",
+          "id": "git",
+          "label": "MCP — git",
+          "category": "mcp-server",
+          "installable": false,
+          "why": "detecte un repositorio git",
+          "signal": "git",
+          "installCommand": "uvx mcp-server-git --repository {REPO_PATH}"
+        }
+      ],
+      "plan_valido": true,
+      "plan_sha256": "bd409f55a3571b35491c429e4950ffcc66027d5c4abb790f40684de3710f267b",
+      "tests_suite": {
+        "detected": false,
+        "runner": null,
+        "command": null
+      },
+      "tests_before": null,
+      "turns_to_green": null,
+      "guardrail_block_rate": null,
+      "error": null
+    },
+    {
+      "repo": "leansup",
+      "path": "/Users/skauch/Developer/Github/leansup",
+      "stack_esperado": {
+        "language": "typescript",
+        "backend": null,
+        "frontend": "nextjs",
+        "packageManager": "npm",
+        "note": "Node.js / Next.js fullstack"
+      },
+      "stack_detectado": {
+        "language": "typescript",
+        "backend": null,
+        "frontend": "nextjs",
+        "mobile": null,
+        "database": null,
+        "orm": null,
+        "testing": [
+          "vitest",
+          "playwright"
+        ],
+        "hasDocker": false
+      },
+      "deteccion_ok": false,
+      "deteccion_mismatches": [
+        "packageManager: esperado=\"npm\" detectado=\"null\""
+      ],
+      "recommendations": [
+        {
+          "type": "profile",
+          "id": "nextjs-admin",
+          "label": "nextjs-admin",
+          "category": "profile",
+          "installable": true,
+          "why": "detecte el frontend nextjs",
+          "signal": "frontend:nextjs",
+          "installCommand": null
+        },
+        {
+          "type": "mcp-server",
+          "id": "playwright",
+          "label": "MCP — Playwright",
+          "category": "mcp-server",
+          "installable": false,
+          "why": "detecte Playwright en testing",
+          "signal": "testing:playwright",
+          "installCommand": "npx -y @playwright/mcp@latest"
+        },
+        {
+          "type": "mcp-server",
+          "id": "git",
+          "label": "MCP — git",
+          "category": "mcp-server",
+          "installable": false,
+          "why": "detecte un repositorio git",
+          "signal": "git",
+          "installCommand": "uvx mcp-server-git --repository {REPO_PATH}"
+        },
+        {
+          "type": "framework",
+          "id": "claude-code-action",
+          "label": "anthropics/claude-code-action",
+          "category": "framework",
+          "installable": false,
+          "why": "detecte GitHub Actions (.github/workflows)",
+          "signal": "ci:github-actions",
+          "installCommand": null
+        }
+      ],
+      "plan_valido": true,
+      "plan_sha256": "e6fb725668c2b0a02237334fd5f6334c8576168647f1954d0ad598f1b42ee2af",
+      "tests_suite": {
+        "detected": true,
+        "runner": "npm",
+        "command": "npm test"
+      },
+      "tests_before": null,
+      "turns_to_green": null,
+      "guardrail_block_rate": null,
+      "error": null
+    },
+    {
+      "repo": "gobcl-wp",
+      "path": "/Users/skauch/Developer/Github/gobcl-wp",
+      "stack_esperado": {
+        "language": "php",
+        "backend": null,
+        "frontend": null,
+        "packageManager": null,
+        "note": "WordPress / PHP theme"
+      },
+      "stack_detectado": {
+        "language": null,
+        "backend": null,
+        "frontend": null,
+        "mobile": null,
+        "database": null,
+        "orm": null,
+        "testing": [],
+        "hasDocker": false
+      },
+      "deteccion_ok": false,
+      "deteccion_mismatches": [
+        "language: esperado=\"php\" detectado=\"null\""
+      ],
+      "recommendations": [
+        {
+          "type": "mcp-server",
+          "id": "git",
+          "label": "MCP — git",
+          "category": "mcp-server",
+          "installable": false,
+          "why": "detecte un repositorio git",
+          "signal": "git",
+          "installCommand": "uvx mcp-server-git --repository {REPO_PATH}"
+        }
+      ],
+      "plan_valido": true,
+      "plan_sha256": "0656b5630b768ac2545b0008fa7d2b57149a8a5333f4cf0ae6f4c5d50c5dcc88",
+      "tests_suite": {
+        "detected": false,
+        "runner": null,
+        "command": null
+      },
+      "tests_before": null,
+      "turns_to_green": null,
+      "guardrail_block_rate": null,
+      "error": null
+    },
+    {
+      "repo": "claude-code-sourcemap",
+      "path": "/Users/skauch/Developer/Github/claude-code-sourcemap",
+      "stack_esperado": {
+        "language": "typescript",
+        "backend": null,
+        "frontend": null,
+        "packageManager": "npm",
+        "note": "TypeScript CLI"
+      },
+      "stack_detectado": {
+        "language": null,
+        "backend": null,
+        "frontend": null,
+        "mobile": null,
+        "database": null,
+        "orm": null,
+        "testing": [],
+        "hasDocker": false
+      },
+      "deteccion_ok": false,
+      "deteccion_mismatches": [
+        "language: esperado=\"typescript\" detectado=\"null\"",
+        "packageManager: esperado=\"npm\" detectado=\"null\""
+      ],
+      "recommendations": [
+        {
+          "type": "mcp-server",
+          "id": "git",
+          "label": "MCP — git",
+          "category": "mcp-server",
+          "installable": false,
+          "why": "detecte un repositorio git",
+          "signal": "git",
+          "installCommand": "uvx mcp-server-git --repository {REPO_PATH}"
+        }
+      ],
+      "plan_valido": true,
+      "plan_sha256": "2d3e3471a5d2f39a7a87c05980da8eacc857caac8f7ee9dd3df37f6a708ae9c5",
+      "tests_suite": {
+        "detected": false,
+        "runner": null,
+        "command": null
+      },
+      "tests_before": null,
+      "turns_to_green": null,
+      "guardrail_block_rate": null,
+      "error": null
+    }
+  ]
+}

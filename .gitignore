@@ -35,3 +35,6 @@ __pycache__/
 
 # Test temporaries
 /tmp/
+
+# Dogfood harness — repos config con rutas absolutas locales (no commitear)
+scripts/dogfood.repos.json
