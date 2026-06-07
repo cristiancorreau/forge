@@ -38,6 +38,7 @@ const ALL_COMMANDS = [
   'wiki',
   'skills',
   'aitmpl-search',
+  'recommend',
   'scaffold',
   'teardown',
 ];

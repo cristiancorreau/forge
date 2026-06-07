@@ -11,6 +11,7 @@ import { migrate } from './commands/migrate.js';
 import { wiki } from './commands/wiki.js';
 import { skills } from './commands/skills.js';
 import { aitmplSearch } from './commands/aitmpl-search.js';
+import { recommend } from './commands/recommend.js';
 import { scaffold } from './commands/scaffold.js';
 import { teardown } from './commands/teardown.js';
 import { sessionStart, sessionClose } from './commands/session.js';
@@ -69,6 +70,9 @@ switch (cmd) {
     break;
   case 'aitmpl-search':
     exitCode = await aitmplSearch(rest);
+    break;
+  case 'recommend':
+    exitCode = await recommend(rest);
     break;
   case 'scaffold':
     exitCode = await scaffold(rest);

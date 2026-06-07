@@ -60,11 +60,12 @@ Setup
   teardown       Cleanly uninstall forge from a project (manifest-driven)
 
 Inspect
+  recommend      Stack-aware advisor: best catalog items for THIS project (--apply to install)
   audit          Audit project against the forge standard
   validate       Validate project.yaml schema (exit 1 on error, CI-safe)
   doctor         Check environment, installed runtimes and project.yaml completeness
   skills         List available forge skills grouped by category
-  aitmpl-search  Search the curated offline catalog (frameworks, MCP servers, profiles)
+  aitmpl-search  Search the unified offline catalog (skills, profiles, MCP servers, frameworks)
 
 Workflow
   session-start  Open a work session (prints the /session-start skill steps)
@@ -107,11 +108,12 @@ Setup
   teardown       Desinstala forge del proyecto de forma limpia (vía manifest)
 
 Inspección
+  recommend      Advisor según el stack: mejores items del catálogo para ESTE proyecto (--apply instala)
   audit          Audita el proyecto contra el estándar forge
   validate       Valida el schema de project.yaml (exit 1 si falla, apto CI)
   doctor         Verifica el entorno, runtimes instalados y completitud de project.yaml
   skills         Lista los skills de forge agrupados por categoría
-  aitmpl-search  Busca en el catálogo offline curado (frameworks, MCP servers, profiles)
+  aitmpl-search  Busca en el catálogo offline unificado (skills, profiles, MCP servers, frameworks)
 
 Flujo
   session-start  Abre una sesión de trabajo (imprime los pasos del skill /session-start)
