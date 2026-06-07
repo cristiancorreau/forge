@@ -241,6 +241,18 @@ Per-runtime detail in [docs/en/runtimes/](docs/en/runtimes/).
 
 ---
 
+## VS Code extension
+
+The **forge Agent Framework** extension (`cristiancorreau.forge-agent-framework`) surfaces the CLI inside VS Code: run `init`, `audit`, `doctor`, `generate` and other commands from the Command Palette and the sidebar panel, without leaving the editor.
+
+**Status:** v0.6.0 is packaged but pending publication to the Marketplace (the current live version is 0.5.0). Publishing requires a valid `VSCE_PAT` secret loaded in the repository.
+
+**Trigger the publish:** push tag `vscode-v0.6.0` or dispatch the `publish-vscode` workflow manually — both require the `VSCE_PAT` secret (Azure DevOps PAT, scope Marketplace › Manage).
+
+Full development and publishing instructions: [vscode-extension/README.md](vscode-extension/README.md).
+
+---
+
 ## Skills
 
 12 **general** skills that encapsulate complete flows, mapped per runtime and triggerable as slash commands (`/spec`, `/new-feature`, `/db-migrate`…), plus **per-stack** skills.
