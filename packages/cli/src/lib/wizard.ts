@@ -1,6 +1,7 @@
 import * as p from '@clack/prompts';
 import { detectStack } from './detect.js';
 import { SKILLS } from './catalog.js';
+import { profilesForStack } from './profiles.js';
 
 export interface WizardResult {
   name: string;
@@ -15,6 +16,7 @@ export interface WizardResult {
   packageManager?: string;
   testing: string[];
   profiles: string[];
+  specialized: string[];
   skills: string[];
   runtime: string;
   detected: boolean;
@@ -82,20 +84,19 @@ const TESTING_OPTS: Record<string, p.Option<string>[]> = {
   php:        [{ value: 'phpunit', label: 'PHPUnit' }],
 };
 
-const PROFILE_MAP: Record<string, string> = {
-  hono:    'hono-drizzle',
-  nextjs:  'nextjs-admin',
-  astro:   'astro',
-  fastapi: 'fastapi',
-  rails:   'rails',
-  laravel: 'laravel',
-};
-
 // Skills pre-seleccionadas por defecto en el wizard.
 const DEFAULT_SKILLS: string[] = ['spec', 'new-feature', 'security-audit'];
 
 function toSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+// Parse a comma-separated list of Tier 3 agent names into normalized slugs.
+export function parseSpecialized(input: string | undefined): string[] {
+  return (input ?? '')
+    .split(',')
+    .map(s => toSlug(s.trim()))
+    .filter(Boolean);
 }
 
 function cancel(): never {
@@ -278,6 +279,13 @@ export async function runWizard(): Promise<WizardResult | null> {
     required: false,
   })) as string[];
 
+  // ── Agentes de dominio (Tier 3, opcional) ──
+  const specializedInput = check(await p.text({
+    message: 'Agentes de dominio (Tier 3, opcional)',
+    placeholder: 'dsar-specialist, gcm-engineer — separados por coma, Enter para omitir',
+  }));
+  const specialized = parseSpecialized(specializedInput);
+
   // ── Confirmación ──
   const summary = [
     `  Nombre:   ${name}`,
@@ -288,6 +296,7 @@ export async function runWizard(): Promise<WizardResult | null> {
     testing.length ? `  Testing:  ${testing.join(', ')}` : '',
     `  Runtime:  ${runtime}`,
     skills.length ? `  Skills:   ${skills.join(', ')}` : '',
+    specialized.length ? `  Tier 3:   ${specialized.join(', ')}` : '',
   ].filter(Boolean).join('\n');
 
   p.note(summary, 'Configuración seleccionada');
@@ -297,15 +306,12 @@ export async function runWizard(): Promise<WizardResult | null> {
 
   p.outro('Configuración lista. Instalando...');
 
-  // Auto-detect profiles
-  const profiles: string[] = [];
-  for (const key of [backend, frontend]) {
-    if (key && PROFILE_MAP[key]) profiles.push(PROFILE_MAP[key]);
-  }
+  // Auto-detect profiles from the selected backend/frontend/testing stack.
+  const profiles = profilesForStack({ backend, frontend, testing });
 
   return {
     name, slug, description: description || '', language, mode,
     backend, frontend, database, orm, packageManager, testing,
-    profiles: [...new Set(profiles)], skills, runtime, detected: hasDetection,
+    profiles, specialized, skills, runtime, detected: hasDetection,
   };
 }

@@ -15,6 +15,8 @@ import {
   dim as otDim,
 } from '@opentui/core';
 import type { WizardResult } from '../lib/wizard.js';
+import { parseSpecialized } from '../lib/wizard.js';
+import { profilesForStack } from '../lib/profiles.js';
 import { detectStack } from '../lib/detect.js';
 import { VERSION } from '../version.js';
 import { FORGE_BANNER } from '../ui/banner.js';
@@ -87,7 +89,7 @@ const buildLines = (rows: Row[]) => {
 const STEPS = [
   'Project name','Language','Mode',
   'Backend','Frontend','Database','ORM',
-  'Package manager','Testing','Runtime','Confirm',
+  'Package manager','Testing','Runtime','Domain agents','Confirm',
 ];
 
 // ─── Options ─────────────────────────────────────────────────────────────────
@@ -121,7 +123,6 @@ const TESTING: Record<string, any[]> = {
   php:        [o('PHPUnit','phpunit',''), o('None','none','Skip')],
 };
 const RUNTIMES = [o('Claude Code','claude-code','Recommended'), o('OpenCode','opencode',''), o('Codex CLI','codex',''), o('Kiro IDE','kiro','')];
-const PROFILE_MAP: Record<string,string> = { hono:'hono-drizzle', nextjs:'nextjs-admin', astro:'astro', fastapi:'fastapi', rails:'rails', laravel:'laravel' };
 const toSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -388,6 +389,13 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   ans.runtime = await askSelect('AI Runtime', 'Primary AI coding assistant', RUNTIMES, 'claude-code');
   currentStep = 10;
 
+  const domainInput = await askInput(
+    'Domain agents (Tier 3, optional)',
+    'Comma-separated, e.g. dsar-specialist, gcm-engineer — Enter to skip',
+  );
+  ans.specialized = parseSpecialized(domainInput);
+  currentStep = 11;
+
   // ── Confirm ──
   renderSteps();
   clearContent();
@@ -404,6 +412,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   if (ans.database) summaryRows.push(['  ', fg(C.muted)('Database:'), '  ' + ans.database + (ans.orm ? ' + ' + ans.orm : '')]);
   if (ans.testing?.length) summaryRows.push(['  ', fg(C.muted)('Testing:'),  '   ' + ans.testing.join(', ')]);
   summaryRows.push(['  ', fg(C.muted)('Runtime:'),  '   ' + ans.runtime]);
+  if (ans.specialized?.length) summaryRows.push(['  ', fg(C.muted)('Tier 3:'),  '    ' + ans.specialized.join(', ')]);
 
   const confirmed = await askSelect('', 'Install with this configuration?', [
     o('✔  Yes, install forge', 'yes', ''),
@@ -422,15 +431,14 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
   renderer.destroy();
   restoreTerminal();
 
-  const profiles: string[] = [];
-  if (ans.backend  && PROFILE_MAP[ans.backend])  profiles.push(PROFILE_MAP[ans.backend]);
-  if (ans.frontend && PROFILE_MAP[ans.frontend]) profiles.push(PROFILE_MAP[ans.frontend]);
+  const profiles = profilesForStack({ backend: ans.backend, frontend: ans.frontend, testing: ans.testing });
 
   return {
     name: ans.name, slug: ans.slug, description: '', language: ans.language,
     mode: ans.mode, backend: ans.backend, frontend: ans.frontend,
     database: ans.database, orm: ans.orm, packageManager: ans.packageManager,
-    testing: ans.testing, profiles: [...new Set(profiles)],
+    testing: ans.testing, profiles,
+    specialized: ans.specialized ?? [],
     // Default skills (the OpenTUI wizard doesn't ask for them yet).
     skills: ['spec', 'new-feature', 'security-audit'],
     runtime: ans.runtime, detected: ans.detected,
