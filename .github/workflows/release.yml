@@ -93,8 +93,16 @@ jobs:
           forge --help >/dev/null
           forge doctor
 
-      - name: Publish
+      # OIDC Trusted Publishing — no long-lived NPM_TOKEN.
+      # Requires npm >= 11.5.1; the setup-node runner ships an older npm.
+      - name: Upgrade npm (OIDC Trusted Publishing support)
+        run: npm install -g npm@latest
+
+      # Authentication is via the workflow's OIDC id-token (permissions: id-token: write
+      # above); provenance attestation is automatic. Prerequisite (one-time, maintainer):
+      # configure the Trusted Publisher for @cristiancorreau/forge on npmjs.com
+      # (Package -> Settings -> Trusted Publisher -> GitHub Actions: owner cristiancorreau,
+      # repo forge, workflow release.yml). Until that is set, a token-less publish fails.
+      - name: Publish (OIDC, no token)
         working-directory: packages/cli
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
