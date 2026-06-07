@@ -8,7 +8,7 @@ import { findProjectYaml } from '../lib/yaml.js';
 import { runAudit } from './audit.js';
 import { runDoctor } from './doctor.js';
 import {
-  searchSkills, listInstalledHooks, listTemplates, getConfigSummary,
+  searchSkills, listInstalledHooks, listTemplates, getConfigSummary, getSkillCategories,
   type SkillRow,
 } from '../lib/panel-data.js';
 import {
@@ -144,7 +144,8 @@ function printSkillRows(rows: SkillRow[]): void {
   const width = Math.max(...rows.map(r => r.command.length));
   for (const r of rows) {
     const mark = r.active ? icons.ok : gray('·');
-    console.log(`  ${mark} ${cyan(r.command.padEnd(width))}  ${gray('[' + r.category + ']')} ${r.purpose}`);
+    const activeBadge = r.active ? green(' [active]') : '';
+    console.log(`  ${mark} ${cyan(r.command.padEnd(width))}  ${gray('[' + r.category + ']')}${activeBadge} ${r.purpose}`);
     console.log(`    ${' '.repeat(width)}  ${dim('trigger: ' + r.trigger)}`);
   }
   const active = rows.filter(r => r.active).length;
@@ -152,14 +153,26 @@ function printSkillRows(rows: SkillRow[]): void {
 }
 
 async function skillsSearchSection(root: string): Promise<void> {
+  const categories = getSkillCategories(root);
+  const catChoice = await p.select({
+    message: 'Filtrar por categoría',
+    options: [
+      { value: '', label: 'Todas las categorías' },
+      ...categories.map(c => ({ value: c, label: c })),
+    ],
+  });
+  if (p.isCancel(catChoice)) return;
+
   const q = await p.text({
-    message: 'Buscar skills (nombre, categoría, comando, trigger) — Enter para ver todas',
+    message: 'Buscar skills (nombre, comando, trigger) — Enter para ver todas',
     placeholder: 'wiki, deploy, security…',
   });
   if (p.isCancel(q)) return;
+
+  const selectedCat = String(catChoice ?? '') || undefined;
   console.log('');
-  sectionTitle('Skills');
-  printSkillRows(searchSkills(String(q ?? ''), root));
+  sectionTitle('Skills', selectedCat ? `categoría: ${selectedCat}` : '');
+  printSkillRows(searchSkills(String(q ?? ''), root, selectedCat));
 }
 
 // The panel only renders installable rows (skill/profile/template); other unified
@@ -168,14 +181,23 @@ const TYPE_TAG: Partial<Record<CatalogItem['type'], string>> = {
   skill: 'skill', profile: 'profile', template: 'template',
 };
 
+/** Color for the type badge — cyan=skill, yellow=profile, green=template, gray=others. */
+function typeColor(type: CatalogItem['type']): (s: string) => string {
+  if (type === 'skill') return cyan;
+  if (type === 'profile') return yellow;
+  if (type === 'template') return green;
+  return gray;
+}
+
 function printCatalogRows(items: CatalogItem[]): void {
   if (items.length === 0) { console.log(dim('  Sin resultados.')); return; }
   const width = Math.max(...items.map(i => i.label.length));
   for (const it of items) {
     const mark = it.installed ? green('✓') : gray('·');
-    const tag = gray('[' + (TYPE_TAG[it.type] ?? it.type) + ']');
-    const state = it.installed ? dim(' (ya instalado)') : '';
-    console.log(`  ${mark} ${cyan(it.label.padEnd(width))}  ${tag} ${it.description}${state}`);
+    const typeLabel = TYPE_TAG[it.type] ?? it.type;
+    const tag = typeColor(it.type)('[' + typeLabel + ']');
+    const installedBadge = it.installed ? green(' [instalado]') : '';
+    console.log(`  ${mark} ${cyan(it.label.padEnd(width))}  ${tag}${installedBadge} ${it.description}`);
   }
   const installed = items.filter(i => i.installed).length;
   console.log('\n' + dim(`  ${items.length} ítem(s) · ${installed} ya instalado(s)`));
@@ -211,7 +233,7 @@ async function catalogSearchInstallSection(root: string): Promise<void> {
     options: [
       ...installable.map(i => ({
         value: `${i.type}:${i.id}`,
-        label: `${i.label} ${gray('[' + TYPE_TAG[i.type] + ']')}`,
+        label: `${i.label} ${typeColor(i.type)('[' + (TYPE_TAG[i.type] ?? i.type) + ']')}`,
         hint: i.description,
       })),
       { value: '__cancel__', label: 'Cancelar' },
@@ -222,8 +244,16 @@ async function catalogSearchInstallSection(root: string): Promise<void> {
   const chosen = installable.find(i => `${i.type}:${i.id}` === pick);
   if (!chosen) return;
 
+  // Show full description of the chosen item before confirming.
+  const typeLabel = TYPE_TAG[chosen.type] ?? chosen.type;
+  p.note(
+    `${bold(chosen.label)} ${typeColor(chosen.type)('[' + typeLabel + ']')}\n` +
+    chosen.description,
+    'Detalle del ítem',
+  );
+
   const confirm = await p.confirm({
-    message: `Instalar ${chosen.label} (${TYPE_TAG[chosen.type]})?`,
+    message: `Instalar ${chosen.label} (${typeLabel})?`,
   });
   if (p.isCancel(confirm) || !confirm) { console.log(dim('  Cancelado.')); return; }
 

@@ -1,6 +1,6 @@
 # SPEC-054 Two-gate calidad+seguridad en `forge add` y catálogo
 
-> Estado: DRAFT
+> Estado: IMPLEMENTED
 > Responsable: forge-cli-engineer
 > Creada: 2026-06-07 | Actualizada: 2026-06-07
 > Origen: análisis de `asm` (skill-auto-improver) · Fase: Next · Depende de: SPEC-053

@@ -1,6 +1,6 @@
 # SPEC-053 `forge eval` — scorer de calidad determinístico de skills
 
-> Estado: DRAFT
+> Estado: IMPLEMENTED
 > Responsable: forge-cli-engineer
 > Creada: 2026-06-07 | Actualizada: 2026-06-07
 > Origen: análisis de `asm` (agent-skill-manager) · Fase: Next (no NOW)

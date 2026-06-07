@@ -13,12 +13,13 @@
  * It reuses init's exported installers so the installed config is identical to
  * `forge init`, and never clobbers existing files unless --force.
  */
-import { existsSync, mkdirSync, writeFileSync, statSync } from 'fs';
-import { join, resolve } from 'path';
+import { existsSync, mkdirSync, writeFileSync, statSync, chmodSync } from 'fs';
+import { join, resolve, dirname } from 'path';
 import { resolveForgeRoot } from '../lib/paths.js';
 import { generateClaudeMd } from '../lib/generators/claude-code.js';
 import { generateAgentsMd } from '../lib/generators/opencode.js';
 import { generateCodexAgentsMd } from '../lib/generators/codex.js';
+import { getRuntime } from '../lib/generators/registry.js';
 import { scaffoldWikiStructure } from './wiki.js';
 import { analyzeProject, slugify, type ProjectAnalysis } from '../lib/project-analysis.js';
 import { generateWiki } from '../lib/wiki-autogen.js';
@@ -269,6 +270,23 @@ export async function adopt(args: string[]): Promise<number> {
   } else if (opts.runtime === 'codex') {
     write(join(opts.target, 'AGENTS.md'), generateCodexAgentsMd(config), opts.force);
     created.push('AGENTS.md');
+  } else {
+    // Rules-based and other registry runtimes: iterate surfaces from the descriptor.
+    const descriptor = getRuntime(opts.runtime);
+    if (descriptor) {
+      const surfaces = descriptor.surfaces(config);
+      for (const surface of surfaces) {
+        const absPath = join(opts.target, surface.path);
+        mkdirSync(dirname(absPath), { recursive: true });
+        write(absPath, surface.content, opts.force);
+        if (surface.executable) {
+          try { chmodSync(absPath, 0o755); } catch { /* non-fatal on Windows */ }
+        }
+        created.push(surface.path);
+      }
+    } else {
+      console.log(dim(`  Runtime '${opts.runtime}' no reconocido — sin archivos instalados.`));
+    }
   }
 
   // 4. Auto-generate the wiki (factual) unless --no-wiki.

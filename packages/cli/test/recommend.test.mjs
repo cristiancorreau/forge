@@ -1,11 +1,14 @@
 // SPEC-051 — forge recommend: one pure engine, WHY anchored in detection.
+// SPEC-055 — forge recommend: exportable bundle + intent/interactive/apply-file.
 // Imports the compiled dist modules — build first (npm run build:all).
 //
 //     node --test test/recommend.test.mjs
 
 import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import {
+  existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync,
+} from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -90,5 +93,169 @@ describe('SPEC-051 — recommend engine', () => {
     for (const cat of Object.keys(groups)) {
       assert.ok(groups[cat].length <= 1, `category ${cat} capped to 1`);
     }
+  });
+});
+
+describe('SPEC-055 — buildBundle (plan declarativo)', () => {
+  // Fixture: a RecommendResult with mixed installable/non-installable items.
+  function makeFixtureResult() {
+    return {
+      stack: { language: 'python', backend: 'django', frontend: null, mobile: null, database: 'postgresql', orm: 'django-orm', testing: [], hasDocker: true },
+      recommendations: [
+        {
+          item: {
+            type: 'profile', id: 'django', label: 'Django', description: 'Profile Django',
+            category: 'profile', tags: ['python'], installable: true, installed: false,
+          },
+          why: 'detecte el backend django',
+          signal: 'backend:django',
+          score: 3,
+        },
+        {
+          item: {
+            type: 'mcp-server', id: 'git', label: 'Git MCP', description: 'Git context via MCP',
+            category: 'mcp-server', tags: ['git'], installable: false, installed: false,
+            installSpec: {
+              slug: 'git',
+              command: 'claude',
+              args: ['mcp', 'add', '--transport', 'stdio', 'git', '--', 'uvx', 'mcp-server-git', '--repository', '.'],
+              params: [],
+              env: [],
+            },
+          },
+          why: 'detecte un repositorio git',
+          signal: 'git',
+          score: 1,
+        },
+      ],
+    };
+  }
+
+  test('buildBundle returns stable shape from RecommendResult fixture', () => {
+    const result = makeFixtureResult();
+    const bundle = rec.buildBundle(result);
+
+    // Shape assertions.
+    assert.ok(bundle.createdFrom, 'bundle.createdFrom present');
+    assert.ok(Array.isArray(bundle.createdFrom.signals), 'signals is array');
+    assert.ok(Array.isArray(bundle.items), 'items is array');
+
+    // Signals derived from recommendations.
+    assert.deepStrictEqual(
+      [...bundle.createdFrom.signals].sort(),
+      ['backend:django', 'git'],
+      'signals match recommendation signals',
+    );
+
+    // No intent if not provided.
+    assert.equal(bundle.createdFrom.intent, undefined, 'no intent when not passed');
+
+    // Items count matches recommendations.
+    assert.equal(bundle.items.length, 2, 'two items in bundle');
+
+    // First item (installable).
+    const djangoItem = bundle.items.find(i => i.id === 'django');
+    assert.ok(djangoItem, 'django item present');
+    assert.equal(djangoItem.type, 'profile');
+    assert.equal(djangoItem.category, 'profile');
+    assert.equal(djangoItem.installable, true);
+    assert.ok(djangoItem.why && djangoItem.why.length > 0, 'why present');
+
+    // Second item (non-installable with installSpec).
+    const gitItem = bundle.items.find(i => i.id === 'git');
+    assert.ok(gitItem, 'git item present');
+    assert.equal(gitItem.installable, false);
+    assert.ok(gitItem.installSpec, 'installSpec present for non-installable');
+    assert.equal(gitItem.installSpec.command, 'claude');
+  });
+
+  test('buildBundle incorporates intent into createdFrom.intent', () => {
+    const result = makeFixtureResult();
+    const bundle = rec.buildBundle(result, 'quiero CI con tests end-to-end');
+    assert.equal(bundle.createdFrom.intent, 'quiero CI con tests end-to-end');
+  });
+
+  test('buildBundle with empty intent string omits intent field', () => {
+    const result = makeFixtureResult();
+    const bundle = rec.buildBundle(result, '');
+    assert.equal(bundle.createdFrom.intent, undefined, 'empty intent is omitted');
+  });
+
+  test('buildBundle with no recommendations yields empty items and signals', () => {
+    const result = { stack: {}, recommendations: [] };
+    const bundle = rec.buildBundle(result, 'test intent');
+    assert.deepStrictEqual(bundle.items, []);
+    assert.deepStrictEqual(bundle.createdFrom.signals, []);
+    assert.equal(bundle.createdFrom.intent, 'test intent');
+  });
+
+  test('buildBundle signals are deduplicated', () => {
+    // Two recommendations with the same signal.
+    const result = {
+      stack: {},
+      recommendations: [
+        {
+          item: { type: 'profile', id: 'a', label: 'A', description: '', category: 'profile', tags: [], installable: true, installed: false },
+          why: 'why a', signal: 'backend:django', score: 3,
+        },
+        {
+          item: { type: 'profile', id: 'b', label: 'B', description: '', category: 'profile', tags: [], installable: true, installed: false },
+          why: 'why b', signal: 'backend:django', score: 2,
+        },
+      ],
+    };
+    const bundle = rec.buildBundle(result);
+    assert.equal(bundle.createdFrom.signals.length, 1, 'duplicate signals deduplicated');
+    assert.equal(bundle.createdFrom.signals[0], 'backend:django');
+  });
+
+  test('non-installable items in bundle never have installable:true', () => {
+    const result = makeFixtureResult();
+    const bundle = rec.buildBundle(result);
+    for (const item of bundle.items) {
+      if (item.id === 'git') {
+        assert.equal(item.installable, false, 'git stays non-installable in bundle');
+      }
+    }
+  });
+
+  test('roundtrip: export bundle to file then verify installable/non-installable split', (t) => {
+    const dir = makeTmpDir(t);
+    const bundlePath = join(dir, 'bundle.json');
+
+    const result = makeFixtureResult();
+    const bundle = rec.buildBundle(result, 'test roundtrip');
+    writeFileSync(bundlePath, JSON.stringify(bundle, null, 2), 'utf-8');
+
+    // Read back and verify.
+    const loaded = JSON.parse(readFileSync(bundlePath, 'utf-8'));
+    assert.equal(loaded.createdFrom.intent, 'test roundtrip');
+    assert.equal(loaded.items.length, 2);
+
+    const installableItems = loaded.items.filter(i => i.installable);
+    const nonInstallableItems = loaded.items.filter(i => !i.installable);
+    assert.equal(installableItems.length, 1, 'one installable item');
+    assert.equal(nonInstallableItems.length, 1, 'one non-installable item');
+    assert.equal(installableItems[0].id, 'django');
+    assert.equal(nonInstallableItems[0].id, 'git');
+  });
+
+  test('SPEC-055 acceptance: buildBundle delegates to recommend engine — no second engine', (t) => {
+    // Verify that buildBundle is a pure transform of RecommendResult (no engine code of its own).
+    // We call recommend() then buildBundle() and verify every bundle item.id
+    // maps to an original recommendation — proof no items were invented.
+    const dir = makeTmpDir(t);
+    writeFileSync(join(dir, 'manage.py'), '');
+    writeFileSync(join(dir, 'requirements.txt'), 'django\n');
+    mkdirSync(join(dir, '.git'));
+
+    const result = rec.recommend(forgeRoot(), dir);
+    const bundle = rec.buildBundle(result, 'django CI');
+
+    const recIds = new Set(result.recommendations.map(r => r.item.id));
+    for (const item of bundle.items) {
+      assert.ok(recIds.has(item.id), `bundle item ${item.id} exists in recommendations — no invented items`);
+    }
+    assert.equal(bundle.items.length, result.recommendations.length, 'item count matches');
   });
 });

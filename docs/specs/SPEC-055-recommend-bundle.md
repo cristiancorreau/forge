@@ -1,6 +1,6 @@
 # SPEC-055 Bundle conversacional en `forge recommend`
 
-> Estado: DRAFT
+> Estado: IMPLEMENTED
 > Responsable: forge-cli-engineer
 > Creada: 2026-06-07 | Actualizada: 2026-06-07
 > Origen: análisis de `asm` (find-me-skills) · Fase: Next · Depende de: SPEC-051
@@ -61,12 +61,12 @@ una capa sobre el motor existente (`lib/recommend.ts`), **sin scoring nuevo**:
 | **Capa conversacional + bundle sobre el motor** | reusa motor, plan reversible | otra superficie que mantener | **elegida** |
 
 ## Criterios de aceptación
-- [ ] `forge recommend --interactive`/`--intent` delega en `recommend()` (sin scoring nuevo; test).
-- [ ] Paso de confirmación del intent antes de recomendar.
-- [ ] Exporta `RecommendBundle` con shape estable (snapshot-test); `why` anclado en señal/intent.
-- [ ] `forge recommend --apply <bundle>` instala solo `installable: true` vía `installItem()`.
-- [ ] No instalables → "manual install" + `installSpec`, jamás `--apply`.
-- [ ] `tsc` + `npm test` verdes (incl. Windows).
+- [x] `forge recommend --interactive`/`--intent` delega en `recommend()` (sin scoring nuevo; test).
+- [x] Paso de confirmación del intent antes de recomendar.
+- [x] Exporta `RecommendBundle` con shape estable (snapshot-test); `why` anclado en señal/intent.
+- [x] `forge recommend --apply <bundle>` instala solo `installable: true` vía `installItem()`.
+- [x] No instalables → "manual install" + `installSpec`, jamás `--apply`.
+- [x] `tsc` + `npm test` verdes (incl. Windows).
 
 ## Dependencias
 **Bloqueada por SPEC-051** (motor `recommend`) y SPEC-050 (catálogo unificado).

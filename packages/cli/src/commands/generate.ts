@@ -1,5 +1,5 @@
 import { existsSync, writeFileSync, mkdirSync, chmodSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { generateClaudeMd } from '../lib/generators/claude-code.js';
 import { generateAgentsMd, generateSharedPreCommitHook } from '../lib/generators/opencode.js';
@@ -9,8 +9,11 @@ import {
   generateKiroAgents, generateKiroCommands, generateKiroBranchGuardHook,
   generateKiroBashCheckHook, generateKiroPostTurnHook
 } from '../lib/generators/kiro.js';
+import { getRuntime, runtimeIds } from '../lib/generators/registry.js';
 import { bold, dim, green, red, yellow, cyan, gray } from '../ui/colors.js';
 import { createSpinner } from '../ui/spinner.js';
+
+const ALL_RUNTIME_IDS = runtimeIds();
 
 const HELP = `Usage: forge generate [options]
 
@@ -18,7 +21,7 @@ Generate runtime configuration files from project.yaml.
 Auto-detects active runtimes by filesystem markers.
 
 Options:
-  --runtime <name>   Generate for: claude-code, opencode, codex, kiro, all
+  --runtime <name>   Generate for: ${ALL_RUNTIME_IDS.join(', ')}, all
   --dry-run          Show what would be generated without writing files
   --force            Overwrite existing files without prompting
   -h, --help         Show this help
@@ -29,16 +32,27 @@ Examples:
   forge generate --runtime all --dry-run
 `;
 
-type Runtime = 'claude-code' | 'opencode' | 'codex' | 'kiro';
+/** Filesystem markers for auto-detecting native runtimes. */
+const RUNTIME_MARKERS: Record<string, string> = {
+  'claude-code': '.claude',
+  'opencode': '.opencode',
+  'kiro': '.kiro',
+  'cursor': '.cursor',
+  'windsurf': '.windsurf',
+  'continue': '.continue',
+  'roo': '.roo',
+  'augment': '.augment',
+  'zed': '.zed',
+};
 
-function detectRuntimes(root: string, config: ReturnType<typeof loadProjectYaml>): Runtime[] {
+function detectRuntimes(root: string, config: ReturnType<typeof loadProjectYaml>): string[] {
   const declared = config.runtimes?.active;
-  if (declared && declared.length > 0) return declared as Runtime[];
+  if (declared && declared.length > 0) return declared;
 
-  const active: Runtime[] = [];
-  if (existsSync(join(root, '.claude'))) active.push('claude-code');
-  if (existsSync(join(root, '.opencode'))) active.push('opencode');
-  if (existsSync(join(root, '.kiro'))) active.push('kiro');
+  const active: string[] = [];
+  for (const [id, marker] of Object.entries(RUNTIME_MARKERS)) {
+    if (existsSync(join(root, marker))) active.push(id);
+  }
   const hasAgentsMd = existsSync(join(root, 'AGENTS.md'));
   const hasClaudeOrOpencode = active.includes('claude-code') || active.includes('opencode');
   if (hasAgentsMd && !hasClaudeOrOpencode) active.push('codex');
@@ -102,11 +116,11 @@ export async function generate(args: string[]): Promise<number> {
   console.log(cyan(bold('forge generate')) + dim(' — ' + projectName) + '\n');
   if (dryRun) console.log(dim('  Modo: DRY-RUN (no escribe archivos)') + '\n');
 
-  let runtimesToRun: Runtime[];
+  let runtimesToRun: string[];
   if (runtimeArg === 'all') {
-    runtimesToRun = ['claude-code', 'opencode', 'codex', 'kiro'];
+    runtimesToRun = ALL_RUNTIME_IDS;
   } else if (runtimeArg) {
-    runtimesToRun = [runtimeArg as Runtime];
+    runtimesToRun = [runtimeArg];
   } else {
     runtimesToRun = detectRuntimes(root, config);
     if (runtimesToRun.length === 0) {
@@ -117,10 +131,16 @@ export async function generate(args: string[]): Promise<number> {
   }
 
   // Build spinner items: one entry per runtime (kiro gets a summary entry)
-  const spinnerItems = runtimesToRun.map(rt => ({
-    runtime: rt,
-    file: rt === 'kiro' ? '.kiro/steering/' : rt === 'claude-code' ? 'CLAUDE.md' : 'AGENTS.md',
-  }));
+  const spinnerItems = runtimesToRun.map(rt => {
+    let file = 'AGENTS.md';
+    if (rt === 'kiro') file = '.kiro/steering/';
+    else if (rt === 'claude-code') file = 'CLAUDE.md';
+    else {
+      const desc = getRuntime(rt);
+      if (desc) file = desc.surfaces({ project: { name: '', mode: 'standard' } })[0]?.path ?? file;
+    }
+    return { runtime: rt, file };
+  });
   const spinner = createSpinner(spinnerItems);
   spinner.start();
 
@@ -130,6 +150,7 @@ export async function generate(args: string[]): Promise<number> {
     spinner.update(runtime, 'running');
     try {
       if (runtime === 'claude-code') {
+        // claude-code: rich native installation (mkdir + CLAUDE.md)
         mkdirSync(join(root, '.claude'), { recursive: true });
         const claudeMdPath = join(root, 'CLAUDE.md');
         const status = writeFile(claudeMdPath, generateClaudeMd(config), dryRun, force);
@@ -137,21 +158,22 @@ export async function generate(args: string[]): Promise<number> {
         spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'CLAUDE.md');
 
       } else if (runtime === 'opencode') {
+        // opencode: AGENTS.md + shared git hook fallback
         mkdirSync(join(root, '.opencode'), { recursive: true });
         const status = writeFile(join(root, 'AGENTS.md'), generateAgentsMd(config), dryRun, force);
         results.push({ runtime, file: 'AGENTS.md', status });
-        // OpenCode lacks native blocking hooks: ship the shared git pre-commit fallback.
         results.push(writeSharedGitHook(root, runtime, dryRun, force));
         spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md + .githooks/');
 
       } else if (runtime === 'codex') {
+        // codex: AGENTS.md + shared git hook fallback
         const status = writeFile(join(root, 'AGENTS.md'), generateCodexAgentsMd(config), dryRun, force);
         results.push({ runtime, file: 'AGENTS.md', status });
-        // Codex lacks native blocking hooks: ship the shared git pre-commit fallback.
         results.push(writeSharedGitHook(root, runtime, dryRun, force));
         spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md + .githooks/');
 
       } else if (runtime === 'kiro') {
+        // kiro: rich multi-file installation under .kiro/
         const kiroDir = join(root, '.kiro', 'steering');
         const kiroHooks = join(root, '.kiro', 'hooks');
         mkdirSync(kiroDir, { recursive: true });
@@ -175,6 +197,31 @@ export async function generate(args: string[]): Promise<number> {
         }
         const kiroSummary = `.kiro/steering/ (${files.length} archivos)`;
         spinner.update(runtime, kiroSkip === files.length ? 'skip' : 'done', kiroSummary);
+
+      } else {
+        // Rules-based runtimes: look up the registry and write each surface.
+        const descriptor = getRuntime(runtime);
+        if (!descriptor) {
+          results.push({ runtime, file: '—', status: `ERROR: runtime desconocido '${runtime}'` });
+          spinner.update(runtime, 'error');
+          continue;
+        }
+        const surfaces = descriptor.surfaces(config);
+        let anyOk = false;
+        let allSkip = true;
+        for (const surface of surfaces) {
+          const absPath = join(root, surface.path);
+          // Ensure parent directory exists for nested paths (e.g. .cursor/rules/)
+          if (!dryRun) mkdirSync(dirname(absPath), { recursive: true });
+          const status = surface.executable
+            ? writeExecutable(absPath, surface.content, dryRun, force)
+            : writeFile(absPath, surface.content, dryRun, force);
+          results.push({ runtime, file: surface.path, status });
+          if (!status.startsWith('SKIP')) { anyOk = true; allSkip = false; }
+          if (status.startsWith('ERROR')) { allSkip = false; }
+        }
+        const primaryFile = surfaces[0]?.path ?? '—';
+        spinner.update(runtime, allSkip ? 'skip' : anyOk ? 'done' : 'error', primaryFile);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);

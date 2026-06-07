@@ -7,6 +7,21 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [Sin publicar]
+
+> Mejoras destiladas del análisis de [luongnv89/asm](https://github.com/luongnv89/asm) (agent-skill-manager), alineadas con la tesis del board (compile+maintain, un motor, WHY anclado, read-only, cero telemetría, catálogo curado).
+
+### Agregado
+- **`forge eval`** (SPEC-053) — scorer de calidad **determinístico** de un `SKILL.md` (sin LLM, offline): 7 categorías (structure, description, prompt-engineering, context-efficiency, safety, testability, naming), `overallScore` 0–100 y grade A–F, con notas accionables por categoría. `forge eval <path|owner/repo> [--json] [--fix]`; `--fix` aplica solo arreglos mecánicos reversibles (`.bak`), nunca toca prosa. Motor en `lib/skill-eval.ts`.
+- **Two-gate en `forge add`** (SPEC-054) — el gate de seguridad existente (`skill-security.ts`) se combina con un piso de calidad (`overall >= 75` AND `min(categoría) >= 6`): si la calidad cae bajo el piso, advierte y pide confirmación (`--force` override); el bloqueo duro sigue siendo solo seguridad/formato.
+- **Registry de runtimes + 11 runtimes nuevos** (SPEC-056) — `lib/generators/registry.ts` reemplaza el `if/else` duplicado en init/generate/adopt por un descriptor central. Forge pasa de 4 a **15 runtimes**: nativos (claude-code, opencode, codex, kiro) + rules-based (cursor, windsurf, copilot, gemini, zed, cline, aider, continue, roo, amp, augment), cada uno generando su archivo de reglas en la ruta convencional (`.cursor/rules/forge.md`, `.github/copilot-instructions.md`, `GEMINI.md`, `CONVENTIONS.md`, …).
+- **Bundle exportable en `forge recommend`** (SPEC-055) — `--intent "<texto>"`, `--interactive` (flujo guiado), `--export <file>` (escribe un `RecommendBundle` JSON con `why` anclado en la señal) y `--apply <file>` (instala solo los `installable:true` vía `installItem`, lista los manuales). Reusa el motor existente; nunca inventa items; cero telemetría.
+
+### Cambiado
+- **`forge panel`** (SPEC-057) — filtro por categoría en Skills, badge `[active]`, tipos de catálogo coloreados, badge `[installed]` y vista de detalle (descripción completa) antes de instalar. Mejoras incrementales sobre @clack/OpenTUI, sin reescritura.
+
+---
+
 ## [3.4.0] — 2026-06-06
 
 > El wedge "compile, don't recommend": advisor `forge recommend` sobre un catálogo unificado, marcador North Star y endurecimiento de `forge migrate`.

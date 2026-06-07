@@ -1,6 +1,6 @@
 /**
- * `forge recommend` engine (SPEC-051) — the single pure function behind the
- * advisor. It combines the detection signal (`detectStack`) with the unified
+ * `forge recommend` engine (SPEC-051 + SPEC-055) — the single pure function behind
+ * the advisor. It combines the detection signal (`detectStack`) with the unified
  * catalog (`getUnifiedCatalog`) to produce read-only recommendations, each with a
  * WHY anchored in the detection signal that triggered it.
  *
@@ -10,7 +10,7 @@
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { detectStack, type DetectedStack } from './detect.js';
-import { getUnifiedCatalog, type CatalogItem } from './catalog-install.js';
+import { getUnifiedCatalog, type CatalogItem, type CatalogInstallSpec } from './catalog-install.js';
 
 export interface Recommendation {
   item: CatalogItem;
@@ -136,4 +136,50 @@ export function manualInstallCommand(item: CatalogItem): string | null {
   if (!item.installSpec) return null;
   const { command, args } = item.installSpec;
   return `${command} ${args.join(' ')}`.trim();
+}
+
+// ─── SPEC-055: Bundle (plan declarativo exportable) ──────────────────────────
+
+export interface RecommendBundleItem {
+  id: string;
+  type: string;
+  category: string;
+  installable: boolean;
+  why: string;
+  installSpec?: CatalogInstallSpec;
+}
+
+export interface RecommendBundle {
+  createdFrom: {
+    intent?: string;
+    signals: string[];
+  };
+  items: RecommendBundleItem[];
+}
+
+/**
+ * Build a declarative, exportable bundle from a RecommendResult (SPEC-055).
+ * Pure: no writes, no TTY. The intent string (if provided) is recorded in
+ * `createdFrom.intent` for human reference only — it never alters scoring.
+ */
+export function buildBundle(result: RecommendResult, intent?: string): RecommendBundle {
+  const signals = [...new Set(result.recommendations.map(r => r.signal))];
+  const items: RecommendBundleItem[] = result.recommendations.map(r => {
+    const entry: RecommendBundleItem = {
+      id: r.item.id,
+      type: r.item.type,
+      category: r.item.category,
+      installable: r.item.installable,
+      why: r.why,
+    };
+    if (r.item.installSpec) entry.installSpec = r.item.installSpec;
+    return entry;
+  });
+  return {
+    createdFrom: {
+      ...(intent !== undefined && intent.length > 0 ? { intent } : {}),
+      signals,
+    },
+    items,
+  };
 }
