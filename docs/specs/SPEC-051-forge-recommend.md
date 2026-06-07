@@ -1,8 +1,8 @@
 # SPEC-051 `forge recommend` — advisor read-only de un solo motor
 
-> Estado: PROPOSED
+> Estado: IMPLEMENTED
 > Responsable: forge-cli-engineer
-> Creada: 2026-06-06 | Actualizada: 2026-06-06
+> Creada: 2026-06-06 | Actualizada: 2026-06-07
 > Issue: #106 · Epic: #104 · Bloqueada por: SPEC-050 (catálogo unificado)
 
 ## Contexto
