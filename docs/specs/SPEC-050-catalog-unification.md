@@ -1,8 +1,8 @@
 # SPEC-050 Unificación del catálogo (una fuente, flag `installable`)
 
-> Estado: PROPOSED
+> Estado: IMPLEMENTED
 > Responsable: forge-cli-engineer
-> Creada: 2026-06-06 | Actualizada: 2026-06-06
+> Creada: 2026-06-06 | Actualizada: 2026-06-07
 > Issue: #105 · Epic: #104 · Bloquea: SPEC-051 (`forge recommend`)
 
 ## Contexto
