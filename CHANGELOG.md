@@ -7,6 +7,23 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [Unreleased]
+
+### Agregado
+- **Agentes Tier 3 en el wizard.** `forge init` ahora pregunta por agentes de dominio, los registra en `agents.specialized`, genera un stub por agente en `.claude/agents/` (en Claude Code) o los lista en `AGENTS.md`/steering (OpenCode/Codex/Kiro), y `forge audit` valida que existan. El conocimiento de negocio lo completa el equipo.
+- **Auto-selección de profiles desde el stack.** Nuevo `src/lib/profiles.ts` con `PROFILE_MAP` completo (15 stacks) y `profilesForStack()`, usado por el wizard clack y el OpenTUI para pre-seleccionar los profiles Tier 2 a partir del stack detectado (antes había dos mapas incompletos duplicados).
+- **Hooks de sesión de Codex.** `forge init --runtime codex` genera `.codex/codex.yaml` con `onStart`/`onFinish` cableados a los hooks JS, además de los guardrails embebidos en `AGENTS.md`.
+- **SessionStart en Claude Code.** `settings.json` ahora cablea el evento `SessionStart` al hook de inicio de sesión.
+
+### Cambiado
+- **Hooks de guardrail portados a JS puro.** `session-start` y `post-turn-check` pasan de shell+`python3` a Node sin dependencias: el `project.yaml` se parsea en proceso. Benchmark: ~1.6–2.2× más rápido que las versiones shell+python cuando se parsea YAML. Los checkers de lenguaje (`tsc`/`composer`/`ruby`, y `py_compile` para `.py`) se siguen invocando solo cuando cambian archivos de ese lenguaje. Los `.sh` se conservan para el instalador legacy v1.
+- **Documentación reconciliada con el código.** Las tablas del README (migrate/scaffold/teardown ya portados, operaciones reversibles, Tier 3, hooks, auto-detección), el `RELEASE-CHECKLIST`, los planes v2/npm (marcados como históricos) y la doc de Codex se actualizaron al estado real.
+
+### Corregido
+- **Colisión de Tier 3.** Un agente especializado con el nombre de un agente core/profile (p. ej. `backend-engineer`) ya no sobrescribe al agente real con un stub vacío bajo `--force`: los nombres reservados se omiten con aviso y los stubs nunca pisan un archivo existente.
+
+---
+
 ## [2.9.13] — 2026-06-04
 
 ### Cambiado (UI)

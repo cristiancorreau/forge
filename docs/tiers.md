@@ -111,8 +111,8 @@ Un proyecto puede activar **varios profiles** a la vez (por ejemplo, un profile 
 
 El orden de instalación es lo que hace funcionar la **regla de colisión** (Tier 2 gana sobre Tier 1):
 
-1. **Profiles primero.** `forge-init.py` instala los agentes de los profiles activos (`profiles/<stack>/agents/`). Cada uno escribe su archivo (`api-engineer`, `frontend-engineer`, etc.) con las instrucciones del stack.
+1. **Profiles primero.** `forge init` instala los agentes de los profiles activos (`profiles/<stack>/agents/`). Cada uno escribe su archivo (`api-engineer`, `frontend-engineer`, etc.) con las instrucciones del stack.
 2. **Core después, sin sobreescribir.** Luego se instalan los agentes universales de `core/agents/`, pero **sin pisar** los archivos que ya colocó un profile. Así, donde un profile provee una versión especializada, esa prevalece; donde no hay profile para ese rol, queda la versión genérica de core.
-3. **Tier 3 lo aporta el proyecto.** Los agentes de dominio no los instala forge: viven en `proyecto/.claude/agents/` y se registran manualmente en `agents.specialized` de `project.yaml`.
+3. **Tier 3 lo aporta el proyecto.** El conocimiento de negocio lo escribe el equipo, pero el wizard de `forge init` los pregunta, los registra en `agents.specialized` y genera un **stub** por agente en `proyecto/.claude/agents/` cuando no existe (nunca pisa uno existente, ni siquiera con `--force`). Un nombre de Tier 3 que colisione con un agente core/profile se omite con aviso. `forge audit` valida que cada agente declarado exista en disco.
 
 El resultado es un equipo compuesto por capas: lo universal de core, especializado por los profiles activos y completado con los agentes de dominio del producto.
