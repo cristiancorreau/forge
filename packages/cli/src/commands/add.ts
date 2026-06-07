@@ -5,6 +5,7 @@ import { resolveSource, fetchSkill } from '../lib/skill-source.js';
 import {
   assessSkill, demoteRiskyLines, type Assessment, type Finding,
 } from '../lib/skill-security.js';
+import { evalSkill, checkQualityGate } from '../lib/skill-eval.js';
 
 const HELP = `Usage: forge add <source> [options]
 
@@ -17,7 +18,8 @@ Source:
 Options:
   --dry-run    Run the full security analysis, write nothing
   --yes        Proceed without an interactive prompt (still blocks high risk)
-  --force      Override a BLOCK verdict (high-severity findings) — destructive
+  --force      Override a BLOCK verdict (high-severity findings) or a quality
+               warning — use with care
   --path <p>   Subpath within the repo where SKILL.md lives
   -h, --help   Show this help
 
@@ -145,7 +147,16 @@ export async function add(args: string[]): Promise<number> {
   const a = assessSkill(fetched.content);
   printReport(a, fetched.label, fetched.sha);
 
-  // Policy gate.
+  // Quality gate (SPEC-054): run evalSkill and show grade.
+  const ev = evalSkill(fetched.content);
+  const qg = checkQualityGate(ev);
+  process.stdout.write(`  Calidad:  Grade ${ev.grade} (${ev.overallScore}/100)`);
+  if (!qg.pass) {
+    process.stdout.write(` — ADVERTENCIA: ${qg.reason}`);
+  }
+  process.stdout.write('\n\n');
+
+  // Security policy gate.
   if (!a.formatOk) {
     process.stderr.write('BLOQUEADO: el contenido no es un SKILL.md valido. No se instalo nada.\n');
     return 1;
@@ -166,6 +177,31 @@ export async function add(args: string[]): Promise<number> {
   }
   if (a.decision === 'block' && force) {
     process.stdout.write('⚠ --force: instalando pese a hallazgos de severidad alta. Bajo tu responsabilidad.\n');
+  }
+
+  // Quality gate (SPEC-054): warn + confirm if quality is below the floor.
+  // --dry-run shows the warning but does not block (analysis only, no install).
+  // --force or --yes bypass the quality confirmation.
+  if (!qg.pass && !force && !yes && !dryRun) {
+    const weakCat = qg.weakestCategory;
+    process.stdout.write(
+      `ADVERTENCIA DE CALIDAD: ${qg.reason}.\n` +
+      (weakCat ? `  Categoria mas debil: ${weakCat.id} (${weakCat.score}/10).\n` : '') +
+      `Volve a correr con --yes para instalar de todos modos, o --force para omitir todos los gates.\n` +
+      `No se instalo nada.\n`,
+    );
+    return 1;
+  }
+  if (!qg.pass && !force && !yes && dryRun) {
+    const weakCat = qg.weakestCategory;
+    process.stdout.write(
+      `ADVERTENCIA DE CALIDAD: ${qg.reason}.\n` +
+      (weakCat ? `  Categoria mas debil: ${weakCat.id} (${weakCat.score}/10).\n` : ''),
+    );
+    // Do not block — let --dry-run complete normally below.
+  }
+  if (!qg.pass && (force || yes)) {
+    process.stdout.write(`Nota: skill por debajo del piso de calidad (${ev.overallScore}/100, Grade ${ev.grade}). Instalando de todos modos.\n`);
   }
 
   if (dryRun) {

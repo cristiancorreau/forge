@@ -2,6 +2,7 @@
 import { init } from './commands/init.js';
 import { adopt } from './commands/adopt.js';
 import { add } from './commands/add.js';
+import { evalCmd } from './commands/eval.js';
 import { audit } from './commands/audit.js';
 import { generate } from './commands/generate.js';
 import { update } from './commands/update.js';
@@ -43,6 +44,9 @@ switch (cmd) {
     break;
   case 'add':
     exitCode = await add(rest);
+    break;
+  case 'eval':
+    exitCode = await evalCmd(rest);
     break;
   case 'audit':
     exitCode = await audit(rest);
