@@ -1,0 +1,52 @@
+[
+  {
+    "path": "/path/to/licitaciones-automation",
+    "stack_esperado": {
+      "language": "python",
+      "backend": null,
+      "frontend": null,
+      "packageManager": null,
+      "note": "Python pip / requirements.txt"
+    }
+  },
+  {
+    "path": "/path/to/llm-council",
+    "stack_esperado": {
+      "language": "python",
+      "backend": null,
+      "frontend": null,
+      "packageManager": null,
+      "note": "Python Poetry / pyproject.toml"
+    }
+  },
+  {
+    "path": "/path/to/leansup",
+    "stack_esperado": {
+      "language": "typescript",
+      "backend": null,
+      "frontend": "nextjs",
+      "packageManager": "npm",
+      "note": "Node.js / Next.js fullstack"
+    }
+  },
+  {
+    "path": "/path/to/gobcl-wp",
+    "stack_esperado": {
+      "language": "php",
+      "backend": "laravel",
+      "frontend": null,
+      "packageManager": null,
+      "note": "WordPress / PHP"
+    }
+  },
+  {
+    "path": "/path/to/claude-code-sourcemap",
+    "stack_esperado": {
+      "language": "typescript",
+      "backend": null,
+      "frontend": null,
+      "packageManager": "npm",
+      "note": "TypeScript CLI"
+    }
+  }
+]
