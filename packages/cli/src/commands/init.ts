@@ -43,12 +43,13 @@ function tryReLaunchWithBun(args: string[]): void {
   process.exit(result.status ?? 0);
 }
 import { buildManifest, saveManifest } from '../lib/lock.js';
+import { listCatalogAgents } from '../lib/catalog.js';
 import { dim } from '../ui/colors.js';
 import { printHeader, printSection, printDetected, printAgentList } from '../ui/header.js';
 import { runTasks } from '../ui/tasks.js';
 import { generateClaudeMd } from '../lib/generators/claude-code.js';
 import { generateAgentsMd } from '../lib/generators/opencode.js';
-import { generateCodexAgentsMd } from '../lib/generators/codex.js';
+import { generateCodexAgentsMd, generateCodexYaml } from '../lib/generators/codex.js';
 import {
   generateKiroProduct, generateKiroStructure,
   generateKiroAgents, generateKiroCommands, generateKiroBranchGuardHook
@@ -107,6 +108,12 @@ function buildProjectYaml(result: Awaited<ReturnType<typeof runWizard>>): string
     ? `  profiles:\n${result.profiles.map(p => `    - ${p}`).join('\n')}`
     : '';
 
+  const specialized = result.specialized && result.specialized.length > 0
+    ? `  specialized:\n${result.specialized.map(s => `    - ${s}`).join('\n')}`
+    : '';
+
+  const agentsExtra = [profiles, specialized].filter(Boolean).join('\n');
+
   const coreAgents = defaultAgentsForMode(result.mode);
 
   return `project:
@@ -124,7 +131,7 @@ agents:
   active:
 ${coreAgents.map(a => `    - ${a}`).join('\n')}
   compliance: []
-${profiles}
+${agentsExtra}
 
 runtimes:
   active:
@@ -177,13 +184,63 @@ function installCoreAgents(forgeRoot: string, destDir: string, activeAgents: str
   }
 }
 
+function tier3Stub(name: string, projectName: string): string {
+  const title = name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return `---
+name: ${name}
+description: Agente de dominio (Tier 3) de ${projectName}. Conoce el negocio concreto del proyecto. Completar scope y reglas.
+model: sonnet
+tools: Read, Grep, Glob, Bash, Edit, Write
+tier: 3
+---
+
+# ${title}
+
+Agente especializado de dominio para **${projectName}**. Vive en este repositorio y
+conoce el negocio concreto del proyecto. Reemplazá este stub con su rol real.
+
+## Tu trabajo
+
+- (Describí las tareas de dominio que este agente cubre.)
+
+## Reglas
+
+- Leé el \`CLAUDE.md\` del proyecto y la spec activa antes de tocar código.
+- Sin spec en \`docs/specs/\` → no empieces. Pedí que se cree primero.
+- PII nunca en logs; parámetros preparados siempre; auth + authz en cada endpoint.
+
+## No hagas
+
+- No salgas del dominio de este agente.
+- No mergees ni crees PRs directamente.
+
+> Agente Tier 3 — registrado en \`project.yaml\` (\`agents.specialized\`). Completá este
+> archivo con el conocimiento de negocio antes de usarlo en producción.
+`;
+}
+
+// Generate a Tier 3 (domain) agent stub for each declared specialized agent.
+// Never overwrites an existing agent file — the stub is scaffolding only, so a
+// filled-in Tier 3 agent (or a colliding Tier 1/2 agent) is left untouched even
+// under --force. Callers must filter out names that collide with installed
+// core/profile agents; this guard is the last line of defense.
+function installSpecializedStubs(destDir: string, names: string[], projectName: string): void {
+  if (names.length === 0) return;
+  mkdirSync(destDir, { recursive: true });
+  for (const name of names) {
+    const dest = join(destDir, `${name}.md`);
+    if (existsSync(dest)) continue; // never clobber an existing agent
+    writeFileSync(dest, tier3Stub(name, projectName), 'utf-8');
+  }
+}
+
 function installHooks(forgeRoot: string, destDir: string, mode: string, force: boolean): void {
   mkdirSync(destDir, { recursive: true });
   const hooksDir = join(forgeRoot, 'core', 'hooks');
   if (!existsSync(hooksDir)) return;
 
   // JS hooks (zero Python dependency)
-  const universal = ['pre-edit-check.js', 'post-turn-check.sh', 'session-start.sh'];
+  const universal = ['pre-edit-check.js', 'post-turn-check.js', 'session-start.js'];
   const standard = ['pre-bash-check.js'];
 
   for (const hook of universal) {
@@ -215,8 +272,9 @@ function generateSettingsJson(language: string, mode: string): string {
   allowList.push('Bash(git *)');
 
   const hooks: Record<string, unknown[]> = {
+    SessionStart: [{ hooks: [{ type: 'command', command: 'node .claude/hooks/session-start.js' }] }],
     PreToolUse: [{ matcher: '.*', hooks: [{ type: 'command', command: 'node .claude/hooks/pre-edit-check.js' }] }],
-    Stop: [{ hooks: [{ type: 'command', command: 'bash .claude/hooks/post-turn-check.sh' }] }],
+    Stop: [{ hooks: [{ type: 'command', command: 'node .claude/hooks/post-turn-check.js' }] }],
   };
   if (mode === 'standard' || mode === 'enterprise') {
     (hooks.PreToolUse as Array<Record<string, unknown>>).push({
@@ -308,7 +366,7 @@ export async function init(args: string[]): Promise<number> {
     config = {
       project: { name: result.name, slug: result.slug, description: result.description, language: result.language, mode: result.mode, status: 'active' },
       stack: { backend: result.backend, frontend: result.frontend, database: result.database, orm: result.orm, package_manager: result.packageManager, testing: result.testing },
-      agents: { active: defaultAgentsForMode(result.mode), compliance: [], profiles: result.profiles },
+      agents: { active: defaultAgentsForMode(result.mode), compliance: [], profiles: result.profiles, specialized: result.specialized },
       runtimes: { active: [runtimeOverride ?? result.runtime] },
       skills: result.skills,
     };
@@ -322,7 +380,20 @@ export async function init(args: string[]): Promise<number> {
   const activeAgents = config.agents?.active ?? [];
   const complianceAgents = config.agents?.compliance ?? [];
   const profiles = config.agents?.profiles ?? [];
+  const specialized = config.agents?.specialized ?? [];
   const allAgents = [...activeAgents, ...complianceAgents];
+
+  // Tier 3 stubs must never collide with a built-in Tier 1/2 agent name, or a
+  // blank stub would shadow the real agent. Reserve every core + active-profile
+  // agent name and split the declared specialized agents accordingly.
+  const reservedAgentNames = new Set<string>(allAgents);
+  try {
+    const catalog = listCatalogAgents(forgeRoot);
+    for (const a of catalog.core) reservedAgentNames.add(a);
+    for (const p of profiles) for (const a of catalog.profiles[p] ?? []) reservedAgentNames.add(a);
+  } catch { /* forge root unresolved — fall back to allAgents only */ }
+  const tier3Conflicts = specialized.filter(s => reservedAgentNames.has(s));
+  const tier3ToInstall = specialized.filter(s => !reservedAgentNames.has(s));
 
   // Show detected stack
   const detectedItems: string[] = [];
@@ -364,9 +435,12 @@ export async function init(args: string[]): Promise<number> {
 
     await runTasks('Installing...', [
       {
-        title: `Agents (${allAgents.length})`,
+        title: `Agents (${allAgents.length}${tier3ToInstall.length ? ` + ${tier3ToInstall.length} Tier 3` : ''})`,
         tech: profiles.length ? `${profiles.join(', ')} profile` : 'core',
-        task: () => installCoreAgents(forgeRoot, join(claudeDir, 'agents'), allAgents, profiles, force),
+        task: () => {
+          installCoreAgents(forgeRoot, join(claudeDir, 'agents'), allAgents, profiles, force);
+          installSpecializedStubs(join(claudeDir, 'agents'), tier3ToInstall, config.project.name ?? 'Project');
+        },
       },
       {
         title: 'Hooks (pre-edit-check.js, pre-bash-check.js)',
@@ -413,6 +487,7 @@ export async function init(args: string[]): Promise<number> {
           const installedFiles = [
             'CLAUDE.md', '.claude/settings.json', '.claude/architecture.rules',
             ...allAgents.map(a => `.claude/agents/${a}.md`),
+            ...tier3ToInstall.map(a => `.claude/agents/${a}.md`),
           ];
           const ts = new Date().toISOString();
           saveManifest(projectRoot, buildManifest(runtime, installedFiles, projectRoot, VERSION, ts));
@@ -420,12 +495,26 @@ export async function init(args: string[]): Promise<number> {
       },
     ]);
 
+    if (tier3Conflicts.length) {
+      process.stdout.write('\n' + dim(`  ⚠ Tier 3 omitidos (colisionan con un agente core/profile): ${tier3Conflicts.join(', ')}`) + '\n');
+    }
+
   } else if (runtime === 'opencode') {
     mkdirSync(join(projectRoot, '.opencode'), { recursive: true });
     write(join(projectRoot, 'AGENTS.md'), generateAgentsMd(config), force);
 
   } else if (runtime === 'codex') {
+    // AGENTS.md carries the inline guardrails; .codex/ wires the session hooks
+    // (onStart/onFinish) to the shared shell checks — Codex's native mechanism.
+    const codexDir = join(projectRoot, '.codex');
+    mkdirSync(codexDir, { recursive: true });
     write(join(projectRoot, 'AGENTS.md'), generateCodexAgentsMd(config), force);
+    const codexHooksSrc = join(forgeRoot, 'core', 'hooks');
+    for (const h of ['session-start.js', 'post-turn-check.js']) {
+      const src = join(codexHooksSrc, h);
+      if (existsSync(src)) copyFile(src, join(codexDir, h), force);
+    }
+    write(join(codexDir, 'codex.yaml'), generateCodexYaml(), force);
 
   } else if (runtime === 'kiro') {
     installKiro(forgeRoot, projectRoot, config, force);

@@ -349,9 +349,12 @@ runtimes:
     // Generated config.
     assert.ok(existsSync(join(dir, 'CLAUDE.md')), 'CLAUDE.md missing');
     assert.ok(existsSync(join(dir, '.claude', 'settings.json')), 'settings.json missing');
-    // Hooks are JavaScript (zero Python).
+    // Hooks are JavaScript (zero Python) — including the ported session/stop hooks.
     assert.ok(existsSync(join(dir, '.claude', 'hooks', 'pre-edit-check.js')), 'JS hook missing');
+    assert.ok(existsSync(join(dir, '.claude', 'hooks', 'post-turn-check.js')), 'post-turn-check.js missing');
+    assert.ok(existsSync(join(dir, '.claude', 'hooks', 'session-start.js')), 'session-start.js missing');
     assert.ok(!existsSync(join(dir, '.claude', 'hooks', 'pre-edit-check.py')), 'Python hook must not exist');
+    assert.ok(!existsSync(join(dir, '.claude', 'hooks', 'post-turn-check.sh')), 'shell hook must not be installed');
     // Manifest with the current version.
     const manifestPath = join(dir, '.forge', 'manifest.json');
     assert.ok(existsSync(manifestPath), '.forge/manifest.json missing');
@@ -359,9 +362,157 @@ runtimes:
     assert.equal(manifest.forgeVersion, EXPECTED_VERSION);
     assert.equal(manifest.runtime, 'claude-code');
 
-    // settings.json wires hooks via node (no python3).
+    // settings.json wires every hook via node (no python3, no shell).
     const settings = readFileSync(join(dir, '.claude', 'settings.json'), 'utf-8');
     assert.match(settings, /node .claude\/hooks/);
+    assert.match(settings, /SessionStart/);
+    assert.match(settings, /node \.claude\/hooks\/post-turn-check\.js/);
     assert.doesNotMatch(settings, /python3/);
+    assert.doesNotMatch(settings, /\.sh/);
+  });
+
+  // Auto-selección de profiles: detected/selected stack → Tier 2 profile slugs.
+  test('profilesForStack maps a stack to its Tier 2 profiles', async () => {
+    const { profilesForStack } = await import(
+      join(__dirname, '..', 'dist', 'lib', 'profiles.js')
+    );
+    assert.deepEqual(profilesForStack({ backend: 'hono', frontend: 'nextjs' }), ['hono-drizzle', 'nextjs-admin']);
+    assert.deepEqual(profilesForStack({ backend: 'django' }), ['django']);
+    assert.deepEqual(profilesForStack({ testing: ['playwright'] }), ['playwright-crawler']);
+    // A framework with no forge profile (fastify) yields nothing, not a bogus slug.
+    assert.deepEqual(profilesForStack({ backend: 'fastify' }), []);
+  });
+
+  // Tier 3: init generates a stub per specialized agent and audit validates them.
+  test('init generates Tier 3 stubs and audit validates them', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Tier3 E2E"
+  mode: "standard"
+  language: "typescript"
+agents:
+  active:
+    - orchestrator
+  specialized:
+    - dsar-specialist
+    - gcm-engineer
+runtimes:
+  active:
+    - claude-code
+`
+    );
+    const { status } = runForge(['init', '--force'], { cwd: dir });
+    assert.equal(status, 0, 'init --force should exit 0');
+
+    // A stub is written for each Tier 3 agent, with tier: 3 frontmatter.
+    const stub = join(dir, '.claude', 'agents', 'dsar-specialist.md');
+    assert.ok(existsSync(stub), 'Tier 3 stub missing');
+    assert.match(readFileSync(stub, 'utf-8'), /tier: 3/);
+    assert.ok(existsSync(join(dir, '.claude', 'agents', 'gcm-engineer.md')), 'second Tier 3 stub missing');
+
+    // audit reports both specialized agents as present (level ok).
+    const audit = runForge(['audit', '--json'], { cwd: dir });
+    const report = JSON.parse(audit.stdout);
+    const tier3 = report.issues.filter((i) => i.check === 'tier3');
+    assert.equal(tier3.length, 2, 'audit should emit one tier3 issue per specialized agent');
+    assert.ok(tier3.every((i) => i.level === 'ok'), 'specialized agents should be present');
+  });
+
+  // Codex hooks: init wires .codex/codex.yaml session hooks + inline guardrails.
+  test('init --runtime codex writes AGENTS.md and .codex session hooks', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Codex E2E"
+  mode: "standard"
+  language: "typescript"
+agents:
+  active:
+    - orchestrator
+runtimes:
+  active:
+    - codex
+`
+    );
+    const { status } = runForge(['init', '--force', '--runtime', 'codex'], { cwd: dir });
+    assert.equal(status, 0, 'init --runtime codex should exit 0');
+
+    assert.ok(existsSync(join(dir, 'AGENTS.md')), 'AGENTS.md missing');
+    const codexYamlPath = join(dir, '.codex', 'codex.yaml');
+    assert.ok(existsSync(codexYamlPath), '.codex/codex.yaml missing');
+    const codexYaml = readFileSync(codexYamlPath, 'utf-8');
+    assert.match(codexYaml, /onStart/);
+    assert.match(codexYaml, /onFinish/);
+    // The session hooks are pure JS (zero Python) and actually copied to .codex/.
+    assert.match(codexYaml, /node \.codex\/session-start\.js/);
+    assert.ok(existsSync(join(dir, '.codex', 'session-start.js')), 'onStart hook not copied');
+    assert.ok(existsSync(join(dir, '.codex', 'post-turn-check.js')), 'onFinish hook not copied');
+    assert.doesNotMatch(codexYaml, /python3/);
+    // AGENTS.md carries the inline guardrails (Codex's native mechanism).
+    assert.match(readFileSync(join(dir, 'AGENTS.md'), 'utf-8'), /Branch guard/);
+  });
+
+  // Tier 3 collision guard: a specialized name equal to a core/profile agent must
+  // NOT clobber the real agent, even under --force.
+  test('init does not let a Tier 3 stub clobber a core agent', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(
+      dir,
+      `project:
+  name: "Collision E2E"
+  mode: "standard"
+  language: "typescript"
+agents:
+  active:
+    - orchestrator
+    - backend-engineer
+  specialized:
+    - backend-engineer
+    - dsar-specialist
+runtimes:
+  active:
+    - claude-code
+`
+    );
+    const { status } = runForge(['init', '--force'], { cwd: dir });
+    assert.equal(status, 0, 'init --force should exit 0');
+
+    // The real core agent survives (tier: 1), not replaced by a tier: 3 stub.
+    const core = readFileSync(join(dir, '.claude', 'agents', 'backend-engineer.md'), 'utf-8');
+    assert.match(core, /tier:\s*1/, 'core agent was clobbered by a Tier 3 stub');
+    assert.doesNotMatch(core, /tier:\s*3/);
+    // The non-colliding Tier 3 agent is still scaffolded.
+    assert.ok(existsSync(join(dir, '.claude', 'agents', 'dsar-specialist.md')), 'non-colliding Tier 3 stub missing');
+  });
+
+  // The ported JS hooks run on Node alone (no Python) and behave like the shell
+  // versions. They live in core/hooks/ and are copied verbatim into projects.
+  const HOOKS_DIR = join(__dirname, '..', '..', '..', 'core', 'hooks');
+
+  function gitInit(dir) {
+    spawnSync('git', ['init', '-q'], { cwd: dir });
+    spawnSync('git', ['config', 'user.email', 't@t.co'], { cwd: dir });
+    spawnSync('git', ['config', 'user.name', 'forge test'], { cwd: dir });
+  }
+
+  test('post-turn-check.js exits 0 with no changes (pure JS)', (t) => {
+    const dir = makeTmpDir(t);
+    gitInit(dir);
+    const res = spawnSync(process.execPath, [join(HOOKS_DIR, 'post-turn-check.js')], { cwd: dir, encoding: 'utf-8' });
+    assert.equal(res.status, 0, 'post-turn-check.js should exit 0');
+    assert.equal(stripAnsi(res.stdout).trim(), '', 'no output when nothing changed');
+  });
+
+  test('session-start.js parses project.yaml in JS and warns on missing fields', (t) => {
+    const dir = makeTmpDir(t);
+    gitInit(dir);
+    writeProjectYaml(dir, 'project:\n  name: "Hooky"\n'); // project.mode missing on purpose
+    const res = spawnSync(process.execPath, [join(HOOKS_DIR, 'session-start.js')], { cwd: dir, encoding: 'utf-8' });
+    assert.equal(res.status, 0, 'session-start.js should exit 0 when git is available');
+    // Warns about the missing required field — proves the in-process YAML read works.
+    assert.match(stripAnsi(res.stdout), /project\.mode/);
   });
 });

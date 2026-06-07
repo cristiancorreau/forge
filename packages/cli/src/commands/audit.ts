@@ -299,6 +299,15 @@ export async function audit(args: string[]): Promise<number> {
       }
     }
 
+    // Tier 3 (domain) agents declared in project.yaml must exist on disk.
+    const specialized = config?.agents?.specialized ?? [];
+    for (const name of specialized) {
+      const exists = existsSync(join(agentsDir, `${name}.md`));
+      issues.push(exists
+        ? { level: 'ok', check: 'tier3', message: `Agente de dominio '${name}' presente` }
+        : { level: 'warn', check: 'tier3', message: `Agente de dominio '${name}' declarado en agents.specialized pero falta .claude/agents/${name}.md` });
+    }
+
     // Check hooks
     const hooksDir = join(root, '.claude', 'hooks');
     if (!existsSync(hooksDir)) {
