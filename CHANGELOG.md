@@ -7,6 +7,20 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.4.0] — 2026-06-06
+
+> El wedge "compile, don't recommend": advisor `forge recommend` sobre un catálogo unificado, marcador North Star y endurecimiento de `forge migrate`.
+
+### Agregado
+- **`forge recommend`** (SPEC-051) — advisor read-only stack-aware: analiza el stack detectado (`detect.ts`) y recomienda los mejores items del catálogo para ESTE proyecto, con un **WHY anclado en la señal de detección** (django→profile django, postgres→MCP postgres, CI→claude-code-action). Read-only por defecto; `--apply` instala los instalables vía `installItem` (idempotente) y muestra el comando manual para los MCP no instalables, nunca `--apply` sobre lo que no puede instalar. `--category`, `--top N`, `--json`. Un solo motor (`lib/recommend.ts`) en 3 superficies.
+- **Catálogo unificado** (SPEC-050) — una sola fuente de verdad (`lib/catalog-unified.ts`) con un modelo `CatalogItem` y flag `installable`, y **un solo motor de búsqueda** (`scoreCatalog`). Fusiona el catálogo instalable (skills/profiles/templates) con el curado (frameworks/MCP servers/tools/resources). Los profiles de forge se representan una vez, instalables, enriquecidos con la metadata curada. `forge aitmpl-search` ahora busca el catálogo completo.
+- **Marcador North Star** (#109) — forge estampa `# generated-by: forge vX.Y.Z` como primera línea de todo `project.yaml` que genera (comentario YAML, idempotente). Permite medir adopción **sin telemetría** vía GitHub code search. Ver `docs/north-star.md`.
+
+### Cambiado
+- **`forge migrate`** (#108) — el backup es ahora el **default** (`project.yaml.bak`; `--no-backup` para optar a no); `schema_version` se escribe como **campo YAML real** (machine-readable), no como comentario. `detectVersion()` lo lee primero.
+
+---
+
 ## [3.3.1] — 2026-06-06
 
 ### Cambiado
