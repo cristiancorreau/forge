@@ -93,12 +93,17 @@ export function generateKiroAgents(config: ProjectYaml): string {
     .map(a => `| ${a} | ${agentDescriptions[a] ?? 'Specialized agent'} |`)
     .join('\n');
 
+  const specialized = agents.specialized ?? [];
+  const specializedSection = specialized.length > 0
+    ? `\n## Domain agents (Tier 3)\n\n${specialized.map(a => `- ${a}`).join('\n')}\n\n> Project-specific domain agents. Define each one's role and scope here before delegating work.\n`
+    : '';
+
   return `# Agent Roster
 
 | Agent | Responsibility |
 |-------|----------------|
 ${rows || '| — | No agents declared in project.yaml |'}
-
+${specializedSection}
 ## Usage
 
 - Use the specialized agent for each task

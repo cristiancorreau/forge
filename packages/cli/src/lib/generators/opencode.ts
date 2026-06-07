@@ -79,6 +79,11 @@ export function generateAgentsMd(config: ProjectYaml): string {
     ? `\n## Compliance\n\nMarcos activos: ${compliance.frameworks.map(f => f.toUpperCase()).join(', ')}\n`
     : '';
 
+  const specialized = agents.specialized ?? [];
+  const specializedSection = specialized.length > 0
+    ? `\n## Agentes de dominio (Tier 3)\n\n${specialized.map(a => `- \`${a}\``).join('\n')}\n\n> Conocen el negocio concreto del proyecto. Definí el rol y scope de cada uno acá antes de delegarles trabajo.\n`
+    : '';
+
   return `# AGENTS.md — ${name}
 
 > Generado por forge v2. Actualizar project.yaml para cambiar la configuración.
@@ -101,5 +106,5 @@ ${agentRows || '| — | Sin agentes declarados en project.yaml |'}
 > Invocar el agente especializado para cada tarea. Usar orchestrator solo para tareas multi-agente.
 
 ${commandsSection(config.deploy?.provider ?? 'tu plataforma de deploy')}
-${guardrailSection()}${complianceSection}`;
+${guardrailSection()}${specializedSection}${complianceSection}`;
 }

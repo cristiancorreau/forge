@@ -1,5 +1,22 @@
 import type { ProjectYaml } from '../yaml.js';
 
+/**
+ * `.codex/codex.yaml` — wires the Codex CLI session hooks. Codex has no
+ * PreToolUse/Stop interception (those guardrails live inline in AGENTS.md), but
+ * it does support onStart/onFinish session hooks, which forge points at the same
+ * pure-JS checks used by Claude Code (zero Python dependency).
+ */
+export function generateCodexYaml(): string {
+  return `# .codex/codex.yaml — generado por forge v2 para Codex CLI
+# Ajustá 'model' según tu preferencia (ver la doc de Codex CLI).
+# model: gpt-5-codex
+
+hooks:
+  onStart:  node .codex/session-start.js
+  onFinish: node .codex/post-turn-check.js
+`;
+}
+
 export function generateCodexAgentsMd(config: ProjectYaml): string {
   const proj = config.project;
   const stack = config.stack ?? {};
@@ -12,6 +29,11 @@ export function generateCodexAgentsMd(config: ProjectYaml): string {
   const allAgents = [...active, ...compliance];
 
   const agentList = allAgents.map(a => `- \`${a}\``).join('\n') || '- (ninguno declarado)';
+
+  const specialized = agents.specialized ?? [];
+  const specializedSection = specialized.length > 0
+    ? `\n## Agentes de dominio (Tier 3)\n\n${specialized.map(a => `- \`${a}\``).join('\n')}\n\n> Conocen el negocio concreto del proyecto. Definí el rol y scope de cada uno antes de delegarles trabajo.\n`
+    : '';
 
   return `# AGENTS.md — ${name}
 # Generado por forge v2 para Codex CLI
@@ -26,6 +48,7 @@ export function generateCodexAgentsMd(config: ProjectYaml): string {
 ## Agentes disponibles
 
 ${agentList}
+${specializedSection}
 
 ## Workflow SDD (obligatorio)
 
