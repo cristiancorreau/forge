@@ -162,7 +162,9 @@ async function skillsSearchSection(root: string): Promise<void> {
   printSkillRows(searchSkills(String(q ?? ''), root));
 }
 
-const TYPE_TAG: Record<CatalogItem['type'], string> = {
+// The panel only renders installable rows (skill/profile/template); other unified
+// types fall back to their own name.
+const TYPE_TAG: Partial<Record<CatalogItem['type'], string>> = {
   skill: 'skill', profile: 'profile', template: 'template',
 };
 
@@ -171,7 +173,7 @@ function printCatalogRows(items: CatalogItem[]): void {
   const width = Math.max(...items.map(i => i.label.length));
   for (const it of items) {
     const mark = it.installed ? green('✓') : gray('·');
-    const tag = gray('[' + TYPE_TAG[it.type] + ']');
+    const tag = gray('[' + (TYPE_TAG[it.type] ?? it.type) + ']');
     const state = it.installed ? dim(' (ya instalado)') : '';
     console.log(`  ${mark} ${cyan(it.label.padEnd(width))}  ${tag} ${it.description}${state}`);
   }

@@ -18,22 +18,16 @@ import { join } from 'path';
 import { SKILLS } from './catalog.js';
 import { findProjectYaml, loadProjectYaml } from './yaml.js';
 import { listTemplates, type TemplateEntry } from './panel-data.js';
+import {
+  type CatalogItem,
+  PROFILE_META, getCuratedItems, scoreCatalog,
+} from './catalog-unified.js';
+
+// The data model + the search engine live in catalog-unified.ts (SPEC-050).
+// Re-export the model so existing importers (the panel) keep their import path.
+export type { CatalogItem, CatalogItemType, CatalogInstallSpec } from './catalog-unified.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────
-
-export type CatalogItemType = 'skill' | 'profile' | 'template';
-
-export interface CatalogItem {
-  type: CatalogItemType;
-  /** Stable id used by the installers (skill id, profile name, template id). */
-  id: string;
-  /** Short human label for the UI. */
-  label: string;
-  /** One-line description. */
-  description: string;
-  /** True when it is already in project.yaml or already scaffolded on disk. */
-  installed: boolean;
-}
 
 export interface InstallResult {
   ok: boolean;
@@ -110,27 +104,22 @@ function templateInstalled(projectRoot: string, id: string): boolean {
   return false;
 }
 
-// ─── searchCatalog ───────────────────────────────────────────────────────────
+// ─── Installable items + catalog views ─────────────────────────────────────────
 
 const profileDescription = (name: string): string =>
   `Profile Tier 2 para el stack ${name} (agentes en .claude/agents/)`;
 
 /**
- * Unified, case-insensitive substring search across installable items: skills,
- * profiles and templates. An empty query returns the whole catalog. Each item
- * is marked `installed` against project.yaml and/or the scaffolded state on
- * disk. Profiles and templates require a `forgeRoot`; with `forgeRoot === null`
- * only skills are returned.
+ * The installable items (forge's own skills, profiles, templates), built from the
+ * bundled assets + project.yaml. Profiles and templates require a `forgeRoot`;
+ * with `forgeRoot === null` only skills are returned. Each item is marked
+ * `installed` against project.yaml / the scaffolded state on disk, and `installable`
+ * is always true. Profiles are enriched with the curated metadata (description,
+ * tags, url) from the unified catalog.
  */
-export function searchCatalog(
-  forgeRoot: string | null,
-  projectRoot: string,
-  query: string,
-): CatalogItem[] {
-  const q = query.trim().toLowerCase();
+export function getInstallableItems(forgeRoot: string | null, projectRoot: string): CatalogItem[] {
   const skillSet = new Set(activeSkillIds(projectRoot));
   const profileSet = new Set(activeProfiles(projectRoot));
-
   const items: CatalogItem[] = [];
 
   // Skills.
@@ -138,16 +127,20 @@ export function searchCatalog(
     items.push({
       type: 'skill', id: s.id, label: s.command,
       description: `[${s.category}] ${s.purpose}`,
-      installed: skillSet.has(s.id),
+      category: 'skill', tags: [s.category],
+      installable: true, installed: skillSet.has(s.id),
     });
   }
 
-  // Profiles.
+  // Profiles (enriched from the curated PROFILE_META when available).
   for (const name of listAvailableProfiles(forgeRoot)) {
+    const meta = PROFILE_META[name];
     items.push({
       type: 'profile', id: name, label: name,
-      description: profileDescription(name),
-      installed: profileSet.has(name),
+      description: meta?.description ?? profileDescription(name),
+      category: 'profile', tags: meta?.tags ?? [],
+      installable: true, installed: profileSet.has(name),
+      url: meta?.url, language: meta?.language || undefined,
     });
   }
 
@@ -163,17 +156,34 @@ export function searchCatalog(
       : t.description;
     items.push({
       type: 'template', id, label, description,
-      installed: templateInstalled(projectRoot, id),
+      category: 'template', tags: [],
+      installable: true, installed: templateInstalled(projectRoot, id),
     });
   }
 
-  if (!q) return items;
-  return items.filter(it =>
-    it.id.toLowerCase().includes(q) ||
-    it.label.toLowerCase().includes(q) ||
-    it.type.toLowerCase().includes(q) ||
-    it.description.toLowerCase().includes(q),
-  );
+  return items;
+}
+
+/**
+ * Installable-only catalog view (skills/profiles/templates), searched through the
+ * unified engine (`scoreCatalog`). Preserves the panel's behaviour: an empty query
+ * returns the whole installable catalog in order; otherwise it is scored.
+ */
+export function searchCatalog(
+  forgeRoot: string | null,
+  projectRoot: string,
+  query: string,
+): CatalogItem[] {
+  return scoreCatalog(getInstallableItems(forgeRoot, projectRoot), query);
+}
+
+/**
+ * The full unified catalog: installable items plus the curated, non-installable
+ * discovery items (frameworks/MCP servers/tools/resources). Single entry point for
+ * consumers that want everything (aitmpl-search; and, later, `forge recommend`).
+ */
+export function getUnifiedCatalog(forgeRoot: string | null, projectRoot: string): CatalogItem[] {
+  return [...getInstallableItems(forgeRoot, projectRoot), ...getCuratedItems()];
 }
 
 // ─── Surgical project.yaml editing ───────────────────────────────────────────
@@ -620,6 +630,8 @@ export function installItem(
     case 'skill':    return installSkill(projectRoot, forgeRoot, item.id);
     case 'profile':  return installProfile(projectRoot, forgeRoot, item.id);
     case 'template': return installTemplate(projectRoot, forgeRoot, item.id);
-    default:         return { ok: false, alreadyInstalled: false, message: 'Tipo desconocido', changed: [] };
+    // Non-installable catalog items (mcp-server/framework/tool/resource) never
+    // reach installItem from the UI (it only offers installable rows); guard anyway.
+    default:         return { ok: false, alreadyInstalled: false, message: `"${item.id}" no es instalable por forge (instalación manual).`, changed: [] };
   }
 }
