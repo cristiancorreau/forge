@@ -41,6 +41,8 @@ wiki-lint   → health check + auto-reparación
 | `local2prod` | Universal | CLI del provider de deploy | new-feature |
 | `new-feature` | Universal | No (orquesta los otros) | Usuario directo |
 | `obsidian-sync` | Integración | Obsidian + Local REST API | new-feature, local2prod |
+| `forge-skill-creator` | Desarrollo | `forge eval` | Usuario directo |
+| `forge-skill-improver` | Desarrollo | `forge eval` | Usuario directo |
 
 ## Categorías
 

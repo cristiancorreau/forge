@@ -23,6 +23,8 @@ export const SKILLS: SkillInfo[] = [
   { id: 'wiki-query',     command: '/wiki-query',     category: 'Wiki',       purpose: 'Responde citando el wiki del proyecto',               trigger: '"¿qué dice el wiki sobre…"' },
   { id: 'wiki-lint',      command: '/wiki-lint',      category: 'Wiki',       purpose: 'Verifica integridad del wiki (links, huérfanos)',     trigger: '"verificar wiki"' },
   { id: 'aitmpl-search',  command: '/aitmpl-search',  category: 'Catálogo',   purpose: 'Busca en el catálogo de frameworks/MCP/profiles',     trigger: '"buscar templates", "buscar MCP"' },
+  { id: 'forge-skill-creator', command: '/forge-skill-creator', category: 'Desarrollo', purpose: 'Crea un SKILL.md nuevo e itera con forge eval hasta pasar el gate',     trigger: '"crear skill", "nueva skill"' },
+  { id: 'forge-skill-improver',command: '/forge-skill-improver',category: 'Desarrollo', purpose: 'Mejora un SKILL.md existente con forge eval hasta pasar el gate',       trigger: '"mejorar skill", "optimizar skill"' },
   { id: 'obsidian-sync',  command: '/obsidian-sync',  category: 'Integración',purpose: 'Sincroniza un vault de Obsidian con el código',       trigger: '"actualizar obsidian", "sync vault"' },
   { id: 'laravel-eloquent',command: '/laravel-eloquent',category: 'Laravel',    purpose: 'Eloquent: relaciones, eager loading, evitar N+1, casts, pgvector',  trigger: '"modelo eloquent", "evitar N+1", "query lenta"' },
   { id: 'laravel-pest',   command: '/laravel-pest',   category: 'Laravel',     purpose: 'TDD con Pest 3: factories, fakes, HTTP tests, coverage',           trigger: '"test laravel", "pest", "factory"' },
