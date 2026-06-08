@@ -4,7 +4,7 @@
 
 ## Misión del proyecto
 
-Framework de desarrollo agéntico multi-runtime (Claude Code, OpenCode, Codex, Kiro). CLI TypeScript + legacy Python en migración.
+Framework de desarrollo agéntico multi-runtime (19 runtimes: 4 nativos + 15 basados en reglas). CLI TypeScript + legacy Python en migración.
 
 ## Stack
 

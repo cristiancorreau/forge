@@ -2,17 +2,40 @@
 
 # Runtimes soportados por forge
 
-forge genera configuración nativa para 4 runtimes de IA. Cada runtime tiene su propio adapter
-en `adapters/<runtime>/` que lee `project.yaml` y produce los archivos que espera ese tool.
+forge genera configuración nativa para 19 runtimes de IA (4 nativos + 15 basados en reglas).
+Cada runtime tiene su propio adapter en `adapters/<runtime>/` que lee `project.yaml` y produce
+los archivos que espera ese tool.
 
 ## Tabla de soporte
 
-| Runtime | Instalación | Archivos generados | Nivel de soporte |
-|---------|-------------|-------------------|-----------------|
-| [Claude Code](#claude-code) | `npm i -g @anthropic-ai/claude-code` | `CLAUDE.md`, `.claude/agents/`, `.claude/commands/`, `.claude/settings.json` | Completo |
-| [OpenCode](#opencode) | `npm i -g opencode-ai` | `AGENTS.md` | Soportado |
-| [Codex CLI](#codex-cli) | `npm i -g @openai/codex` | `AGENTS.md` | Soportado |
-| [Kiro](#kiro) | Descargar el IDE desde [kiro.dev](https://kiro.dev) | `.kiro/steering/*.md` | Monitoring |
+### Runtimes nativos (4)
+
+| Runtime | Tipo | Archivos generados | Nivel de soporte |
+|---------|------|--------------------|-----------------|
+| [Claude Code](#claude-code) | nativo | `CLAUDE.md`, `.claude/agents/`, `.claude/commands/`, `.claude/settings.json` | Completo |
+| [OpenCode](#opencode) | nativo | `AGENTS.md` | Soportado |
+| [Codex CLI](#codex-cli) | nativo | `AGENTS.md` | Soportado |
+| [Kiro](#kiro) | nativo | `.kiro/steering/*.md` | Monitoring |
+
+### Runtimes basados en reglas (15)
+
+| Runtime | ID | Archivo generado | Tipo |
+|---------|----|------------------|------|
+| Cursor | `cursor` | `.cursor/rules/forge.md` | rules-based |
+| Windsurf | `windsurf` | `.windsurf/rules/forge.md` | rules-based |
+| GitHub Copilot | `copilot` | `.github/copilot-instructions.md` | rules-based |
+| Gemini CLI | `gemini` | `GEMINI.md` | rules-based |
+| Zed | `zed` | `.zed/rules.md` | rules-based |
+| Cline | `cline` | `.clinerules` | rules-based |
+| Aider | `aider` | `CONVENTIONS.md` | rules-based |
+| Continue | `continue` | `.continue/rules/forge.md` | rules-based |
+| Roo Code | `roo` | `.roo/rules/forge.md` | rules-based |
+| Amp | `amp` | `AGENTS.md` | rules-based |
+| Augment Code | `augment` | `.augment/rules/forge.md` | rules-based |
+| Google Antigravity | `antigravity` | `.antigravity/rules/forge.md` | rules-based |
+| OpenClaw | `openclaw` | `.openclaw/rules/forge.md` | rules-based |
+| Pi | `pi` | `.pi/rules/forge.md` | rules-based |
+| Hermes | `hermes` | `.hermes/rules/forge.md` | rules-based |
 
 ## Detección de runtimes (`forge doctor`)
 

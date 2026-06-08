@@ -2,7 +2,7 @@
 
 > Estado: IMPLEMENTED
 > Responsable: forge-cli-engineer
-> Creada: 2026-06-07 | Actualizada: 2026-06-07
+> Creada: 2026-06-07 | Actualizada: 2026-06-08
 
 ## Contexto
 
@@ -12,7 +12,8 @@ agregar un runtime nuevo requiriera editar múltiples archivos manualmente y era
 olvidar alguno. Además, asm (~14-18 runtimes) tiene una cobertura mucho mayor que forge.
 
 Este spec cierra la brecha de paridad agregando un registry central de runtimes y
-expandiendo el soporte a 15 runtimes totales.
+expandiendo el soporte a **19 runtimes totales** (4 nativos + 15 rules-based),
+igualando la cobertura de asm.
 
 ## Decisión
 
@@ -40,6 +41,10 @@ expandiendo el soporte a 15 runtimes totales.
    | roo | `.roo/rules/forge.md` | Convención Roo Code (`.roo/rules/`) — dudosa; elegida por analogía con cursor/windsurf |
    | amp | `AGENTS.md` | Convención Amp (usa AGENTS.md, mismo que opencode) |
    | augment | `.augment/rules/forge.md` | Convención Augment Code (`.augment/rules/`) — documentación interna |
+   | antigravity | `.antigravity/rules/forge.md` | Google Antigravity (IDE agéntico) — convención `.antigravity/`, runtime emergente |
+   | openclaw | `.openclaw/rules/forge.md` | OpenClaw — convención comunitaria `.openclaw/rules/`, runtime nicho |
+   | pi | `.pi/rules/forge.md` | Pi — config dir `.pi/` (asm usa `~/.pi`), runtime nicho |
+   | hermes | `.hermes/rules/forge.md` | Hermes — config dir `.hermes/` (asm usa `~/.hermes`), runtime nicho |
 
 4. **Refactor** de `generate.ts` y `adopt.ts` para iterar el registry en vez de if/else.
    claude-code y kiro conservan su manejo especial por complejidad de instalación.
@@ -60,11 +65,12 @@ expandiendo el soporte a 15 runtimes totales.
 
 ## Criterios de aceptación
 
-- [x] `runtimeIds()` retorna todos los IDs registrados (al menos 15)
+- [x] `runtimeIds()` retorna todos los IDs registrados (al menos 19)
 - [x] Cada descriptor produce ≥1 surface con path y content no vacíos
 - [x] claude-code → CLAUDE.md, opencode → AGENTS.md, codex → AGENTS.md, kiro → .kiro/steering/product.md
 - [x] `generate.ts` itera el registry para runtimes no especiales
 - [x] `adopt.ts` itera el registry para runtimes no especiales
+- [x] `project.schema.json` enum sincronizado con `runtimeIds()` (test que previene drift)
 - [x] Tests en `packages/cli/test/registry.test.mjs` cubren los criterios anteriores
 - [x] Build pasa sin errores TypeScript
 - [x] Tests existentes siguen en verde
@@ -81,3 +87,9 @@ expandiendo el soporte a 15 runtimes totales.
 - claude-code conserva su instalación rica (settings.json, hooks, agents, commands) en
   init.ts; en generate.ts también se mantiene aparte por mkdirSync y lógica propia.
 - kiro conserva su manejo especial (múltiples archivos bajo .kiro/steering/ y .kiro/hooks/).
+- **Expansión a 19 (2026-06-08):** se agregaron antigravity, openclaw, pi y hermes para
+  igualar la cobertura de asm. Son runtimes nicho/emergentes; sus rutas siguen el patrón
+  `.<runtime>/rules/forge.md` y deben actualizarse si publican una convención oficial.
+  En esta tanda se corrigió además una desincronización previa: el enum de
+  `project.schema.json` había quedado en 4 runtimes pese a que el registry tenía 15; ahora
+  un test (`project.schema.json runtime enum matches runtimeIds()`) lo mantiene en sync.

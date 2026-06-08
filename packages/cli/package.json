@@ -1,7 +1,7 @@
 {
   "name": "@cristiancorreau/forge",
-  "version": "3.5.0",
-  "description": "Agentic development framework — multi-runtime support for Claude Code, OpenCode, Codex and Kiro",
+  "version": "3.6.0",
+  "description": "Agentic development framework — multi-runtime support for 19 AI runtimes (Claude Code, OpenCode, Codex, Kiro + 15 rules-based editors)",
   "author": "Cristian Correa <cristian@socialweb.cl>",
   "license": "Apache-2.0",
   "repository": {

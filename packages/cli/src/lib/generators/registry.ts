@@ -149,6 +149,22 @@ const ampDescriptor = rulesRuntime('amp', 'Amp', 'AGENTS.md');
 // NOTE: If Augment updates their convention, update this path and SPEC-056.
 const augmentDescriptor = rulesRuntime('augment', 'Augment Code', '.augment/rules/forge.md');
 
+// Google Antigravity: agentic IDE; .antigravity/rules/ config dir convention.
+// NOTE: niche/emerging runtime; if Antigravity publishes a convention, update SPEC-056.
+const antigravityDescriptor = rulesRuntime('antigravity', 'Google Antigravity', '.antigravity/rules/forge.md');
+
+// OpenClaw: .openclaw/rules/ — community convention (mirrors the .runtime/rules/ pattern).
+// NOTE: niche runtime; update this path and SPEC-056 if an official convention lands.
+const openclawDescriptor = rulesRuntime('openclaw', 'OpenClaw', '.openclaw/rules/forge.md');
+
+// Pi: .pi/rules/ — config dir convention (asm uses ~/.pi for this runtime).
+// NOTE: niche runtime; update this path and SPEC-056 if an official convention lands.
+const piDescriptor = rulesRuntime('pi', 'Pi', '.pi/rules/forge.md');
+
+// Hermes: .hermes/rules/ — config dir convention (asm uses ~/.hermes for this runtime).
+// NOTE: niche runtime; update this path and SPEC-056 if an official convention lands.
+const hermesDescriptor = rulesRuntime('hermes', 'Hermes', '.hermes/rules/forge.md');
+
 // ---------------------------------------------------------------------------
 // Registry
 // ---------------------------------------------------------------------------
@@ -171,6 +187,10 @@ export const RUNTIMES: RuntimeDescriptor[] = [
   rooDescriptor,
   ampDescriptor,
   augmentDescriptor,
+  antigravityDescriptor,
+  openclawDescriptor,
+  piDescriptor,
+  hermesDescriptor,
 ];
 
 /** Returns the descriptor for a given runtime ID, or undefined if not found. */

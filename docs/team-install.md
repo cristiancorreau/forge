@@ -51,7 +51,7 @@ npx @cristiancorreau/forge audit    # estado del proyecto vs el manifest
 
 ### 4. Empezá tu primera sesión
 
-Abrí tu runtime de IA (Claude Code, OpenCode, Codex o Kiro) y ejecutá:
+Abrí tu runtime de IA (uno de los 19 runtimes soportados) y ejecutá:
 
 ```
 /session-start

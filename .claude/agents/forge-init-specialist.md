@@ -1,6 +1,6 @@
 ---
 name: forge-init-specialist
-description: "Inicializa forge en un proyecto nuevo o existente. Lee project.yaml, instala agentes en .claude/agents/, genera AGENTS.md y configura el runtime seleccionado (Claude Code, OpenCode, Kiro, Codex)."
+description: "Inicializa forge en un proyecto nuevo o existente. Lee project.yaml, instala agentes en .claude/agents/, genera AGENTS.md y configura el runtime seleccionado (19 runtimes soportados)."
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
 tier: 3

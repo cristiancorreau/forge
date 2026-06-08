@@ -12,7 +12,7 @@
 
 ### Set up any project to work with AI agents in a single command
 
-One agent team, every runtime — **Claude Code · OpenCode · Codex CLI · Kiro** from a single `project.yaml`.
+One agent team, every runtime — **19 runtimes** (4 native + 15 rules-based editors) from a single `project.yaml`.
 
 <br>
 
@@ -57,12 +57,12 @@ npx @cristiancorreau/forge init
 
 **forge** is a multi-runtime _agentic development_ framework. A single command analyzes your project, installs a team of specialized agents, wires up security guardrails, and leaves a `project.yaml` as the **single source of truth** from which each AI runtime's native configuration is regenerated.
 
-Instead of copy-pasting agent rules across projects and across tools, you define the team **once** and forge materializes it for Claude Code, OpenCode, Codex CLI and Kiro.
+Instead of copy-pasting agent rules across projects and across tools, you define the team **once** and forge materializes it for all 19 supported runtimes.
 
 - 🤖 **Multi-runtime agent teams** — 7 universal agents + 19 stack profiles
 - 📐 **Spec-first SDD flow** — no code task without an `APPROVED` spec
 - 🪝 **Guardrail hooks in pure JS** — branch-guard, debug, secrets and prod-safety, zero Python
-- 🔁 **One `project.yaml`, every CLI** — Claude Code, OpenCode, Codex, Kiro
+- 🔁 **One `project.yaml`, every CLI** — 19 runtimes: 4 native + 15 rules-based
 - ⚖️ **Compliance with binding veto** — GDPR/LGPD/CCPA reviewer that blocks the merge
 - 🔄 **Reversible operations** — SHA-256 manifest + `--dry-run` to audit every change
 - 📚 **Project knowledge base** — wiki that ingests, lints and answers with citations
@@ -156,7 +156,7 @@ forge is organized into five layers that go from the source of truth to per-runt
 | 📚 **Knowledge** | Agents + stack profiles that bring the knowledge of each role and framework. |
 | 🛡️ **Guardrail** | Compliance and security enforcement: hooks, branch-guard, secret detection. |
 | 🎯 **Delegation** | Skill orchestration and dispatch: which agent handles which task. |
-| 📡 **Distribution** | Runtime adapters that translate the source of truth to Claude Code, OpenCode, Codex and Kiro. |
+| 📡 **Distribution** | Runtime adapters that translate the source of truth to 19 AI runtimes (4 native + 15 rules-based). |
 
 ---
 
@@ -314,7 +314,7 @@ On top of the **guardrail hooks in pure JavaScript** (zero Python):
 | Agents by tier (1/2/3) | ✅ | ❌ | ❌ |
 | Stack profiles | ✅ 19 | 🚧 partial | ❌ |
 | Invokable skills | ✅ 12 | ✅ central focus | 🚧 |
-| Multi-runtime | ✅ 4 runtimes | 🚧 mostly Claude Code | 🚧 |
+| Multi-runtime | ✅ 19 runtimes | 🚧 mostly Claude Code | 🚧 |
 | Compliance with veto (GDPR/LGPD/CCPA) | ✅ binding | ❌ | ❌ |
 | Guardrail hooks (branch/secrets/prod) | ✅ no Python | ❌ | ❌ |
 | Knowledge base / wiki with citations | ✅ ingest/lint/query | ❌ | ❌ |

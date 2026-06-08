@@ -1,9 +1,8 @@
 # forge — Agent Framework (VS Code extension)
 
 Maneja proyectos forge desde VS Code: la extensión envuelve la CLI
-`@cristiancorreau/forge` (multi-runtime: Claude Code, OpenCode, Codex, Kiro) y
-expone sus comandos (`init`, `audit`, `doctor`, `generate`, …) desde la paleta y
-la vista lateral.
+`@cristiancorreau/forge` (multi-runtime: 19 runtimes) y expone sus comandos
+(`init`, `audit`, `doctor`, `generate`, …) desde la paleta y la vista lateral.
 
 Publisher: `cristiancorreau` · ID: `forge-agent-framework`
 
