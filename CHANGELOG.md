@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.8.2] — 2026-06-08
+
+> Primer sprint del rediseño del panel a "cockpit" (SPEC-059, Epic #147).
+
+### Agregado
+- **`forge panel` — máquina de modos + KEYMAP único** (SPEC-059 PR1) — el manejo de teclas del TUI pasa a una state machine explícita (`NAV/FILTER/PALETTE/CONFIRM/LOG`) con un KEYMAP declarativo que es la fuente única del dispatcher, el footer contextual y el nuevo overlay de ayuda `?`. Elimina los flags ad-hoc de foco (raíz del bug del live-search). El panel se comporta igual; los modos PALETTE/CONFIRM/LOG quedan listos para los próximos sprints.
+- **Acciones de la capa de datos del panel** (SPEC-059 PR2) — `uninstallItem`, `enableSkill`/`disableSkill`, `installHook` (puras, idempotentes, YAML-safe), expuestas también en el fallback `@clack`. Test de paridad i18n en/es para prevenir drift.
+
+---
+
 ## [3.8.1] — 2026-06-08
 
 ### Corregido
