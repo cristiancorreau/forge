@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="772" viewBox="0 0 1040 772" font-family="'SF Mono','Menlo','Consolas',monospace">
+  <defs><linearGradient id="ember" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd9a0"/><stop offset="1" stop-color="#ff7a18"/></linearGradient></defs>
+  <rect width="1040" height="772" fill="#0a0a0b"/>
+  <rect x="16" y="16" width="1008" height="740" rx="12" fill="#15151a" stroke="#2a2a30"/>
+  <circle cx="44" cy="44" r="7" fill="#ff5f56"/><circle cx="68" cy="44" r="7" fill="#ffbd2e"/><circle cx="92" cy="44" r="7" fill="#27c93f"/>
+  <text x="520" y="49" fill="#8a8a8a" font-size="14" text-anchor="middle">forge panel</text>
+  <rect x="36" y="72" width="968" height="96" rx="6" fill="#0c0c0e" stroke="#ff8a1c" stroke-width="2"/>
+  <g font-size="13" font-weight="bold" xml:space="preserve"><text x="56" y="98" fill="#ffd9a0">███████╗ ██████╗ ██████╗  ██████╗ ███████╗</text><text x="56" y="109" fill="#ffc77a">██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝</text><text x="56" y="120" fill="#ffb454">█████╗  ██║   ██║██████╔╝██║  ███╗█████╗  </text><text x="56" y="131" fill="#ff9d3c">██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝  </text><text x="56" y="142" fill="#ff8a1c">██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗</text><text x="56" y="153" fill="#ff7a18">╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</text></g>
+  <text x="440" y="118" fill="#8a8a8a" font-size="14">v3.8.1 · panel · <tspan fill="#27c93f">●</tspan> mi-proyecto · enterprise</text>
+  <!-- nav -->
+  <rect x="36" y="184" width="250" height="528" rx="6" fill="#0c0c0e" stroke="#3a3a42"/>
+  <text x="58" y="225" fill="#cfd2d6" font-size="15">  ⌂ Inicio</text>
+  <text x="58" y="255" fill="#cfd2d6" font-size="15">  ◷ Monitoreo</text>
+  <rect x="44" y="270" width="234" height="30" rx="4" fill="#2a1c0e"/>
+  <text x="58" y="291" fill="#ffb454" font-size="15">▸ ⊞ Catálogo</text>
+  <text x="58" y="325" fill="#cfd2d6" font-size="15">  ✦ Skills</text>
+  <text x="58" y="355" fill="#cfd2d6" font-size="15">  ⎇ Hooks</text>
+  <text x="58" y="385" fill="#cfd2d6" font-size="15">  ▤ Templates</text>
+  <!-- content -->
+  <rect x="298" y="184" width="706" height="528" rx="6" fill="#0c0c0e" stroke="#ff8a1c" stroke-width="2"/>
+  <text x="318" y="216" fill="#e6e6e6" font-size="15" font-weight="bold">Catálogo · 51 ítems · 7 instalados</text>
+  <!-- filter input (FILTER mode) -->
+  <text x="318" y="250" font-size="14" fill="#6a6a72">filtro</text>
+  <rect x="318" y="258" width="668" height="32" rx="4" fill="#15110a" stroke="#ff8a1c"/>
+  <text x="332" y="280" font-size="15"><tspan fill="#ff8a1c">/ </tspan><tspan fill="#e6e6e6">pest</tspan><tspan fill="#ff8a1c">▌</tspan></text>
+  <!-- list -->
+  <rect x="316" y="306" width="670" height="30" rx="4" fill="#2a1c0e"/>
+  <text x="330" y="327" font-size="14"><tspan fill="#ff8a1c">› </tspan><tspan fill="#27c93f">✓ </tspan><tspan fill="#e6e6e6">laravel-pest      </tspan><tspan fill="#ffd166">[skill]</tspan><tspan fill="#27c93f"> [instalado]</tspan></text>
+  <text x="330" y="359" font-size="14"><tspan fill="#8a8a8a">  ○ </tspan><tspan fill="#cfd2d6">pest-plugin       </tspan><tspan fill="#ffd166">[skill]</tspan><tspan fill="#9aa0a6">    plugins y helpers de Pest</tspan></text>
+  <text x="330" y="391" font-size="14"><tspan fill="#8a8a8a">  ○ </tspan><tspan fill="#cfd2d6">pest-arch         </tspan><tspan fill="#27c93f">[profile]</tspan><tspan fill="#9aa0a6">  tests de arquitectura</tspan></text>
+  <text x="330" y="423" font-size="14"><tspan fill="#8a8a8a">  ○ </tspan><tspan fill="#cfd2d6">browser-test      </tspan><tspan fill="#ffd166">[skill]</tspan><tspan fill="#9aa0a6">    e2e en navegador + evidencia</tspan></text>
+  <line x1="330" y1="446" x2="972" y2="446" stroke="#2a2a30"/>
+  <!-- status line after action -->
+  <text x="330" y="476" font-size="14"><tspan fill="#27c93f">✓</tspan><tspan fill="#9aa0a6"> laravel-pest ya estaba instalado · agregado a project.yaml</tspan></text>
+  <!-- inline actions hint -->
+  <rect x="316" y="500" width="670" height="120" rx="6" fill="#0e0e11" stroke="#2a2a30"/>
+  <text x="332" y="528" fill="#cfd2d6" font-size="14" font-weight="bold">Acciones sobre el ítem seleccionado</text>
+  <text x="332" y="556" font-size="14"><tspan fill="#ffd166">[i]</tspan><tspan fill="#cfd2d6"> instalar      </tspan><tspan fill="#ffd166">[e]</tspan><tspan fill="#cfd2d6"> eval (calidad A–F)</tspan></text>
+  <text x="332" y="582" font-size="14"><tspan fill="#ffd166">[u]</tspan><tspan fill="#9aa0a6"> desinstalar   </tspan><tspan fill="#9aa0a6">(pide confirmación · modo CONFIRM)   </tspan></text>
+  <text x="332" y="608" font-size="14"><tspan fill="#ffd166">[/]</tspan><tspan fill="#9aa0a6"> filtrar       </tspan><tspan fill="#ffd166">[Space]</tspan><tspan fill="#9aa0a6"> multi-select (v2)</tspan></text>
+  <text x="318" y="660" fill="#6a6a72" font-size="13">El filtro `/` es un MODO explícito: no roba foco como el live-search viejo.</text>
+  <!-- footer -->
+  <text x="36" y="740" font-size="13"><tspan fill="#ff8a1c" font-weight="bold">FILTER </tspan><tspan fill="#8a8a8a"> escribí para filtrar · [Enter] bajar a la lista · [Esc] limpiar · [i] instalar</tspan></text>
+</svg>

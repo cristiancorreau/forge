@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="772" viewBox="0 0 1040 772" font-family="'SF Mono','Menlo','Consolas',monospace">
+  <defs><linearGradient id="ember" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd9a0"/><stop offset="1" stop-color="#ff7a18"/></linearGradient></defs>
+  <rect width="1040" height="772" fill="#0a0a0b"/>
+  <rect x="16" y="16" width="1008" height="740" rx="12" fill="#15151a" stroke="#2a2a30"/>
+  <circle cx="44" cy="44" r="7" fill="#ff5f56"/><circle cx="68" cy="44" r="7" fill="#ffbd2e"/><circle cx="92" cy="44" r="7" fill="#27c93f"/>
+  <text x="520" y="49" fill="#8a8a8a" font-size="14" text-anchor="middle">forge panel</text>
+  <!-- header -->
+  <rect x="36" y="72" width="968" height="96" rx="6" fill="#0c0c0e" stroke="#ff8a1c" stroke-width="2"/>
+  <g font-size="13" font-weight="bold" xml:space="preserve"><text x="56" y="98" fill="#ffd9a0">███████╗ ██████╗ ██████╗  ██████╗ ███████╗</text><text x="56" y="109" fill="#ffc77a">██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝</text><text x="56" y="120" fill="#ffb454">█████╗  ██║   ██║██████╔╝██║  ███╗█████╗  </text><text x="56" y="131" fill="#ff9d3c">██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝  </text><text x="56" y="142" fill="#ff8a1c">██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗</text><text x="56" y="153" fill="#ff7a18">╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</text></g>
+  <text x="440" y="118" fill="#8a8a8a" font-size="14">v3.8.1 · panel · <tspan fill="#27c93f">●</tspan> mi-proyecto · enterprise</text>
+  <!-- nav dimmed -->
+  <rect x="36" y="184" width="250" height="528" rx="6" fill="#0c0c0e" stroke="#3a3a42"/>
+  <g opacity="0.4" fill="#9aa0a6" font-size="15">
+    <text x="58" y="225">⌂ Inicio</text><text x="58" y="255">◇ Configuración</text>
+    <text x="58" y="285">◷ Monitoreo</text><text x="58" y="315">✦ Skills</text>
+    <text x="58" y="345">⊞ Catálogo</text>
+  </g>
+  <!-- content split: top breadcrumb, bottom log -->
+  <rect x="298" y="184" width="706" height="528" rx="6" fill="#0c0c0e" stroke="#ff8a1c" stroke-width="2"/>
+  <text x="318" y="214" fill="#8a8a8a" font-size="13">forge ⟩ Generar ⟩ generate</text>
+  <!-- runner header -->
+  <rect x="316" y="228" width="670" height="34" rx="4" fill="#15110a"/>
+  <text x="330" y="251" font-size="15"><tspan fill="#cfd2d6">$ forge generate --runtime all </tspan><tspan fill="#ffd166">--dry-run</tspan></text>
+  <text x="970" y="251" fill="#ffb454" font-size="14" text-anchor="end">● ejecutando…</text>
+  <!-- log -->
+  <g font-size="14">
+    <text x="330" y="290"><tspan fill="#27c93f">✓</tspan><tspan fill="#cfd2d6"> claude-code   .claude/CLAUDE.md            </tspan><tspan fill="#8a8a8a">(update)</tspan></text>
+    <text x="330" y="316"><tspan fill="#27c93f">✓</tspan><tspan fill="#cfd2d6"> claude-code   .claude/agents/*.md          </tspan><tspan fill="#8a8a8a">(12 files)</tspan></text>
+    <text x="330" y="342"><tspan fill="#27c93f">✓</tspan><tspan fill="#cfd2d6"> opencode      AGENTS.md                     </tspan><tspan fill="#8a8a8a">(create)</tspan></text>
+    <text x="330" y="368"><tspan fill="#27c93f">✓</tspan><tspan fill="#cfd2d6"> codex         AGENTS.md                     </tspan><tspan fill="#8a8a8a">(update)</tspan></text>
+    <text x="330" y="394"><tspan fill="#27c93f">✓</tspan><tspan fill="#cfd2d6"> cursor        .cursor/rules/forge.md         </tspan><tspan fill="#8a8a8a">(create)</tspan></text>
+    <text x="330" y="420"><tspan fill="#27c93f">✓</tspan><tspan fill="#cfd2d6"> copilot       .github/copilot-instructions   </tspan><tspan fill="#8a8a8a">(create)</tspan></text>
+    <text x="330" y="446"><tspan fill="#8a8a8a">○ kiro          (sin marcadores en el repo, se omite)</tspan></text>
+  </g>
+  <line x1="330" y1="466" x2="972" y2="466" stroke="#2a2a30"/>
+  <text x="330" y="492" font-size="14"><tspan fill="#9aa0a6">plan: </tspan><tspan fill="#e6e6e6">17 archivos</tspan><tspan fill="#9aa0a6"> · </tspan><tspan fill="#27c93f">0 destructivos</tspan><tspan fill="#9aa0a6"> · </tspan><tspan fill="#ffd166">dry-run</tspan></text>
+  <!-- done state -->
+  <text x="330" y="540" font-size="15"><tspan fill="#27c93f">✓ done (exit 0)</tspan></text>
+  <rect x="330" y="556" width="300" height="34" rx="4" fill="#1a1206" stroke="#ff8a1c"/>
+  <text x="344" y="579" font-size="14"><tspan fill="#ffd166">[Enter]</tspan><tspan fill="#cfd2d6"> aplicar de verdad</tspan></text>
+  <text x="650" y="579" font-size="14"><tspan fill="#9aa0a6">[Esc] descartar el plan</tspan></text>
+  <text x="318" y="650" fill="#6a6a72" font-size="13">Comandos que escriben corren primero en dry-run; solo aplican</text>
+  <text x="318" y="670" fill="#6a6a72" font-size="13">tras que ves el plan. (v2 del rediseño)</text>
+  <!-- footer -->
+  <text x="36" y="740" font-size="13"><tspan fill="#ff8a1c" font-weight="bold">LOG </tspan><tspan fill="#8a8a8a"> [Enter] aplicar · [Esc] cancelar · [↑↓] scroll · q bloqueado mientras corre</tspan></text>
+</svg>
