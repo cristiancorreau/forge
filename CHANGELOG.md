@@ -7,6 +7,17 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.8.3] — 2026-06-08
+
+> Segundo sprint del cockpit (SPEC-059): correr comandos desde el panel.
+
+### Agregado
+- **Command palette `:`** (SPEC-059 PR4) — desde `forge panel`, la tecla `:` abre un buscador fuzzy para correr cualquier comando por nombre (`rcm` → recommend). Los comandos puros (audit/doctor/validate/recommend/eval) corren in-panel; los interactivos (init/migrate/session) salen del panel y delegan (evita el conflicto de alt-screen). El modo PALETTE apaga el foco del fondo.
+- **Runner / log pane** (SPEC-059 PR3) — los comandos corren in-process y muestran su salida en un pane con buffer-ventana (acotado) y estado `✓ done` / `✗`.
+- Lógica en un módulo puro testeable `lib/panel-commands.ts` (`COMMANDS`, `fuzzyMatch`, `logBuffer`, `runPanelCommand`) con 38 tests.
+
+---
+
 ## [3.8.2] — 2026-06-08
 
 > Primer sprint del rediseño del panel a "cockpit" (SPEC-059, Epic #147).
