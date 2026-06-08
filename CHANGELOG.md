@@ -7,9 +7,9 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
-## [Sin publicar]
+## [3.5.0] — 2026-06-07
 
-> Mejoras destiladas del análisis de [luongnv89/asm](https://github.com/luongnv89/asm) (agent-skill-manager), alineadas con la tesis del board (compile+maintain, un motor, WHY anclado, read-only, cero telemetría, catálogo curado).
+> Mejoras destiladas del análisis de [luongnv89/asm](https://github.com/luongnv89/asm) (agent-skill-manager), alineadas con la tesis del board (compile+maintain, un motor, WHY anclado, read-only, cero telemetría, catálogo curado): scorer de calidad `forge eval`, two-gate en `add`, registry de runtimes (4→15), bundle exportable en `recommend` y mejoras de `panel`.
 
 ### Agregado
 - **`forge eval`** (SPEC-053) — scorer de calidad **determinístico** de un `SKILL.md` (sin LLM, offline): 7 categorías (structure, description, prompt-engineering, context-efficiency, safety, testability, naming), `overallScore` 0–100 y grade A–F, con notas accionables por categoría. `forge eval <path|owner/repo> [--json] [--fix]`; `--fix` aplica solo arreglos mecánicos reversibles (`.bak`), nunca toca prosa. Motor en `lib/skill-eval.ts`.
