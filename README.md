@@ -97,21 +97,20 @@ forge runs on **Node.js 20+**. With **Bun** you unlock the full-screen panel (Op
 npx @cristiancorreau/forge init
 ```
 
-**Install the global `forge` command:**
+**Install the global `forge` command** — pick your package manager:
 
 ```bash
-npm install -g @cristiancorreau/forge
+npm  install -g @cristiancorreau/forge   # npm
+pnpm add     -g @cristiancorreau/forge   # pnpm  (run `pnpm setup` once)
+bun  add     -g @cristiancorreau/forge   # bun   (needs ~/.bun/bin on PATH)
 ```
+
+> The full-screen `forge init` wizard (OpenTUI) runs under **Bun**; with npm/node it works the same via prompts. If you have forge installed with both bun **and** npm, whichever is first on your `PATH` wins — update that same manager (e.g. `bun add -g @cristiancorreau/forge@latest`).
 
 <details>
-<summary>Other package managers and PATH troubleshooting</summary>
+<summary>PATH troubleshooting</summary>
 
 <br>
-
-```bash
-pnpm add -g @cristiancorreau/forge     # pnpm  (requiere `pnpm setup` una vez)
-bun add -g @cristiancorreau/forge      # bun   (requiere ~/.bun/bin en el PATH)
-```
 
 Is the `forge` command not recognized after the global install? The global binaries directory is not on your `PATH`. `npx @cristiancorreau/forge <cmd>` always works without installing; for the bare command:
 
