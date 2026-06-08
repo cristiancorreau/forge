@@ -2,6 +2,7 @@ import * as p from '@clack/prompts';
 import chalk from 'chalk';
 import { detectStack } from './detect.js';
 import { SKILLS } from './catalog.js';
+import { runtimeIds } from './generators/registry.js';
 import { forgeBanner } from '../ui/banner.js';
 import { VERSION } from '../version.js';
 import {
@@ -234,7 +235,7 @@ export async function runWizard(): Promise<WizardResult | null> {
       '  ◆ Knowledge    specs, wiki, architecture.rules',
       '  ◆ Guardrail    hooks que protegen el scope',
       '  ◆ Delegation   agentes tier-1/2 acotados',
-      '  ◆ Distribution 1 config → 4 runtimes',
+      `  ◆ Distribution 1 config → ${runtimeIds().length} runtimes`,
       '',
       'El wizard te guía en ~8 pasos. Al terminar verás un resumen de',
       'lo instalado y cómo seguir trabajando.',

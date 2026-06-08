@@ -17,6 +17,7 @@ import {
 import type { WizardResult } from '../lib/wizard.js';
 import { tuiBorderChars } from '../ui/ascii.js';
 import { detectStack } from '../lib/detect.js';
+import { runtimeIds } from '../lib/generators/registry.js';
 import { VERSION } from '../version.js';
 import { FORGE_BANNER } from '../ui/banner.js';
 import { THEME, bannerRowColor } from '../ui/theme.js';
@@ -379,7 +380,7 @@ export async function runOpenTUIWizard(): Promise<WizardResult | null> {
         ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Knowledge'),    '    ', fg(C.muted)('specs, wiki, architecture.rules')],
         ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Guardrail'),    '    ', fg(C.muted)('hooks que protegen el scope')],
         ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Delegation'),   '   ', fg(C.muted)('agentes tier-1/2 acotados')],
-        ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Distribution'), ' ', fg(C.muted)('1 config → 4 runtimes')],
+        ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Distribution'), ' ', fg(C.muted)(`1 config → ${runtimeIds().length} runtimes`)],
         '',
         fg(C.green)('Al terminar abrirás un dashboard con todo lo instalado y'),
         fg(C.green)('cómo seguir trabajando.'),

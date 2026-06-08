@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.8.0] — 2026-06-08
+
+### Corregido
+- **Wizard/dashboard decían "4 runtimes"** — el texto de bienvenida de `forge init` (TUI OpenTUI y fallback `@clack`) y el dashboard post-install tenían el conteo de runtimes hardcodeado en "4". Ahora se deriva de `runtimeIds()` (registry), así que muestra el total real (**19**) y no se vuelve a desactualizar al agregar runtimes. La versión ya era dinámica (`VERSION`).
+
+---
+
 ## [3.7.0] — 2026-06-08
 
 > Meta-skills de autoría destiladas de asm: crear y mejorar skills guiado por `forge eval`.

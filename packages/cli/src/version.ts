@@ -1,2 +1,2 @@
 /** Single source of truth for the CLI version (kept in sync with package.json). */
-export const VERSION = '3.7.0';
+export const VERSION = '3.8.0';

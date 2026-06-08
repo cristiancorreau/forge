@@ -15,6 +15,7 @@ import {
   dim as otDim,
 } from '@opentui/core';
 import { VERSION } from '../version.js';
+import { runtimeIds } from '../lib/generators/registry.js';
 import { tuiBorderChars } from '../ui/ascii.js';
 import { FORGE_BANNER } from '../ui/banner.js';
 import { THEME, bannerRowColor } from '../ui/theme.js';
@@ -290,7 +291,7 @@ async function runDashboardLoop(renderer: any, data: DashboardData): Promise<voi
       ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Knowledge'),    '    ', fg(C.muted)('docs/specs, wiki, architecture.rules')],
       ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Guardrail'),    '    ', fg(C.muted)('hooks → impiden cambios fuera de scope')],
       ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Delegation'),   '   ', fg(C.muted)('agentes tier-1/2 con scope acotado')],
-      ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Distribution'), ' ', fg(C.muted)('1 project.yaml → 4 runtimes')],
+      ['  ', fg(C.cyan)('◆ '), boldCol(C.yellow, 'Distribution'), ' ', fg(C.muted)(`1 project.yaml → ${runtimeIds().length} runtimes`)],
       '',
       ['Modo: ', boldCol(C.green, data.mode), fg(C.muted)('   ·   Lenguaje: '), boldCol(C.white, data.language), fg(C.muted)('   ·   Runtime: '), boldCol(C.cyan, data.runtime)],
     ];
