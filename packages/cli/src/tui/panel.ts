@@ -7,12 +7,14 @@
  * shared with the @clack fallback and the test suite. See SPEC-033.
  *
  * SPEC-059 PR1: mode state machine + single KEYMAP source of truth.
+ * SPEC-059 PR3: runner / log pane (LOG mode).
+ * SPEC-059 PR4: command palette ':' (PALETTE mode).
  * Modes: NAV | FILTER | PALETTE | CONFIRM | LOG
  *   - NAV:     default; section navigation + all shortcuts
  *   - FILTER:  typing in the catalog/skills search input
- *   - PALETTE: (reserved for PR4 — command palette)
- *   - CONFIRM:  (reserved for PR4 — destructive action confirmation)
- *   - LOG:      (reserved for PR3 — runner log pane)
+ *   - PALETTE: command palette overlay (PR4)
+ *   - CONFIRM:  (reserved for future destructive action confirmation)
+ *   - LOG:      runner log pane (PR3)
  */
 // @ts-nocheck — OpenTUI types; Bun-only module
 import {
@@ -26,6 +28,10 @@ import {
   bold as otBold,
   dim as otDim,
 } from '@opentui/core';
+// ScrollBoxRenderable is used for the log pane when available (SPEC-059 PR3).
+// The import is intentionally deferred to avoid a hard failure on older builds.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _ScrollBoxRenderable: any;
 import { VERSION } from '../version.js';
 import { tuiBorderChars } from '../ui/ascii.js';
 import { FORGE_BANNER } from '../ui/banner.js';
@@ -40,6 +46,10 @@ import {
 import {
   searchCatalog, installItem,
 } from '../lib/catalog-install.js';
+import {
+  COMMANDS, fuzzyMatch, logBuffer, runPanelCommand,
+  type PanelCommand,
+} from '../lib/panel-commands.js';
 
 // ── Mode state machine ──────────────────────────────────────────────────────
 /** Panel interaction modes (SPEC-059). */
@@ -63,12 +73,16 @@ interface KeyBinding {
  */
 const KEYMAP: { global: KeyBinding[]; bySection: Record<string, KeyBinding[]> } = {
   global: [
-    { key: '↑↓',  label: 'Section',   action: 'nav-section',   modes: ['NAV'] },
-    { key: 'Tab', label: 'Focus',      action: 'cycle-focus',   modes: ['NAV', 'FILTER'] },
-    { key: 'Enter', label: 'Open/Install', action: 'confirm',   modes: ['NAV', 'FILTER'] },
-    { key: '?',   label: 'Help',       action: 'toggle-help',   modes: ['NAV'] },
-    { key: 'q/Esc', label: 'Quit',     action: 'quit',          modes: ['NAV'] },
-    { key: 'Esc', label: 'Back to nav', action: 'escape-filter', modes: ['FILTER'] },
+    { key: '↑↓',  label: 'Section',      action: 'nav-section',    modes: ['NAV'] },
+    { key: 'Tab', label: 'Focus',         action: 'cycle-focus',    modes: ['NAV', 'FILTER'] },
+    { key: 'Enter', label: 'Open/Install', action: 'confirm',       modes: ['NAV', 'FILTER'] },
+    { key: ':',   label: 'Command palette', action: 'open-palette', modes: ['NAV'] },
+    { key: '?',   label: 'Help',          action: 'toggle-help',    modes: ['NAV'] },
+    { key: 'q/Esc', label: 'Quit',        action: 'quit',           modes: ['NAV'] },
+    { key: 'Esc', label: 'Back to nav',   action: 'escape-filter',  modes: ['FILTER'] },
+    { key: 'Enter', label: 'Run command', action: 'palette-run',    modes: ['PALETTE'] },
+    { key: 'Esc', label: 'Close palette', action: 'escape-palette', modes: ['PALETTE'] },
+    { key: 'Esc', label: 'Close log',     action: 'escape-log',     modes: ['LOG'] },
   ],
   bySection: {
     catalog: [
@@ -85,6 +99,8 @@ const KEYMAP: { global: KeyBinding[]; bySection: Record<string, KeyBinding[]> } 
 /** Build the footer string for the current mode + section. */
 function buildFooterText(mode: PanelMode, section: string): string {
   if (mode === 'FILTER') return t('panel.footer.filter');
+  if (mode === 'PALETTE') return t('panel.footer.palette');
+  if (mode === 'LOG') return t('panel.footer.log');
   // NAV mode: show contextual bindings
   return t('panel.footer.nav');
 }
@@ -293,6 +309,186 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
 
   function toggleHelp(): void {
     if (helpOverlay) hideHelp(); else showHelp();
+  }
+
+  // ── Log pane (SPEC-059 PR3) ─────────────────────────────────────────────────
+  let logOverlay: any = null;
+  const LOG_MAX_LINES = Math.max(8, BODY_H - 6);
+
+  function showLogPane(title: string, lines: string[], ok: boolean): void {
+    hideLogPane();
+    const statusLine = ok ? t('panel.log.done') : t('panel.log.error');
+    const allLines = [t('panel.log.running'), '', ...lines, '', statusLine];
+    const OW = Math.min(W - 4, Math.max(60, W - 8));
+    const OH = Math.min(BODY_H - 2, allLines.length + 4);
+    const OL = Math.floor((W - OW) / 2);
+    const OT = HEADER_H + 1;
+    logOverlay = new BoxRenderable(renderer, {
+      id: 'log-overlay',
+      position: 'absolute',
+      left: OL, top: OT, width: OW, height: OH,
+      border: true,
+      customBorderChars: tuiBorderChars(),
+      borderStyle: 'single',
+      borderColor: ok ? C.green : C.red,
+      backgroundColor: C.bg,
+      flexDirection: 'column',
+      paddingLeft: 1,
+      paddingTop: 0,
+      title: ' ' + title + ' ',
+    });
+    // Limit to window using logBuffer
+    const buf = logBuffer(LOG_MAX_LINES);
+    buf.append(allLines);
+    const windowLines = buf.getWindow();
+    logOverlay.add(Text({
+      id: 'log-content',
+      content: buildLines(windowLines.map((l) =>
+        l === statusLine
+          ? (ok ? fg(C.green)(l) : fg(C.red)(l))
+          : fg(C.white)(l),
+      )),
+    }));
+    logOverlay.add(Text({
+      id: 'log-hint',
+      content: buildLines([dimLeaf('[Esc] ' + t('panel.footer.log'))]),
+    }));
+    renderer.root.add(logOverlay);
+    mode = 'LOG';
+    updateFooter();
+  }
+
+  function hideLogPane(): void {
+    if (!logOverlay) return;
+    try { renderer.root.remove('log-overlay'); } catch {}
+    logOverlay = null;
+  }
+
+  /**
+   * Run a panel command and show its output in the log pane.
+   * For delegated/writes-fs commands: close the panel with a shell hint.
+   */
+  async function runCommandInLog(cmd: PanelCommand): Promise<void> {
+    const panelCtx = { root, forgeRoot: forgeRootOrNull() };
+    const result = await runPanelCommand(cmd.id, panelCtx);
+    if ('delegate' in result && result.delegate) {
+      // Delegated: destroy panel + print hint
+      try { renderer.destroy(); } catch {}
+      restoreTerminal();
+      process.stdout.write(
+        '\n  ' + t('panel.log.delegate', { cmd: result.cmd }) + '\n\n',
+      );
+      return;
+    }
+    if ('needsApply' in result && result.needsApply) {
+      const lines = [t('panel.log.needs-apply', { cmd: result.cmd })];
+      showLogPane(cmd.name, lines, false);
+      return;
+    }
+    // Pure result
+    showLogPane(cmd.name, result.lines, result.ok);
+  }
+
+  // ── Command palette (SPEC-059 PR4) ──────────────────────────────────────────
+  let paletteOverlay: any = null;
+  let paletteInput: any = null;
+  let paletteSelect: any = null;
+  let paletteResults: PanelCommand[] = [...COMMANDS];
+
+  function buildPaletteOptions(cmds: PanelCommand[]) {
+    return cmds.map((c, i) => ({
+      name: `${c.name.padEnd(20)} [${c.kind}]  ${c.desc.slice(0, 45)}`,
+      value: String(i),
+      description: c.aliases.length ? 'aliases: ' + c.aliases.join(', ') : '',
+    }));
+  }
+
+  function showPalette(): void {
+    if (paletteOverlay) return;
+    // Blur background widgets to prevent focus leakage (SPEC-059 requirement)
+    try { catalogInput?.blur(); } catch {}
+    try { catalogSelect?.blur(); } catch {}
+    try { nav.blur(); } catch {}
+
+    const PW = Math.min(W - 4, Math.max(70, W - 8));
+    const PH = Math.min(H - HEADER_H - BOTTOM_H - 4, 20);
+    const PL = Math.floor((W - PW) / 2);
+    const PT = HEADER_H + 2;
+
+    paletteOverlay = new BoxRenderable(renderer, {
+      id: 'palette-overlay',
+      position: 'absolute',
+      left: PL, top: PT, width: PW, height: PH,
+      border: true,
+      customBorderChars: tuiBorderChars(),
+      borderStyle: 'single',
+      borderColor: C.cyan,
+      backgroundColor: C.bgPanel,
+      flexDirection: 'column',
+      paddingLeft: 1,
+      paddingTop: 0,
+      title: t('panel.palette.title'),
+    });
+
+    const inp = new InputRenderable(renderer, {
+      id: 'palette-input', width: PW - 4,
+      backgroundColor: C.bgInput, focusedBackgroundColor: C.bgFocus, focusedTextColor: C.cyan,
+      placeholder: t('panel.palette.placeholder'), placeholderColor: C.muted,
+    });
+    paletteOverlay.add(inp);
+    paletteInput = inp;
+
+    paletteResults = [...COMMANDS];
+    const sel = new SelectRenderable(renderer, {
+      id: 'palette-sel', width: PW - 4, height: Math.max(4, PH - 5),
+      options: buildPaletteOptions(paletteResults), selectedIndex: 0,
+      showScrollIndicator: true,
+      backgroundColor: C.bgPanel, focusedBackgroundColor: C.bgPanel, focusedTextColor: C.white,
+      selectedBackgroundColor: C.bgFocus, selectedTextColor: C.yellow,
+      showDescription: true, descriptionColor: C.muted, selectedDescriptionColor: C.cyan,
+    });
+    paletteOverlay.add(sel);
+    paletteSelect = sel;
+
+    renderer.root.add(paletteOverlay);
+    mode = 'PALETTE';
+    updateFooter();
+    inp.focus();
+
+    inp.on('input', () => {
+      paletteResults = fuzzyMatch(inp.value ?? '', COMMANDS);
+      try {
+        sel.options = buildPaletteOptions(paletteResults);
+      } catch {}
+    });
+    inp.on('change', () => {
+      paletteResults = fuzzyMatch(inp.value ?? '', COMMANDS);
+      try {
+        sel.options = buildPaletteOptions(paletteResults);
+      } catch {}
+    });
+  }
+
+  function hidePalette(): void {
+    if (!paletteOverlay) return;
+    try { paletteInput?.blur(); } catch {}
+    try { paletteSelect?.blur(); } catch {}
+    try { renderer.root.remove('palette-overlay'); } catch {}
+    paletteOverlay = null;
+    paletteInput = null;
+    paletteSelect = null;
+  }
+
+  async function runSelectedPaletteCommand(): Promise<void> {
+    const idx = paletteSelect?.getSelectedIndex?.() ?? 0;
+    const cmd = paletteResults[idx];
+    if (!cmd) return;
+    hidePalette();
+    mode = 'NAV';
+    // Restore nav focus before running (in case it's instant)
+    try { nav.focus(); } catch {}
+    updateFooter();
+    await runCommandInLog(cmd);
   }
 
   // ── Section renderers (unchanged from original) ────────────────────────────
@@ -567,14 +763,55 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     if (SECTIONS[i]?.value === 'catalog' && catalogInput) { try { catalogInput.focus(); } catch {} }
   });
 
-  // ── Key dispatcher — routed by mode (SPEC-059 PR1) ─────────────────────────
+  // ── Key dispatcher — routed by mode (SPEC-059 PR1/PR3/PR4) ───────────────────
   return new Promise<void>((resolve) => {
     const handler = (key: any) => {
       const name = (key?.name ?? '').toLowerCase();
+      const sequence = key?.sequence ?? '';
 
       // If the help overlay is open, only ? and Esc close it; everything else is blocked.
       if (helpOverlay) {
         if (name === '?' || name === 'escape') hideHelp();
+        return;
+      }
+
+      // ── Mode: LOG ────────────────────────────────────────────────────────────
+      if (mode === 'LOG') {
+        if (name === 'escape') {
+          hideLogPane();
+          mode = 'NAV';
+          try { nav.focus(); } catch {}
+          updateFooter();
+        }
+        // All keys are blocked in LOG mode except Esc
+        return;
+      }
+
+      // ── Mode: PALETTE ────────────────────────────────────────────────────────
+      if (mode === 'PALETTE') {
+        if (name === 'escape') {
+          hidePalette();
+          mode = 'NAV';
+          try { nav.focus(); } catch {}
+          updateFooter();
+          return;
+        }
+        if (name === 'return' || name === 'enter') {
+          // Run is async — fire and forget inside the handler
+          runSelectedPaletteCommand().catch(() => {});
+          return;
+        }
+        if (name === 'tab') {
+          // Tab cycles: input → select → input
+          const inFocused = paletteInput && paletteInput.focused;
+          if (inFocused) {
+            try { paletteInput.blur(); paletteSelect?.focus(); } catch {}
+          } else {
+            try { paletteSelect?.blur(); paletteInput?.focus(); } catch {}
+          }
+          return;
+        }
+        // All other keys are consumed by the focused palette widget naturally.
         return;
       }
 
@@ -622,6 +859,11 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
           toggleHelp();
           return;
         }
+        // ':' key opens the command palette (SPEC-059 PR4)
+        if (sequence === ':' || name === ':') {
+          showPalette();
+          return;
+        }
         if (name === 'tab') {
           const sec = getCurrentSection();
           if (sec === 'catalog' && catalogInput) {
@@ -635,8 +877,7 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
         return;
       }
 
-      // ── Modes PALETTE / CONFIRM / LOG: reserved for PR3/PR4 ────────────────
-      // These modes are declared but not yet active. Fall through to NAV behaviour.
+      // ── Mode: CONFIRM: reserved for future destructive action confirmation ──
     };
     onKey(renderer, handler);
   });
