@@ -155,7 +155,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["claude-code", "opencode", "codex", "kiro"]
+            "enum": ["claude-code", "opencode", "codex", "kiro", "cursor", "windsurf", "copilot", "gemini", "zed", "cline", "aider", "continue", "roo", "amp", "augment", "antigravity", "openclaw", "pi", "hermes"]
           },
           "uniqueItems": true,
           "minItems": 1

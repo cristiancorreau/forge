@@ -12,7 +12,7 @@
 
 ### Configura cualquier proyecto para trabajar con agentes de IA en un solo comando
 
-Un equipo de agentes, todos los runtimes — **Claude Code · OpenCode · Codex CLI · Kiro** desde un único `project.yaml`.
+Un equipo de agentes, todos los runtimes — **19 runtimes** (4 nativos + 15 editores basados en reglas) desde un único `project.yaml`.
 
 <br>
 
@@ -57,12 +57,12 @@ npx @cristiancorreau/forge init
 
 **forge** es un framework de _agentic development_ multi-runtime. Un solo comando analiza tu proyecto, instala un equipo de agentes especializados, cablea guardrails de seguridad y deja un `project.yaml` como **única fuente de verdad** desde la que se regenera la configuración nativa de cada runtime de IA.
 
-En vez de copiar y pegar reglas de agentes entre proyectos y entre herramientas, defines el equipo **una vez** y forge lo materializa para Claude Code, OpenCode, Codex CLI y Kiro.
+En vez de copiar y pegar reglas de agentes entre proyectos y entre herramientas, defines el equipo **una vez** y forge lo materializa para los 19 runtimes soportados.
 
 - 🤖 **Equipos de agentes multi-runtime** — 7 agentes universales + 19 profiles de stack
 - 📐 **Flujo SDD spec-first** — ninguna tarea de código sin una spec `APPROVED`
 - 🪝 **Guardrail hooks en JS puro** — branch-guard, debug, secretos y prod-safety, cero Python
-- 🔁 **Un `project.yaml`, cada CLI** — Claude Code, OpenCode, Codex, Kiro
+- 🔁 **Un `project.yaml`, cada CLI** — 19 runtimes: 4 nativos + 15 basados en reglas
 - ⚖️ **Compliance con veto vinculante** — revisor GDPR/LGPD/CCPA que bloquea el merge
 - 🔄 **Operaciones reversibles** — manifest SHA-256 + `--dry-run` para auditar cada cambio
 - 📚 **Knowledge base del proyecto** — wiki que ingesta, lintea y responde con citas
@@ -156,7 +156,7 @@ forge se organiza en cinco capas que van de la fuente de verdad a la materializa
 | 📚 **Knowledge** | Agentes + profiles de stack que aportan el saber de cada rol y framework. |
 | 🛡️ **Guardrail** | Enforcement de compliance y seguridad: hooks, branch-guard, detección de secretos. |
 | 🎯 **Delegation** | Orquestación y despacho de skills: qué agente atiende qué tarea. |
-| 📡 **Distribution** | Adapters de runtime que traducen la fuente de verdad a Claude Code, OpenCode, Codex y Kiro. |
+| 📡 **Distribution** | Adapters de runtime que traducen la fuente de verdad a 19 runtimes de IA (4 nativos + 15 basados en reglas). |
 
 ---
 
@@ -302,7 +302,7 @@ Sumado a los **guardrail hooks en JavaScript puro** (cero Python):
 | Agentes por tier (1/2/3) | ✅ | ❌ | ❌ |
 | Profiles de stack | ✅ 19 | 🚧 parcial | ❌ |
 | Skills invocables | ✅ 12 | ✅ foco central | 🚧 |
-| Multi-runtime | ✅ 4 runtimes | 🚧 sobre todo Claude Code | 🚧 |
+| Multi-runtime | ✅ 19 runtimes | 🚧 sobre todo Claude Code | 🚧 |
 | Compliance con veto (GDPR/LGPD/CCPA) | ✅ vinculante | ❌ | ❌ |
 | Guardrail hooks (branch/secrets/prod) | ✅ sin Python | ❌ | ❌ |
 | Knowledge base / wiki con citas | ✅ ingest/lint/query | ❌ | ❌ |

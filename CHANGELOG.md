@@ -7,6 +7,21 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.6.0] — 2026-06-08
+
+> Paridad de runtimes con asm: de 15 a **19 runtimes**, y documentación + landing alineadas.
+
+### Agregado
+- **4 runtimes nuevos** (SPEC-056) — `antigravity` (Google Antigravity), `openclaw`, `pi` y `hermes`, cada uno generando su archivo de reglas en `.<runtime>/rules/forge.md`. Forge pasa a soportar **19 runtimes** (4 nativos + 15 rules-based), igualando la cobertura de asm.
+
+### Corregido
+- **Desincronización del schema de runtimes** — el enum de `runtimes.active` en `core/schemas/project.schema.json` había quedado en los 4 runtimes nativos pese a que el registry ya tenía 15; `forge validate` rechazaba runtimes válidos. Ahora el enum lista los 19 y un test (`project.schema.json runtime enum matches runtimeIds()`) previene que vuelva a desincronizarse.
+
+### Cambiado
+- **Documentación y landing** — README (ES/EN), `docs/runtimes/` (ES/EN), descripciones de `manifest.json` / `package.json` y la landing actualizadas para reflejar los 19 runtimes (antes decían 4).
+
+---
+
 ## [3.5.0] — 2026-06-07
 
 > Mejoras destiladas del análisis de [luongnv89/asm](https://github.com/luongnv89/asm) (agent-skill-manager), alineadas con la tesis del board (compile+maintain, un motor, WHY anclado, read-only, cero telemetría, catálogo curado): scorer de calidad `forge eval`, two-gate en `add`, registry de runtimes (4→15), bundle exportable en `recommend` y mejoras de `panel`.

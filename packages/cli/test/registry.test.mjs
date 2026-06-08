@@ -56,9 +56,9 @@ before(async () => {
 });
 
 describe('forge runtime registry — SPEC-056', () => {
-  test('registry exports RUNTIMES array with at least 15 entries', () => {
+  test('registry exports RUNTIMES array with at least 19 entries', () => {
     assert.ok(Array.isArray(RUNTIMES), 'RUNTIMES must be an array');
-    assert.ok(RUNTIMES.length >= 15, `Expected >=15 runtimes, got ${RUNTIMES.length}`);
+    assert.ok(RUNTIMES.length >= 19, `Expected >=19 runtimes, got ${RUNTIMES.length}`);
   });
 
   test('runtimeIds() returns all IDs matching RUNTIMES', () => {
@@ -193,15 +193,29 @@ describe('forge runtime registry — SPEC-056', () => {
     }
   });
 
-  // Verify all 11 new rules-based runtimes are present.
-  test('all 11 new rules-based runtimes are registered', () => {
+  // Verify all 15 rules-based runtimes are present.
+  test('all 15 rules-based runtimes are registered', () => {
     const ids = runtimeIds();
     const expected = [
       'cursor', 'windsurf', 'copilot', 'gemini', 'zed',
       'cline', 'aider', 'continue', 'roo', 'amp', 'augment',
+      'antigravity', 'openclaw', 'pi', 'hermes',
     ];
     for (const id of expected) {
       assert.ok(ids.includes(id), `Rules-based runtime '${id}' must be in registry`);
     }
+  });
+
+  // Guard against the schema/registry drift that previously left the enum at 4.
+  test('project.schema.json runtime enum matches runtimeIds()', () => {
+    const schemaPath = join(DIST, '..', 'assets', 'core', 'schemas', 'project.schema.json');
+    const schema = JSON.parse(readFileSync(schemaPath, 'utf8'));
+    const enumIds = schema.properties.runtimes.properties.active.items.enum;
+    const ids = runtimeIds();
+    assert.deepStrictEqual(
+      [...enumIds].sort(),
+      [...ids].sort(),
+      'project.schema.json runtime enum must list exactly the registered runtime IDs',
+    );
   });
 });
