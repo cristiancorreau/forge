@@ -106,3 +106,45 @@ jobs:
       - name: Publish (OIDC, no token)
         working-directory: packages/cli
         run: npm publish --provenance --access public
+
+  # Mirror the npm release as a GitHub Release, using the matching CHANGELOG
+  # section as the body. Runs only after a successful npm publish.
+  github-release:
+    name: GitHub Release
+    needs: publish-npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract CHANGELOG section for this tag
+        id: notes
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # Pull the "## [VERSION]" block from CHANGELOG.md, up to the next "## [".
+          awk -v ver="$VERSION" '
+            $0 ~ ("^## \\[" ver "\\]") { capture=1; print; next }
+            capture && $0 ~ "^## \\[" { exit }
+            capture { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "No CHANGELOG entry for $VERSION; falling back to auto-generated notes." >&2
+            echo "fallback=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "----- release notes -----"; cat release-notes.md || true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ steps.notes.outputs.fallback }}" = "true" ]; then
+            gh release create "$GITHUB_REF_NAME" \
+              --title "v${{ steps.notes.outputs.version }}" \
+              --generate-notes --verify-tag
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "v${{ steps.notes.outputs.version }}" \
+              --notes-file release-notes.md --verify-tag
+          fi
