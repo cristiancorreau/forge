@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="772" viewBox="0 0 1040 772" font-family="'SF Mono','Menlo','Consolas',monospace">
+  <defs><linearGradient id="ember" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd9a0"/><stop offset="1" stop-color="#ff7a18"/></linearGradient></defs>
+  <rect width="1040" height="772" fill="#0a0a0b"/>
+  <rect x="16" y="16" width="1008" height="740" rx="12" fill="#15151a" stroke="#2a2a30"/>
+  <circle cx="44" cy="44" r="7" fill="#ff5f56"/><circle cx="68" cy="44" r="7" fill="#ffbd2e"/><circle cx="92" cy="44" r="7" fill="#27c93f"/>
+  <text x="520" y="49" fill="#8a8a8a" font-size="14" text-anchor="middle">forge panel</text>
+  <g opacity="0.3">
+    <rect x="36" y="72" width="968" height="96" rx="6" fill="#0c0c0e" stroke="#ff8a1c" stroke-width="2"/>
+    <g font-size="13" font-weight="bold" xml:space="preserve"><text x="56" y="98" fill="#ffd9a0">███████╗ ██████╗ ██████╗  ██████╗ ███████╗</text><text x="56" y="109" fill="#ffc77a">██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝</text><text x="56" y="120" fill="#ffb454">█████╗  ██║   ██║██████╔╝██║  ███╗█████╗  </text><text x="56" y="131" fill="#ff9d3c">██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝  </text><text x="56" y="142" fill="#ff8a1c">██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗</text><text x="56" y="153" fill="#ff7a18">╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</text></g>
+    <rect x="36" y="184" width="250" height="528" rx="6" fill="#0c0c0e" stroke="#3a3a42"/>
+    <rect x="298" y="184" width="706" height="528" rx="6" fill="#0c0c0e" stroke="#ff8a1c" stroke-width="2"/>
+  </g>
+  <!-- help overlay -->
+  <rect x="150" y="160" width="740" height="452" rx="8" fill="#0c0c0e" stroke="#ff8a1c" stroke-width="2"/>
+  <text x="174" y="200" fill="#ffb454" font-size="17" font-weight="bold">Atajos de teclado</text>
+  <text x="866" y="200" fill="#8a8a8a" font-size="14" text-anchor="end">[?] cerrar</text>
+  <line x1="174" y1="214" x2="866" y2="214" stroke="#2a2a30"/>
+  <!-- col 1 global -->
+  <text x="174" y="248" fill="#6a6a72" font-size="13">GLOBAL</text>
+  <g font-size="14">
+    <text x="174" y="278"><tspan fill="#ffd166">:</tspan><tspan fill="#9aa0a6">      command palette</tspan></text>
+    <text x="174" y="304"><tspan fill="#ffd166">/</tspan><tspan fill="#9aa0a6">      filtrar la lista</tspan></text>
+    <text x="174" y="330"><tspan fill="#ffd166">?</tspan><tspan fill="#9aa0a6">      esta ayuda</tspan></text>
+    <text x="174" y="356"><tspan fill="#ffd166">1–7</tspan><tspan fill="#9aa0a6">    saltar a sección</tspan></text>
+    <text x="174" y="382"><tspan fill="#ffd166">Tab</tspan><tspan fill="#9aa0a6">    siguiente sección</tspan></text>
+    <text x="174" y="408"><tspan fill="#ffd166">j/k</tspan><tspan fill="#9aa0a6">    bajar / subir</tspan></text>
+    <text x="174" y="434"><tspan fill="#ffd166">r</tspan><tspan fill="#9aa0a6">      refrescar sección</tspan></text>
+    <text x="174" y="460"><tspan fill="#ffd166">o</tspan><tspan fill="#9aa0a6">      abrir project.yaml</tspan></text>
+    <text x="174" y="486"><tspan fill="#ffd166">q</tspan><tspan fill="#9aa0a6">      salir</tspan></text>
+  </g>
+  <line x1="520" y1="230" x2="520" y2="560" stroke="#2a2a30"/>
+  <!-- col 2 contextual -->
+  <text x="552" y="248" fill="#6a6a72" font-size="13">SKILLS / CATÁLOGO</text>
+  <g font-size="14">
+    <text x="552" y="278"><tspan fill="#ffd166">i</tspan><tspan fill="#9aa0a6">      instalar</tspan></text>
+    <text x="552" y="304"><tspan fill="#ffd166">u</tspan><tspan fill="#9aa0a6">      desinstalar (confirm)</tspan></text>
+    <text x="552" y="330"><tspan fill="#ffd166">e</tspan><tspan fill="#9aa0a6">      eval calidad (A–F)</tspan></text>
+    <text x="552" y="356"><tspan fill="#ffd166">Space</tspan><tspan fill="#9aa0a6">  multi-select (v2)</tspan></text>
+  </g>
+  <text x="552" y="402" fill="#6a6a72" font-size="13">CALIDAD / CONFIG</text>
+  <g font-size="14">
+    <text x="552" y="432"><tspan fill="#ffd166">a</tspan><tspan fill="#9aa0a6">      audit</tspan></text>
+    <text x="552" y="458"><tspan fill="#ffd166">d</tspan><tspan fill="#9aa0a6">      doctor</tspan></text>
+    <text x="552" y="484"><tspan fill="#ffd166">g</tspan><tspan fill="#9aa0a6">      generate (compilar)</tspan></text>
+    <text x="552" y="510"><tspan fill="#ffd166">v</tspan><tspan fill="#9aa0a6">      validate</tspan></text>
+  </g>
+  <line x1="174" y1="540" x2="866" y2="540" stroke="#2a2a30"/>
+  <text x="174" y="572" fill="#6a6a72" font-size="13">El footer y este overlay leen el MISMO KEYMAP — nunca se desincronizan.</text>
+  <text x="520" y="600" fill="#8a8a8a" font-size="14" text-anchor="middle">[?] o [Esc] para cerrar</text>
+  <text x="36" y="740" fill="#8a8a8a" font-size="13">[?] cerrar ayuda</text>
+</svg>
