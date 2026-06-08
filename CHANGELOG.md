@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.8.5] — 2026-06-08
+
+### Corregido
+- **Recuadros desalineados con contenido de color** — `ui/box.ts` calculaba el ancho y el padding con `.length`, que cuenta los códigos de color ANSI (invisibles). Como cada línea traía distinta cantidad de color, el borde derecho se corría y la decoración "se descuadraba" (visible en `forge wiki status` y `forge skills`, sobre todo en Windows PowerShell). Ahora se mide el **ancho visible** (sin ANSI) para el ancho y el relleno. Afecta a los 12 comandos que usan recuadros (skills, wiki, doctor, audit, recommend, migrate, scaffold, adopt, teardown, session, aitmpl-search, panel). Test guardián que verifica que todas las líneas del recuadro tienen el mismo ancho visible.
+
+---
+
 ## [3.8.4] — 2026-06-08
 
 > Tercer sprint del cockpit (SPEC-059) — completa el rediseño v1 de `forge panel`.
