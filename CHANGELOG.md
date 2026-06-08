@@ -7,6 +7,15 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.7.0] — 2026-06-08
+
+> Meta-skills de autoría destiladas de asm: crear y mejorar skills guiado por `forge eval`.
+
+### Agregado
+- **`forge-skill-creator`** y **`forge-skill-improver`** (SPEC-058) — dos skills nuevas (categoría Desarrollo, instalables vía catálogo) que cierran el ciclo de autoría sobre `forge eval`: `forge-skill-creator` guía la creación de un `SKILL.md` desde cero e itera hasta pasar el gate de calidad; `forge-skill-improver` lleva un `SKILL.md` existente al estándar corrigiendo la categoría más débil por vuelta (con `forge eval --fix` para los arreglos mecánicos reversibles). Delegan en el scorer existente (cero scoring nuevo) y **pasan su propio gate** (dogfooding verificado por test: grade A).
+
+---
+
 ## [3.6.0] — 2026-06-08
 
 > Paridad de runtimes con asm: de 15 a **19 runtimes**, y documentación + landing alineadas.
