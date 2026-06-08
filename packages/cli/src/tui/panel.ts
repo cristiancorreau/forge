@@ -13,7 +13,7 @@ import {
   Text,
   SelectRenderable,
   InputRenderable,
-  t,
+  t as otText,
   fg,
   bold as otBold,
   dim as otDim,
@@ -59,8 +59,8 @@ const buildLines = (rows: Row[]) => {
   });
   strings.push(pending);
   (strings as any).raw = [...strings];
-  if (values.length === 0) return t`${pending}`;
-  return (t as any)(strings, ...values);
+  if (values.length === 0) return otText`${pending}`;
+  return (otText as any)(strings, ...values);
 };
 const o = (name: string, value: string, description = '') => ({ name, value, description });
 
@@ -306,16 +306,15 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
   }
 
   // ── Section: Catálogo (search input + results Select + install on Enter) ──
-  const TYPE_COL: Record<string, string> = { skill: C.cyan, profile: C.yellow, template: C.green };
-
+  // SelectRenderable option names must be plain strings — the widget styles the
+  // selected row itself. Interpolating fg()/styled fragments here renders as
+  // "[object Object]" (regression fixed: keep tag/badge as plain text).
   function refreshCatalogResults(query: string) {
     catalogResults = searchCatalog(forgeRoot, root, query);
     const options = catalogResults.map((it: any, i: number) => {
       const mark = it.installed ? '✓ ' : '  ';
-      const typeColors: Record<string, string> = { skill: C.cyan, profile: C.yellow, template: C.green };
-      const typeCol = typeColors[it.type] ?? C.muted;
-      const tag = fg(typeCol)('[' + it.type + ']');
-      const installedBadge = it.installed ? fg(C.green)(' [instalado]') : '';
+      const tag = '[' + it.type + ']';
+      const installedBadge = it.installed ? ' [instalado]' : '';
       const desc = it.description.length > 80 ? it.description.slice(0, 79) + '…' : it.description;
       const state = it.installed ? ' · ya instalado' : '';
       return o(`${mark}${it.label}  ${tag}${installedBadge}`, String(i), desc + state);
