@@ -9,6 +9,7 @@ import { runAudit } from './audit.js';
 import { runDoctor } from './doctor.js';
 import {
   searchSkills, listInstalledHooks, listTemplates, getConfigSummary, getSkillCategories,
+  getProjectState,
   type SkillRow,
 } from '../lib/panel-data.js';
 import {
@@ -85,6 +86,38 @@ function sectionTitle(title: string, subtitle = ''): void {
 }
 
 // ─── Node fallback (@clack/prompts) ───────────────────────────────────────────
+
+/**
+ * Print the Home section (SPEC-059 PR6) in the @clack fallback.
+ * Uses getProjectState with no audit/doctor (optimistic, fast) for the snapshot.
+ */
+function printHomeSection(root: string): void {
+  const state = getProjectState(root);
+  const nextActionMap: Record<string, string> = {
+    empty:             'forge init — inicializar forge en este proyecto',
+    brownfield:        'forge adopt — incorporar forge a este codebase',
+    configured:        'forge recommend — obtener recomendaciones de skills',
+    healthy:           'forge audit — ejecutar una auditoría del proyecto',
+    'needs-attention': 'forge doctor — diagnosticar problemas del entorno',
+  };
+  const stateLabelMap: Record<string, string> = {
+    empty:             'Proyecto no configurado',
+    brownfield:        'Proyecto existente — forge no configurado',
+    configured:        'Configurado — sin skills activas',
+    healthy:           'Saludable',
+    'needs-attention': 'Requiere atención',
+  };
+  const cfg = getConfigSummary(root);
+  const lines: string[] = [];
+  lines.push(`Estado: ${stateLabelMap[state] ?? state}`);
+  lines.push(`Próxima acción: ${nextActionMap[state] ?? ''}`);
+  lines.push('');
+  lines.push(bold('Pulso del proyecto'));
+  lines.push(`  Skills activas: ${cfg.found ? cfg.skills.length : '—'}`);
+  lines.push(`  Runtimes:       ${cfg.found ? (cfg.runtimes.join(', ') || '—') : '—'}`);
+  lines.push(`  Proyecto:       ${cfg.found ? cfg.name : '—'}`);
+  console.log(box('Inicio', lines));
+}
 
 function printConfigSection(root: string): void {
   const c = getConfigSummary(root);
@@ -406,6 +439,8 @@ function printTemplatesSection(): void {
  */
 function printStaticSnapshot(root: string): number {
   printPanelBanner('snapshot (sin TTY interactiva)');
+  printHomeSection(root);
+  console.log('');
   printConfigSection(root);
   console.log('');
   printMonitorSection(root);
@@ -440,6 +475,7 @@ async function runClackFallback(root: string): Promise<number> {
     const choice = await p.select({
       message: '¿Qué querés ver?',
       options: [
+        { value: 'home',      label: 'Inicio',        hint: 'estado del proyecto + próxima acción' },
         { value: 'config',    label: 'Configuración', hint: 'resumen de project.yaml' },
         { value: 'monitor',   label: 'Monitoreo',     hint: 'audit + doctor' },
         { value: 'skills',    label: 'Skills',        hint: 'buscar en el catálogo' },
@@ -455,6 +491,7 @@ async function runClackFallback(root: string): Promise<number> {
 
     console.log('');
     switch (choice) {
+      case 'home':      printHomeSection(root); break;
       case 'config':    printConfigSection(root); break;
       case 'monitor':   printMonitorSection(root); break;
       case 'skills':    await skillsSearchSection(root); break;
