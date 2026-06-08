@@ -1,14 +1,17 @@
 /**
  * forge interactive panel — OpenTUI full-screen UI (Bun runtime only).
  *
- * Five navigable sections (Configuración, Monitoreo, Skills, Hooks, Templates)
- * built on the same panel pattern as tui/dashboard.ts. All data comes from the
- * non-interactive layer (lib/panel-data.ts + runAudit/runDoctor) so the logic is
- * shared with the @clack fallback and the test suite. See SPEC-033.
+ * Seven navigable sections (Inicio, Configuración, Monitoreo, Skills, Catálogo,
+ * Hooks, Templates) built on the same panel pattern as tui/dashboard.ts. All
+ * data comes from the non-interactive layer (lib/panel-data.ts + runAudit/
+ * runDoctor) so the logic is shared with the @clack fallback and the test suite.
+ * See SPEC-033.
  *
  * SPEC-059 PR1: mode state machine + single KEYMAP source of truth.
  * SPEC-059 PR3: runner / log pane (LOG mode).
  * SPEC-059 PR4: command palette ':' (PALETTE mode).
+ * SPEC-059 PR5: inline filter '/' + install action 'i'.
+ * SPEC-059 PR6: contextual Home section (render-then-hydrate).
  * Modes: NAV | FILTER | PALETTE | CONFIRM | LOG
  *   - NAV:     default; section navigation + all shortcuts
  *   - FILTER:  typing in the catalog/skills search input
@@ -42,6 +45,7 @@ import { runAudit } from '../commands/audit.js';
 import { runDoctor } from '../commands/doctor.js';
 import {
   searchSkills, listInstalledHooks, listTemplates, getConfigSummary,
+  detectBrownfield, getProjectState, type ProjectState,
 } from '../lib/panel-data.js';
 import {
   searchCatalog, installItem,
@@ -86,19 +90,32 @@ const KEYMAP: { global: KeyBinding[]; bySection: Record<string, KeyBinding[]> } 
   ],
   bySection: {
     catalog: [
-      { key: 'Type', label: 'Filter',    action: 'filter-input', modes: ['NAV'] },
+      { key: '/',   label: 'Filter',      action: 'open-filter',   modes: ['NAV'] },
       { key: 'Tab',  label: 'input→list→nav', action: 'cycle-focus', modes: ['NAV', 'FILTER'] },
-      { key: 'Enter', label: 'Install',  action: 'install-item', modes: ['NAV', 'FILTER'] },
+      { key: 'Enter', label: 'Install',   action: 'install-item',  modes: ['NAV', 'FILTER'] },
+      { key: 'i',   label: 'Install selected', action: 'install-inline', modes: ['NAV', 'FILTER'] },
     ],
     skills: [
-      { key: 'Type', label: 'Filter', action: 'filter-input', modes: ['NAV'] },
+      { key: '/', label: 'Filter', action: 'open-filter', modes: ['NAV'] },
+    ],
+    hooks: [
+      { key: '/', label: 'Filter', action: 'open-filter', modes: ['NAV'] },
+    ],
+    home: [
+      { key: 'Enter', label: 'Run suggested action', action: 'home-run', modes: ['NAV'] },
     ],
   },
 };
 
 /** Build the footer string for the current mode + section. */
 function buildFooterText(mode: PanelMode, section: string): string {
-  if (mode === 'FILTER') return t('panel.footer.filter');
+  if (mode === 'FILTER') {
+    // For list sections (catalog/skills/hooks) show the inline action hint.
+    if (section === 'catalog' || section === 'skills' || section === 'hooks') {
+      return t('panel.footer.filter.list');
+    }
+    return t('panel.footer.filter');
+  }
   if (mode === 'PALETTE') return t('panel.footer.palette');
   if (mode === 'LOG') return t('panel.footer.log');
   // NAV mode: show contextual bindings
@@ -215,7 +232,9 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
   });
   renderer.root.add(navPanel);
 
+  // Home is the first section (index 0) — SPEC-059 PR6.
   const SECTIONS = [
+    o(t('panel.sec.home'),      'home',      t('panel.sec.home.desc')),
     o(t('panel.sec.config'),    'config',    t('panel.sec.config.desc')),
     o(t('panel.sec.monitor'),   'monitor',   t('panel.sec.monitor.desc')),
     o(t('panel.sec.skills'),    'skills',    t('panel.sec.skills.desc')),
@@ -491,6 +510,30 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     await runCommandInLog(cmd);
   }
 
+  // ── Home state (SPEC-059 PR6) ──────────────────────────────────────────────
+  // Render-then-hydrate: homeState starts as null (loading) and is populated
+  // after the async audit/doctor calls resolve.
+  let homeProjectState: ProjectState | null = null;
+  let homeAuditLoaded = false;
+
+  async function hydrateHomeState(): Promise<void> {
+    if (homeAuditLoaded) return;
+    homeAuditLoaded = true;
+    try {
+      // Run audit + doctor after initial render to avoid startup latency.
+      const auditReport = runAudit(root);
+      const doctorReport = runDoctor(root);
+      homeProjectState = getProjectState(root, auditReport, doctorReport);
+    } catch {
+      homeProjectState = getProjectState(root);
+    }
+  }
+
+  // ── Inline filter state (SPEC-059 PR5) ────────────────────────────────────
+  // Per-section filter query kept between renders within the same section visit.
+  let filterQuery = '';
+  let filterInput: any = null;
+
   // ── Section renderers (unchanged from original) ────────────────────────────
   let catalogInput: any = null;
   let catalogSelect: any = null;
@@ -593,6 +636,55 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     return rows;
   }
 
+  /**
+   * Re-render the Hooks section with an inline filter input (SPEC-059 PR5).
+   * The filter is applied as a substring match against hook name/event/description.
+   */
+  function renderHooksWithFilter(): void {
+    clearContent();
+    filterInput = null;
+    content.add(Text({ id: 'hooks-title', content: buildLines([
+      boldCol(C.white, 'Hooks'),
+      dimLeaf('Filtrar hooks — [Esc] volver al nav'),
+    ]) }));
+
+    const inp = new InputRenderable(renderer, {
+      id: 'hooks-filter', width: RIGHT_W - 4,
+      backgroundColor: C.bgInput, focusedBackgroundColor: C.bgFocus, focusedTextColor: C.cyan,
+      placeholder: t('panel.filter.placeholder'), placeholderColor: C.muted,
+      value: filterQuery,
+    });
+    content.add(inp);
+    filterInput = inp;
+
+    const rebuildHookRows = (q: string) => {
+      for (const child of [...content.getChildren()]) {
+        if (child.id === 'hooks-results') { try { content.remove(child.id); } catch {} }
+      }
+      const hooks = listInstalledHooks(root, forgeRoot);
+      const filtered = q
+        ? hooks.filter(h =>
+            h.hook.toLowerCase().includes(q.toLowerCase()) ||
+            h.event.toLowerCase().includes(q.toLowerCase()) ||
+            h.description.toLowerCase().includes(q.toLowerCase()),
+          )
+        : hooks;
+      const rows: Row[] = filtered.length === 0
+        ? [fg(C.muted)('Sin resultados.')]
+        : filtered.map(h => {
+            const mark = h.installed ? fg(C.green)('✔ ') : fg(C.muted)('○ ');
+            return ['  ', mark, boldCol(C.white, h.hook.padEnd(22)), fg(C.cyan)(h.event),
+              h.matcher ? dimLeaf('  matcher=' + h.matcher) : '', fg(C.muted)('  [' + h.mode + ']')];
+          });
+      content.add(Text({ id: 'hooks-results', content: buildLines(fitRows(rows, 4)) }));
+    };
+
+    inp.on('input', () => { filterQuery = inp.value ?? ''; rebuildHookRows(filterQuery); });
+    inp.on('change', () => { filterQuery = inp.value ?? ''; rebuildHookRows(filterQuery); });
+    rebuildHookRows(filterQuery);
+    inp.focus();
+  }
+
   // ── Section: Templates ──
   function rowsTemplates(): Row[] {
     const templates = listTemplates(forgeRoot);
@@ -607,6 +699,89 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
       rows.push(['  ', fg(C.white)(tpl.name.padEnd(26)), dimLeaf(tpl.description)]);
     }
     return rows;
+  }
+
+  // ── Section: Home (SPEC-059 PR6) ─────────────────────────────────────────
+  /**
+   * Map project state to the key i18n action string.
+   */
+  function stateToActionKey(state: ProjectState): string {
+    switch (state) {
+      case 'empty':           return 'panel.home.action.init';
+      case 'brownfield':      return 'panel.home.action.adopt';
+      case 'configured':      return 'panel.home.action.recommend';
+      case 'healthy':         return 'panel.home.action.audit';
+      case 'needs-attention': return 'panel.home.action.doctor';
+    }
+  }
+
+  function stateToLabelKey(state: ProjectState): string {
+    switch (state) {
+      case 'empty':           return 'panel.home.state.empty';
+      case 'brownfield':      return 'panel.home.state.brownfield';
+      case 'configured':      return 'panel.home.state.configured';
+      case 'healthy':         return 'panel.home.state.healthy';
+      case 'needs-attention': return 'panel.home.state.needs-attention';
+    }
+  }
+
+  function rowsHome(): Row[] {
+    const state = homeProjectState ?? getProjectState(root);
+    const stateLabel = t(stateToLabelKey(state));
+    const nextAction = t(stateToActionKey(state));
+
+    const stateColor = (s: ProjectState): string => {
+      if (s === 'healthy') return C.green;
+      if (s === 'needs-attention') return C.red;
+      if (s === 'configured') return C.cyan;
+      if (s === 'brownfield') return C.yellow;
+      return C.muted;
+    };
+
+    const rows: Row[] = [
+      boldCol(C.white, t('panel.sec.home')),
+      '',
+      ['  ', fg(C.muted)(t('panel.home.next') + ': '), fg(stateColor(state))(stateLabel)],
+      '',
+      ['  ', boldCol(C.cyan, '→ '), fg(C.white)(nextAction)],
+      '',
+      dimLeaf('─'.repeat(Math.max(10, RIGHT_W - 6))),
+      '',
+      boldCol(C.cyan, t('panel.home.pulse')),
+    ];
+
+    // Pulse block: show key config metrics.
+    rows.push(['  ', fg(C.muted)('skills active  '), fg(C.white)(cfg.found ? String(cfg.skills.length) : '—')]);
+    rows.push(['  ', fg(C.muted)('runtimes       '), fg(C.white)(cfg.found ? (cfg.runtimes.join(', ') || '—') : '—')]);
+    rows.push(['  ', fg(C.muted)('project        '), fg(C.white)(cfg.found ? cfg.name : '—')]);
+
+    // If audit hasn't loaded yet, show a placeholder.
+    if (!homeAuditLoaded) {
+      rows.push('');
+      rows.push(dimLeaf(t('panel.home.loading')));
+    }
+
+    rows.push('');
+    rows.push(['  ', dimLeaf('[Enter] '), dimLeaf(nextAction)]);
+    rows.push(['  ', dimLeaf('[:] '), dimLeaf('command palette — run any command')]);
+
+    return rows;
+  }
+
+  async function renderHomeSection(): Promise<void> {
+    clearContent();
+    // Initial render with cfg (synchronous, fast).
+    content.add(Text({ id: 'home-content', content: buildLines(fitRows(rowsHome())) }));
+    updateFooter();
+
+    // Hydrate with audit+doctor in the background — update when done.
+    hydrateHomeState().then(() => {
+      // Re-render after audit loaded if the home section is still active.
+      if (getCurrentSection() === 'home') {
+        try { content.remove('home-content'); } catch {}
+        content.add(Text({ id: 'home-content', content: buildLines(fitRows(rowsHome())) }));
+      }
+    }).catch(() => {});
   }
 
   // ── Section: Skills (with live search input) ──
@@ -635,15 +810,39 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     content.add(Text({ id: 'skills-results', content: buildLines(fitRows([...rows, '', footer], 4)) }));
   }
 
-  function renderSkillsSection() {
+  function renderSkillsSection(withFilter = false) {
     clearContent();
+    filterInput = null;
+    const query = withFilter ? filterQuery : '';
     content.add(Text({ id: 'skills-title', content: buildLines([
       boldCol(C.white, 'Skills'),
-      dimLeaf('Skills del catálogo. Para instalar uno, usá la sección Catálogo.'),
+      dimLeaf(withFilter
+        ? 'Filtrar skills — [Esc] volver al nav'
+        : 'Skills del catálogo. Presioná [/] para filtrar.'),
     ]) }));
-    // The live search input was removed (it stole focus / broke navigation).
-    // The section now just lists every skill.
-    renderSkills('');
+
+    if (withFilter) {
+      // Add the filter input in FILTER mode.
+      const inp = new InputRenderable(renderer, {
+        id: 'skills-filter', width: RIGHT_W - 4,
+        backgroundColor: C.bgInput, focusedBackgroundColor: C.bgFocus, focusedTextColor: C.cyan,
+        placeholder: t('panel.filter.placeholder'), placeholderColor: C.muted,
+        value: filterQuery,
+      });
+      content.add(inp);
+      filterInput = inp;
+      inp.on('input', () => {
+        filterQuery = inp.value ?? '';
+        renderSkills(filterQuery);
+      });
+      inp.on('change', () => {
+        filterQuery = inp.value ?? '';
+        renderSkills(filterQuery);
+      });
+      inp.focus();
+    }
+
+    renderSkills(query);
   }
 
   // ── Section: Catálogo (search input + results Select + install on Enter) ──
@@ -669,9 +868,17 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     const idx = catalogSelect?.getSelectedIndex?.() ?? -1;
     const it = catalogResults[idx];
     if (!it) return;
-    if (it.installed) { catalogStatus = `${it.label} ya estaba instalado.`; updateCatalogStatus(); return; }
+    if (it.installed) {
+      catalogStatus = t('panel.install.already', { label: it.label });
+      updateCatalogStatus();
+      return;
+    }
     const res = installItem(root, forgeRoot, { type: it.type, id: it.id });
-    catalogStatus = (res.ok ? '✓ ' : '✗ ') + res.message;
+    if (res.ok) {
+      catalogStatus = t('panel.install.ok', { label: it.label });
+    } else {
+      catalogStatus = t('panel.install.fail', { msg: res.message });
+    }
     // Refresh config summary + installed flags after a successful install.
     if (res.ok) {
       try { Object.assign(cfg, getConfigSummary(root)); } catch {}
@@ -688,8 +895,21 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     const installed = catalogResults.filter((r: any) => r.installed).length;
     content.add(Text({ id: 'catalog-status', content: buildLines([
       catalogStatus ? fg(catalogStatus.startsWith('✓') ? C.green : C.red)(catalogStatus) : '',
-      dimLeaf(`${catalogResults.length} ítem(s) · ${installed} instalado(s)   [Enter] instalar el seleccionado`),
+      dimLeaf(`${catalogResults.length} ítem(s) · ${installed} instalado(s)   [/] filtrar  [i] instalar  [Enter] instalar`),
     ]) }));
+  }
+
+  /**
+   * Open filter mode for the catalog: focuses the catalog input.
+   * Called when '/' is pressed in NAV mode while in the catalog section.
+   * This is safe: FILTER is an explicit mode so no focus leak (SPEC-059 PR5).
+   */
+  function openCatalogFilter(): void {
+    if (catalogInput) {
+      try { catalogInput.focus(); } catch {}
+      mode = 'FILTER';
+      updateFooter();
+    }
   }
 
   function renderCatalogSection() {
@@ -697,7 +917,7 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     catalogStatus = '';
     content.add(Text({ id: 'catalog-title', content: buildLines([
       boldCol(C.white, 'Catálogo — buscar e instalar'),
-      dimLeaf('Skills, profiles y templates. Escribí para filtrar; Enter instala el seleccionado.'),
+      dimLeaf('Skills, profiles y templates. [/] filtrar; [i] instalar seleccionado.'),
     ]) }));
     const input = new InputRenderable(renderer, {
       id: 'catalog-input', width: RIGHT_W - 4,
@@ -733,8 +953,11 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
   function renderSection(idx: number) {
     // When switching sections, always reset to NAV mode first.
     mode = 'NAV';
+    filterQuery = '';
+    filterInput = null;
     hideHelp();
-    const value = SECTIONS[idx]?.value ?? 'config';
+    const value = SECTIONS[idx]?.value ?? 'home';
+    if (value === 'home') { renderHomeSection().catch(() => {}); return; }
     if (value === 'skills') { renderSkillsSection(); updateFooter(); return; }
     if (value === 'catalog') { renderCatalogSection(); return; }  // renderCatalogSection sets mode
     clearContent();
@@ -817,31 +1040,51 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
 
       // ── Mode: FILTER (active input widget) ──────────────────────────────────
       if (mode === 'FILTER') {
-        const inputFocused = (catalogInput && catalogInput.focused) || false;
+        const sec = getCurrentSection();
+        const inputFocused = (catalogInput && catalogInput.focused)
+          || (filterInput && filterInput.focused) || false;
         const listFocused  = (catalogSelect && catalogSelect.focused) || false;
 
         if (name === 'escape') {
-          // Esc exits FILTER → NAV, focus back to nav
+          // Esc exits FILTER → NAV; reset filter state; re-render the section.
           try { catalogInput?.blur(); } catch {}
           try { catalogSelect?.blur(); } catch {}
+          try { filterInput?.blur(); } catch {}
+          filterInput = null;
           try { nav.focus(); } catch {}
           mode = 'NAV';
           updateFooter();
+          // For skills/hooks: re-render without filter to restore the plain view.
+          if (sec === 'skills') { renderSkillsSection(); }
           return;
         }
         if (name === 'tab') {
-          // Tab cycles: input → list → nav → input
-          if (inputFocused) {
-            try { catalogInput.blur(); catalogSelect.focus(); } catch {}
-          } else if (listFocused) {
-            try { catalogSelect.blur(); nav.focus(); } catch {}
+          // Tab cycles: input → list → nav → input (catalog)
+          // Or for skills/hooks: input → nav
+          if (sec === 'catalog') {
+            if (inputFocused) {
+              try { catalogInput.blur(); catalogSelect.focus(); } catch {}
+            } else if (listFocused) {
+              try { catalogSelect.blur(); nav.focus(); } catch {}
+              mode = 'NAV';
+              updateFooter();
+            } else {
+              try { catalogInput?.focus(); } catch {}
+              mode = 'FILTER';
+              updateFooter();
+            }
+          } else {
+            // skills / hooks: only an input; Tab → nav
+            try { filterInput?.blur(); } catch {}
+            try { nav.focus(); } catch {}
             mode = 'NAV';
             updateFooter();
-          } else {
-            try { catalogInput?.focus(); } catch {}
-            mode = 'FILTER';
-            updateFooter();
           }
+          return;
+        }
+        // Inline install action 'i' in catalog FILTER mode
+        if ((name === 'i') && sec === 'catalog') {
+          installSelectedCatalogItem();
           return;
         }
         // All other keys are consumed by the focused widget naturally — no action needed.
@@ -870,6 +1113,42 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
             try { catalogInput.focus(); } catch {}
             mode = 'FILTER';
             updateFooter();
+          }
+          return;
+        }
+        // '/' key — open inline filter (SPEC-059 PR5)
+        // Works in Skills, Catálogo, and Hooks sections.
+        if (sequence === '/' || name === '/') {
+          const sec = getCurrentSection();
+          if (sec === 'catalog') {
+            openCatalogFilter();
+            return;
+          }
+          if (sec === 'skills') {
+            // Switch to FILTER mode and re-render with the filter input.
+            filterQuery = '';
+            mode = 'FILTER';
+            renderSkillsSection(true);
+            updateFooter();
+            return;
+          }
+          // hooks: filter is informational (list only); entering filter mode
+          // clears and shows an inline filter input via a similar mechanism.
+          if (sec === 'hooks') {
+            filterQuery = '';
+            mode = 'FILTER';
+            renderHooksWithFilter();
+            updateFooter();
+            return;
+          }
+          return;
+        }
+        // 'i' key — install inline from Catalog in NAV mode (SPEC-059 PR5)
+        if (name === 'i') {
+          const sec = getCurrentSection();
+          if (sec === 'catalog') {
+            installSelectedCatalogItem();
+            return;
           }
           return;
         }

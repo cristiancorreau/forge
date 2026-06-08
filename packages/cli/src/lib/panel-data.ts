@@ -271,6 +271,69 @@ export function listTemplates(forgeRoot: string | null): TemplateEntry[] {
   return out;
 }
 
+// ─── Brownfield detection + project state ────────────────────────────────────
+
+/**
+ * Returns true when the given root looks like an existing project (has at least
+ * one of: package.json, pyproject.toml, go.mod, Cargo.toml, .git) but does NOT
+ * have a project.yaml — i.e. forge has not been configured yet.
+ *
+ * This is the only new piece of data needed for the Home section (SPEC-059 PR6).
+ */
+export function detectBrownfield(root: string): boolean {
+  const markers = ['package.json', 'pyproject.toml', 'go.mod', 'Cargo.toml', '.git'];
+  const hasMarker = markers.some(m => existsSync(join(root, m)));
+  if (!hasMarker) return false;
+  // If project.yaml already exists, forge is configured → not brownfield.
+  return !findProjectYaml(root);
+}
+
+/** The five possible project states derived from config + audit + doctor signals. */
+export type ProjectState =
+  | 'empty'            // no config, no brownfield markers
+  | 'brownfield'       // has markers but no project.yaml
+  | 'configured'       // has project.yaml but zero skills active
+  | 'healthy'          // has project.yaml + skills + no audit errors
+  | 'needs-attention'; // has project.yaml + (audit errors OR doctor assets not ok)
+
+/**
+ * Derive the project state from config summary + optional audit/doctor results.
+ *
+ * Accepts audit and doctor as optional parameters so the Home section can do
+ * render-then-hydrate: paint quickly with cfg (synchronous) and pass in the
+ * audit/doctor reports once they resolve (deferred).
+ *
+ * Degradation rules when reports are omitted:
+ *   - no audit → cannot distinguish healthy vs needs-attention → 'configured'
+ *   - no doctor → assetsOk treated as true (optimistic)
+ */
+export function getProjectState(
+  root: string,
+  audit?: { summary: { errors: number } } | null,
+  doctor?: { assetsOk: boolean } | null,
+): ProjectState {
+  const cfg = getConfigSummary(root);
+
+  if (!cfg.found) {
+    return detectBrownfield(root) ? 'brownfield' : 'empty';
+  }
+
+  // Has project.yaml
+  if (cfg.skills.length === 0) return 'configured';
+
+  // Has skills — check health
+  if (audit == null) {
+    // No audit report yet — cannot classify beyond 'configured'
+    return 'configured';
+  }
+
+  const hasErrors = audit.summary.errors > 0;
+  const assetsNotOk = doctor != null && !doctor.assetsOk;
+
+  if (hasErrors || assetsNotOk) return 'needs-attention';
+  return 'healthy';
+}
+
 // ─── Configuration summary ───────────────────────────────────────────────────
 
 export interface ConfigSummary {
