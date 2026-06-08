@@ -5,6 +5,14 @@
  * built on the same panel pattern as tui/dashboard.ts. All data comes from the
  * non-interactive layer (lib/panel-data.ts + runAudit/runDoctor) so the logic is
  * shared with the @clack fallback and the test suite. See SPEC-033.
+ *
+ * SPEC-059 PR1: mode state machine + single KEYMAP source of truth.
+ * Modes: NAV | FILTER | PALETTE | CONFIRM | LOG
+ *   - NAV:     default; section navigation + all shortcuts
+ *   - FILTER:  typing in the catalog/skills search input
+ *   - PALETTE: (reserved for PR4 — command palette)
+ *   - CONFIRM:  (reserved for PR4 — destructive action confirmation)
+ *   - LOG:      (reserved for PR3 — runner log pane)
  */
 // @ts-nocheck — OpenTUI types; Bun-only module
 import {
@@ -33,6 +41,86 @@ import {
   searchCatalog, installItem,
 } from '../lib/catalog-install.js';
 
+// ── Mode state machine ──────────────────────────────────────────────────────
+/** Panel interaction modes (SPEC-059). */
+export type PanelMode = 'NAV' | 'FILTER' | 'PALETTE' | 'CONFIRM' | 'LOG';
+
+// ── KEYMAP — single source of truth ────────────────────────────────────────
+/** One key binding entry: what key, what label to show, what action name. */
+interface KeyBinding {
+  key: string;
+  label: string;
+  action: string;
+  /** Modes in which this binding is active (undefined = all modes). */
+  modes?: PanelMode[];
+  /** Sections where this binding applies (undefined = all sections). */
+  sections?: string[];
+}
+
+/**
+ * KEYMAP — the single source of truth for (a) the dispatcher,
+ * (b) the footer contextual text, (c) the ? help overlay.
+ */
+const KEYMAP: { global: KeyBinding[]; bySection: Record<string, KeyBinding[]> } = {
+  global: [
+    { key: '↑↓',  label: 'Section',   action: 'nav-section',   modes: ['NAV'] },
+    { key: 'Tab', label: 'Focus',      action: 'cycle-focus',   modes: ['NAV', 'FILTER'] },
+    { key: 'Enter', label: 'Open/Install', action: 'confirm',   modes: ['NAV', 'FILTER'] },
+    { key: '?',   label: 'Help',       action: 'toggle-help',   modes: ['NAV'] },
+    { key: 'q/Esc', label: 'Quit',     action: 'quit',          modes: ['NAV'] },
+    { key: 'Esc', label: 'Back to nav', action: 'escape-filter', modes: ['FILTER'] },
+  ],
+  bySection: {
+    catalog: [
+      { key: 'Type', label: 'Filter',    action: 'filter-input', modes: ['NAV'] },
+      { key: 'Tab',  label: 'input→list→nav', action: 'cycle-focus', modes: ['NAV', 'FILTER'] },
+      { key: 'Enter', label: 'Install',  action: 'install-item', modes: ['NAV', 'FILTER'] },
+    ],
+    skills: [
+      { key: 'Type', label: 'Filter', action: 'filter-input', modes: ['NAV'] },
+    ],
+  },
+};
+
+/** Build the footer string for the current mode + section. */
+function buildFooterText(mode: PanelMode, section: string): string {
+  if (mode === 'FILTER') return t('panel.footer.filter');
+  // NAV mode: show contextual bindings
+  return t('panel.footer.nav');
+}
+
+/** Build the help overlay content lines from KEYMAP. */
+function buildHelpLines(section: string): string[] {
+  const lines: string[] = [];
+  lines.push(t('panel.help.title'));
+  lines.push('');
+  lines.push('  Global');
+  for (const b of KEYMAP.global) {
+    lines.push(`    [${b.key}]  ${b.label}`);
+  }
+  const secBindings = KEYMAP.bySection[section];
+  if (secBindings && secBindings.length > 0) {
+    lines.push('');
+    lines.push('  This section');
+    for (const b of secBindings) {
+      lines.push(`    [${b.key}]  ${b.label}`);
+    }
+  }
+  lines.push('');
+  lines.push('  ' + t('panel.help.close'));
+  return lines;
+}
+
+// ── Adaptor for the private OpenTUI key API ─────────────────────────────────
+/** Single coupling point for the private OpenTUI `_internalKeyInput` API. */
+function onKey(renderer: any, handler: (key: any) => void): void {
+  try { renderer._internalKeyInput.onInternal('keypress', handler); } catch {}
+}
+function offKey(renderer: any, handler: (key: any) => void): void {
+  try { renderer._internalKeyInput?.offInternal?.('keypress', handler); } catch {}
+}
+
+// ── Terminal helpers ────────────────────────────────────────────────────────
 function restoreTerminal(): void {
   try {
     process.stdout.write(
@@ -149,14 +237,71 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
   bottom.add(bottomText);
   renderer.root.add(bottom);
 
-  let searchInput: any = null;   // active in the Skills section
-  let catalogInput: any = null;  // active in the Catálogo section
-  let catalogSelect: any = null; // results list in the Catálogo section
+  // ── Mode state ─────────────────────────────────────────────────────────────
+  let mode: PanelMode = 'NAV';
+
+  function getCurrentSection(): string {
+    return SECTIONS[nav.getSelectedIndex?.() ?? 0]?.value ?? 'config';
+  }
+
+  function updateFooter(): void {
+    const sec = getCurrentSection();
+    const text = buildFooterText(mode, sec);
+    try {
+      bottom.remove('btm-t');
+    } catch {}
+    bottom.add(Text({ id: 'btm-t', content: buildLines([dimLeaf(text)]) }));
+  }
+
+  // ── Help overlay ────────────────────────────────────────────────────────────
+  let helpOverlay: any = null;
+
+  function showHelp(): void {
+    if (helpOverlay) return;
+    const sec = getCurrentSection();
+    const lines = buildHelpLines(sec);
+    const OW = Math.min(52, W - 4);
+    const OH = lines.length + 2;
+    const OL = Math.floor((W - OW) / 2);
+    const OT = Math.floor((H - OH) / 2);
+    helpOverlay = new BoxRenderable(renderer, {
+      id: 'help-overlay',
+      position: 'absolute',
+      left: OL, top: OT, width: OW, height: OH,
+      border: true,
+      customBorderChars: tuiBorderChars(),
+      borderStyle: 'double',
+      borderColor: C.yellow,
+      backgroundColor: C.bgPanel,
+      flexDirection: 'column',
+      paddingLeft: 1,
+      paddingTop: 0,
+      title: t('panel.help.title'),
+    });
+    helpOverlay.add(Text({
+      id: 'help-content',
+      content: buildLines(lines.map((l) => fg(C.white)(l))),
+    }));
+    renderer.root.add(helpOverlay);
+  }
+
+  function hideHelp(): void {
+    if (!helpOverlay) return;
+    try { renderer.root.remove('help-overlay'); } catch {}
+    helpOverlay = null;
+  }
+
+  function toggleHelp(): void {
+    if (helpOverlay) hideHelp(); else showHelp();
+  }
+
+  // ── Section renderers (unchanged from original) ────────────────────────────
+  let catalogInput: any = null;
+  let catalogSelect: any = null;
   let catalogResults: any[] = [];
-  let catalogStatus = '';        // last install message
+  let catalogStatus = '';
 
   function clearContent() {
-    if (searchInput) { try { searchInput.blur(); } catch {} searchInput = null; }
     if (catalogInput) { try { catalogInput.blur(); } catch {} catalogInput = null; }
     if (catalogSelect) { try { catalogSelect.blur(); } catch {} catalogSelect = null; }
     for (const child of [...content.getChildren()]) {
@@ -384,12 +529,18 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     input.on('change', () => refreshCatalogResults(input.value ?? ''));
     sel.on('itemSelected', () => installSelectedCatalogItem());
     input.focus();
+    // Entering catalog section starts in FILTER mode (input focused)
+    mode = 'FILTER';
+    updateFooter();
   }
 
   function renderSection(idx: number) {
+    // When switching sections, always reset to NAV mode first.
+    mode = 'NAV';
+    hideHelp();
     const value = SECTIONS[idx]?.value ?? 'config';
-    if (value === 'skills') { renderSkillsSection(); return; }
-    if (value === 'catalog') { renderCatalogSection(); return; }
+    if (value === 'skills') { renderSkillsSection(); updateFooter(); return; }
+    if (value === 'catalog') { renderCatalogSection(); return; }  // renderCatalogSection sets mode
     clearContent();
     let rows: Row[];
     switch (value) {
@@ -400,6 +551,7 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
       default:          rows = rowsConfig();
     }
     content.add(Text({ id: 'sec', content: buildLines(fitRows(rows)) }));
+    updateFooter();
   }
 
   renderSection(0);
@@ -412,44 +564,80 @@ async function runPanelLoop(renderer: any, root: string): Promise<void> {
     const i = sectionIdx(idx);
     renderSection(i);
     // Enter on Skills/Catálogo focuses the search box so the user can type immediately.
-    if (SECTIONS[i]?.value === 'skills' && searchInput) { try { searchInput.focus(); } catch {} }
     if (SECTIONS[i]?.value === 'catalog' && catalogInput) { try { catalogInput.focus(); } catch {} }
   });
 
+  // ── Key dispatcher — routed by mode (SPEC-059 PR1) ─────────────────────────
   return new Promise<void>((resolve) => {
     const handler = (key: any) => {
       const name = (key?.name ?? '').toLowerCase();
-      // When typing in a search box, let the input consume keys.
-      const typingSkills = !!searchInput && searchInput.focused;
-      const typingCatalog = !!catalogInput && catalogInput.focused;
-      const inCatalogList = !!catalogSelect && catalogSelect.focused;
-      const typing = typingSkills || typingCatalog;
 
-      if (!typing && !inCatalogList && (name === 'q' || name === 'escape')) {
-        try { renderer._internalKeyInput?.offInternal?.('keypress', handler); } catch {}
-        resolve();
+      // If the help overlay is open, only ? and Esc close it; everything else is blocked.
+      if (helpOverlay) {
+        if (name === '?' || name === 'escape') hideHelp();
         return;
       }
-      if ((typing || inCatalogList) && name === 'escape') {
-        // Esc out of the active widget back to the nav.
-        try { searchInput?.blur(); } catch {}
-        try { catalogInput?.blur(); } catch {}
-        try { catalogSelect?.blur(); } catch {}
-        try { nav.focus(); } catch {}
-        return;
-      }
-      // Tab cycles focus. Skills: nav ↔ input. Catálogo: input → list → nav → input.
-      if (name === 'tab') {
-        if (catalogInput || catalogSelect) {
-          if (typingCatalog) { try { catalogInput.blur(); catalogSelect.focus(); } catch {} }
-          else if (inCatalogList) { try { catalogSelect.blur(); nav.focus(); } catch {} }
-          else { try { catalogInput?.focus(); } catch {} }
+
+      // ── Mode: FILTER (active input widget) ──────────────────────────────────
+      if (mode === 'FILTER') {
+        const inputFocused = (catalogInput && catalogInput.focused) || false;
+        const listFocused  = (catalogSelect && catalogSelect.focused) || false;
+
+        if (name === 'escape') {
+          // Esc exits FILTER → NAV, focus back to nav
+          try { catalogInput?.blur(); } catch {}
+          try { catalogSelect?.blur(); } catch {}
+          try { nav.focus(); } catch {}
+          mode = 'NAV';
+          updateFooter();
           return;
         }
-        if (typingSkills) { try { searchInput.blur(); nav.focus(); } catch {} }
-        else if (searchInput) { try { searchInput.focus(); } catch {} }
+        if (name === 'tab') {
+          // Tab cycles: input → list → nav → input
+          if (inputFocused) {
+            try { catalogInput.blur(); catalogSelect.focus(); } catch {}
+          } else if (listFocused) {
+            try { catalogSelect.blur(); nav.focus(); } catch {}
+            mode = 'NAV';
+            updateFooter();
+          } else {
+            try { catalogInput?.focus(); } catch {}
+            mode = 'FILTER';
+            updateFooter();
+          }
+          return;
+        }
+        // All other keys are consumed by the focused widget naturally — no action needed.
+        return;
       }
+
+      // ── Mode: NAV (default) ─────────────────────────────────────────────────
+      if (mode === 'NAV') {
+        if (name === 'q' || name === 'escape') {
+          offKey(renderer, handler);
+          resolve();
+          return;
+        }
+        if (name === '?') {
+          toggleHelp();
+          return;
+        }
+        if (name === 'tab') {
+          const sec = getCurrentSection();
+          if (sec === 'catalog' && catalogInput) {
+            try { catalogInput.focus(); } catch {}
+            mode = 'FILTER';
+            updateFooter();
+          }
+          return;
+        }
+        // No other NAV keys need interception — nav widget handles ↑↓/Enter.
+        return;
+      }
+
+      // ── Modes PALETTE / CONFIRM / LOG: reserved for PR3/PR4 ────────────────
+      // These modes are declared but not yet active. Fall through to NAV behaviour.
     };
-    try { renderer._internalKeyInput.onInternal('keypress', handler); } catch {}
+    onKey(renderer, handler);
   });
 }
