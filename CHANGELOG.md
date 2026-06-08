@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.8.1] — 2026-06-08
+
+### Corregido
+- **`forge panel` mostraba `[object Object]`** en el nav, los títulos de sección y las filas del catálogo (OpenTUI, runtime Bun). Dos causas: (1) el template tag `t` de `@opentui/core` y la función i18n `t()` compartían nombre, así que `t('panel.sec.config')` devolvía un `StyledText` en vez del texto traducido (ahora el tag de OpenTUI se importa como `otText`); (2) las opciones del catálogo interpolaban fragmentos estilizados `fg()` en el `name` del `SelectRenderable`, que debe ser texto plano. Se agregó un test guardián (`tui-panel-guard.test.mjs`) que bloquea ambas regresiones. El wizard y el dashboard no estaban afectados (no usan i18n inline).
+
+---
+
 ## [3.8.0] — 2026-06-08
 
 ### Corregido
