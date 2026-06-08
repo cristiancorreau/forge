@@ -7,6 +7,18 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.8.4] — 2026-06-08
+
+> Tercer sprint del cockpit (SPEC-059) — completa el rediseño v1 de `forge panel`.
+
+### Agregado
+- **Filtro `/` + acción inline `i`** (SPEC-059 PR5) — en Skills/Catálogo/Hooks, `/` filtra la lista en vivo (modo FILTER explícito, sin robar foco) e `i` instala el ítem seleccionado.
+- **Home contextual** (SPEC-059 PR6) — sección Inicio (por defecto) que detecta el estado del proyecto (`getProjectState`/`detectBrownfield`, puras y testeadas) y destaca la **siguiente acción sugerida** (empty→init, brownfield→adopt, configured→recommend, healthy→audit, needs-attention→doctor) + acciones rápidas + pulse. Render-then-hydrate (sin latencia en el arranque).
+
+Con esto el panel pasó de **visor read-only** a **cockpit**: Home contextual, command palette `:`, runner/log, filtro y acciones, todo sobre una máquina de modos + KEYMAP único. Backlog v2 (nav 2-niveles, dry-run→apply, multi-select, destructivas) en #146.
+
+---
+
 ## [3.8.3] — 2026-06-08
 
 > Segundo sprint del cockpit (SPEC-059): correr comandos desde el panel.
