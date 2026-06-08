@@ -28,7 +28,7 @@
     "build:all": "node scripts/build-assets.mjs && tsc",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build:all",
-    "test": "node --test test/commands.test.mjs test/assets.test.mjs test/hook-spec-gate.test.mjs test/claude-md-specialized.test.mjs test/wiki.test.mjs test/panel.test.mjs test/catalog-install.test.mjs test/windows-compat.test.mjs test/bun-relaunch.test.mjs test/wizard-project-type.test.mjs test/adopt.test.mjs test/more-technologies.test.mjs test/tier2-profiles.test.mjs test/python-sunset.test.mjs test/update.test.mjs test/laravel-skills.test.mjs test/skill-security.test.mjs test/add.test.mjs test/hook-guardrail.test.mjs test/mcp-tools.test.mjs test/i18n.test.mjs test/catalog-unified.test.mjs test/recommend.test.mjs test/marker.test.mjs test/registry.test.mjs test/skill-eval.test.mjs test/meta-skills.test.mjs test/tui-panel-guard.test.mjs"
+    "test": "node --test test/commands.test.mjs test/assets.test.mjs test/hook-spec-gate.test.mjs test/claude-md-specialized.test.mjs test/wiki.test.mjs test/panel.test.mjs test/catalog-install.test.mjs test/windows-compat.test.mjs test/bun-relaunch.test.mjs test/wizard-project-type.test.mjs test/adopt.test.mjs test/more-technologies.test.mjs test/tier2-profiles.test.mjs test/python-sunset.test.mjs test/update.test.mjs test/laravel-skills.test.mjs test/skill-security.test.mjs test/add.test.mjs test/hook-guardrail.test.mjs test/mcp-tools.test.mjs test/i18n.test.mjs test/catalog-unified.test.mjs test/recommend.test.mjs test/marker.test.mjs test/registry.test.mjs test/skill-eval.test.mjs test/meta-skills.test.mjs test/tui-panel-guard.test.mjs test/panel-modes-guard.test.mjs test/panel-actions.test.mjs test/i18n-parity.test.mjs"
   },
   "files": [
     "dist",

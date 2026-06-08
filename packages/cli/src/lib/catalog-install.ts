@@ -12,7 +12,7 @@
  */
 import {
   existsSync, readFileSync, writeFileSync, readdirSync, mkdirSync,
-  copyFileSync, statSync,
+  copyFileSync, statSync, unlinkSync,
 } from 'fs';
 import { join } from 'path';
 import { SKILLS } from './catalog.js';
@@ -192,6 +192,123 @@ export function getUnifiedCatalog(forgeRoot: string | null, projectRoot: string)
 interface YamlEdit {
   changed: boolean;
   content: string;
+}
+
+/**
+ * Remove `item` from a TOP-LEVEL block/flat list `key` in `content`, preserving
+ * comments and formatting. Handles two shapes:
+ *  - block list:  `skills:\n  - a\n  - b`  → removes the matching `  - item` line
+ *  - flat list:   `skills: [a, b]`         → rewrites without the item
+ * If `item` is not present, returns unchanged (no-op, idempotent).
+ */
+function removeTopLevelListItem(content: string, key: string, item: string): YamlEdit {
+  const lines = content.split('\n');
+  const keyRe = new RegExp(`^${key}:(.*)$`);
+
+  let keyIdx = -1;
+  let inlineRest = '';
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(keyRe);
+    if (m) { keyIdx = i; inlineRest = m[1]; break; }
+  }
+
+  if (keyIdx === -1) return { changed: false, content };
+
+  const rest = inlineRest.trim();
+
+  // Flat list form: `key: [a, b]`.
+  const flat = rest.match(/^\[(.*)\]$/);
+  if (flat) {
+    const inner = flat[1].trim();
+    const current = inner.length
+      ? inner.split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
+      : [];
+    const filtered = current.filter(v => v !== item);
+    if (filtered.length === current.length) return { changed: false, content };
+    lines[keyIdx] = `${key}: [${filtered.join(', ')}]`;
+    return { changed: true, content: lines.join('\n') };
+  }
+
+  // Block list form: find and remove the matching `  - item` line.
+  let foundItem = false;
+  for (let i = keyIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    const m = line.match(/^(\s+)-\s+(.*)$/);
+    if (m) {
+      foundItem = true;
+      const existing = m[2].trim().replace(/^["']|["']$/g, '');
+      if (existing === item) {
+        lines.splice(i, 1);
+        return { changed: true, content: lines.join('\n') };
+      }
+      continue;
+    }
+    if (!foundItem && (line.trim() === '' || line.trim().startsWith('#'))) continue;
+    break;
+  }
+
+  return { changed: false, content };
+}
+
+/**
+ * Remove `name` from the `agents.profiles` block/flat list in `content`.
+ * Idempotent: if not present, returns unchanged.
+ */
+function removeProfile(content: string, name: string): YamlEdit {
+  const lines = content.split('\n');
+
+  let agentsIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^agents:\s*(#.*)?$/.test(lines[i])) { agentsIdx = i; break; }
+  }
+  if (agentsIdx === -1) return { changed: false, content };
+
+  let profilesIdx = -1;
+  let agentsBlockEnd = lines.length;
+  for (let i = agentsIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')) {
+      agentsBlockEnd = i; break;
+    }
+    if (/^\s+profiles:\s*(\[.*\])?\s*(#.*)?$/.test(line) || /^\s+profiles:\s+\S/.test(line)) {
+      profilesIdx = i; break;
+    }
+  }
+  if (profilesIdx === -1) return { changed: false, content };
+
+  const profLine = lines[profilesIdx];
+  const inlineRest = profLine.replace(/^\s+profiles:/, '').trim();
+  const flat = inlineRest.match(/^\[(.*)\]$/);
+  if (flat) {
+    const inner = flat[1].trim();
+    const current = inner.length
+      ? inner.split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
+      : [];
+    const filtered = current.filter(v => v !== name);
+    if (filtered.length === current.length) return { changed: false, content };
+    const lead = profLine.match(/^(\s+)/)?.[1] ?? '  ';
+    lines[profilesIdx] = `${lead}profiles: [${filtered.join(', ')}]`;
+    return { changed: true, content: lines.join('\n') };
+  }
+
+  // Block list under profiles:.
+  let foundItem = false;
+  for (let i = profilesIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    const m = line.match(/^(\s+)-\s+(.*)$/);
+    if (m) {
+      foundItem = true;
+      const existing = m[2].trim().replace(/^["']|["']$/g, '');
+      if (existing === name) {
+        lines.splice(i, 1);
+        return { changed: true, content: lines.join('\n') };
+      }
+      continue;
+    }
+    if (!foundItem && (line.trim() === '' || line.trim().startsWith('#'))) continue;
+    break;
+  }
+  return { changed: false, content };
 }
 
 /**
@@ -385,6 +502,11 @@ function copyDir(src: string, dest: string): string[] {
 
 const rel = (projectRoot: string, abs: string): string =>
   abs.startsWith(projectRoot + '/') ? abs.slice(projectRoot.length + 1) : abs;
+
+/** Safe unlink — no-op if the file doesn't exist. */
+function _unlinkSafe(p: string): void {
+  try { unlinkSync(p); } catch { /* no-op */ }
+}
 
 // ─── installSkill ────────────────────────────────────────────────────────────
 
@@ -617,6 +739,150 @@ function scaffoldWiki(projectRoot: string, forgeRoot: string): void {
     const tpl = join(tplDir, sub, '_template.md');
     if (existsSync(tpl)) copyFileSync(tpl, dest);
   }
+}
+
+// ─── uninstallSkill ──────────────────────────────────────────────────────────
+
+/**
+ * Deactivate a skill: remove its id from project.yaml `skills` (surgical edit)
+ * and remove the slash command from `.claude/commands/` if forge installed it.
+ * Idempotent: if not present, returns alreadyInstalled=false, ok=true, changed=[].
+ */
+export function uninstallSkill(projectRoot: string, forgeRoot: string | null, id: string): InstallResult {
+  const known = SKILLS.some(s => s.id === id);
+  if (!known) {
+    return { ok: false, alreadyInstalled: false, message: `Skill desconocida: ${id}`, changed: [] };
+  }
+
+  const yamlPath = projectYamlPath(projectRoot);
+  const changed: string[] = [];
+  let wasInYaml = false;
+
+  if (existsSync(yamlPath)) {
+    const before = readFileSync(yamlPath, 'utf-8');
+    const edit = removeTopLevelListItem(before, 'skills', id);
+    if (edit.changed) {
+      writeFileSync(yamlPath, edit.content, 'utf-8');
+      changed.push(rel(projectRoot, yamlPath));
+      wasInYaml = true;
+    }
+  }
+
+  // Remove the slash command if forge copied it.
+  if (forgeRoot) {
+    const cmdDest = join(projectRoot, '.claude', 'commands', `${id}.md`);
+    if (existsSync(cmdDest)) {
+      _unlinkSafe(cmdDest);
+      changed.push(rel(projectRoot, cmdDest));
+    }
+  }
+
+  if (!wasInYaml && changed.length === 0) {
+    return { ok: true, alreadyInstalled: false, message: `La skill ${id} no estaba activa.`, changed: [] };
+  }
+  return { ok: true, alreadyInstalled: false, message: `Skill ${id} desactivada.`, changed };
+}
+
+// ─── uninstallProfile ────────────────────────────────────────────────────────
+
+/**
+ * Deactivate a profile: remove its name from project.yaml `agents.profiles`
+ * (surgical edit). Does NOT remove the agent files from `.claude/agents/` since
+ * those may be customised and other profiles might share them.
+ * Idempotent: if not present, ok=true, changed=[].
+ */
+export function uninstallProfile(projectRoot: string, _forgeRoot: string | null, name: string): InstallResult {
+  const yamlPath = projectYamlPath(projectRoot);
+  if (!existsSync(yamlPath)) {
+    return { ok: true, alreadyInstalled: false, message: `El profile ${name} no estaba activo.`, changed: [] };
+  }
+
+  const before = readFileSync(yamlPath, 'utf-8');
+  const edit = removeProfile(before, name);
+  if (!edit.changed) {
+    return { ok: true, alreadyInstalled: false, message: `El profile ${name} no estaba activo.`, changed: [] };
+  }
+  writeFileSync(yamlPath, edit.content, 'utf-8');
+  return { ok: true, alreadyInstalled: false, message: `Profile ${name} desactivado.`, changed: [rel(projectRoot, yamlPath)] };
+}
+
+// ─── uninstallItem ───────────────────────────────────────────────────────────
+
+/**
+ * Reverse of installItem: deactivate a skill or profile (surgical project.yaml
+ * edit) and clean up files that installItem copied. Idempotent.
+ */
+export function uninstallItem(
+  projectRoot: string,
+  forgeRoot: string | null,
+  item: Pick<CatalogItem, 'type' | 'id'>,
+): InstallResult {
+  switch (item.type) {
+    case 'skill':   return uninstallSkill(projectRoot, forgeRoot, item.id);
+    case 'profile': return uninstallProfile(projectRoot, forgeRoot, item.id);
+    default:
+      return { ok: false, alreadyInstalled: false, message: `"${item.id}" no admite desinstalación via forge.`, changed: [] };
+  }
+}
+
+// ─── enableSkill / disableSkill ──────────────────────────────────────────────
+
+/**
+ * Enable a skill: equivalent to installSkill (adds it to skills: in project.yaml
+ * and copies the slash command). Idempotent.
+ */
+export function enableSkill(projectRoot: string, forgeRoot: string | null, id: string): InstallResult {
+  return installSkill(projectRoot, forgeRoot, id);
+}
+
+/**
+ * Disable a skill: remove its id from project.yaml `skills` (surgical edit).
+ * Does NOT remove the slash command file (use uninstallSkill for full cleanup).
+ * Idempotent.
+ */
+export function disableSkill(projectRoot: string, id: string): InstallResult {
+  const known = SKILLS.some(s => s.id === id);
+  if (!known) {
+    return { ok: false, alreadyInstalled: false, message: `Skill desconocida: ${id}`, changed: [] };
+  }
+
+  const yamlPath = projectYamlPath(projectRoot);
+  if (!existsSync(yamlPath)) {
+    return { ok: true, alreadyInstalled: false, message: `La skill ${id} no estaba activa.`, changed: [] };
+  }
+
+  const before = readFileSync(yamlPath, 'utf-8');
+  const edit = removeTopLevelListItem(before, 'skills', id);
+  if (!edit.changed) {
+    return { ok: true, alreadyInstalled: false, message: `La skill ${id} no estaba activa.`, changed: [] };
+  }
+  writeFileSync(yamlPath, edit.content, 'utf-8');
+  return { ok: true, alreadyInstalled: false, message: `Skill ${id} desactivada.`, changed: [rel(projectRoot, yamlPath)] };
+}
+
+// ─── installHook ─────────────────────────────────────────────────────────────
+
+/**
+ * Install a hook from the forge registry into `.claude/hooks/`. The source is
+ * resolved from `<forgeRoot>/core/hooks/<hookId>`. The hook must exist in the
+ * registry (either universal or standard group). Idempotent.
+ */
+export function installHook(projectRoot: string, forgeRoot: string, hookId: string): InstallResult {
+  const hookSrc = join(forgeRoot, 'core', 'hooks', hookId);
+  if (!existsSync(hookSrc)) {
+    return { ok: false, alreadyInstalled: false, message: `Hook no encontrado en el registry: ${hookId}`, changed: [] };
+  }
+
+  const hooksDir = join(projectRoot, '.claude', 'hooks');
+  const hookDest = join(hooksDir, hookId);
+
+  if (existsSync(hookDest)) {
+    return { ok: true, alreadyInstalled: true, message: `El hook ${hookId} ya estaba instalado.`, changed: [] };
+  }
+
+  mkdirSync(hooksDir, { recursive: true });
+  copyFileSync(hookSrc, hookDest);
+  return { ok: true, alreadyInstalled: false, message: `Hook ${hookId} instalado en .claude/hooks/.`, changed: [rel(projectRoot, hookDest)] };
 }
 
 // ─── Dispatcher ──────────────────────────────────────────────────────────────
