@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self'; script-src 'self';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>forge desktop</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>forge desktop</h1>
+      <p class="subtitle">Configuracion de forge sin salir del escritorio.</p>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="nuevo" role="tab">Proyecto nuevo</button>
+      <button class="tab" data-view="adoptar" role="tab">Adoptar</button>
+      <button class="tab" data-view="diagnostico" role="tab">Diagnostico</button>
+    </nav>
+
+    <main>
+      <!-- Vista: Proyecto nuevo (init --from) -->
+      <section class="view active" id="view-nuevo" role="tabpanel">
+        <h2>Proyecto nuevo</h2>
+        <p class="hint">
+          Crea la configuracion de forge a partir de un archivo de respuestas
+          (<code>--from</code>). Podes previsualizar el resultado con
+          <code>--dry-run</code> antes de aplicar cambios.
+        </p>
+        <label for="init-from">Archivo de respuestas</label>
+        <input
+          id="init-from"
+          type="text"
+          placeholder="ruta/al/answers.yaml"
+          autocomplete="off"
+        />
+        <div class="actions">
+          <button id="btn-init-preview" class="secondary">Previsualizar</button>
+          <button id="btn-init-apply" class="primary">Crear proyecto</button>
+        </div>
+      </section>
+
+      <!-- Vista: Adoptar (adopt) -->
+      <section class="view" id="view-adoptar" role="tabpanel">
+        <h2>Adoptar proyecto existente</h2>
+        <p class="hint">
+          Detecta el stack del repositorio actual y agrega la configuracion de
+          forge sin sobrescribir archivos existentes. Previsualiza con
+          <code>--dry-run</code> antes de aplicar.
+        </p>
+        <div class="actions">
+          <button id="btn-adopt-preview" class="secondary">Previsualizar</button>
+          <button id="btn-adopt-apply" class="primary">Adoptar</button>
+        </div>
+      </section>
+
+      <!-- Vista: Diagnostico (doctor / audit) -->
+      <section class="view" id="view-diagnostico" role="tabpanel">
+        <h2>Diagnostico</h2>
+        <p class="hint">
+          Verifica el estado de la configuracion. <code>doctor</code> hace un
+          chequeo rapido; <code>audit --json</code> entrega un reporte detallado.
+        </p>
+        <div class="actions">
+          <button id="btn-doctor" class="secondary">Doctor</button>
+          <button id="btn-audit" class="primary">Auditoria</button>
+        </div>
+      </section>
+
+      <section class="output-panel">
+        <div class="output-head">
+          <h3>Salida</h3>
+          <span id="status" class="status"></span>
+        </div>
+        <pre id="output" class="output" aria-live="polite"></pre>
+      </section>
+    </main>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>
