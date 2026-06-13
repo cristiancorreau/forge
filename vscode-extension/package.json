@@ -18,6 +18,11 @@
   "contributes": {
     "commands": [
       {
+        "command": "forge.openConfigPanel",
+        "title": "forge: Abrir panel de configuración",
+        "icon": "$(settings-gear)"
+      },
+      {
         "command": "forge.init",
         "title": "forge: Init Wizard",
         "icon": "$(wand)"
@@ -158,6 +163,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "test": "node --test test/ipc.test.mjs test/validation.test.mjs test/parity.test.mjs",
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {

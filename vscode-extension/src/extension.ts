@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { spawn } from 'child_process';
+import { ForgeConfigPanel } from './webview/panel';
 
 // ---------------------------------------------------------------------------
 // CLI invocation
@@ -28,8 +29,11 @@ function findProjectYaml(workspaceRoot: string): boolean {
 /**
  * The configured CLI command, split into argv tokens.
  * e.g. "npx @cristiancorreau/forge" → ["npx", "@cristiancorreau/forge"]
+ *
+ * Exported so the config webview (src/webview/panel.ts) reuses the exact same
+ * resolution — the GUI must spawn the same CLI the rest of the extension does.
  */
-function getCliCommand(): string[] {
+export function getCliCommand(): string[] {
   const config = vscode.workspace.getConfiguration('forge');
   const raw = config.get<string>('cliCommand', 'npx @cristiancorreau/forge').trim();
   const tokens = raw.split(/\s+/).filter(Boolean);
@@ -491,6 +495,21 @@ export function activate(context: vscode.ExtensionContext): void {
   statusBarItem.command = 'forge.showStatus';
   context.subscriptions.push(statusBarItem);
   statusBarItem.show();
+
+  // Status bar: open the config panel (SPEC-070)
+  const panelStatusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
+  panelStatusItem.text = '$(settings-gear) forge config';
+  panelStatusItem.tooltip = 'forge — abrir panel de configuración';
+  panelStatusItem.command = 'forge.openConfigPanel';
+  context.subscriptions.push(panelStatusItem);
+  panelStatusItem.show();
+
+  // Command: forge.openConfigPanel (SPEC-070)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forge.openConfigPanel', () => {
+      ForgeConfigPanel.createOrShow(context.extensionUri);
+    })
+  );
 
   const root = getWorkspaceRoot();
   const hasProjectYaml = root ? findProjectYaml(root) : false;

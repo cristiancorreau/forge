@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="%%CSP%%" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="%%STYLE_URI%%" rel="stylesheet" />
+  <title>forge — configuración</title>
+</head>
+<body>
+  <nav class="tabs">
+    <button class="tab active" data-view="new">Proyecto nuevo</button>
+    <button class="tab" data-view="adopt">Adoptar existente</button>
+    <button class="tab" data-view="diag">Diagnóstico</button>
+  </nav>
+
+  <main>
+    <!-- ============================================================ -->
+    <!-- Vista 1: Proyecto nuevo (init --from)                        -->
+    <!-- ============================================================ -->
+    <section id="view-new" class="view active">
+      <h1>Proyecto nuevo</h1>
+      <p class="hint">Completá los pasos. Al confirmar se ejecuta <code>forge init --from</code> con las respuestas.</p>
+
+      <ol class="stepper">
+        <li class="step-dot active" data-dot="0">Identidad</li>
+        <li class="step-dot" data-dot="1">Stack</li>
+        <li class="step-dot" data-dot="2">Modo y runtime</li>
+      </ol>
+
+      <!-- Paso 0: identidad -->
+      <div class="step active" data-step="0">
+        <label for="name">Nombre del proyecto</label>
+        <input id="name" type="text" placeholder="Mi App Genial" autocomplete="off" />
+        <div class="field-error" id="name-error"></div>
+
+        <label for="slug">Slug</label>
+        <input id="slug" type="text" placeholder="mi-app-genial" autocomplete="off" />
+        <div class="field-error" id="slug-error"></div>
+        <p class="hint">El slug se deriva del nombre; podés ajustarlo.</p>
+
+        <label for="type">Tipo</label>
+        <select id="type">
+          <option value="fullstack">Fullstack</option>
+          <option value="backend">Backend</option>
+          <option value="frontend">Frontend</option>
+          <option value="library">Librería</option>
+          <option value="cli">CLI</option>
+        </select>
+      </div>
+
+      <!-- Paso 1: stack -->
+      <div class="step" data-step="1">
+        <label for="language">Lenguaje principal</label>
+        <select id="language">
+          <option value="typescript">TypeScript</option>
+          <option value="javascript">JavaScript</option>
+          <option value="python">Python</option>
+          <option value="go">Go</option>
+          <option value="rust">Rust</option>
+        </select>
+
+        <label for="frontend">Frontend (opcional)</label>
+        <input id="frontend" type="text" placeholder="nextjs" autocomplete="off" />
+
+        <label for="backend">Backend (opcional)</label>
+        <input id="backend" type="text" placeholder="express" autocomplete="off" />
+
+        <label for="database">Base de datos (opcional)</label>
+        <input id="database" type="text" placeholder="postgres" autocomplete="off" />
+
+        <label for="testing">Testing (separado por comas)</label>
+        <input id="testing" type="text" placeholder="vitest" autocomplete="off" />
+      </div>
+
+      <!-- Paso 2: modo y runtime -->
+      <div class="step" data-step="2">
+        <label for="mode">Modo</label>
+        <select id="mode">
+          <option value="startup">startup</option>
+          <option value="standard" selected>standard</option>
+          <option value="enterprise">enterprise</option>
+        </select>
+
+        <label for="runtime-new">Runtime</label>
+        <select id="runtime-new">
+          <option value="claude-code" selected>claude-code</option>
+          <option value="opencode">opencode</option>
+          <option value="codex">codex</option>
+          <option value="kiro">kiro</option>
+        </select>
+
+        <label for="skills">Skills (separado por comas, opcional)</label>
+        <input id="skills" type="text" placeholder="spec" autocomplete="off" />
+      </div>
+
+      <div class="actions">
+        <button id="new-prev" class="btn ghost" disabled>Anterior</button>
+        <button id="new-next" class="btn">Siguiente</button>
+        <button id="new-preview" class="btn ghost hidden">Previsualizar</button>
+        <button id="new-apply" class="btn primary hidden">Crear proyecto</button>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- Vista 2: Adoptar proyecto existente (adopt)                  -->
+    <!-- ============================================================ -->
+    <section id="view-adopt" class="view">
+      <h1>Adoptar proyecto existente</h1>
+      <p class="hint">Analiza el proyecto actual e instala la config de forge con <code>forge adopt</code>.</p>
+
+      <label for="runtime-adopt">Runtime</label>
+      <select id="runtime-adopt">
+        <option value="claude-code" selected>claude-code</option>
+        <option value="opencode">opencode</option>
+        <option value="codex">codex</option>
+      </select>
+
+      <label for="mode-adopt">Modo</label>
+      <select id="mode-adopt">
+        <option value="startup">startup</option>
+        <option value="standard" selected>standard</option>
+        <option value="enterprise">enterprise</option>
+      </select>
+
+      <label class="checkbox">
+        <input id="wiki-adopt" type="checkbox" checked />
+        Generar wiki factual
+      </label>
+
+      <div class="actions">
+        <button id="adopt-preview" class="btn ghost">Previsualizar</button>
+        <button id="adopt-apply" class="btn primary">Aplicar</button>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- Vista 3: Diagnóstico (audit + doctor)                        -->
+    <!-- ============================================================ -->
+    <section id="view-diag" class="view">
+      <h1>Diagnóstico</h1>
+      <p class="hint">Corre <code>audit --json</code> y <code>doctor</code> sobre este proyecto.</p>
+
+      <div class="actions">
+        <button id="diag-run" class="btn primary">Ejecutar diagnóstico</button>
+      </div>
+
+      <div id="diag-summary" class="summary hidden"></div>
+      <ul id="diag-list" class="diag-list"></ul>
+    </section>
+
+    <!-- Output compartido -->
+    <div class="output-wrap">
+      <div class="output-header">
+        <span>Salida</span>
+        <span id="status-badge" class="badge"></span>
+      </div>
+      <pre id="output" class="output"></pre>
+    </div>
+  </main>
+
+  <script nonce="%%NONCE%%" src="%%SCRIPT_URI%%"></script>
+</body>
+</html>
