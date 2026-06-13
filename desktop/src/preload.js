@@ -2,6 +2,11 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 
+// The app's own version, read once at preload time (Node access is available
+// here but not in the renderer). Exposed so the UI badge never drifts.
+let appVersion = '';
+try { appVersion = require('../package.json').version; } catch { /* ignore */ }
+
 /**
  * API segura expuesta al renderer via contextBridge.
  *
@@ -17,4 +22,19 @@ contextBridge.exposeInMainWorld('forge', {
   runAction(action, payload) {
     return ipcRenderer.invoke('forge:run', { action, payload });
   },
+
+  /**
+   * Serializa el objeto de respuestas del wizard a un archivo JSON temporal
+   * (en el main process) y devuelve su ruta. El renderer luego la usa como
+   * `--from` para `init`.
+   *
+   * @param {object} answers  WizardResult armado en el renderer
+   * @returns {Promise<{ok:boolean, file:string, error?:string}>}
+   */
+  writeAnswers(answers) {
+    return ipcRenderer.invoke('forge:writeAnswers', answers);
+  },
+
+  /** The desktop app version (from its package.json). */
+  appVersion,
 });
