@@ -408,10 +408,18 @@
     .cursor{animation:none}
     *{transition:none !important}
   }
+
+  .nav-lang{
+    font:600 .72rem/1 var(--mono,monospace);letter-spacing:.06em;
+    color:var(--muted-2,#9aa);background:transparent;
+    border:1px solid var(--border-soft,#333);border-radius:7px;
+    padding:.34rem .55rem;cursor:pointer;transition:color .15s,border-color .15s
+  }
+  .nav-lang:hover{color:#ff9f1c;border-color:#ff9f1c}
 </style>
 </head>
 <body>
-<a class="skip" href="#main">Saltar al contenido</a>
+<a class="skip" href="#main" data-en="Skip to content">Saltar al contenido</a>
 
 <!-- ============ NAV ============ -->
 <header class="nav">
@@ -425,12 +433,13 @@
       forge <span class="v">v3.8.8</span>
     </a>
     <nav class="nav-links" id="navLinks" aria-label="Principal">
-      <a href="#por-que">Por qué</a>
-      <a href="#capas">Arquitectura</a>
-      <a href="#quickstart">Quickstart</a>
+      <a href="#por-que" data-en="Why">Por qué</a>
+      <a href="#capas" data-en="Architecture">Arquitectura</a>
+      <a href="#quickstart" data-en="Quickstart">Quickstart</a>
       <a href="https://github.com/cristiancorreau/forge" target="_blank" rel="noopener noreferrer">GitHub</a>
       <a href="https://www.npmjs.com/package/@cristiancorreau/forge" target="_blank" rel="noopener noreferrer">npm</a>
-      <a class="nav-cta" href="#quickstart">Empezar</a>
+      <a class="nav-cta" href="#quickstart" data-en="Get started">Empezar</a>
+      <button class="nav-lang" id="langToggle" type="button" aria-label="Switch language to English">EN</button>
     </nav>
     <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navLinks">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -451,18 +460,18 @@
         </svg>
         <span class="lock">forge</span>
       </div>
-      <span class="pill"><span class="dot"></span>Agentic Development Framework · Apache-2.0</span>
-      <h1>Configura tu proyecto para <span class="em">agentes de IA</span> en un comando.</h1>
-      <p class="hero-sub">Un equipo de agentes, <strong>cualquier runtime</strong>. forge detecta tu stack, instala agentes especializados, hooks de guardrail y un manifest auditable — para <strong>19 runtimes</strong> (Claude Code, Cursor, Copilot, Gemini y 15 más) desde un solo <code>project.yaml</code>.</p>
+      <span class="pill" data-en='<span class="dot"></span>Agentic Development Framework · Apache-2.0'><span class="dot"></span>Agentic Development Framework · Apache-2.0</span>
+      <h1 data-en='Set up your project for <span class="em">AI agents</span> in one command.'>Configura tu proyecto para <span class="em">agentes de IA</span> en un comando.</h1>
+      <p class="hero-sub" data-en='One agent team, <strong>every runtime</strong>. forge detects your stack, installs specialized agents, guardrail hooks and an auditable manifest — for <strong>19 runtimes</strong> (Claude Code, Cursor, Copilot, Gemini and 15 more) from a single <code>project.yaml</code>.'>Un equipo de agentes, <strong>cualquier runtime</strong>. forge detecta tu stack, instala agentes especializados, hooks de guardrail y un manifest auditable — para <strong>19 runtimes</strong> (Claude Code, Cursor, Copilot, Gemini y 15 más) desde un solo <code>project.yaml</code>.</p>
 
       <div class="cta-row">
         <a class="btn btn-primary" href="#quickstart">
-          Empezar
+          <span data-en="Get started">Empezar</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
         <a class="btn btn-ghost" href="https://github.com/cristiancorreau/forge" target="_blank" rel="noopener noreferrer">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.9 1.57 2.36 1.12 2.94.85.09-.66.35-1.12.63-1.38-2.22-.26-4.55-1.14-4.55-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.7 0 0 .84-.27 2.75 1.05A9.36 9.36 0 0 1 12 6.84c.85 0 1.71.12 2.51.34 1.91-1.32 2.75-1.05 2.75-1.05.55 1.4.2 2.44.1 2.7.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.48-.01 2.82 0 .27.18.6.69.49A10.02 10.02 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"/></svg>
-          Ver en GitHub
+          <span data-en="View on GitHub">Ver en GitHub</span>
         </a>
       </div>
 
@@ -512,23 +521,23 @@
   <div class="wrap">
     <dl class="stats-inner">
       <div class="stat">
-        <dt class="l">comandos de CLI</dt>
+        <dt class="l" data-en="CLI commands">comandos de CLI</dt>
         <dd class="n">17</dd>
       </div>
       <div class="stat">
-        <dt class="l">stack profiles · tier 2</dt>
+        <dt class="l" data-en="stack profiles · tier 2">stack profiles · tier 2</dt>
         <dd class="n">19</dd>
       </div>
       <div class="stat">
-        <dt class="l">skills invocables</dt>
+        <dt class="l" data-en="invokable skills">skills invocables</dt>
         <dd class="n">15</dd>
       </div>
       <div class="stat">
-        <dt class="l">runtimes soportados</dt>
+        <dt class="l" data-en="supported runtimes">runtimes soportados</dt>
         <dd class="n">19</dd>
       </div>
       <div class="stat">
-        <dt class="l">capas de arquitectura</dt>
+        <dt class="l" data-en="architecture layers">capas de arquitectura</dt>
         <dd class="n">5</dd>
       </div>
     </dl>
@@ -539,52 +548,52 @@
 <section class="section" id="por-que">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">Por qué forge</p>
-      <h2>Gobernanza de agentes, no solo prompts.</h2>
-      <p>forge no es un archivo de reglas: es una capa de arquitectura, compliance y delegación que se regenera desde una sola fuente de verdad.</p>
+      <p class="eyebrow" data-en="Why forge">Por qué forge</p>
+      <h2 data-en="Agent governance, not just prompts.">Gobernanza de agentes, no solo prompts.</h2>
+      <p data-en="forge is not a rules file: it's an architecture, compliance and delegation layer regenerated from a single source of truth.">forge no es un archivo de reglas: es una capa de arquitectura, compliance y delegación que se regenera desde una sola fuente de verdad.</p>
     </div>
 
     <div class="grid features">
       <article class="card">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="3.2"/><path d="M5.6 5.6l2.4 2.4M16 16l2.4 2.4M18.4 5.6L16 8M8 16l-2.4 2.4"/></svg></div>
-        <h3>Multi-runtime real</h3>
-        <p>Un <code>project.yaml</code> genera la config de 19 runtimes (4 nativos + 15 basados en reglas) mediante adaptadores de distribución.</p>
+        <h3 data-en="Real multi-runtime">Multi-runtime real</h3>
+        <p data-en='A single <code>project.yaml</code> generates the config for 19 runtimes (4 native + 15 rules-based) through distribution adapters.'>Un <code>project.yaml</code> genera la config de 19 runtimes (4 nativos + 15 basados en reglas) mediante adaptadores de distribución.</p>
       </article>
 
       <article class="card">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-        <h3>Spec-first (SDD)</h3>
-        <p>Ninguna tarea de código sin una spec aprobada. El orchestrator veta implementaciones sin spec en <code>docs/specs/</code>.</p>
+        <h3 data-en="Spec-first (SDD)">Spec-first (SDD)</h3>
+        <p data-en='No code task without an approved spec. The orchestrator vetoes implementations with no spec in <code>docs/specs/</code>.'>Ninguna tarea de código sin una spec aprobada. El orchestrator veta implementaciones sin spec en <code>docs/specs/</code>.</p>
       </article>
 
       <article class="card">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M9 12l2 2 4-4"/></svg></div>
-        <h3>Compliance con veto</h3>
-        <p>El <code>compliance-reviewer</code> tiene poder de veto vinculante sobre GDPR, LGPD y CCPA antes de que el código avance.</p>
+        <h3 data-en="Compliance with veto">Compliance con veto</h3>
+        <p data-en='The <code>compliance-reviewer</code> holds binding veto power over GDPR, LGPD and CCPA before code moves forward.'>El <code>compliance-reviewer</code> tiene poder de veto vinculante sobre GDPR, LGPD y CCPA antes de que el código avance.</p>
       </article>
 
       <article class="card">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg></div>
-        <h3>Guardrail hooks en JS</h3>
-        <p>Cero Python. Hooks puros en JavaScript: branch-guard y detección de debug, secrets y operaciones de producción.</p>
+        <h3 data-en="Guardrail hooks in JS">Guardrail hooks en JS</h3>
+        <p data-en="Zero Python. Pure JavaScript hooks: branch-guard plus detection of debug statements, secrets and production operations.">Cero Python. Hooks puros en JavaScript: branch-guard y detección de debug, secrets y operaciones de producción.</p>
       </article>
 
       <article class="card">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg></div>
-        <h3>Operaciones reversibles</h3>
-        <p>Manifest con SHA-256 y modo <code>--dry-run</code>: <code>update</code> re-sincroniza el catálogo preservando tus ediciones locales.</p>
+        <h3 data-en="Reversible operations">Operaciones reversibles</h3>
+        <p data-en='SHA-256 manifest and <code>--dry-run</code> mode: <code>update</code> re-syncs the catalog while preserving your local edits.'>Manifest con SHA-256 y modo <code>--dry-run</code>: <code>update</code> re-sincroniza el catálogo preservando tus ediciones locales.</p>
       </article>
 
       <article class="card">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h5"/></svg></div>
-        <h3>Base de conocimiento</h3>
-        <p>Wiki del proyecto: <code>ingest</code>, <code>lint</code> y <code>query</code> con citas. 15 skills invocables y 17 comandos en la CLI.</p>
+        <h3 data-en="Knowledge base">Base de conocimiento</h3>
+        <p data-en='Project wiki: <code>ingest</code>, <code>lint</code> and <code>query</code> with citations. 15 invokable skills and 17 CLI commands.'>Wiki del proyecto: <code>ingest</code>, <code>lint</code> y <code>query</code> con citas. 15 skills invocables y 17 comandos en la CLI.</p>
       </article>
 
       <article class="card">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
-        <h3>Adopta y documenta tu repo</h3>
-        <p><code>forge adopt</code> instala forge en un proyecto existente; <code>forge analyze</code> lo lee (stack, hotspots, TODOs) y el skill <code>/onboard</code> genera arquitectura, onboarding y revisión de seguridad con agentes especializados.</p>
+        <h3 data-en="Adopt &amp; document your repo">Adopta y documenta tu repo</h3>
+        <p data-en='<code>forge adopt</code> installs forge into an existing project; <code>forge analyze</code> reads it (stack, hotspots, TODOs) and the <code>/onboard</code> skill generates architecture, onboarding and a security review with specialized agents.'><code>forge adopt</code> instala forge en un proyecto existente; <code>forge analyze</code> lo lee (stack, hotspots, TODOs) y el skill <code>/onboard</code> genera arquitectura, onboarding y revisión de seguridad con agentes especializados.</p>
       </article>
     </div>
   </div>
@@ -594,9 +603,9 @@
 <section class="section" id="capas" style="background:var(--bg-2);border-block:1px solid var(--border-soft)">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">Arquitectura</p>
-      <h2>Las 5 capas de forge.</h2>
-      <p>Cada capa tiene una responsabilidad clara, de la memoria del proyecto a la distribución por runtime.</p>
+      <p class="eyebrow" data-en="Architecture">Arquitectura</p>
+      <h2 data-en="The 5 layers of forge.">Las 5 capas de forge.</h2>
+      <p data-en="Each layer has a clear responsibility, from project memory to per-runtime distribution.">Cada capa tiene una responsabilidad clara, de la memoria del proyecto a la distribución por runtime.</p>
     </div>
 
     <div class="layers">
@@ -604,35 +613,35 @@
         <span class="num">01</span>
         <div>
           <h3>Memory <span class="tag">project.yaml</span></h3>
-          <p>El <code>project.yaml</code> es la única fuente de verdad: stack, equipo, agentes, skills y compliance. Todo se regenera desde acá.</p>
+          <p data-en='The <code>project.yaml</code> is the single source of truth: stack, team, agents, skills and compliance. Everything is regenerated from here.'>El <code>project.yaml</code> es la única fuente de verdad: stack, equipo, agentes, skills y compliance. Todo se regenera desde acá.</p>
         </div>
       </div>
       <div class="layer">
         <span class="num">02</span>
         <div>
-          <h3>Knowledge <span class="tag">agentes + perfiles</span></h3>
-          <p>7 agentes Tier 1 universales, 19 perfiles de stack Tier 2 y agentes Tier 3 de proyecto. El conocimiento que el equipo necesita por dominio.</p>
+          <h3>Knowledge <span class="tag" data-en="agents + profiles">agentes + perfiles</span></h3>
+          <p data-en="7 universal Tier 1 agents, 19 Tier 2 stack profiles and project-level Tier 3 agents. The knowledge the team needs per domain.">7 agentes Tier 1 universales, 19 perfiles de stack Tier 2 y agentes Tier 3 de proyecto. El conocimiento que el equipo necesita por dominio.</p>
         </div>
       </div>
       <div class="layer">
         <span class="num">03</span>
         <div>
-          <h3>Guardrail <span class="tag">compliance + seguridad</span></h3>
-          <p>Hooks que imponen cumplimiento y seguridad: branch-guard, detección de secrets, debug y operaciones de producción. Pura prevención.</p>
+          <h3>Guardrail <span class="tag" data-en="compliance + security">compliance + seguridad</span></h3>
+          <p data-en="Hooks that enforce compliance and security: branch-guard, secret detection, debug and production operations. Pure prevention.">Hooks que imponen cumplimiento y seguridad: branch-guard, detección de secrets, debug y operaciones de producción. Pura prevención.</p>
         </div>
       </div>
       <div class="layer">
         <span class="num">04</span>
         <div>
-          <h3>Delegation <span class="tag">orquestación</span></h3>
-          <p>El orchestrator coordina y despacha skills al agente correcto. La delegación es explícita y auditable, no implícita.</p>
+          <h3>Delegation <span class="tag" data-en="orchestration">orquestación</span></h3>
+          <p data-en="The orchestrator coordinates and dispatches skills to the right agent. Delegation is explicit and auditable, not implicit.">El orchestrator coordina y despacha skills al agente correcto. La delegación es explícita y auditable, no implícita.</p>
         </div>
       </div>
       <div class="layer">
         <span class="num">05</span>
         <div>
-          <h3>Distribution <span class="tag">adaptadores</span></h3>
-          <p>Adaptadores por runtime traducen la config a los 19 runtimes soportados. Escribes una vez, corre en cualquiera.</p>
+          <h3>Distribution <span class="tag" data-en="adapters">adaptadores</span></h3>
+          <p data-en="Per-runtime adapters translate the config to all 19 supported runtimes. Write once, run on any of them.">Adaptadores por runtime traducen la config a los 19 runtimes soportados. Escribes una vez, corre en cualquiera.</p>
         </div>
       </div>
     </div>
@@ -643,16 +652,16 @@
 <section class="section" id="panel">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">Panel interactivo</p>
-      <h2>Configura y monitorea desde un panel.</h2>
-      <p>El comando <code>forge panel</code> abre un panel OpenTUI a pantalla completa con Bun — config, monitor, skills, hooks y templates. Con Node hace fallback a prompts de @clack; consolas legacy caen a ASCII.</p>
+      <p class="eyebrow" data-en="Interactive panel">Panel interactivo</p>
+      <h2 data-en="Configure and monitor from a panel.">Configura y monitorea desde un panel.</h2>
+      <p data-en='The <code>forge panel</code> command opens a full-screen OpenTUI panel with Bun — config, monitor, skills, hooks and templates. With Node it falls back to @clack prompts; legacy consoles degrade to ASCII.'>El comando <code>forge panel</code> abre un panel OpenTUI a pantalla completa con Bun — config, monitor, skills, hooks y templates. Con Node hace fallback a prompts de @clack; consolas legacy caen a ASCII.</p>
     </div>
     <figure class="shot-glow" style="margin:0">
       <div class="shot-wrap">
         <img src="./assets/cli-preview.png" width="1120" height="700" loading="lazy" decoding="async"
              alt="Panel interactivo OpenTUI de forge mostrando la configuración del proyecto, los agentes instalados y el estado del runtime." />
       </div>
-      <figcaption>forge panel — config, monitor, skills, hooks y templates en la terminal.</figcaption>
+      <figcaption data-en="forge panel — config, monitor, skills, hooks and templates in the terminal.">forge panel — config, monitor, skills, hooks y templates en la terminal.</figcaption>
     </figure>
   </div>
 </section>
@@ -662,10 +671,10 @@
   <div class="wrap">
     <div class="section-head">
       <p class="eyebrow">Distribution</p>
-      <h2>Un equipo, diecinueve runtimes.</h2>
-      <p>Defines el equipo una vez en <code>project.yaml</code> y los adaptadores escriben la config nativa de cada herramienta.</p>
+      <h2 data-en="One team, nineteen runtimes.">Un equipo, diecinueve runtimes.</h2>
+      <p data-en='You define the team once in <code>project.yaml</code> and the adapters write each tool&apos;s native config.'>Defines el equipo una vez en <code>project.yaml</code> y los adaptadores escriben la config nativa de cada herramienta.</p>
     </div>
-    <p style="text-align:center;color:var(--muted-2);font-family:var(--mono);font-size:.82rem;margin:-.4rem 0 1.4rem">4 nativos · 15 basados en reglas</p>
+    <p style="text-align:center;color:var(--muted-2);font-family:var(--mono);font-size:.82rem;margin:-.4rem 0 1.4rem" data-en="4 native · 15 rules-based">4 nativos · 15 basados en reglas</p>
     <div class="grid runtimes">
       <div class="runtime"><span class="rl" aria-hidden="true">CC</span><b>Claude Code</b><span>.claude/</span></div>
       <div class="runtime"><span class="rl" aria-hidden="true">OC</span><b>OpenCode</b><span>AGENTS.md</span></div>
@@ -695,8 +704,8 @@
   <div class="wrap">
     <div class="section-head">
       <p class="eyebrow">Quickstart</p>
-      <h2>De cero a un equipo de agentes.</h2>
-      <p>Un proyecto nuevo o uno que ya existe: forge se adapta a ambos. Requiere Node.js 20+ (con Bun se desbloquea el panel a pantalla completa).</p>
+      <h2 data-en="From zero to an agent team.">De cero a un equipo de agentes.</h2>
+      <p data-en="A brand-new project or an existing one: forge adapts to both. Requires Node.js 20+ (Bun unlocks the full-screen panel).">Un proyecto nuevo o uno que ya existe: forge se adapta a ambos. Requiere Node.js 20+ (con Bun se desbloquea el panel a pantalla completa).</p>
     </div>
 
     <div class="quick-grid">
@@ -704,35 +713,35 @@
         <li>
           <span class="sn" aria-hidden="true">1</span>
           <div>
-            <b>Instala forge</b>
-            <p>Pruébalo sin instalar con <code>npx @cristiancorreau/forge init</code>, o instala la CLI global con tu gestor preferido — <code>npm</code>, <code>pnpm</code> o <code>bun</code>:</p>
+            <b data-en="Install forge">Instala forge</b>
+            <p data-en='Try it without installing via <code>npx @cristiancorreau/forge init</code>, or install the global CLI with your preferred manager — <code>npm</code>, <code>pnpm</code> or <code>bun</code>:'>Pruébalo sin instalar con <code>npx @cristiancorreau/forge init</code>, o instala la CLI global con tu gestor preferido — <code>npm</code>, <code>pnpm</code> o <code>bun</code>:</p>
             <p style="font-family:var(--mono);font-size:.82rem;color:var(--muted-2);line-height:1.9;margin-top:.5rem">
               <code>npm  i  -g @cristiancorreau/forge</code><br>
               <code>pnpm add -g @cristiancorreau/forge</code><br>
               <code>bun  add -g @cristiancorreau/forge</code>
             </p>
-            <p style="font-size:.82rem;color:var(--muted-2);margin-top:.5rem">El wizard full-screen (OpenTUI) corre con <strong>Bun</strong>; con npm/node funciona igual vía prompts.</p>
+            <p style="font-size:.82rem;color:var(--muted-2);margin-top:.5rem" data-en="The full-screen wizard (OpenTUI) runs with <strong>Bun</strong>; with npm/node it works the same via prompts.">El wizard full-screen (OpenTUI) corre con <strong>Bun</strong>; con npm/node funciona igual vía prompts.</p>
           </div>
         </li>
         <li>
           <span class="sn" aria-hidden="true">2</span>
           <div>
-            <b>Inicializa o adopta</b>
-            <p><code>init</code> arranca el wizard en un proyecto nuevo; <code>adopt</code> incorpora forge a un codebase existente, lo analiza y genera la wiki.</p>
+            <b data-en="Init or adopt">Inicializa o adopta</b>
+            <p data-en='<code>init</code> starts the wizard in a new project; <code>adopt</code> brings forge into an existing codebase, analyzes it and generates the wiki.'><code>init</code> arranca el wizard en un proyecto nuevo; <code>adopt</code> incorpora forge a un codebase existente, lo analiza y genera la wiki.</p>
           </div>
         </li>
         <li>
           <span class="sn" aria-hidden="true">3</span>
           <div>
-            <b>Trabaja spec-first</b>
-            <p>Ejecuta <code>/spec</code> para tu primera feature. Sin spec aprobada, el orchestrator veta la implementación.</p>
+            <b data-en="Work spec-first">Trabaja spec-first</b>
+            <p data-en='Run <code>/spec</code> for your first feature. Without an approved spec, the orchestrator vetoes the implementation.'>Ejecuta <code>/spec</code> para tu primera feature. Sin spec aprobada, el orchestrator veta la implementación.</p>
           </div>
         </li>
         <li>
           <span class="sn" aria-hidden="true">4</span>
           <div>
-            <b>Mantén sincronizado</b>
-            <p><code>update</code> re-sincroniza los archivos gestionados con el catálogo preservando tus ediciones; <code>doctor</code> y <code>validate</code> verifican el estado.</p>
+            <b data-en="Keep it in sync">Mantén sincronizado</b>
+            <p data-en='<code>update</code> re-syncs the managed files with the catalog while preserving your edits; <code>doctor</code> and <code>validate</code> check the state.'><code>update</code> re-sincroniza los archivos gestionados con el catálogo preservando tus ediciones; <code>doctor</code> y <code>validate</code> verifican el estado.</p>
           </div>
         </li>
       </ol>
@@ -753,16 +762,16 @@ npx @cristiancorreau/forge analyze   # leer el código; luego /onboard documenta
             <span class="lbl">Copiar</span>
           </button>
         </div>
-<pre><span class="c"># proyecto nuevo</span>
+<pre><span class="c" data-en="# new project"># proyecto nuevo</span>
 <span class="p">$</span> npx @cristiancorreau/forge init
 
-<span class="c"># proyecto existente</span>
+<span class="c" data-en="# existing project"># proyecto existente</span>
 <span class="p">$</span> npx @cristiancorreau/forge adopt
-<span class="p">$</span> npx @cristiancorreau/forge analyze   <span class="c"># leer el código; /onboard documenta</span>
+<span class="p">$</span> npx @cristiancorreau/forge analyze   <span class="c" data-en="# read the code; /onboard documents it"># leer el código; /onboard documenta</span>
 
-<span class="c"># primera feature, spec-first</span>
+<span class="c" data-en="# first feature, spec-first"># primera feature, spec-first</span>
 <span class="p">$</span> /spec
-<span class="ok">▲ forge — listo para construir.</span></pre>
+<span class="ok" data-en="▲ forge — ready to build.">▲ forge — listo para construir.</span></pre>
       </div>
     </div>
   </div>
@@ -771,17 +780,17 @@ npx @cristiancorreau/forge analyze   # leer el código; luego /onboard documenta
 <!-- ============ FINAL CTA ============ -->
 <section class="section final">
   <div class="wrap">
-    <p class="eyebrow">Empieza ahora</p>
-    <h2>Forja tu equipo de agentes.</h2>
-    <p>Open source bajo Apache-2.0. Configura cualquier proyecto para trabajar con agentes de IA en un comando — sin lock-in de runtime.</p>
+    <p class="eyebrow" data-en="Start now">Empieza ahora</p>
+    <h2 data-en="Forge your agent team.">Forja tu equipo de agentes.</h2>
+    <p data-en="Open source under Apache-2.0. Set up any project to work with AI agents in one command — with no runtime lock-in.">Open source bajo Apache-2.0. Configura cualquier proyecto para trabajar con agentes de IA en un comando — sin lock-in de runtime.</p>
     <div class="cta-row">
       <a class="btn btn-primary" href="https://www.npmjs.com/package/@cristiancorreau/forge" target="_blank" rel="noopener noreferrer">
-        Instalar desde npm
+        <span data-en="Install from npm">Instalar desde npm</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </a>
       <a class="btn btn-ghost" href="https://github.com/cristiancorreau/forge" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.9 1.57 2.36 1.12 2.94.85.09-.66.35-1.12.63-1.38-2.22-.26-4.55-1.14-4.55-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.7 0 0 .84-.27 2.75 1.05A9.36 9.36 0 0 1 12 6.84c.85 0 1.71.12 2.51.34 1.91-1.32 2.75-1.05 2.75-1.05.55 1.4.2 2.44.1 2.7.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.48-.01 2.82 0 .27.18.6.69.49A10.02 10.02 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"/></svg>
-        Explorar el repo
+        <span data-en="Explore the repo">Explorar el repo</span>
       </a>
     </div>
   </div>
@@ -801,28 +810,28 @@ npx @cristiancorreau/forge analyze   # leer el código; luego /onboard documenta
           </svg>
           forge
         </a>
-        <p>Framework de desarrollo agéntico multi-runtime. Configura cualquier proyecto para trabajar con agentes de IA en un comando.</p>
+        <p data-en="Multi-runtime agentic development framework. Set up any project to work with AI agents in one command.">Framework de desarrollo agéntico multi-runtime. Configura cualquier proyecto para trabajar con agentes de IA en un comando.</p>
       </div>
       <div class="ft-cols">
         <div class="ft-col">
-          <h4>Producto</h4>
-          <a href="#por-que">Por qué forge</a>
-          <a href="#capas">Arquitectura</a>
+          <h4 data-en="Product">Producto</h4>
+          <a href="#por-que" data-en="Why forge">Por qué forge</a>
+          <a href="#capas" data-en="Architecture">Arquitectura</a>
           <a href="#panel">Panel</a>
           <a href="#quickstart">Quickstart</a>
         </div>
         <div class="ft-col">
-          <h4>Recursos</h4>
+          <h4 data-en="Resources">Recursos</h4>
           <a href="https://github.com/cristiancorreau/forge" target="_blank" rel="noopener noreferrer">GitHub</a>
           <a href="https://www.npmjs.com/package/@cristiancorreau/forge" target="_blank" rel="noopener noreferrer">npm</a>
           <a href="https://github.com/cristiancorreau/forge/issues" target="_blank" rel="noopener noreferrer">Issues</a>
-          <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener noreferrer">Licencia Apache-2.0</a>
+          <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener noreferrer" data-en="Apache-2.0 License">Licencia Apache-2.0</a>
         </div>
       </div>
     </div>
     <div class="ft-bottom">
-      <span>© 2026 forge · Apache-2.0 · v3.1.0</span>
-      <span>Hecho con fuego, yunque y mucho dogfooding.</span>
+      <span>© 2026 forge · Apache-2.0 · v3.8.8</span>
+      <span data-en="Made with fire, anvil and a lot of dogfooding.">Hecho con fuego, yunque y mucho dogfooding.</span>
     </div>
   </div>
 </footer>
@@ -912,6 +921,35 @@ npx @cristiancorreau/forge analyze   # leer el código; luego /onboard documenta
           navToggle.setAttribute("aria-expanded", "false");
           navToggle.setAttribute("aria-label", "Abrir menú");
         }
+      });
+    }
+
+    /* ---- language toggle (ES default · EN via data-en) ---- */
+    var langToggle = document.getElementById("langToggle");
+    var i18nNodes = Array.prototype.slice.call(document.querySelectorAll("[data-en]"));
+    // Snapshot the Spanish source once so toggling is lossless both ways.
+    i18nNodes.forEach(function (el) { el.setAttribute("data-es", el.innerHTML); });
+
+    function applyLang(lang) {
+      var en = lang === "en";
+      i18nNodes.forEach(function (el) {
+        el.innerHTML = en ? el.getAttribute("data-en") : el.getAttribute("data-es");
+      });
+      document.documentElement.lang = en ? "en" : "es";
+      if (langToggle) {
+        langToggle.textContent = en ? "ES" : "EN";
+        langToggle.setAttribute("aria-label", en ? "Cambiar idioma a español" : "Switch language to English");
+      }
+      try { window.localStorage.setItem("forge-lang", lang); } catch (e) {}
+    }
+
+    var saved = "es";
+    try { saved = window.localStorage.getItem("forge-lang") || "es"; } catch (e) {}
+    if (saved === "en") applyLang("en");
+
+    if (langToggle) {
+      langToggle.addEventListener("click", function () {
+        applyLang(document.documentElement.lang === "en" ? "es" : "en");
       });
     }
   })();
