@@ -2,6 +2,9 @@
 
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const os = require('os');
+const fs = require('fs');
+const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { toArgs } = require('./args');
 
@@ -95,6 +98,22 @@ ipcMain.handle('forge:run', async (_event, message) => {
     stderr: result.stderr,
     args: subArgs,
   };
+});
+
+// IPC: el renderer envia el WizardResult ya armado; el main lo serializa a un
+// archivo JSON temporal y devuelve la ruta. El renderer luego corre
+// `init --from <ruta>` reusando el canal forge:run. El renderer nunca toca el
+// filesystem: todo pasa por este handler en el main process.
+ipcMain.handle('forge:writeAnswers', async (_event, answers) => {
+  try {
+    const unique = crypto.randomBytes(8).toString('hex');
+    const file = path.join(os.tmpdir(), `forge-answers-${unique}.json`);
+    const json = JSON.stringify(answers ?? {}, null, 2);
+    await fs.promises.writeFile(file, json, 'utf8');
+    return { ok: true, file };
+  } catch (err) {
+    return { ok: false, file: '', error: String(err && err.message ? err.message : err) };
+  }
 });
 
 app.whenReady().then(() => {
