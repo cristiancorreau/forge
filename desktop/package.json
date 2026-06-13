@@ -1,0 +1,25 @@
+{
+  "name": "@cristiancorreau/forge-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "App de escritorio (Electron) de configuracion para forge. GUI fina sobre la misma CLI via spawn.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.mjs",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "cl.socialweb.forge.desktop",
+    "productName": "forge desktop",
+    "files": [
+      "src/**/*",
+      "renderer/**/*"
+    ]
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}
