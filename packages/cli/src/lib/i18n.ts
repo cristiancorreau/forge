@@ -50,7 +50,7 @@ Usage: forge <command> [options]
 
 Setup
   panel          Open the interactive panel (config, monitor, skills, hooks, templates)
-  init           Initialize forge in a project (wizard + post-install dashboard)
+  init           Initialize forge (wizard, or --from answers.json for non-interactive/GUI/CI)
   adopt          Onboard forge into an EXISTING codebase (analyze + auto-wiki)
   add            Install a skill from an external source (security pipeline, opt-in network)
   generate       Generate runtime config files from project.yaml
@@ -100,7 +100,7 @@ Uso: forge <comando> [opciones]
 
 Setup
   panel          Abre el panel interactivo (config, monitor, skills, hooks, templates)
-  init           Inicializa forge en un proyecto (wizard + dashboard post-install)
+  init           Inicializa forge (wizard, o --from answers.json para modo no-interactivo/GUI/CI)
   adopt          Incorpora forge a un codebase EXISTENTE (análisis + auto-wiki)
   add            Instala un skill desde una fuente externa (pipeline de seguridad, red opt-in)
   generate       Genera los archivos de config nativos de cada runtime desde project.yaml
