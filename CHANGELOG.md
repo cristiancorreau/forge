@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.8.8] — 2026-06-13
+
+### Agregado
+- **`forge analyze` + skill `/onboard` (SPEC-061)** — flujo para entender y documentar un repo **ya existente** (complementa `forge adopt`, que instala forge en proyectos creados).
+  - **`forge analyze [path] [--json] [--write]`**: análisis determinístico y offline del código (`lib/code-analysis.ts`) — stack, lenguajes, hotspots (directorios y archivos más grandes), marcadores `TODO/FIXME/HACK/XXX`, presencia de tests y los agentes sugeridos por el stack. `--write` guarda `docs/analysis/<fecha>-analysis.md`. Sin LLM ni red: base reproducible.
+  - **Skill `/onboard`**: orquesta a los agentes especializados (`docs-writer`, `security-auditor`, ingenieros del stack) para **leer el código** y generar `docs/architecture.md`, `docs/onboarding.md` y `docs/security-review.md`, alimentando el wiki. Anclado en la salida de `forge analyze`. Incluye las secciones de resiliencia (SPEC-060) y pasa su gate (91/A).
+- `forge eval --help` ahora documenta las 8 categorías (incluye `resilience`).
+
+---
+
 ## [3.8.7] — 2026-06-13
 
 ### Agregado

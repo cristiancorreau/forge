@@ -15,6 +15,7 @@ export const SKILLS: SkillInfo[] = [
   { id: 'spec',           command: '/spec',           category: 'Desarrollo', purpose: 'Redacta specs siguiendo la plantilla forge',          trigger: 'antes de escribir una spec' },
   { id: 'new-feature',    command: '/new-feature',    category: 'Desarrollo', purpose: 'Checklist de feature de plan a deploy',               trigger: '"nueva feature", "implementar"' },
   { id: 'security-audit', command: '/security-audit', category: 'Desarrollo', purpose: 'Checklist de seguridad para endpoints y auth',        trigger: '"auditar seguridad", "revisar auth"' },
+  { id: 'onboard',        command: '/onboard',        category: 'Análisis',   purpose: 'Analiza un repo existente con agentes y genera docs (arquitectura, onboarding, seguridad)', trigger: '"documentar el proyecto", "onboarding", "entender este repo"' },
   { id: 'local2prod',     command: '/local2prod',     category: 'Desarrollo', purpose: 'Deploy a prod; no termina hasta READY/SUCCESS',       trigger: '"publicar", "deploy"' },
   { id: 'db-migrate',     command: '/db-migrate',     category: 'Datos',      purpose: 'Migración segura (Prisma/Drizzle/AR/Alembic/Goose)',  trigger: '"migrar schema", "nueva migración"' },
   { id: 'browser-test',   command: '/browser-test',   category: 'Testing',    purpose: 'Verifica UI en navegador y captura evidencia',        trigger: '"screenshot de", "open <url>"' },

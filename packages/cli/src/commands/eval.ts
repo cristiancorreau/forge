@@ -14,7 +14,7 @@ import { evalSkill, type SkillEval, type CategoryResult } from '../lib/skill-eva
 
 const HELP = `Usage: forge eval <source> [options]
 
-Score a SKILL.md on 7 quality dimensions (offline, deterministic, no LLM).
+Score a SKILL.md on 8 quality dimensions (offline, deterministic, no LLM).
 
 Source:
   ./path or /path              Local SKILL.md or directory containing one
@@ -33,6 +33,7 @@ Categories scored (0–10 each, overall 0–100):
   context-efficiency body length, file references, block size, token mention
   safety             safety keywords, confirm/dry-run for destructive ops, prereqs
   testability        verifiable outputs, acceptance criteria, error scenarios
+  resilience         anti-rationalization table, red flags, verification gate
   naming             kebab-case clarity, name matches purpose
 
 Grade: A (>=90) B (>=75) C (>=60) D (>=45) F (<45)
