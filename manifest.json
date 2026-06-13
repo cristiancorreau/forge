@@ -1,13 +1,15 @@
 {
   "name": "forge",
-  "version": "3.8.5",
+  "version": "3.8.6",
   "description": "Agentic development framework for 19 AI runtimes (Claude Code, OpenCode, Codex, Kiro and 15 rules-based editors)",
   "license": "Apache-2.0",
   "repository": "https://github.com/cristiancorreau/forge",
   "layers": {
     "memory": {
       "description": "Project knowledge base — project.yaml as single source of truth",
-      "files": ["templates/project.yaml.tpl"]
+      "files": [
+        "templates/project.yaml.tpl"
+      ]
     },
     "knowledge": {
       "description": "Agent definitions and stack-specific profiles",
@@ -88,97 +90,141 @@
     {
       "id": "astro",
       "stack": "Astro + Tailwind + TypeScript",
-      "agents": ["frontend-engineer"]
+      "agents": [
+        "frontend-engineer"
+      ]
     },
     {
       "id": "django",
       "stack": "Django 4.x + Django REST Framework",
-      "agents": ["api-engineer"]
+      "agents": [
+        "api-engineer"
+      ]
     },
     {
       "id": "expo",
       "stack": "React Native / Expo",
-      "agents": ["mobile-engineer"]
+      "agents": [
+        "mobile-engineer"
+      ]
     },
     {
       "id": "express",
       "stack": "Express + Node.js",
-      "agents": ["api-engineer"]
+      "agents": [
+        "api-engineer"
+      ]
     },
     {
       "id": "fastapi",
       "stack": "FastAPI + Python",
-      "agents": ["api-engineer"]
+      "agents": [
+        "api-engineer"
+      ]
     },
     {
       "id": "flask",
       "stack": "Flask 3 + blueprints + SQLAlchemy + marshmallow (Python)",
-      "agents": ["api-engineer"]
+      "agents": [
+        "api-engineer"
+      ]
     },
     {
       "id": "flutter",
       "stack": "Flutter 3 + Dart 3 + Riverpod + go_router",
-      "agents": ["mobile-engineer"]
+      "agents": [
+        "mobile-engineer"
+      ]
     },
     {
       "id": "go-gin",
       "stack": "Go + Gin + sqlc",
-      "agents": ["api-engineer"]
+      "agents": [
+        "api-engineer"
+      ]
     },
     {
       "id": "hono-drizzle",
       "stack": "Hono + Drizzle + TypeScript",
-      "agents": ["api-engineer"]
+      "agents": [
+        "api-engineer"
+      ]
     },
     {
       "id": "laravel",
       "stack": "Laravel + PHP",
-      "agents": ["api-engineer", "fullstack-engineer", "migration-specialist", "laravel-specialist", "laravel-test-engineer"]
+      "agents": [
+        "api-engineer",
+        "fullstack-engineer",
+        "migration-specialist",
+        "laravel-specialist",
+        "laravel-test-engineer"
+      ]
     },
     {
       "id": "nestjs",
       "stack": "NestJS + TypeScript",
-      "agents": ["api-engineer"]
+      "agents": [
+        "api-engineer"
+      ]
     },
     {
       "id": "nextjs-admin",
       "stack": "Next.js 15 + shadcn/ui",
-      "agents": ["admin-engineer"]
+      "agents": [
+        "admin-engineer"
+      ]
     },
     {
       "id": "playwright-crawler",
       "stack": "Playwright + scraping/crawling",
-      "agents": ["scanner-engineer"]
+      "agents": [
+        "scanner-engineer"
+      ]
     },
     {
       "id": "rails",
       "stack": "Ruby on Rails",
-      "agents": ["fullstack-engineer"]
+      "agents": [
+        "fullstack-engineer"
+      ]
     },
     {
       "id": "rust",
       "stack": "Axum + Tokio + sqlx/SeaORM (Rust; variantes Actix/Rocket)",
-      "agents": ["api-engineer"]
+      "agents": [
+        "api-engineer"
+      ]
     },
     {
       "id": "springboot",
       "stack": "Spring Boot 3 + Spring Data JPA (Java/Kotlin)",
-      "agents": ["api-engineer"]
+      "agents": [
+        "api-engineer"
+      ]
     },
     {
       "id": "sveltekit",
       "stack": "SvelteKit",
-      "agents": ["frontend-engineer"]
+      "agents": [
+        "frontend-engineer"
+      ]
     },
     {
       "id": "vuenuxt",
       "stack": "Nuxt 3 + Vue 3 + Pinia",
-      "agents": ["frontend-engineer"]
+      "agents": [
+        "frontend-engineer"
+      ]
     },
     {
       "id": "wordpress",
       "stack": "WordPress + Divi/Elementor",
-      "agents": ["wp-engineer", "divi-engineer", "elementor-engineer"]
+      "agents": [
+        "wp-engineer",
+        "divi-engineer",
+        "elementor-engineer"
+      ]
     }
   ],
   "skills": [

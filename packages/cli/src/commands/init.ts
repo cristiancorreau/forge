@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync, readFileSync, copyFileSync, readdirSync, statSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, copyFileSync, readdirSync, statSync, unlinkSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
@@ -221,7 +221,30 @@ export function defaultAgentsForMode(mode: string): string[] {
   return ['orchestrator', 'backend-engineer', 'frontend-engineer', 'test-engineer', 'docs-writer'];
 }
 
-export function installCoreAgents(forgeRoot: string, destDir: string, activeAgents: string[], profiles: string[], force: boolean): void {
+/** Agent basenames (no `.md`) bundled in every profiles/<p>/agents/ dir. */
+function profileAgentNames(forgeRoot: string, profile: string): string[] {
+  const dir = join(forgeRoot, 'profiles', profile, 'agents');
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).filter(f => f.endsWith('.md')).map(f => basename(f, '.md'));
+}
+
+/** Every agent forge can install from its bundle (core + all profiles). */
+function allBundledAgentNames(forgeRoot: string): Set<string> {
+  const names = new Set<string>();
+  const coreDir = join(forgeRoot, 'core', 'agents');
+  if (existsSync(coreDir)) {
+    for (const f of readdirSync(coreDir)) if (f.endsWith('.md')) names.add(basename(f, '.md'));
+  }
+  const profilesDir = join(forgeRoot, 'profiles');
+  if (existsSync(profilesDir)) {
+    for (const p of readdirSync(profilesDir)) {
+      for (const n of profileAgentNames(forgeRoot, p)) names.add(n);
+    }
+  }
+  return names;
+}
+
+export function installCoreAgents(forgeRoot: string, destDir: string, activeAgents: string[], profiles: string[], force: boolean, specialized: string[] = []): void {
   mkdirSync(destDir, { recursive: true });
 
   // Tier 2: profile agents first
@@ -241,6 +264,25 @@ export function installCoreAgents(forgeRoot: string, destDir: string, activeAgen
       if (existsSync(src) && (!existsSync(dest) || force)) {
         copyFile(src, dest, force);
       }
+    }
+  }
+
+  // Prune orphans: forge-managed agents left over from a PREVIOUS stack/profile
+  // (e.g. laravel agents lingering after the project was reconfigured to another
+  // backend). We only remove files forge itself bundles AND that the current
+  // config no longer selects. Hand-authored agents (unknown to the bundle) and
+  // registered Tier-3 specialized agents are never touched.
+  const expected = new Set<string>([
+    ...activeAgents,
+    ...profiles.flatMap(p => profileAgentNames(forgeRoot, p)),
+    ...specialized,
+  ]);
+  const bundled = allBundledAgentNames(forgeRoot);
+  for (const file of readdirSync(destDir)) {
+    if (!file.endsWith('.md')) continue;
+    const name = basename(file, '.md');
+    if (bundled.has(name) && !expected.has(name)) {
+      unlinkSync(join(destDir, file));
     }
   }
 }
@@ -549,7 +591,7 @@ export async function init(args: string[]): Promise<number> {
       {
         title: `Agents (${allAgents.length})`,
         tech: profiles.length ? `${profiles.join(', ')} profile` : 'core',
-        task: () => installCoreAgents(forgeRoot, join(claudeDir, 'agents'), allAgents, profiles, force),
+        task: () => installCoreAgents(forgeRoot, join(claudeDir, 'agents'), allAgents, profiles, force, config.agents?.specialized ?? []),
       },
       {
         title: 'Hooks (pre-edit-check.js, pre-bash-check.js)',

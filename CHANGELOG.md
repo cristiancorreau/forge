@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.8.6] — 2026-06-12
+
+### Corregido
+- **Agentes huérfanos al reconfigurar el stack** — `forge init` instalaba los agentes del profile elegido pero **nunca eliminaba** los del profile anterior. Al reconfigurar un proyecto (p. ej. cambiar de `laravel` a `express`+`nextjs` y reinstalar), los agentes del profile viejo quedaban pegados en `.claude/agents/` — por eso aparecían agentes de Laravel (`api-engineer`, `fullstack-engineer`, `laravel-specialist`, `laravel-test-engineer`, `migration-specialist`) en proyectos que no son Laravel. Ahora `installCoreAgents()` **poda** los agentes del bundle de forge que la configuración actual ya no selecciona, preservando los agentes Tier-3 registrados en `agents.specialized` y cualquier agente hecho a mano. Aplica a `forge init` y `forge adopt`. Test guardián del escenario reconfigurar→podar.
+
+---
+
 ## [3.8.5] — 2026-06-08
 
 ### Corregido
