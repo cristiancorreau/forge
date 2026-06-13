@@ -253,8 +253,9 @@ export async function adopt(args: string[]): Promise<number> {
 
     const activeAgents = config.agents?.active ?? [];
     const profiles = config.agents?.profiles ?? [];
+    const specialized = config.agents?.specialized ?? [];
 
-    installCoreAgents(forgeRoot, join(claudeDir, 'agents'), activeAgents, profiles, opts.force);
+    installCoreAgents(forgeRoot, join(claudeDir, 'agents'), activeAgents, profiles, opts.force, specialized);
     installHooks(forgeRoot, join(claudeDir, 'hooks'), opts.mode, opts.force);
     installCommands(forgeRoot, join(claudeDir, 'commands'), opts.force);
     write(join(opts.target, 'CLAUDE.md'), generateClaudeMd(config), opts.force);
