@@ -20,6 +20,12 @@ universal:
   - hook: session-start.sh
     event: SessionStart
     description: "Carga project.yaml + estado al iniciar la sesión"
+  - hook: precompact-headroom.js
+    event: PreCompact
+    description: >-
+      Antes de que el runtime compacte el contexto, recuerda releer
+      .forge/state/STATE.md (SPEC-062) para no perder el panorama. Solo se
+      registra en runtimes que exponen el evento PreCompact (claude-code).
 
 standard:
   # mode: standard + enterprise

@@ -109,6 +109,36 @@ function matchCritical(command) {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Package-manager consistency guard (SPEC-066). Advisory only (never blocks):
+// warn when a lockfile-affecting command uses a package manager different from
+// the one declared in stack.package_manager. Same failure class as GSD's stale
+// image sentinel: wrong tool -> wrong lockfile -> inconsistent results.
+// ---------------------------------------------------------------------------
+const PM_INSTALL = {
+  npm:  /\bnpm\s+(install|i|ci|add|update)\b/,
+  pnpm: /\bpnpm\s+(install|i|add|update)\b/,
+  yarn: /\byarn\s+(install|add|up|upgrade)\b/,
+  bun:  /\bbun\s+(install|i|add|update)\b/,
+};
+
+function matchPmMismatch(command, project) {
+  const stack = project.stack || {};
+  const declared = String(stack.package_manager || '').replace(/['"]/g, '').trim();
+  if (!declared || !PM_INSTALL[declared]) return null;
+  for (const [pm, re] of Object.entries(PM_INSTALL)) {
+    if (pm !== declared && re.test(command)) {
+      return (
+        `forge: ADVERTENCIA — inconsistencia de gestor de paquetes.\n\n` +
+        `  El proyecto declara "${declared}" pero el comando usa "${pm}".\n` +
+        `  Esto puede generar un lockfile distinto y resultados inconsistentes.\n` +
+        `  Usa ${declared} o actualiza stack.package_manager en project.yaml.\n`
+      );
+    }
+  }
+  return null;
+}
+
 function matchForbidden(command, project) {
   try {
     const forbidden = (project.rules || {}).forbidden_in_production;
@@ -165,8 +195,16 @@ process.stdin.on('end', () => {
   }
 
   const project = loadProjectYaml();
+
+  // Advisory PM-consistency guard (never blocks). Emitted alongside the exit-0
+  // path; if a destructive label also matches, the destructive message wins.
+  const pmWarn = matchPmMismatch(command, project);
+
   const label = matchDangerous(command) || matchForbidden(command, project);
-  if (!label) process.exit(0);
+  if (!label) {
+    if (pmWarn) process.stdout.write(pmWarn);
+    process.exit(0);
+  }
 
   const snippet = command.slice(0, 120) + (command.length > 120 ? '...' : '');
   const inProd = isProductionContext(command, project);
@@ -175,15 +213,16 @@ process.stdin.on('end', () => {
     process.stdout.write(
       `forge: BLOQUEADO — comando destructivo detectado en contexto de producción.\n\n` +
       `  Comando: ${snippet}\n  Patrón: ${label}\n\n` +
-      `  Ejecutá esto MANUALMENTE con plena consciencia de que afecta producción.\n\n` +
+      `  Ejecuta esto MANUALMENTE con plena consciencia de que afecta producción.\n\n` +
       `  Lección del 2026-04-28: --force-reset borró 225 usuarios en producción.\n`
     );
     process.exit(2);
   } else {
+    if (pmWarn) process.stdout.write(pmWarn);
     process.stdout.write(
       `forge: ADVERTENCIA — comando potencialmente destructivo.\n\n` +
       `  Comando: ${snippet}\n  Patrón: ${label}\n\n` +
-      `  Si apunta a producción, cancelá y ejecutá manualmente.\n`
+      `  Si apunta a producción, cancela y ejecuta manualmente.\n`
     );
     process.exit(0);
   }

@@ -411,6 +411,15 @@ const RAW_CURATED: RawCuratedItem[] = [
     },
   },
   {
+    name: 'gsd-browser',
+    description:
+      'Open GSD · MCP server: automatización de browser nativa para agentes via Chrome DevTools Protocol — 90+ comandos, daemon persistente, evidence bundles replayables y visual diffing. Integración externa (ver repo para instalar).',
+    category: 'mcp-server',
+    tags: ['gsd', 'browser', 'e2e', 'cdp', 'automation', 'visual-diffing', 'mcp'],
+    url: 'https://github.com/open-gsd/gsd-browser',
+    language: 'Rust',
+  },
+  {
     name: 'MCP — Sentry',
     description:
       'Consulta issues, eventos y trazas de Sentry. Permite a Claude diagnosticar errores de producción directamente.',
@@ -654,6 +663,15 @@ const RAW_CURATED: RawCuratedItem[] = [
     tags: ['mcp', 'debugging', 'inspector', 'testing', 'development'],
     url: 'https://github.com/modelcontextprotocol/inspector',
     language: 'TypeScript',
+  },
+  {
+    name: 'gsd-test-runner (Open GSD)',
+    description:
+      'Runner de tests remoto y dockerizado multi-OS (Linux/Windows/macOS) sobre hosts SSH, con imágenes versionadas y reporting JSON Lines. Integración externa de Open GSD para verificación cross-platform sin CI propio.',
+    category: 'tool',
+    tags: ['gsd', 'testing', 'remote', 'docker', 'multi-os', 'ci'],
+    url: 'https://github.com/open-gsd/gsd-test-runner',
+    language: 'Go',
   },
 
   // ── Resources ─────────────────────────────────────────────────────────────

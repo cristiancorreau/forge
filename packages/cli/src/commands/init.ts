@@ -310,7 +310,7 @@ export function installHooks(forgeRoot: string, destDir: string, mode: string, f
   // JS hooks (zero Python dependency, cross-platform — run via `node`, so they
   // work in PowerShell as well as bash). The .sh variants remain in the bundle
   // as reference but the installed/registered command is the .js version.
-  const universal = ['pre-edit-check.js', 'post-turn-check.js', 'session-start.js'];
+  const universal = ['pre-edit-check.js', 'post-turn-check.js', 'session-start.js', 'precompact-headroom.js'];
   const standard = ['pre-bash-check.js'];
 
   for (const hook of universal) {
@@ -354,6 +354,9 @@ function buildSettings(language: string, mode: string): Record<string, unknown> 
   const hooks: Record<string, unknown[]> = {
     PreToolUse: [{ matcher: '.*', hooks: [{ type: 'command', command: 'node .claude/hooks/pre-edit-check.js' }] }],
     Stop: [{ hooks: [{ type: 'command', command: 'node .claude/hooks/post-turn-check.js' }] }],
+    // PreCompact (Claude Code): re-anchor to .forge/state/STATE.md before the
+    // runtime compacts context (SPEC-068). Only claude-code exposes this event.
+    PreCompact: [{ hooks: [{ type: 'command', command: 'node .claude/hooks/precompact-headroom.js' }] }],
   };
   if (mode === 'standard' || mode === 'enterprise') {
     (hooks.PreToolUse as Array<Record<string, unknown>>).push({
