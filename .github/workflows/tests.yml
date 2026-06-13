@@ -56,9 +56,11 @@ jobs:
         working-directory: packages/cli
         run: bun install --frozen-lockfile && bun run build:all
       # VS Code extension: compile (tsc) + run ipc/validation/parity tests (node:test).
-      - name: Extension — compile + tests
+      # The extension's package-lock.json is gitignored (the repo pins the CLI via
+      # bun.lock), so `npm install` is used instead of `npm ci`.
+      - name: Extension — install + compile + tests
         working-directory: vscode-extension
-        run: npm ci && npm run compile && npm test
+        run: npm install --no-audit --no-fund && npm run compile && npm test
       # Electron desktop: only the pure action→args mapping is tested (no Electron run).
       - name: Desktop — args mapping tests
         working-directory: desktop
