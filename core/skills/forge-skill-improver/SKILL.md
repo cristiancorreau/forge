@@ -84,3 +84,23 @@ diseño, no de redacción.
 
 Devuelve el `SKILL.md` mejorado y el reporte de `forge eval` con el delta. Esta
 skill es autocontenida y debería consumir menos de 4000 tokens.
+
+## Excusas comunes
+
+| Excusa | Realidad |
+|---|---|
+| "La categoría `resilience` no aplica a esta skill" | Aplica a toda skill: toda skill puede documentar excusas y exigir evidencia. |
+| "El score global ya pasa 75, no toco lo demás" | El two-gate también exige piso 6 por categoría; una débil bloquea igual. |
+| "Edito a ciegas hasta que suba" | Leé la `notes` de la categoría estancada antes de tocar nada. |
+
+## Señales de alerta
+
+- Mejorar el global mientras una categoría sigue bajo el piso (6)
+- Iterar sin leer las `notes` por categoría del reporte
+- Declarar la mejora "lista" sin el delta de `forge eval` como evidencia
+
+## Verificación
+
+- [ ] `forge eval <ruta> --json` post-mejora con `overallScore` mayor al baseline — pegá el delta como evidencia
+- [ ] La categoría que era la más débil subió a `>= 6`
+- [ ] Ninguna regresión: ninguna otra categoría bajó respecto del `.bak`

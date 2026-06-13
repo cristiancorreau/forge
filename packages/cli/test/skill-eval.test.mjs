@@ -95,6 +95,25 @@ Fall back to the backup you created before starting.
 
 Returns the refactored files and a summary of changes made.
 Token budget: this skill is self-contained and should use less than 4000 tokens.
+
+## Excusas comunes
+
+| Excusa | Realidad |
+|---|---|
+| "El controller es chico, no hace falta refactor" | Los controllers chicos crecen; extraer temprano evita la deuda. |
+| "Lo testeo después" | No lo vas a hacer; corré \`php artisan test\` ahora y pegá la salida. |
+
+## Señales de alerta
+
+- Refactorizar sin correr los tests antes y después
+- "Anda bien" sin evidencia de la salida del test
+- Lógica de negocio que sigue en el controller tras el refactor
+
+## Verificación
+
+- [ ] \`php artisan test\` verde — pegá la salida del comando como evidencia
+- [ ] Cada acción quedó bajo 15 líneas
+- [ ] Coverage no bajó
 `;
 
 /** A minimal / poor-quality skill. Should score D or F. */
@@ -110,7 +129,7 @@ just do it
 // ── Unit tests: evalSkill ─────────────────────────────────────────────────────
 
 describe('evalSkill — pure function', () => {
-  test('returns the 7 expected categories', () => {
+  test('returns the 8 expected categories', () => {
     const result = E.evalSkill(HIGH_QUALITY_SKILL);
     const ids = result.categories.map(c => c.id);
     assert.deepEqual(ids.sort(), [
@@ -118,6 +137,7 @@ describe('evalSkill — pure function', () => {
       'description',
       'naming',
       'prompt-engineering',
+      'resilience',
       'safety',
       'structure',
       'testability',
@@ -129,6 +149,16 @@ describe('evalSkill — pure function', () => {
     for (const c of result.categories) {
       assert.equal(c.max, 10, `category ${c.id} should have max: 10`);
     }
+  });
+
+  test('resilience: 10/10 when the 3 sections are present (SPEC-060)', () => {
+    const res = E.evalSkill(HIGH_QUALITY_SKILL).categories.find(c => c.id === 'resilience');
+    assert.equal(res.score, 10, `resilience should be 10/10, notes: ${res.notes}`);
+  });
+
+  test('resilience: 0/10 when anti-rationalization, red-flags and verification gate are all absent', () => {
+    const res = E.evalSkill(LOW_QUALITY_SKILL).categories.find(c => c.id === 'resilience');
+    assert.equal(res.score, 0, `resilience should be 0/10 for a bare skill, got ${res.score}`);
   });
 
   test('overallScore is 0–100', () => {
@@ -221,7 +251,7 @@ describe('forge eval --json', () => {
       assert.ok(typeof parsed.overallScore === 'number', 'missing overallScore');
       assert.ok(['A', 'B', 'C', 'D', 'F'].includes(parsed.grade), `invalid grade: ${parsed.grade}`);
       assert.ok(Array.isArray(parsed.categories), 'categories must be array');
-      assert.equal(parsed.categories.length, 7, 'must have 7 categories');
+      assert.equal(parsed.categories.length, 8, 'must have 8 categories');
       assert.ok(Array.isArray(parsed.notes), 'notes must be array');
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });

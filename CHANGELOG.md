@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.8.7] — 2026-06-13
+
+### Agregado
+- **Resiliencia de skills (SPEC-060)** — `forge eval` suma una 8ª categoría, `resilience`, que recompensa el patrón anti-racionalización + gates de verificación: la tabla `## Excusas comunes` (Excusa|Realidad), la sección `## Señales de alerta` y el `## Verificación` con checklist + evidencia obligatoria ("'parece bien' nunca alcanza"). El `overallScore` ahora promedia 8 categorías y el two-gate (SPEC-054) exige el patrón en skills `installable`. Los meta-skills `forge-skill-creator` y `forge-skill-improver` lo incorporan (dogfooding) y enseñan a emitirlo. Patrón inspirado en [`addyosmani/agent-skills`](https://github.com/addyosmani/agent-skills) (MIT), reimplementado en español como scorer determinístico — sin copiar contenido del repo original.
+
+---
+
 ## [3.8.6] — 2026-06-12
 
 ### Corregido
