@@ -8,155 +8,330 @@
   <title>forge — configuración</title>
 </head>
 <body>
-  <nav class="tabs">
-    <button class="tab active" data-view="new">Proyecto nuevo</button>
-    <button class="tab" data-view="adopt">Adoptar existente</button>
-    <button class="tab" data-view="diag">Diagnóstico</button>
+  <!-- ===== Biblioteca de iconos SVG (inline, sin librerias) ===== -->
+  <svg width="0" height="0" aria-hidden="true" focusable="false" class="svg-defs">
+    <defs>
+      <linearGradient id="emberGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ff7a18" />
+        <stop offset="1" stop-color="#ffb347" />
+      </linearGradient>
+    </defs>
+
+    <!-- Logo de marca: yunque + chispa, relleno con gradiente ember -->
+    <symbol id="ic-logo" viewBox="0 0 24 24">
+      <path
+        fill="url(#emberGrad)"
+        d="M3 9h11a4 4 0 0 0 4-3 1 1 0 0 1 2 0 6 6 0 0 1-6 5H9l-1 2h6a1 1 0 0 1 .9 1.45L13.5 18H8a1 1 0 0 1-.9-.55L4.2 11.6 3 11a1 1 0 0 1 0-2Z"
+      />
+      <path fill="url(#emberGrad)" d="M9 19h6l-1 3H10l-1-3Z" />
+    </symbol>
+
+    <!-- Tabs -->
+    <symbol id="ic-spark" viewBox="0 0 24 24">
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M12 8l2 2-2 2-2-2 2-2Z" />
+    </symbol>
+    <symbol id="ic-git-merge" viewBox="0 0 24 24">
+      <circle cx="6" cy="6" r="2.5" />
+      <circle cx="6" cy="18" r="2.5" />
+      <circle cx="18" cy="9" r="2.5" />
+      <path d="M6 8.5v7M8.4 7.5A6 6 0 0 0 15.5 9.2" />
+    </symbol>
+    <symbol id="ic-activity" viewBox="0 0 24 24">
+      <path d="M3 12h4l2.5 7 4-14L16 12h5" />
+    </symbol>
+
+    <!-- Stack -->
+    <symbol id="ic-server" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="7" rx="1.5" /><rect x="3" y="13" width="18" height="7" rx="1.5" />
+      <path d="M7 7.5h.01M7 16.5h.01" />
+    </symbol>
+    <symbol id="ic-browser" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M7 6.5h.01M10 6.5h.01" />
+    </symbol>
+    <symbol id="ic-code" viewBox="0 0 24 24">
+      <path d="M8 7l-5 5 5 5M16 7l5 5-5 5" />
+    </symbol>
+    <symbol id="ic-shield-check" viewBox="0 0 24 24">
+      <path d="M12 3 5 6v5c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3Z" /><path d="M9 11.5l2 2 4-4" />
+    </symbol>
+
+    <!-- Badges / estados -->
+    <symbol id="ic-check" viewBox="0 0 24 24"><path d="M5 12l4.5 4.5L19 7" /></symbol>
+    <symbol id="ic-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></symbol>
+    <symbol id="ic-loader" viewBox="0 0 24 24">
+      <path d="M12 3v4M12 17v4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M3 12h4M17 12h4M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" />
+    </symbol>
+
+    <!-- Navegacion -->
+    <symbol id="ic-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6" /></symbol>
+    <symbol id="ic-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></symbol>
+    <symbol id="ic-eye" viewBox="0 0 24 24">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
+    </symbol>
+    <symbol id="ic-rocket" viewBox="0 0 24 24">
+      <path d="M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.9-.9.9-2.3 0-3.2a2.3 2.3 0 0 0-3 .2Z" />
+      <path d="M9 11a8 8 0 0 1 4-6c3-2 6-2 6-2s0 3-2 6a8 8 0 0 1-6 4l-2-2Z" /><circle cx="14.5" cy="9.5" r="1.2" />
+    </symbol>
+    <symbol id="ic-folder" viewBox="0 0 24 24">
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+    </symbol>
+  </svg>
+
+  <!-- ===== Header ===== -->
+  <header class="app-header">
+    <div class="brand">
+      <svg class="brand-logo" aria-hidden="true"><use href="#ic-logo" /></svg>
+      <div class="brand-text">
+        <h1><span class="brand-forge">forge</span></h1>
+        <p class="subtitle">Configura forge sin salir del editor.</p>
+      </div>
+    </div>
+    <span class="version-chip" id="version-chip"></span>
+  </header>
+
+  <!-- ===== Tabs ===== -->
+  <nav class="tabs" role="tablist" aria-label="Vistas">
+    <button class="tab active" data-view="new" role="tab" aria-selected="true">
+      <svg class="ic" aria-hidden="true"><use href="#ic-spark" /></svg>Proyecto nuevo
+    </button>
+    <button class="tab" data-view="adopt" role="tab" aria-selected="false">
+      <svg class="ic" aria-hidden="true"><use href="#ic-git-merge" /></svg>Adoptar
+    </button>
+    <button class="tab" data-view="diag" role="tab" aria-selected="false">
+      <svg class="ic" aria-hidden="true"><use href="#ic-activity" /></svg>Diagnóstico
+    </button>
   </nav>
 
   <main>
     <!-- ============================================================ -->
     <!-- Vista 1: Proyecto nuevo (init --from)                        -->
     <!-- ============================================================ -->
-    <section id="view-new" class="view active">
-      <h1>Proyecto nuevo</h1>
-      <p class="hint">Completá los pasos. Al confirmar se ejecuta <code>forge init --from</code> con las respuestas.</p>
+    <section id="view-new" class="view active" role="tabpanel">
+      <div class="card wizard">
+        <!-- Stepper -->
+        <ol class="stepper" aria-label="Progreso del asistente">
+          <li class="step-node active" data-dot="0"><span class="dot">1</span><span class="step-label">Identidad</span></li>
+          <li class="step-node" data-dot="1"><span class="dot">2</span><span class="step-label">Stack</span></li>
+          <li class="step-node" data-dot="2"><span class="dot">3</span><span class="step-label">Modo y runtime</span></li>
+        </ol>
 
-      <ol class="stepper">
-        <li class="step-dot active" data-dot="0">Identidad</li>
-        <li class="step-dot" data-dot="1">Stack</li>
-        <li class="step-dot" data-dot="2">Modo y runtime</li>
-      </ol>
+        <div class="wizard-body">
+          <!-- Paso 0: identidad -->
+          <div class="step active" data-step="0">
+            <p class="step-q">¿Qué vas a construir?</p>
 
-      <!-- Paso 0: identidad -->
-      <div class="step active" data-step="0">
-        <label for="name">Nombre del proyecto</label>
-        <input id="name" type="text" placeholder="Mi App Genial" autocomplete="off" />
-        <div class="field-error" id="name-error"></div>
+            <div class="field">
+              <label for="name">Nombre del proyecto <span class="req">*</span></label>
+              <div class="input-wrap">
+                <input id="name" type="text" placeholder="Mi App Genial" autocomplete="off" />
+                <svg class="input-check" aria-hidden="true"><use href="#ic-check" /></svg>
+              </div>
+              <p class="field-error" id="name-error" role="alert"></p>
+            </div>
 
-        <label for="slug">Slug</label>
-        <input id="slug" type="text" placeholder="mi-app-genial" autocomplete="off" />
-        <div class="field-error" id="slug-error"></div>
-        <p class="hint">El slug se deriva del nombre; podés ajustarlo.</p>
+            <div class="field">
+              <label for="slug">Slug <span class="req">*</span></label>
+              <div class="input-wrap">
+                <input id="slug" type="text" placeholder="mi-app-genial" autocomplete="off" />
+                <svg class="input-check" aria-hidden="true"><use href="#ic-check" /></svg>
+              </div>
+              <p class="field-error" id="slug-error" role="alert"></p>
+              <p class="slug-line">El slug se deriva del nombre; puedes ajustarlo.</p>
+            </div>
 
-        <label for="type">Tipo</label>
-        <select id="type">
-          <option value="fullstack">Fullstack</option>
-          <option value="backend">Backend</option>
-          <option value="frontend">Frontend</option>
-          <option value="library">Librería</option>
-          <option value="cli">CLI</option>
-        </select>
-      </div>
+            <div class="field">
+              <label for="type">Tipo</label>
+              <select id="type">
+                <option value="fullstack">Fullstack</option>
+                <option value="backend">Backend</option>
+                <option value="frontend">Frontend</option>
+                <option value="library">Librería</option>
+                <option value="cli">CLI</option>
+              </select>
+            </div>
+          </div>
 
-      <!-- Paso 1: stack -->
-      <div class="step" data-step="1">
-        <label for="language">Lenguaje principal</label>
-        <select id="language">
-          <option value="typescript">TypeScript</option>
-          <option value="javascript">JavaScript</option>
-          <option value="python">Python</option>
-          <option value="go">Go</option>
-          <option value="rust">Rust</option>
-        </select>
+          <!-- Paso 1: stack -->
+          <div class="step" data-step="1">
+            <p class="step-q">Elige el stack.</p>
 
-        <label for="frontend">Frontend (opcional)</label>
-        <input id="frontend" type="text" placeholder="nextjs" autocomplete="off" />
+            <div class="field">
+              <label for="language">Lenguaje principal</label>
+              <select id="language">
+                <option value="typescript">TypeScript</option>
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+              </select>
+            </div>
 
-        <label for="backend">Backend (opcional)</label>
-        <input id="backend" type="text" placeholder="express" autocomplete="off" />
+            <div class="stack-block">
+              <h4 class="block-title"><svg class="ic" aria-hidden="true"><use href="#ic-browser" /></svg> Frontend</h4>
+              <div class="field">
+                <label for="frontend">Framework (opcional)</label>
+                <input id="frontend" type="text" placeholder="nextjs" autocomplete="off" />
+              </div>
+            </div>
 
-        <label for="database">Base de datos (opcional)</label>
-        <input id="database" type="text" placeholder="postgres" autocomplete="off" />
+            <div class="stack-block">
+              <h4 class="block-title"><svg class="ic" aria-hidden="true"><use href="#ic-server" /></svg> Backend</h4>
+              <div class="grid-2">
+                <div class="field">
+                  <label for="backend">Framework (opcional)</label>
+                  <input id="backend" type="text" placeholder="express" autocomplete="off" />
+                </div>
+                <div class="field">
+                  <label for="database">Base de datos (opcional)</label>
+                  <input id="database" type="text" placeholder="postgres" autocomplete="off" />
+                </div>
+              </div>
+            </div>
 
-        <label for="testing">Testing (separado por comas)</label>
-        <input id="testing" type="text" placeholder="vitest" autocomplete="off" />
-      </div>
+            <div class="field">
+              <label for="testing">Testing (separado por comas)</label>
+              <input id="testing" type="text" placeholder="vitest" autocomplete="off" />
+            </div>
+          </div>
 
-      <!-- Paso 2: modo y runtime -->
-      <div class="step" data-step="2">
-        <label for="mode">Modo</label>
-        <select id="mode">
-          <option value="startup">startup</option>
-          <option value="standard" selected>standard</option>
-          <option value="enterprise">enterprise</option>
-        </select>
+          <!-- Paso 2: modo y runtime -->
+          <div class="step" data-step="2">
+            <p class="step-q">Modo, runtime y skills.</p>
 
-        <label for="runtime-new">Runtime</label>
-        <select id="runtime-new">
-          <option value="claude-code" selected>claude-code</option>
-          <option value="opencode">opencode</option>
-          <option value="codex">codex</option>
-          <option value="kiro">kiro</option>
-        </select>
+            <div class="grid-2">
+              <div class="field">
+                <label for="mode">Modo</label>
+                <select id="mode">
+                  <option value="startup">startup</option>
+                  <option value="standard" selected>standard</option>
+                  <option value="enterprise">enterprise</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="runtime-new">Runtime</label>
+                <select id="runtime-new">
+                  <option value="claude-code" selected>claude-code</option>
+                  <option value="opencode">opencode</option>
+                  <option value="codex">codex</option>
+                  <option value="kiro">kiro</option>
+                </select>
+              </div>
+            </div>
 
-        <label for="skills">Skills (separado por comas, opcional)</label>
-        <input id="skills" type="text" placeholder="spec" autocomplete="off" />
-      </div>
+            <div class="field">
+              <label for="skills">Skills (separado por comas, opcional)</label>
+              <input id="skills" type="text" placeholder="spec" autocomplete="off" />
+            </div>
+          </div>
+        </div>
 
-      <div class="actions">
-        <button id="new-prev" class="btn ghost" disabled>Anterior</button>
-        <button id="new-next" class="btn">Siguiente</button>
-        <button id="new-preview" class="btn ghost hidden">Previsualizar</button>
-        <button id="new-apply" class="btn primary hidden">Crear proyecto</button>
+        <!-- Barra de navegacion -->
+        <div class="wizard-nav">
+          <button type="button" class="secondary icon-only" id="new-prev" aria-label="Anterior" disabled>
+            <svg class="ic" aria-hidden="true"><use href="#ic-arrow-left" /></svg>
+          </button>
+          <span class="step-counter" id="step-counter">Paso 1 de 3</span>
+          <div class="nav-right">
+            <button type="button" class="primary" id="new-next">
+              Siguiente <svg class="ic" aria-hidden="true"><use href="#ic-arrow-right" /></svg>
+            </button>
+            <button type="button" class="secondary hidden" id="new-preview">
+              <svg class="ic" aria-hidden="true"><use href="#ic-eye" /></svg> Previsualizar
+            </button>
+            <button type="button" class="primary hidden" id="new-apply">
+              <svg class="ic" aria-hidden="true"><use href="#ic-rocket" /></svg> Crear proyecto
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- ============================================================ -->
     <!-- Vista 2: Adoptar proyecto existente (adopt)                  -->
     <!-- ============================================================ -->
-    <section id="view-adopt" class="view">
-      <h1>Adoptar proyecto existente</h1>
-      <p class="hint">Analiza el proyecto actual e instala la config de forge con <code>forge adopt</code>.</p>
+    <section id="view-adopt" class="view" role="tabpanel">
+      <div class="card">
+        <h2>Adoptar proyecto existente</h2>
+        <p class="hint">
+          Analiza el proyecto actual e instala la configuración de forge con
+          <code>forge adopt</code>. Previsualiza con <code>--dry-run</code> antes de aplicar.
+        </p>
 
-      <label for="runtime-adopt">Runtime</label>
-      <select id="runtime-adopt">
-        <option value="claude-code" selected>claude-code</option>
-        <option value="opencode">opencode</option>
-        <option value="codex">codex</option>
-      </select>
+        <div class="cwd-block">
+          <span class="cwd-label"><svg class="ic" aria-hidden="true"><use href="#ic-folder" /></svg> Directorio de trabajo</span>
+          <span class="cwd-path mono">el workspace abierto</span>
+        </div>
 
-      <label for="mode-adopt">Modo</label>
-      <select id="mode-adopt">
-        <option value="startup">startup</option>
-        <option value="standard" selected>standard</option>
-        <option value="enterprise">enterprise</option>
-      </select>
+        <div class="grid-2">
+          <div class="field">
+            <label for="runtime-adopt">Runtime</label>
+            <select id="runtime-adopt">
+              <option value="claude-code" selected>claude-code</option>
+              <option value="opencode">opencode</option>
+              <option value="codex">codex</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="mode-adopt">Modo</label>
+            <select id="mode-adopt">
+              <option value="startup">startup</option>
+              <option value="standard" selected>standard</option>
+              <option value="enterprise">enterprise</option>
+            </select>
+          </div>
+        </div>
 
-      <label class="checkbox">
-        <input id="wiki-adopt" type="checkbox" checked />
-        Generar wiki factual
-      </label>
+        <label class="checkbox">
+          <input id="wiki-adopt" type="checkbox" checked />
+          Generar wiki factual
+        </label>
 
-      <div class="actions">
-        <button id="adopt-preview" class="btn ghost">Previsualizar</button>
-        <button id="adopt-apply" class="btn primary">Aplicar</button>
+        <div class="actions">
+          <button id="adopt-preview" class="secondary">
+            <svg class="ic" aria-hidden="true"><use href="#ic-eye" /></svg> Previsualizar
+          </button>
+          <button id="adopt-apply" class="primary">
+            <svg class="ic" aria-hidden="true"><use href="#ic-git-merge" /></svg> Adoptar
+          </button>
+        </div>
       </div>
     </section>
 
     <!-- ============================================================ -->
     <!-- Vista 3: Diagnóstico (audit + doctor)                        -->
     <!-- ============================================================ -->
-    <section id="view-diag" class="view">
-      <h1>Diagnóstico</h1>
-      <p class="hint">Corre <code>audit --json</code> y <code>doctor</code> sobre este proyecto.</p>
+    <section id="view-diag" class="view" role="tabpanel">
+      <div class="card">
+        <h2>Diagnóstico</h2>
+        <p class="hint">
+          Corre <code>audit --json</code> y <code>doctor</code> sobre este proyecto.
+        </p>
 
-      <div class="actions">
-        <button id="diag-run" class="btn primary">Ejecutar diagnóstico</button>
+        <div class="actions">
+          <button id="diag-run" class="primary">
+            <svg class="ic" aria-hidden="true"><use href="#ic-shield-check" /></svg> Ejecutar diagnóstico
+          </button>
+        </div>
+
+        <div id="diag-summary" class="summary hidden"></div>
+        <ul id="diag-list" class="diag-list"></ul>
       </div>
-
-      <div id="diag-summary" class="summary hidden"></div>
-      <ul id="diag-list" class="diag-list"></ul>
     </section>
 
-    <!-- Output compartido -->
-    <div class="output-wrap">
-      <div class="output-header">
-        <span>Salida</span>
-        <span id="status-badge" class="badge"></span>
+    <!-- ===== Panel de salida compartido (terminal) ===== -->
+    <section class="output-panel">
+      <div class="output-head">
+        <h3>Salida</h3>
+        <span id="status-badge" class="badge" role="status" aria-live="polite"></span>
       </div>
-      <pre id="output" class="output"></pre>
-    </div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="dots"><i class="dot-r"></i><i class="dot-w"></i><i class="dot-g"></i></span>
+          <span class="terminal-cmd mono" id="terminal-cmd">forge</span>
+        </div>
+        <pre id="output" class="output mono" aria-live="polite"></pre>
+      </div>
+    </section>
   </main>
 
   <script nonce="%%NONCE%%" src="%%SCRIPT_URI%%"></script>

@@ -41,9 +41,27 @@
   const outputEl = $('output');
   const statusBadge = $('status-badge');
 
+  // Ícono por estado para el badge tipo terminal (espejo del desktop).
+  const STATUS_ICON = {
+    ok: 'ic-check',
+    err: 'ic-x',
+    run: 'ic-loader',
+  };
+
   function setStatus(kind, text) {
     statusBadge.className = 'badge ' + kind;
-    statusBadge.textContent = text;
+    if (!text) {
+      statusBadge.textContent = '';
+      return;
+    }
+    const iconId = STATUS_ICON[kind];
+    if (iconId) {
+      statusBadge.innerHTML =
+        '<svg class="ic" aria-hidden="true"><use href="#' + iconId + '" /></svg>';
+      statusBadge.appendChild(document.createTextNode(text));
+    } else {
+      statusBadge.textContent = text;
+    }
   }
 
   function setOutput(text) {
@@ -110,6 +128,11 @@
     $('slug-error').textContent = slugRes.valid ? '' : slugRes.error;
     nameEl.classList.toggle('invalid', !nameRes.valid && nameEl.value.length > 0);
     slugEl.classList.toggle('invalid', !slugRes.valid && slugEl.value.length > 0);
+    // Check verde en el wrap cuando el campo es válido (sistema visual ember).
+    const nameWrap = nameEl.closest('.input-wrap');
+    const slugWrap = slugEl.closest('.input-wrap');
+    if (nameWrap) nameWrap.classList.toggle('valid', nameRes.valid && nameEl.value.length > 0);
+    if (slugWrap) slugWrap.classList.toggle('valid', slugRes.valid && slugEl.value.length > 0);
     return nameRes.valid && slugRes.valid;
   }
 
@@ -129,9 +152,14 @@
     document.querySelectorAll('#view-new .step').forEach((s) => {
       s.classList.toggle('active', Number(s.getAttribute('data-step')) === n);
     });
-    document.querySelectorAll('#view-new .step-dot').forEach((d) => {
-      d.classList.toggle('active', Number(d.getAttribute('data-dot')) <= n);
+    // Stepper ember: el paso actual = active, los anteriores = done.
+    document.querySelectorAll('#view-new .step-node').forEach((node) => {
+      const i = Number(node.getAttribute('data-dot'));
+      node.classList.toggle('active', i === n);
+      node.classList.toggle('done', i < n);
     });
+    const counter = $('step-counter');
+    if (counter) counter.textContent = 'Paso ' + (n + 1) + ' de ' + TOTAL_STEPS;
     $('new-prev').toggleAttribute('disabled', n === 0);
     const last = n === TOTAL_STEPS - 1;
     $('new-next').classList.toggle('hidden', last);
