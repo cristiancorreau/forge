@@ -2,7 +2,7 @@
 
 # Skills de forge
 
-forge incluye **14 skills** invocables como comandos slash. Cada skill encapsula un flujo de trabajo reutilizable (planificar una feature, migrar una base de datos, auditar seguridad, consultar el wiki, etc.) que se activa por un comando explícito o por triggers contextuales.
+forge incluye **15 skills** invocables como comandos slash. Cada skill encapsula un flujo de trabajo reutilizable (planificar una feature, migrar una base de datos, auditar seguridad, documentar un repo existente, consultar el wiki, etc.) que se activa por un comando explícito o por triggers contextuales.
 
 ## Tabla resumen
 
@@ -14,6 +14,7 @@ forge incluye **14 skills** invocables como comandos slash. Cada skill encapsula
 | new-feature | `/new-feature` | Flujo de desarrollo | Al comenzar cualquier feature nueva |
 | security-audit | `/security-audit` | Flujo de desarrollo | Al implementar/modificar endpoints o auth |
 | local2prod | `/local2prod` | Flujo de desarrollo | Al desplegar una feature terminada a producción |
+| onboard | `/onboard` | Análisis | Al adoptar/entender un repo existente y documentarlo |
 | db-migrate | `/db-migrate` | Datos | Al modificar el schema / migrar la BD |
 | wiki-ingest | `/wiki-ingest` | Wiki / conocimiento | Al incorporar documentación o conocimiento al wiki |
 | wiki-query | `/wiki-query` | Wiki / conocimiento | Al responder preguntas con el wiki del proyecto |
@@ -60,6 +61,15 @@ forge incluye **14 skills** invocables como comandos slash. Cada skill encapsula
 - **Comando:** `/local2prod`
 - **Propósito:** Flujo completo de publicación a producción. Compatible con Vercel, Railway, Fly.io, GitHub Actions y pipelines custom. Nunca dar una tarea por terminada sin deploy en estado READY/SUCCESS. El provider sale de `project.yaml` (`deploy.provider`).
 - **Trigger:** `/local2prod`; al terminar una feature y querer desplegarla a producción.
+
+---
+
+## Análisis
+
+### onboard
+- **Comando:** `/onboard`
+- **Propósito:** Analiza un proyecto **ya creado** con los agentes especializados (`docs-writer`, `security-auditor`, ingenieros del stack) y genera documentación real: `docs/architecture.md`, `docs/onboarding.md` y `docs/security-review.md`, alimentando el wiki. Se ancla en la salida determinística de `forge analyze` para no inventar estructura. Complementa a `forge adopt` (que instala forge en el repo).
+- **Trigger:** `/onboard`, "documentar el proyecto", "onboarding", "entender este repo", "analizar el código"; justo después de `forge adopt` o cuando alguien nuevo debe entender el código.
 
 ---
 
