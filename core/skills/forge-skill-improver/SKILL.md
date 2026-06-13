@@ -28,7 +28,7 @@ lo uses para crear una skill nueva; para eso está `forge-skill-creator`.
 
 ## Prerequisitos
 
-Antes de empezar, verificá:
+Antes de empezar, verifica:
 
 - El archivo objetivo existe y `forge eval --help` responde.
 - Git está limpio o hay un backup: el loop edita el archivo en el lugar.
@@ -42,7 +42,7 @@ Capturá el estado inicial. Por ejemplo:
 forge eval core/skills/<id> --json
 ```
 
-Guardá `overallScore`, `grade` y la categoría más débil. Ese es tu punto de
+Guarda `overallScore`, `grade` y la categoría más débil. Ese es tu punto de
 comparación al final.
 
 ## Paso 2 — Arreglos mecánicos
@@ -72,14 +72,14 @@ categoría baja: el gate exige el piso por categoría.
 
 ## Manejo de errores
 
-Si una edición baja el score (regresión), revertí desde el `.bak` y probá otra
+Si una edición baja el score (regresión), revierte desde el `.bak` y prueba otra
 táctica para esa categoría. Si tras dos iteraciones la categoría no se mueve,
-frená y reportá el bloqueo en vez de seguir editando: a veces el límite es de
+detente y reporta el bloqueo en vez de seguir editando: a veces el límite es de
 diseño, no de redacción.
 
 ## Relación con otros skills
 
-- Para crear una skill desde cero, usá `forge-skill-creator`.
+- Para crear una skill desde cero, usa `forge-skill-creator`.
 - El scorer y los umbrales (75 / 6) viven en `forge eval` (SPEC-053).
 
 Devuelve el `SKILL.md` mejorado y el reporte de `forge eval` con el delta. Esta
@@ -91,7 +91,7 @@ skill es autocontenida y debería consumir menos de 4000 tokens.
 |---|---|
 | "La categoría `resilience` no aplica a esta skill" | Aplica a toda skill: toda skill puede documentar excusas y exigir evidencia. |
 | "El score global ya pasa 75, no toco lo demás" | El two-gate también exige piso 6 por categoría; una débil bloquea igual. |
-| "Edito a ciegas hasta que suba" | Leé la `notes` de la categoría estancada antes de tocar nada. |
+| "Edito a ciegas hasta que suba" | Lee la `notes` de la categoría estancada antes de tocar nada. |
 
 ## Señales de alerta
 
@@ -101,6 +101,6 @@ skill es autocontenida y debería consumir menos de 4000 tokens.
 
 ## Verificación
 
-- [ ] `forge eval <ruta> --json` post-mejora con `overallScore` mayor al baseline — pegá el delta como evidencia
+- [ ] `forge eval <ruta> --json` post-mejora con `overallScore` mayor al baseline — pega el delta como evidencia
 - [ ] La categoría que era la más débil subió a `>= 6`
 - [ ] Ninguna regresión: ninguna otra categoría bajó respecto del `.bak`
