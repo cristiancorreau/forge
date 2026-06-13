@@ -7,6 +7,20 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.9.0] — 2026-06-13
+
+> Cierra los gaps prioritarios del análisis vs Open GSD (`docs/analysis/forge-vs-gsd-2026-06.md`), implementados en paralelo por 4 equipos. Adaptaciones a la arquitectura de forge (compilador, determinístico, offline), sin copiar.
+
+### Agregado
+- **Artefacto `.forge/state/` (SPEC-062)** — `forge generate`/`init`/`adopt` emiten `STATE.md`, `PLAN.md` y `CONTEXT.md` desde `project.yaml` + las specs, como punto de re-anclaje de contexto determinístico (regenerable, en el manifest SHA-256 para drift en `audit`). El hook `session-start` inyecta un resumen de `STATE.md`. Ataca el "context rot" por la vía de un compilador, sin ser orquestador.
+- **Registro declarativo de capacidades (SPEC-063)** — `core/registry/units.yaml` mapea cada agente/skill a `{scope, tools, outputs, phase}`; `forge audit` valida presencia de archivo, que los `tools` del frontmatter estén dentro del contrato, y parity registro↔disco (estilo Unit Registry, verificado en compile/audit time).
+- **`forge spec-probe` (SPEC-064)** — gate de SALIDA determinístico que puntúa la completitud verificable de una spec (criterios como checklist, alternativas resueltas, estado único), reusando la maquinaria pura de `forge eval`. `--json`. Extiende el gate de entrada del SDD hacia un gate de salida offline.
+
+### Cambiado
+- **Wizard confiable en Windows (SPEC-065)** — `@clack/prompts` pasa a ser el wizard por defecto en todas las plataformas; OpenTUI queda **opt-in** vía `FORGE_ENABLE_OPENTUI=1`. Sin esa variable, `forge init` ya no intenta el relaunch bajo Bun (elimina el descuadre y la fragilidad en Windows PowerShell, #74).
+
+---
+
 ## [3.8.9] — 2026-06-13
 
 ### Cambiado
