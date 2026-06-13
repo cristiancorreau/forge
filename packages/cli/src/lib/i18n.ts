@@ -44,7 +44,7 @@ export function t(key: string, vars?: Record<string, string | number>): string {
   return s;
 }
 
-const HELP_EN = `forge v{version} — Agentic development framework
+const HELP_EN = `Forge AI v{version} — Agentic development framework for AI coding agents
 
 Usage: forge <command> [options]
 
@@ -94,7 +94,7 @@ Examples:
   npx @cristiancorreau/forge doctor
 `;
 
-const HELP_ES = `forge v{version} — Framework de desarrollo agéntico
+const HELP_ES = `Forge AI v{version} — Framework de desarrollo agéntico para agentes de IA
 
 Uso: forge <comando> [opciones]
 
@@ -147,7 +147,7 @@ Ejemplos:
 const MESSAGES: Record<Lang, Record<string, string>> = {
   en: {
     'help.full': HELP_EN,
-    'header.tagline': 'Configure any project for AI agents',
+    'header.tagline': 'Forge AI — configure any project for AI agents',
     'panel.title': ' Sections ',
     'panel.footer': '[↑↓] Section   [Tab] Focus input/list/nav   [Enter] Install (Catalog)   [q/Esc] Quit',
     'panel.footer.nav': '[↑↓] Section   [Tab] Focus   [Enter] Open   [:] Palette   [?] Help   [q/Esc] Quit',
@@ -191,7 +191,7 @@ const MESSAGES: Record<Lang, Record<string, string>> = {
   },
   es: {
     'help.full': HELP_ES,
-    'header.tagline': 'Configura cualquier proyecto para agentes de IA',
+    'header.tagline': 'Forge AI — configura cualquier proyecto para agentes de IA',
     'panel.title': ' Secciones ',
     'panel.footer': '[↑↓] Sección   [Tab] Foco input/lista/nav   [Enter] Instalar (Catálogo)   [q/Esc] Salir',
     'panel.footer.nav': '[↑↓] Sección   [Tab] Foco   [Enter] Abrir   [:] Palette   [?] Ayuda   [q/Esc] Salir',

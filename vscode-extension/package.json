@@ -1,8 +1,8 @@
 {
   "name": "forge-agent-framework",
   "publisher": "cristiancorreau",
-  "displayName": "forge — Agent Framework",
-  "description": "Manage Forge v2 agent projects from VS Code — drives the @cristiancorreau/forge CLI for multi-runtime support (19 runtimes: 4 native + 15 rules-based)",
+  "displayName": "Forge AI — Agent Framework",
+  "description": "Forge AI: configure and manage AI agent projects from VS Code — drives the @cristiancorreau/forge CLI for multi-runtime support (19 runtimes: 4 native + 15 rules-based)",
   "version": "0.7.0",
   "engines": {
     "vscode": "^1.85.0"
@@ -19,72 +19,72 @@
     "commands": [
       {
         "command": "forge.openConfigPanel",
-        "title": "forge: Abrir panel de configuración",
+        "title": "Forge AI: Abrir panel de configuración",
         "icon": "$(settings-gear)"
       },
       {
         "command": "forge.init",
-        "title": "forge: Init Wizard",
+        "title": "Forge AI: Init Wizard",
         "icon": "$(wand)"
       },
       {
         "command": "forge.recommend",
-        "title": "forge: Recommend (stack-aware advisor)",
+        "title": "Forge AI: Recommend (stack-aware advisor)",
         "icon": "$(lightbulb)"
       },
       {
         "command": "forge.audit",
-        "title": "forge: Run Audit",
+        "title": "Forge AI: Run Audit",
         "icon": "$(check)"
       },
       {
         "command": "forge.doctor",
-        "title": "forge: Doctor",
+        "title": "Forge AI: Doctor",
         "icon": "$(pulse)"
       },
       {
         "command": "forge.generate",
-        "title": "forge: Generate Runtime Config",
+        "title": "Forge AI: Generate Runtime Config",
         "icon": "$(layers)"
       },
       {
         "command": "forge.validate",
-        "title": "forge: Validate project.yaml",
+        "title": "Forge AI: Validate project.yaml",
         "icon": "$(pass)"
       },
       {
         "command": "forge.migrate",
-        "title": "forge: Migrate project.yaml to v2",
+        "title": "Forge AI: Migrate project.yaml to v2",
         "icon": "$(arrow-up)"
       },
       {
         "command": "forge.scaffold",
-        "title": "forge: Scaffold Agent",
+        "title": "Forge AI: Scaffold Agent",
         "icon": "$(add)"
       },
       {
         "command": "forge.skills",
-        "title": "forge: Skills (list / search)",
+        "title": "Forge AI: Skills (list / search)",
         "icon": "$(extensions)"
       },
       {
         "command": "forge.wikiStatus",
-        "title": "forge: Wiki Status",
+        "title": "Forge AI: Wiki Status",
         "icon": "$(book)"
       },
       {
         "command": "forge.wikiInit",
-        "title": "forge: Wiki Init",
+        "title": "Forge AI: Wiki Init",
         "icon": "$(new-folder)"
       },
       {
         "command": "forge.searchCatalog",
-        "title": "forge: Search Catalog (frameworks / MCP / profiles)",
+        "title": "Forge AI: Search Catalog (frameworks / MCP / profiles)",
         "icon": "$(search)"
       },
       {
         "command": "forge.showStatus",
-        "title": "forge: Show Project Status",
+        "title": "Forge AI: Show Project Status",
         "icon": "$(info)"
       }
     ],

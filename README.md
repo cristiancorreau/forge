@@ -10,6 +10,8 @@
 <br>
 <br>
 
+# Forge AI
+
 ### Set up any project to work with AI agents in a single command
 
 One agent team, every runtime — **19 runtimes** (4 native + 15 rules-based editors) from a single `project.yaml`.
@@ -53,9 +55,9 @@ npx @cristiancorreau/forge init
 
 ---
 
-## What is forge?
+## What is Forge AI?
 
-**forge** is a multi-runtime _agentic development_ framework. A single command analyzes your project, installs a team of specialized agents, wires up security guardrails, and leaves a `project.yaml` as the **single source of truth** from which each AI runtime's native configuration is regenerated.
+**Forge AI** (the `forge` CLI) is a multi-runtime _agentic development_ framework. A single command analyzes your project, installs a team of specialized agents, wires up security guardrails, and leaves a `project.yaml` as the **single source of truth** from which each AI runtime's native configuration is regenerated.
 
 Instead of copy-pasting agent rules across projects and across tools, you define the team **once** and forge materializes it for all 19 supported runtimes.
 
