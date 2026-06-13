@@ -70,6 +70,9 @@ categoría más débil. Repetí hasta que el gate pase. Tope sugerido: 8 iteraci
 - [ ] La categoría más débil queda en `>= 6`.
 - [ ] El frontmatter tiene `name`, `description`, `version` y `triggers`.
 - [ ] El body incluye prerequisitos, pasos, un ejemplo y criterios verificables.
+- [ ] El body trae las tres secciones de resiliencia (SPEC-060): `## Excusas
+      comunes` (tabla Excusa|Realidad), `## Señales de alerta` y `## Verificación`
+      con checklist + evidencia. Sin ellas, la categoría `resilience` cae bajo el piso.
 
 ## Manejo de errores
 
@@ -85,3 +88,23 @@ categoría estancada en lugar de seguir editando a ciegas.
 
 Devuelve el `SKILL.md` creado y el reporte final de `forge eval`. Esta skill es
 autocontenida y debería consumir menos de 4000 tokens.
+
+## Excusas comunes
+
+| Excusa | Realidad |
+|---|---|
+| "Esta skill es muy simple, no necesita las secciones de resiliencia" | El scorer las exige; sin ellas el gate falla. Lo simple igual se saltea pasos. |
+| "Las agrego después de que pase el resto" | Después no se agregan. Escribilas en el borrador, no al final. |
+| "El agente ya sabe verificar, no hace falta el gate" | "Ya sabe" es la racionalización: el gate con evidencia es lo que lo obliga. |
+
+## Señales de alerta
+
+- Crear un `SKILL.md` sin tabla de racionalizaciones ni gate de verificación
+- Declarar "listo" sin pegar la salida de `forge eval`
+- Subir el score global ignorando una categoría bajo el piso (6)
+
+## Verificación
+
+- [ ] `forge eval core/skills/<id> --json` con `overallScore >= 75` — pegá la salida como evidencia
+- [ ] Ninguna categoría bajo 6 (incluida `resilience`)
+- [ ] Las tres secciones de resiliencia presentes en el skill generado

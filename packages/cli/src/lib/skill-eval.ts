@@ -18,6 +18,7 @@ export type CategoryId =
   | 'context-efficiency'
   | 'safety'
   | 'testability'
+  | 'resilience'
   | 'naming';
 
 export interface CategoryResult {
@@ -341,6 +342,72 @@ function scoreTestability(md: string): CategoryResult {
 }
 
 /**
+ * Returns the body of the first H2/H3 section whose title matches `titleRe`,
+ * sliced from just after the heading to the next H2/H3 heading or end-of-string.
+ * Returns null when no matching heading exists. (JS regex has no \Z, so this
+ * walks headings explicitly instead of relying on an end-anchored lookahead.)
+ */
+function sectionBody(md: string, titleRe: RegExp): string | null {
+  const lines = md.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const h = lines[i].match(/^#{2,3}\s+(.+?)\s*$/);
+    if (!h || !titleRe.test(h[1])) continue;
+    const rest: string[] = [];
+    for (let j = i + 1; j < lines.length; j++) {
+      if (/^#{2,3}\s+/.test(lines[j])) break;
+      rest.push(lines[j]);
+    }
+    return rest.join('\n');
+  }
+  return null;
+}
+
+/**
+ * resilience: anti-rationalization + verification gates (SPEC-060). Rewards
+ * skills that pre-empt the excuses an agent uses to skip steps and that demand
+ * evidence instead of "seems right".
+ * Max 10 — racionalizaciones (4) + señales de alerta (3) + gate con evidencia (3).
+ *
+ * Patrón inspirado en addyosmani/agent-skills (MIT); reimplementado en español.
+ */
+function scoreResilience(md: string): CategoryResult {
+  const notes: string[] = [];
+  let score = 0;
+
+  // 1. Tabla de racionalizaciones: heading ("Excusas comunes" / "Racionaliz" /
+  //    "Rationaliz") seguido de una tabla markdown (fila con dos columnas |…|…|).
+  const hasRatHeading = /^#{2,3}\s+(excusas?\b|racionaliz|rationaliz|anti-?racionaliz)/im.test(md);
+  const hasTable = /^\s*\|.+\|.+\|\s*$/m.test(md);
+  if (hasRatHeading && hasTable) {
+    score += 4;
+  } else {
+    notes.push('no anti-rationalization table ("## Excusas comunes" con tabla Excusa|Realidad)');
+  }
+
+  // 2. Señales de alerta / red flags: heading + al menos una viñeta debajo.
+  const redFlagBody = sectionBody(md, /se[nñ]ales de alerta|red ?flags?|banderas rojas/i);
+  if (redFlagBody !== null && /^\s*[-*]\s+\S/m.test(redFlagBody)) {
+    score += 3;
+  } else {
+    notes.push('no red-flags section ("## Señales de alerta" con viñetas)');
+  }
+
+  // 3. Gate de verificación con evidencia: heading "Verificación"/"Verification"
+  //    con checklist `- [ ]` Y una referencia a evidencia concreta (salida de
+  //    test/build/log/comando), no sólo "parece bien".
+  const verifBody = sectionBody(md, /verificaci[oó]n|verification/i);
+  const hasChecklist = verifBody !== null ? /^\s*[-*]\s+\[[ x]\]/m.test(verifBody) : false;
+  const hasEvidence = /\b(salida del? (test|comando|build)|test output|build log|pega(r|á)? la salida|evidencia|paste the output|logs?\b|coverage)\b/i.test(md);
+  if (hasChecklist && hasEvidence) {
+    score += 3;
+  } else {
+    notes.push('no verification gate with evidence ("## Verificación" con checklist + evidencia de salida/log)');
+  }
+
+  return { id: 'resilience', score, max: 10, notes: notes.length ? notes.join('; ') : undefined };
+}
+
+/**
  * naming: clear name without abbreviations, name matches purpose from description.
  * Max 10 — 5 pts each.
  */
@@ -402,7 +469,7 @@ function deriveGrade(overall: number): 'A' | 'B' | 'C' | 'D' | 'F' {
  * Pure and deterministic — no I/O, no LLM, no randomness.
  *
  * The overall score is the arithmetic mean of all category scores scaled to 100:
- *   overall = (sum(category.score) / (7 * 10)) * 100
+ *   overall = (sum(category.score) / (categories.length * 10)) * 100
  */
 export function evalSkill(skillMd: string): SkillEval {
   const categories: CategoryResult[] = [
@@ -412,11 +479,12 @@ export function evalSkill(skillMd: string): SkillEval {
     scoreContextEfficiency(skillMd),
     scoreSafety(skillMd),
     scoreTestability(skillMd),
+    scoreResilience(skillMd),
     scoreNaming(skillMd),
   ];
 
   const sum = categories.reduce((acc, c) => acc + c.score, 0);
-  const overallScore = Math.round((sum / (7 * 10)) * 100);
+  const overallScore = Math.round((sum / (categories.length * 10)) * 100);
   const grade = deriveGrade(overallScore);
 
   const notes: string[] = categories
