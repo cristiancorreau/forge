@@ -38,3 +38,30 @@ jobs:
       - name: Build + run the CLI test suite
         working-directory: packages/cli
         run: bun run build:all && bun run test
+
+  test-gui:
+    name: GUI tests (extension parity + desktop args)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # The parity tests (SPEC-072) spawn the real dist/cli.js, so the CLI must
+      # be built first from this same checkout (no version skew).
+      - name: Build the CLI (for parity)
+        working-directory: packages/cli
+        run: bun install --frozen-lockfile && bun run build:all
+      # VS Code extension: compile (tsc) + run ipc/validation/parity tests (node:test).
+      # The extension's package-lock.json is gitignored (the repo pins the CLI via
+      # bun.lock), so `npm install` is used instead of `npm ci`.
+      - name: Extension — install + compile + tests
+        working-directory: vscode-extension
+        run: npm install --no-audit --no-fund && npm run compile && npm test
+      # Electron desktop: only the pure action→args mapping is tested (no Electron run).
+      - name: Desktop — args mapping tests
+        working-directory: desktop
+        run: node --test test/*.test.mjs
