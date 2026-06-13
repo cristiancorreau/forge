@@ -7,6 +7,20 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.9.1] — 2026-06-13
+
+> Tier `next`/`later` del análisis vs Open GSD (`docs/analysis/forge-vs-gsd-2026-06.md`).
+
+### Agregado
+- **Guard de consistencia de gestor de paquetes (SPEC-066)** — `pre-bash-check.js` ahora advierte (sin bloquear) cuando un comando que afecta el lockfile (`install/add/ci/update`) usa un gestor distinto al declarado en `stack.package_manager`. Misma clase de fallo que el sentinel de imagen de Open GSD, adaptada a lo que forge sí conoce.
+- **Ecosistema GSD en el catálogo (SPEC-067)** — `gsd-browser` (mcp-server) y `gsd-test-runner` (tool) entran al catálogo unificado como integraciones externas curadas; `forge recommend` sugiere `gsd-browser` ante frontend + testing E2E (Playwright). forge integra el ecosistema en vez de reconstruirlo.
+- **Hook PreCompact de re-anclaje (SPEC-068)** — `precompact-headroom.js`: justo antes de que el runtime compacte el contexto, recuerda releer `.forge/state/STATE.md` (SPEC-062) para no perder el panorama. Registrado solo en runtimes que exponen el evento (claude-code).
+
+### Cambiado
+- Mensajes de `pre-bash-check.js` neutralizados a español latino (sin voseo).
+
+---
+
 ## [3.9.0] — 2026-06-13
 
 > Cierra los gaps prioritarios del análisis vs Open GSD (`docs/analysis/forge-vs-gsd-2026-06.md`), implementados en paralelo por 4 equipos. Adaptaciones a la arquitectura de forge (compilador, determinístico, offline), sin copiar.

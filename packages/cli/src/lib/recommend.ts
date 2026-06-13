@@ -77,6 +77,9 @@ export function collectSignals(stack: DetectedStack, projectRoot: string): Signa
   if (stack.testing.includes('playwright')) {
     push('testing:playwright', 'detecte Playwright en testing', 'playwright', 2);
   }
+  if (stack.frontend && stack.testing.includes('playwright')) {
+    push('e2e:gsd-browser', 'detecte frontend + testing E2E (Playwright)', 'gsd-browser', 3);
+  }
   if (existsSync(join(projectRoot, '.git'))) {
     push('git', 'detecte un repositorio git', 'git', 1);
   }
