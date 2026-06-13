@@ -1,5 +1,22 @@
 # Changelog — forge (VS Code extension)
 
+## [0.7.0]
+
+### Added
+- **Panel de configuración visual (webview)** — comando `forge: Abrir panel de configuración`
+  y un botón en la status bar. Tres flujos sin tocar la consola: **Proyecto nuevo**
+  (usa `forge init --from` con previsualización `--dry-run`), **Adoptar proyecto
+  existente** (`forge adopt`) y **Diagnóstico** (`audit --json` + `doctor`) como lista
+  accionable. La GUI es solo presentación: invoca el mismo `dist/cli.js` vía spawn
+  (mapeo acción→args en `src/ipc.ts`). SPEC-070.
+- **Tests de paridad GUI↔CLI** (SPEC-072) — `test/ipc.test.mjs` (mapeo acción→args),
+  `test/validation.test.mjs` y `test/parity.test.mjs` (compara SHA-256 de
+  `project.yaml` + `.claude/*` entre la CLI directa y el flujo de la GUI).
+
+### Changed
+- Cierra el drift de versión con la CLI (0.6.0 → 0.7.0). Requiere publicación manual
+  al Marketplace (issue #73).
+
 ## [0.6.0]
 
 ### Added

@@ -3,7 +3,7 @@
   "publisher": "cristiancorreau",
   "displayName": "forge — Agent Framework",
   "description": "Manage Forge v2 agent projects from VS Code — drives the @cristiancorreau/forge CLI for multi-runtime support (19 runtimes: 4 native + 15 rules-based)",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -155,7 +155,13 @@
       }
     }
   },
-  "keywords": ["forge", "agents", "claude", "agentic", "development"],
+  "keywords": [
+    "forge",
+    "agents",
+    "claude",
+    "agentic",
+    "development"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/cristiancorreau/forge"
