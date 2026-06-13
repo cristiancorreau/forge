@@ -9,7 +9,7 @@ import {
   generateKiroAgents, generateKiroCommands, generateKiroBranchGuardHook,
   generateKiroBashCheckHook, generateKiroPostTurnHook
 } from '../lib/generators/kiro.js';
-import { getRuntime, runtimeIds } from '../lib/generators/registry.js';
+import { getRuntime, runtimeIds, stateSurfaces } from '../lib/generators/registry.js';
 import { bold, dim, green, red, yellow, cyan, gray } from '../ui/colors.js';
 import { createSpinner } from '../ui/spinner.js';
 
@@ -232,6 +232,22 @@ export async function generate(args: string[]): Promise<number> {
 
   spinner.stop();
   console.log('');
+
+  // Runtime-agnostic state artifact (SPEC-062): emit .forge/state/{STATE,PLAN,CONTEXT}.md
+  // once, derived from project.yaml + docs/specs/. Re-anchors context for any runtime.
+  try {
+    const specsDir = join(root, config.paths?.specs ?? 'docs/specs');
+    const stateDir = join(root, '.forge', 'state');
+    if (!dryRun) mkdirSync(stateDir, { recursive: true });
+    for (const surface of stateSurfaces(config, specsDir)) {
+      const absPath = join(root, surface.path);
+      const status = writeFile(absPath, surface.content, dryRun, force);
+      results.push({ runtime: 'state', file: surface.path, status });
+    }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    results.push({ runtime: 'state', file: '.forge/state/', status: `ERROR: ${msg}` });
+  }
 
   // Print final results table with colors
   for (const r of results) {

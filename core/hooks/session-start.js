@@ -128,9 +128,39 @@ if (!projectYamlPath) {
   }
 }
 
+// ── State re-anchor (SPEC-062) ─────────────────────────────────────────────
+// Inject a compact summary of .forge/state/STATE.md so the model re-anchors on
+// the active sprint/mode/runtime at the start of the session. Best-effort: any
+// error here is silent (the artifact is optional and derived).
+function emitStateSummary() {
+  if (!projectYamlPath) return;
+  const root = dirname(projectYamlPath);
+  const statePath = join(root, '.forge', 'state', 'STATE.md');
+  if (!existsSync(statePath)) return;
+  let content = '';
+  try { content = readFileSync(statePath, 'utf8'); } catch { return; }
+
+  // Pull the bullet lines under "## Configuración activa" and "## Sprint y fases".
+  const wanted = [];
+  const sectionRe = /^##\s+(Configuración activa|Sprint y fases)\s*$/;
+  const sectionLines = content.split(/\r?\n/);
+  let capturing = false;
+  for (const line of sectionLines) {
+    if (sectionRe.test(line)) { capturing = true; continue; }
+    if (/^##\s+/.test(line)) { capturing = false; continue; }
+    if (capturing && /^[-*]\s+/.test(line)) wanted.push('  ' + line.trim());
+  }
+  if (wanted.length === 0) return;
+  process.stdout.write('forge state — re-anclaje de contexto (.forge/state/STATE.md):\n');
+  process.stdout.write(wanted.join('\n') + '\n');
+}
+
 // ── Output ─────────────────────────────────────────────────────────────────
 const warnings = checksTotal - checksPassed;
-if (warnings === 0) process.exit(0);
+if (warnings === 0) {
+  emitStateSummary();
+  process.exit(0);
+}
 
 const labels = [];
 if (branch === 'main' || branch === 'master') labels.push(`[branch ${branch}]`);
@@ -139,4 +169,5 @@ if (!projectYamlPath) labels.push('[sin project.yaml]');
 
 process.stdout.write(`forge session: ${warnings} advertencia(s) — ${labels.join(' ')}\n`);
 process.stdout.write(lines.join('\n') + '\n');
+emitStateSummary();
 process.exit(0);

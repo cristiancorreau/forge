@@ -45,7 +45,7 @@ import {
   generateKiroProduct, generateKiroStructure,
   generateKiroAgents, generateKiroCommands, generateKiroBranchGuardHook
 } from '../lib/generators/kiro.js';
-import { getRuntime } from '../lib/generators/registry.js';
+import { getRuntime, stateSurfaces, STATE_SURFACE_FILES } from '../lib/generators/registry.js';
 import type { ProjectYaml } from '../lib/yaml.js';
 import { scaffoldWikiStructure } from './wiki.js';
 
@@ -449,11 +449,29 @@ export function saveInstallManifest(
     ...specializedAgents.map(a => `.claude/agents/${a}.md`),
     ...listInstalledRelativeFiles(claudeDir, 'hooks', projectRoot),
     ...listInstalledRelativeFiles(claudeDir, 'commands', projectRoot),
+    // SPEC-062: track the .forge/state/ artifact so `audit` detects drift.
+    // buildManifest only records files that exist on disk, so unemitted ones
+    // are simply skipped.
+    ...STATE_SURFACE_FILES,
   ];
   const seen = new Set<string>();
   const uniqueFiles = installedFiles.filter(f => (seen.has(f) ? false : seen.add(f)));
   const ts = new Date().toISOString();
   saveManifest(projectRoot, buildManifest(runtime, uniqueFiles, projectRoot, forgeVersion, ts));
+}
+
+/**
+ * Emits the `.forge/state/` artifact (SPEC-062): STATE.md / PLAN.md / CONTEXT.md
+ * derived from project.yaml + docs/specs/. Shared by init and adopt; runtime-
+ * agnostic. Always overwrites (the artifact is derived and regenerable).
+ */
+export function emitStateArtifact(projectRoot: string, config: ProjectYaml): void {
+  const specsDir = join(projectRoot, config.paths?.specs ?? 'docs/specs');
+  const stateDir = join(projectRoot, '.forge', 'state');
+  mkdirSync(stateDir, { recursive: true });
+  for (const surface of stateSurfaces(config, specsDir)) {
+    writeFileSync(join(projectRoot, surface.path), surface.content, 'utf-8');
+  }
 }
 
 function installKiro(forgeRoot: string, projectRoot: string, config: ProjectYaml, force: boolean): void {
@@ -625,6 +643,11 @@ export async function init(args: string[]): Promise<number> {
         tech: 'templated scaffold',
         task: () => { scaffoldWikiStructure(projectRoot, false); },
       }] : []),
+      {
+        title: '.forge/state/ (STATE, PLAN, CONTEXT)',
+        tech: 'context re-anchor',
+        task: () => emitStateArtifact(projectRoot, config),
+      },
       {
         title: '.forge/manifest.json',
         tech: 'sha256 tracking',

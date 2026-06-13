@@ -28,7 +28,7 @@ import { VERSION } from '../version.js';
 import {
   defaultAgentsForMode, installCoreAgents, installHooks, installCommands,
   writeSettingsJson, installSpecScaffold, saveInstallManifest, write,
-  buildProjectYaml,
+  buildProjectYaml, emitStateArtifact,
 } from './init.js';
 import { bold, dim, green, cyan, gray, yellow, icons } from '../ui/colors.js';
 import { box } from '../ui/box.js';
@@ -261,9 +261,11 @@ export async function adopt(args: string[]): Promise<number> {
     write(join(opts.target, 'CLAUDE.md'), generateClaudeMd(config), opts.force);
     writeSettingsJson(join(claudeDir, 'settings.json'), config.project.language ?? 'typescript', opts.mode, opts.force);
     installSpecScaffold(forgeRoot, opts.target, claudeDir, config);
+    // SPEC-062: emit .forge/state/ before the manifest so it is tracked.
+    emitStateArtifact(opts.target, config);
     saveInstallManifest(opts.target, claudeDir, opts.runtime, activeAgents, [], VERSION);
 
-    created.push('.claude/ (agents, hooks, commands, settings.json, architecture.rules)', 'CLAUDE.md', 'docs/specs/', '.forge/manifest.json');
+    created.push('.claude/ (agents, hooks, commands, settings.json, architecture.rules)', 'CLAUDE.md', 'docs/specs/', '.forge/state/', '.forge/manifest.json');
   } else if (opts.runtime === 'opencode') {
     mkdirSync(join(opts.target, '.opencode'), { recursive: true });
     write(join(opts.target, 'AGENTS.md'), generateAgentsMd(config), opts.force);
