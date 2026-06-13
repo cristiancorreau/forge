@@ -2,7 +2,7 @@
   "name": "@cristiancorreau/forge-desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "App de escritorio (Electron) de configuracion para forge. GUI fina sobre la misma CLI via spawn.",
+  "description": "Forge AI Desktop — GUI de configuracion (Electron) sobre la misma CLI de forge via spawn.",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",

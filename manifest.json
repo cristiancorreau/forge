@@ -1,7 +1,7 @@
 {
   "name": "forge",
-  "version": "3.10.0",
-  "description": "Agentic development framework for 19 AI runtimes (Claude Code, OpenCode, Codex, Kiro and 15 rules-based editors)",
+  "version": "3.10.1",
+  "description": "Forge AI — agentic development framework for 19 AI coding runtimes (Claude Code, OpenCode, Codex, Kiro and 15 rules-based editors)",
   "license": "Apache-2.0",
   "repository": "https://github.com/cristiancorreau/forge",
   "layers": {

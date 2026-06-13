@@ -54,7 +54,7 @@ describe('t — translation + interpolation', () => {
   });
   test('interpolates {version} in help.full', () => {
     i18n.setLang('en');
-    assert.match(i18n.t('help.full', { version: '9.9.9' }), /forge v9\.9\.9/);
+    assert.match(i18n.t('help.full', { version: '9.9.9' }), /Forge AI v9\.9\.9/);
   });
   test('unknown key falls back to the key itself', () => {
     assert.equal(i18n.t('does.not.exist'), 'does.not.exist');

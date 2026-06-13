@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.10.1] — 2026-06-13
+
+### Cambiado
+- **Marca "Forge AI"** — el nombre visible pasa a ser **Forge AI** para dejar claro que es una herramienta de IA: README (EN/ES), descripciones de paquete (CLI, manifest, extensión, desktop), tagline del banner y header del `--help` de la CLI, header del webview de la extensión y de la app Electron, y títulos de comandos de la extensión (`Forge AI: …`). El **comando `forge`**, el paquete `@cristiancorreau/forge` y los IDs `forge.*` **no cambian** (sin romper instalaciones ni scripts).
+
+---
+
 ## [3.10.0] — 2026-06-13
 
 ### Agregado
