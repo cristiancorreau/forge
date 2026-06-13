@@ -3,7 +3,7 @@
   "publisher": "cristiancorreau",
   "displayName": "forge — Agent Framework",
   "description": "Manage Forge v2 agent projects from VS Code — drives the @cristiancorreau/forge CLI for multi-runtime support (19 runtimes: 4 native + 15 rules-based)",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -17,6 +17,11 @@
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
+      {
+        "command": "forge.openConfigPanel",
+        "title": "forge: Abrir panel de configuración",
+        "icon": "$(settings-gear)"
+      },
       {
         "command": "forge.init",
         "title": "forge: Init Wizard",
@@ -150,7 +155,13 @@
       }
     }
   },
-  "keywords": ["forge", "agents", "claude", "agentic", "development"],
+  "keywords": [
+    "forge",
+    "agents",
+    "claude",
+    "agentic",
+    "development"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/cristiancorreau/forge"
@@ -158,6 +169,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "test": "node --test test/ipc.test.mjs test/validation.test.mjs test/parity.test.mjs",
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
