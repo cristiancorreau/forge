@@ -7,6 +7,7 @@ import { box } from '../ui/box.js';
 import { loadManifest, checkOutdated } from '../lib/lock.js';
 import { resolveForgeRoot } from '../lib/paths.js';
 import { SKILLS, listCatalogAgents } from '../lib/catalog.js';
+import { loadUnits, checkUnitParity, checkToolContracts } from '../lib/unit-registry.js';
 
 const HELP = `Usage: forge audit [options]
 
@@ -227,6 +228,53 @@ function findOpportunities(config: ProjectYaml | null, forgeRoot: string | null)
 }
 
 /**
+ * SPEC-063 — Valida el registro declarativo de capacidades (core/registry/units.yaml)
+ * contra los archivos core en disco:
+ *   (a) cada unidad del registro tiene su archivo real;
+ *   (b) los tools del frontmatter del agente estan dentro del contrato declarado;
+ *   (c) parity: no hay agentes/skills en disco ausentes del registro ni viceversa.
+ *
+ * Si no hay forge root resoluble o el registro no existe, no se reportan errores
+ * (entorno sin assets core: la validacion no aplica).
+ */
+function auditUnitRegistry(forgeRoot: string | null): AuditIssue[] {
+  const issues: AuditIssue[] = [];
+  if (!forgeRoot) return issues;
+
+  const unitsPath = join(forgeRoot, 'core', 'registry', 'units.yaml');
+  if (!existsSync(unitsPath)) {
+    issues.push({
+      level: 'info',
+      check: 'registry',
+      message: 'core/registry/units.yaml ausente — registro de capacidades no disponible',
+    });
+    return issues;
+  }
+
+  const units = loadUnits(unitsPath);
+
+  const parity = checkUnitParity(forgeRoot, units);
+  for (const err of parity.errors) {
+    issues.push({ level: 'error', check: 'registry', message: err });
+  }
+
+  const contracts = checkToolContracts(forgeRoot, units);
+  for (const err of contracts.errors) {
+    issues.push({ level: 'error', check: 'registry', message: err });
+  }
+
+  if (parity.ok && contracts.ok) {
+    issues.push({
+      level: 'ok',
+      check: 'registry',
+      message: `units.yaml al día — ${units.agents.length} agente(s) y ${units.skills.length} skill(s) con contrato verificado`,
+    });
+  }
+
+  return issues;
+}
+
+/**
  * Programmatic audit: runs every check against `root` and returns a structured
  * report. The `audit` CLI command (and the panel/monitor view) build on top of
  * this — keeping the human/JSON rendering separate from the data collection.
@@ -365,6 +413,9 @@ export function runAudit(root: string = process.cwd()): AuditReport {
     manifestStatus = 'missing';
     issues.push({ level: 'info', check: 'manifest', message: 'Sin .forge/manifest.json — ejecutar forge init para generarlo' });
   }
+
+  // SPEC-063: registro declarativo de capacidades (units.yaml) vs disco.
+  issues.push(...auditUnitRegistry(forgeRoot));
 
   // Oportunidades (#8): skills y profiles disponibles que el proyecto no usa.
   issues.push(...findOpportunities(config, forgeRoot));

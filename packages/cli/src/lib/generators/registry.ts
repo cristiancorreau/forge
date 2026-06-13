@@ -19,6 +19,7 @@ import { generateAgentsMd } from './opencode.js';
 import { generateCodexAgentsMd } from './codex.js';
 import { generateKiroProduct } from './kiro.js';
 import { generateRulesDoc } from './rules-doc.js';
+import { generateState, readSpecSummaries, STATE_FILES } from './state.js';
 
 export interface RuntimeSurface {
   path: string;
@@ -196,6 +197,33 @@ export const RUNTIMES: RuntimeDescriptor[] = [
 /** Returns the descriptor for a given runtime ID, or undefined if not found. */
 export function getRuntime(id: string): RuntimeDescriptor | undefined {
   return RUNTIMES.find(r => r.id === id);
+}
+
+// ---------------------------------------------------------------------------
+// State artifact surface (SPEC-062)
+//
+// The `.forge/state/` artifact is runtime-agnostic: it re-anchors context for
+// any runtime, so it is not a RuntimeDescriptor. It needs the docs/specs/
+// directory in addition to config, hence its own surface helper. generate.ts /
+// init.ts / adopt.ts emit these surfaces alongside the per-runtime ones, and
+// include them in the install manifest so `audit` detects drift.
+// ---------------------------------------------------------------------------
+
+/** Relative paths of the `.forge/state/` artifact files. */
+export const STATE_SURFACE_FILES: readonly string[] = STATE_FILES;
+
+/**
+ * Returns the `.forge/state/` surfaces for the given config + specs directory.
+ * Reading the specs directory is impure (filesystem); the generation itself is
+ * pure and deterministic.
+ */
+export function stateSurfaces(config: ProjectYaml, specsDir: string): RuntimeSurface[] {
+  const artifact = generateState(config, readSpecSummaries(specsDir));
+  return [
+    { path: '.forge/state/STATE.md', content: artifact['STATE.md'] },
+    { path: '.forge/state/PLAN.md', content: artifact['PLAN.md'] },
+    { path: '.forge/state/CONTEXT.md', content: artifact['CONTEXT.md'] },
+  ];
 }
 
 /** Returns the list of all registered runtime IDs. */

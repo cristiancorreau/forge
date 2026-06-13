@@ -3,6 +3,7 @@ import { init } from './commands/init.js';
 import { adopt } from './commands/adopt.js';
 import { add } from './commands/add.js';
 import { evalCmd } from './commands/eval.js';
+import { specProbe } from './commands/spec-probe.js';
 import { audit } from './commands/audit.js';
 import { analyze } from './commands/analyze.js';
 import { generate } from './commands/generate.js';
@@ -48,6 +49,9 @@ switch (cmd) {
     break;
   case 'eval':
     exitCode = await evalCmd(rest);
+    break;
+  case 'spec-probe':
+    exitCode = await specProbe(rest);
     break;
   case 'audit':
     exitCode = await audit(rest);
