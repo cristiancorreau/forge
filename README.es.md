@@ -175,12 +175,13 @@ Detalle completo en [docs/tiers.md](docs/tiers.md).
 
 ## Comandos
 
-Los 16 comandos de la CLI.
+Los 17 comandos de la CLI.
 
 | Comando | Qué hace |
 |---------|----------|
 | `forge init` | Wizard completo: detecta el stack, instala agentes y hooks, escribe el manifest. |
 | `forge adopt` | Onboarda forge en un codebase **existente** (análisis + auto-wiki). |
+| `forge analyze` | Lectura determinística y offline de un repo existente (stack, hotspots, TODO/FIXME, tests, agentes sugeridos). Base del skill `/onboard`; `--json` / `--write`. |
 | `forge generate` | Regenera la configuración nativa de cada runtime desde `project.yaml`. |
 | `forge update` | Re-sincroniza archivos gestionados con el catálogo preservando ediciones locales (drift SHA-256). |
 | `forge validate` | Valida que `project.yaml` y los archivos generados cumplan el esquema. |
