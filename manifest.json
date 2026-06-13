@@ -1,6 +1,6 @@
 {
   "name": "forge",
-  "version": "3.8.7",
+  "version": "3.8.8",
   "description": "Agentic development framework for 19 AI runtimes (Claude Code, OpenCode, Codex, Kiro and 15 rules-based editors)",
   "license": "Apache-2.0",
   "repository": "https://github.com/cristiancorreau/forge",
@@ -277,6 +277,11 @@
       "id": "new-feature",
       "dir": "core/skills/new-feature",
       "description": "Feature implementation orchestration"
+    },
+    {
+      "id": "onboard",
+      "dir": "core/skills/onboard",
+      "description": "Analyze an existing repo with specialized agents and generate architecture/onboarding/security docs"
     },
     {
       "id": "obsidian-sync",
