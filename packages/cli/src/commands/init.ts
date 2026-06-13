@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync, copyFileSync, readd
 import { join, basename, dirname } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { runWizard } from '../lib/wizard.js';
+import { loadAnswers } from '../lib/init-answers.js';
 import { resolveForgeRoot } from '../lib/paths.js';
 import { forgeMarker } from '../lib/marker.js';
 import {
@@ -519,26 +520,54 @@ export async function init(args: string[]): Promise<number> {
   const dryRun = args.includes('--dry-run');
   const runtimeIdx = args.indexOf('--runtime');
   const runtimeOverride = runtimeIdx !== -1 ? (args[runtimeIdx + 1] ?? null) : null;
+  // Non-interactive init (SPEC-069): answers come from a JSON file (a GUI/CI
+  // produces it). Skips the wizard entirely; works with or without --dry-run.
+  const fromIdx = args.indexOf('--from');
+  const answersFile = fromIdx !== -1 ? (args[fromIdx + 1] ?? null) : null;
 
   const projectYamlPath = join(process.cwd(), 'project.yaml');
   const hasProjectYaml = existsSync(projectYamlPath);
   let config: ProjectYaml;
 
-  // The interactive wizard runs only when there's no project.yaml and we're not
-  // in dry-run. On Node.js with Bun installed, re-launch under Bun for the
-  // OpenTUI panel wizard; otherwise fall back to the @clack/prompts wizard.
-  if (!hasProjectYaml && !dryRun) {
+  // The interactive wizard runs only when there's no project.yaml, we're not in
+  // dry-run, and no answers-file was supplied. On Node.js with Bun installed and
+  // OpenTUI opted in, re-launch under Bun; otherwise the @clack/prompts wizard.
+  if (!hasProjectYaml && !dryRun && !answersFile) {
     tryReLaunchWithBun(args); // exits the process if it re-launches under Bun
   }
 
   // The OpenTUI wizard renders its own full-screen header. The static boxen
   // header is only shown for the clack wizard, dry-run, and existing-config paths.
   // OpenTUI is opt-in (SPEC-065): only true when FORGE_ENABLE_OPENTUI=1.
-  const usingOpenTUI = openTUIEnabled && isBun && !hasProjectYaml && !dryRun;
+  const usingOpenTUI = openTUIEnabled && isBun && !hasProjectYaml && !dryRun && !answersFile;
   if (!usingOpenTUI) printHeader();
 
   if (hasProjectYaml) {
     config = loadProjectYaml(projectYamlPath);
+  } else if (answersFile) {
+    // SPEC-069: build project.yaml from the answers file, no prompts.
+    if (!existsSync(answersFile)) {
+      console.error(`forge init: no se encontró el archivo de respuestas "${answersFile}".`);
+      return 1;
+    }
+    let result;
+    try {
+      result = loadAnswers(JSON.parse(readFileSync(answersFile, 'utf-8')));
+    } catch (e) {
+      console.error(`forge init: el archivo de respuestas no es JSON válido — ${(e as Error).message}`);
+      return 1;
+    }
+    const specialized = detectTier3Agents(process.cwd());
+    if (!dryRun) {
+      writeFileSync(projectYamlPath, buildProjectYaml(result, specialized), 'utf-8');
+    }
+    config = {
+      project: { name: result.name, slug: result.slug, description: result.description, language: result.language, type: result.type, mode: result.mode, status: 'active' },
+      stack: { backend: result.backend, backend_language: result.backendLanguage, frontend: result.frontend, frontend_language: result.frontendLanguage, database: result.database, orm: result.orm, package_manager: result.packageManager, testing: result.testing },
+      agents: { active: defaultAgentsForMode(result.mode), compliance: [], specialized, profiles: result.profiles },
+      runtimes: { active: [runtimeOverride ?? result.runtime] },
+      skills: result.skills,
+    };
   } else if (dryRun) {
     // Dry-run without config: show what a default standard project would install
     console.log(dim('  No project.yaml found — showing defaults for a "standard" project.') + '\n');

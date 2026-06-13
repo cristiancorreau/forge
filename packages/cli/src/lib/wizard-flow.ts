@@ -33,6 +33,35 @@ export const MOBILE_BY_LANG: Record<string, string[]> = {
   typescript: ['react-native', 'expo'],
 };
 
+/**
+ * Framework value → Tier 2 profile id. Single source shared by both wizards and
+ * by `forge init --from` (SPEC-069) so the GUI/CI path derives the same profiles.
+ */
+export const PROFILE_MAP: Record<string, string> = {
+  hono:       'hono-drizzle',
+  nextjs:     'nextjs-admin',
+  astro:      'astro',
+  fastapi:    'fastapi',
+  rails:      'rails',
+  laravel:    'laravel',
+  expo:       'expo',
+  springboot: 'springboot',
+  flutter:    'flutter',
+  flask:      'flask',
+  axum:       'rust',
+  actix:      'rust',
+  rocket:     'rust',
+};
+
+/** Derive the unique Tier 2 profiles for the chosen frameworks. */
+export function deriveProfiles(frameworks: Array<string | undefined | null>): string[] {
+  const profiles: string[] = [];
+  for (const f of frameworks) {
+    if (f && PROFILE_MAP[f]) profiles.push(PROFILE_MAP[f]);
+  }
+  return [...new Set(profiles)];
+}
+
 /** Languages offered for the backend side. */
 export const BACKEND_LANGUAGES = ['typescript', 'python', 'java', 'kotlin', 'rust', 'ruby', 'go', 'php'];
 

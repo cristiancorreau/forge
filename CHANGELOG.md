@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.10.0] — 2026-06-13
+
+### Agregado
+- **`forge init --from <answers.json>` (SPEC-069)** — modo **no-interactivo** de `init`: lee un archivo de respuestas (un `WizardResult`), salta el wizard y produce el mismo `project.yaml` + `.claude/*` que el flujo interactivo. Habilita un modo de configuración **GUI** (webview de la extensión VS Code y app Electron) para usuarios que no usan la consola, y `init` en CI. `lib/init-answers.ts` aplica defaults tolerantes (slug, mode, runtime) y deriva los profiles de los frameworks vía un mapeo compartido en `lib/wizard-flow.ts`. Funciona con `--dry-run` para previsualizar.
+
+### Specs
+- Plan del modo GUI no-consola: SPEC-070 (webview VS Code), SPEC-071 (app Electron, esfuerzo separado) y SPEC-072 (tests de paridad GUI↔CLI). Implementación en PRs aparte.
+
+---
+
 ## [3.9.1] — 2026-06-13
 
 > Tier `next`/`later` del análisis vs Open GSD (`docs/analysis/forge-vs-gsd-2026-06.md`).
