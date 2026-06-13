@@ -128,9 +128,16 @@ function win32TerminalIsCapable(env: NodeJS.ProcessEnv): boolean {
  * panel? Parameterised on platform/env/bunPath/isTTY/alreadyBun so the full
  * matrix is unit-testable on any host.
  *
- * Gates (all must pass): not already under Bun, not already relaunched
- * (`FORGE_BUN_RELAUNCH=1`), not opted out (`FORGE_NO_BUN=1`), a real TTY, and a
- * resolved Bun binary. Beyond that:
+ * OpenTUI is OPT-IN (SPEC-065): by default the wizard runs the cross-platform
+ * `@clack` prompts (line-by-line, identical on Windows / macOS / Linux). The
+ * full-screen OpenTUI (Bun-only) path is fragile on legacy Windows consoles, so
+ * it is only ever considered when the user explicitly sets
+ * `FORGE_ENABLE_OPENTUI=1`. Without that env var this always returns false — no
+ * relaunch under Bun, always the `@clack` wizard.
+ *
+ * When opted in, all of these gates must still pass: not already under Bun, not
+ * already relaunched (`FORGE_BUN_RELAUNCH=1`), not opted out (`FORGE_NO_BUN=1`),
+ * a real TTY, and a resolved Bun binary. Beyond that:
  *   - `FORGE_FORCE_BUN=1` forces the relaunch (skips the win32 terminal gate).
  *   - On win32, only auto-relaunch when the console is capable (Windows Terminal
  *     or `TERM_PROGRAM`); otherwise prefer the Node fallback to avoid a broken
@@ -143,6 +150,11 @@ export function shouldRelaunchUnderBun(opts: RelaunchDecisionOptions = {}): bool
   const bunPath = opts.bunPath ?? null;
   const isTTY = opts.isTTY ?? false;
   const alreadyBun = opts.alreadyBun ?? false;
+
+  // OpenTUI is opt-in. Without FORGE_ENABLE_OPENTUI=1 we never relaunch under
+  // Bun → the default cross-platform `@clack` wizard always runs. The terminal
+  // gates below only matter on the opt-in path.
+  if (env.FORGE_ENABLE_OPENTUI !== '1') return false;
 
   if (alreadyBun) return false;                        // we ARE Bun — nothing to do
   if (env.FORGE_BUN_RELAUNCH === '1') return false;    // already relaunched (guard)

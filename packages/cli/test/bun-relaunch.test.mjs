@@ -31,53 +31,96 @@ before(async () => {
 
 const BUN = '/usr/local/bin/bun'; // a stand-in resolved bun path
 
-// ── shouldRelaunchUnderBun ─────────────────────────────────────────────────────
-describe('lib/bun — shouldRelaunchUnderBun (relaunch decision matrix)', () => {
-  test('darwin + bun + TTY → true (default macOS behaviour preserved)', () => {
+// OpenTUI is opt-in (SPEC-065): every "→ true" case below also requires
+// FORGE_ENABLE_OPENTUI=1. ON merges that gate into a test env; the default
+// (without the flag) is asserted separately in the opt-in describe block.
+const ON = (env = {}) => ({ FORGE_ENABLE_OPENTUI: '1', ...env });
+
+// ── shouldRelaunchUnderBun — OpenTUI opt-in gate (SPEC-065) ─────────────────────
+describe('lib/bun — shouldRelaunchUnderBun (FORGE_ENABLE_OPENTUI opt-in gate)', () => {
+  test('no FORGE_ENABLE_OPENTUI → false even with bun + TTY on darwin (default = @clack)', () => {
     assert.equal(
       bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: true, env: {} }),
+      false,
+    );
+  });
+
+  test('no FORGE_ENABLE_OPENTUI → false on win32 Windows Terminal (default = @clack)', () => {
+    assert.equal(
+      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: { WT_SESSION: '1' } }),
+      false,
+    );
+  });
+
+  test('no FORGE_ENABLE_OPENTUI → false even with FORGE_FORCE_BUN=1 (opt-in gate wins)', () => {
+    assert.equal(
+      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: true, env: { FORGE_FORCE_BUN: '1' } }),
+      false,
+    );
+  });
+
+  test('FORGE_ENABLE_OPENTUI=1 + bun + TTY → true (opt-in path enabled)', () => {
+    assert.equal(
+      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: true, env: ON() }),
+      true,
+    );
+  });
+
+  test('FORGE_ENABLE_OPENTUI=1 + win32 Windows Terminal + bun + TTY → true', () => {
+    assert.equal(
+      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: ON({ WT_SESSION: '1' }) }),
+      true,
+    );
+  });
+});
+
+// ── shouldRelaunchUnderBun — matrix on the opt-in path (FORGE_ENABLE_OPENTUI=1) ──
+describe('lib/bun — shouldRelaunchUnderBun (relaunch decision matrix, OpenTUI on)', () => {
+  test('darwin + bun + TTY → true (default macOS behaviour preserved)', () => {
+    assert.equal(
+      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: true, env: ON() }),
       true,
     );
   });
 
   test('linux + bun + TTY → true', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'linux', bunPath: BUN, isTTY: true, env: {} }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'linux', bunPath: BUN, isTTY: true, env: ON() }),
       true,
     );
   });
 
   test('FORGE_NO_BUN=1 → false even with bun + TTY', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: true, env: { FORGE_NO_BUN: '1' } }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: true, env: ON({ FORGE_NO_BUN: '1' }) }),
       false,
     );
   });
 
   test('no TTY → false (panels need a real terminal)', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: false, env: {} }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: false, env: ON() }),
       false,
     );
   });
 
   test('no bun resolved → false', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: null, isTTY: true, env: {} }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: null, isTTY: true, env: ON() }),
       false,
     );
   });
 
   test('already under Bun → false (nothing to relaunch)', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: true, alreadyBun: true, env: {} }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: true, alreadyBun: true, env: ON() }),
       false,
     );
   });
 
   test('FORGE_BUN_RELAUNCH=1 guard → false (prevents infinite re-launch)', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: true, env: { FORGE_BUN_RELAUNCH: '1' } }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'darwin', bunPath: BUN, isTTY: true, env: ON({ FORGE_BUN_RELAUNCH: '1' }) }),
       false,
     );
   });
@@ -85,49 +128,49 @@ describe('lib/bun — shouldRelaunchUnderBun (relaunch decision matrix)', () => 
   // ── Windows matrix ──
   test('win32 + bun + TTY, NO capable terminal → false (avoid broken OpenTUI)', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: {} }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: ON() }),
       false,
     );
   });
 
   test('win32 + bun + TTY + WT_SESSION (Windows Terminal) → true', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: { WT_SESSION: '1' } }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: ON({ WT_SESSION: '1' }) }),
       true,
     );
   });
 
   test('win32 + bun + TTY + TERM_PROGRAM (e.g. VS Code) → true', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: { TERM_PROGRAM: 'vscode' } }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: ON({ TERM_PROGRAM: 'vscode' }) }),
       true,
     );
   });
 
   test('win32 legacy console but FORGE_FORCE_BUN=1 → true (override the gate)', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: { FORGE_FORCE_BUN: '1' } }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: ON({ FORGE_FORCE_BUN: '1' }) }),
       true,
     );
   });
 
   test('win32 + WT_SESSION but FORGE_NO_BUN=1 → false (opt-out wins over force)', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: { WT_SESSION: '1', FORGE_NO_BUN: '1' } }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: true, env: ON({ WT_SESSION: '1', FORGE_NO_BUN: '1' }) }),
       false,
     );
   });
 
   test('win32 + FORGE_FORCE_BUN but no TTY → false (gate runs before force)', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: false, env: { FORGE_FORCE_BUN: '1' } }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: BUN, isTTY: false, env: ON({ FORGE_FORCE_BUN: '1' }) }),
       false,
     );
   });
 
   test('win32 + FORGE_FORCE_BUN but no bun → false', () => {
     assert.equal(
-      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: null, isTTY: true, env: { FORGE_FORCE_BUN: '1' } }),
+      bunMod.shouldRelaunchUnderBun({ platform: 'win32', bunPath: null, isTTY: true, env: ON({ FORGE_FORCE_BUN: '1' }) }),
       false,
     );
   });
