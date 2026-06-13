@@ -105,7 +105,7 @@ pnpm add     -g @cristiancorreau/forge   # pnpm  (run `pnpm setup` once)
 bun  add     -g @cristiancorreau/forge   # bun   (needs ~/.bun/bin on PATH)
 ```
 
-> The full-screen `forge init` wizard (OpenTUI) runs under **Bun**; with npm/node it works the same via prompts. If you have forge installed with both bun **and** npm, whichever is first on your `PATH` wins — update that same manager (e.g. `bun add -g @cristiancorreau/forge@latest`).
+> The `forge init` wizard runs the cross-platform `@clack` prompts by default — identical on Windows, macOS and Linux. The full-screen OpenTUI wizard is **opt-in**: set `FORGE_ENABLE_OPENTUI=1` (it requires **Bun** and a capable terminal). If you have forge installed with both bun **and** npm, whichever is first on your `PATH` wins — update that same manager (e.g. `bun add -g @cristiancorreau/forge@latest`).
 
 <details>
 <summary>PATH troubleshooting</summary>

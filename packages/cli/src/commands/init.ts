@@ -13,15 +13,24 @@ import { VERSION } from '../version.js';
 // OpenTUI panels require Bun runtime
 const isBun = typeof (globalThis as any).Bun !== 'undefined';
 
-// If running under Node.js with a TTY, re-launch the CLI under Bun (if available)
-// so the OpenTUI panel wizard can render. Returns without exiting if not possible.
-// The relaunch decision (platform gates, Windows terminal capability, the
-// FORGE_NO_BUN/FORGE_FORCE_BUN overrides, the FORGE_BUN_RELAUNCH guard) lives in
-// the shared, unit-tested lib/bun.ts helper so init and panel stay in sync.
-// Bun discovery is cross-platform: on Windows it looks under
+// OpenTUI is OPT-IN (SPEC-065). By default `forge init` runs the cross-platform
+// `@clack` wizard (lib/wizard.ts), which behaves identically on Windows / macOS /
+// Linux. The full-screen OpenTUI wizard (Bun-only) is fragile on legacy Windows
+// consoles, so it is only enabled when the user sets FORGE_ENABLE_OPENTUI=1.
+const openTUIEnabled = process.env.FORGE_ENABLE_OPENTUI === '1';
+
+// If OpenTUI is opted in AND we're running under Node.js with a TTY, re-launch the
+// CLI under Bun (if available) so the OpenTUI panel wizard can render. Without
+// FORGE_ENABLE_OPENTUI=1 this is a no-op: it never relaunches, so the `@clack`
+// wizard runs. Returns without exiting if a relaunch isn't possible/desired.
+// The relaunch decision (the opt-in gate, platform gates, Windows terminal
+// capability, the FORGE_NO_BUN/FORGE_FORCE_BUN overrides, the FORGE_BUN_RELAUNCH
+// guard) lives in the shared, unit-tested lib/bun.ts helper so init and panel
+// stay in sync. Bun discovery is cross-platform: on Windows it looks under
 // %USERPROFILE%\.bun\bin\bun.exe and uses `where`, on POSIX `which`/~/.bun.
 function tryReLaunchWithBun(args: string[]): void {
   if (isBun) return;
+  if (!openTUIEnabled) return; // OpenTUI opt-in: never relaunch under Bun without it
   const isTTY = !!(process.stdin.isTTY && process.stdout.isTTY);
   const bun = findBun();
   if (shouldRelaunchUnderBun({ bunPath: bun, isTTY, alreadyBun: isBun })) {
@@ -71,6 +80,12 @@ Options:
   --force            Overwrite existing files without prompting
   --dry-run          Show what would be installed without writing files
   -h, --help         Show this help
+
+Environment:
+  FORGE_ENABLE_OPENTUI=1   Opt in to the full-screen OpenTUI wizard (requires Bun
+                           and a capable terminal). Off by default — the wizard
+                           uses cross-platform @clack prompts that work the same
+                           on Windows, macOS and Linux.
 `;
 
 // ---------------------------------------------------------------------------
@@ -497,7 +512,8 @@ export async function init(args: string[]): Promise<number> {
 
   // The OpenTUI wizard renders its own full-screen header. The static boxen
   // header is only shown for the clack wizard, dry-run, and existing-config paths.
-  const usingOpenTUI = isBun && !hasProjectYaml && !dryRun;
+  // OpenTUI is opt-in (SPEC-065): only true when FORGE_ENABLE_OPENTUI=1.
+  const usingOpenTUI = openTUIEnabled && isBun && !hasProjectYaml && !dryRun;
   if (!usingOpenTUI) printHeader();
 
   if (hasProjectYaml) {
@@ -511,9 +527,11 @@ export async function init(args: string[]): Promise<number> {
       runtimes: { active: [runtimeOverride ?? 'claude-code'] },
     };
   } else {
-    // Run interactive wizard — OpenTUI (Bun) or @clack/prompts (Node.js)
+    // Run interactive wizard — @clack/prompts by default (cross-platform), and the
+    // full-screen OpenTUI wizard only when opted in (FORGE_ENABLE_OPENTUI=1) and
+    // running under Bun. See SPEC-065.
     let result;
-    if (isBun) {
+    if (usingOpenTUI) {
       const { runOpenTUIWizard } = await import('../tui/wizard.js');
       result = await runOpenTUIWizard();
       // OpenTUI restored the screen; now show the static header for install phase
