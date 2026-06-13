@@ -1,0 +1,172 @@
+# SPEC-063 — Registro declarativo de capacidades (capability registry).
+#
+# Cada unidad (agente o skill core) declara un contrato estatico verificable:
+#   scope    : ambito de trabajo de la unidad.
+#   tools    : conjunto de tools permitidas por el contrato. El frontmatter del
+#              agente NO puede declarar tools fuera de este conjunto (drift).
+#              Las skills no estan ligadas a tools: la lista queda vacia.
+#   outputs  : artefactos/entregables prometidos por la unidad.
+#   phase    : metadata declarativa opcional (no hay routing en vivo).
+#
+# `forge audit` valida, contra este registro:
+#   (a) cada unidad tiene su archivo real (.md / SKILL.md) presente;
+#   (b) los tools del frontmatter del agente estan dentro de `tools`;
+#   (c) parity: no hay agentes/skills en disco ausentes del registro ni viceversa.
+#
+# Este archivo vive en core/ y build-assets.mjs lo copia a assets/core/.
+
+agents:
+  - name: orchestrator
+    scope: /
+    tools: [Read, Grep, Glob, Bash, Edit, Write, Agent, WebFetch]
+    outputs: [plan, descomposicion-de-tareas, delegacion-a-agentes]
+    phase: planning
+
+  - name: backend-engineer
+    scope: /
+    tools: [Read, Grep, Glob, Bash, Edit, Write]
+    outputs: [endpoints, esquemas-db, logica-de-negocio]
+    phase: implementation
+
+  - name: frontend-engineer
+    scope: /
+    tools: [Read, Grep, Glob, Bash, Edit, Write]
+    outputs: [componentes-ui, paginas, integracion-api]
+    phase: implementation
+
+  - name: test-engineer
+    scope: /
+    tools: [Read, Grep, Glob, Bash, Edit, Write]
+    outputs: [tests, fixtures, cobertura]
+    phase: verification
+
+  - name: docs-writer
+    scope: /
+    tools: [Read, Grep, Glob, Bash, Edit, Write]
+    outputs: [documentacion, readme, guias]
+    phase: documentation
+
+  - name: security-auditor
+    scope: /
+    tools: [Read, Grep, Glob, Bash]
+    outputs: [reporte-de-seguridad, hallazgos]
+    phase: review
+
+  - name: compliance-reviewer
+    scope: /
+    tools: [Read, Grep, Glob, Bash]
+    outputs: [reporte-de-compliance, hallazgos]
+    phase: review
+
+# Skills core. No estan ligadas a tools (contrato de tools vacio); el registro
+# verifica presencia del archivo y parity contra disco, mas outputs prometidos.
+skills:
+  - name: aitmpl-search
+    scope: /
+    tools: []
+    outputs: [resultados-de-busqueda]
+
+  - name: browser-test
+    scope: /
+    tools: []
+    outputs: [reporte-de-test-de-navegador]
+
+  - name: db-migrate
+    scope: /
+    tools: []
+    outputs: [migracion-db]
+
+  - name: forge-skill-creator
+    scope: /
+    tools: []
+    outputs: [skill-nueva]
+
+  - name: forge-skill-improver
+    scope: /
+    tools: []
+    outputs: [skill-mejorada]
+
+  - name: laravel-eloquent
+    scope: /
+    tools: []
+    outputs: [modelos-eloquent]
+
+  - name: laravel-mcp
+    scope: /
+    tools: []
+    outputs: [integracion-mcp-laravel]
+
+  - name: laravel-pest
+    scope: /
+    tools: []
+    outputs: [tests-pest]
+
+  - name: laravel-security
+    scope: /
+    tools: []
+    outputs: [revision-de-seguridad-laravel]
+
+  - name: laravel-verify
+    scope: /
+    tools: []
+    outputs: [verificacion-laravel]
+
+  - name: local2prod
+    scope: /
+    tools: []
+    outputs: [checklist-de-deploy]
+
+  - name: new-feature
+    scope: /
+    tools: []
+    outputs: [feature-implementada]
+
+  - name: obsidian-sync
+    scope: /
+    tools: []
+    outputs: [notas-sincronizadas]
+
+  - name: onboard
+    scope: /
+    tools: []
+    outputs: [documentacion-de-onboarding, arquitectura, revision-de-seguridad]
+
+  - name: phase-kickoff
+    scope: /
+    tools: []
+    outputs: [plan-de-fase]
+
+  - name: security-audit
+    scope: /
+    tools: []
+    outputs: [reporte-de-auditoria-de-seguridad]
+
+  - name: session-close
+    scope: /
+    tools: []
+    outputs: [commit, daily-note, sync-con-main]
+
+  - name: session-start
+    scope: /
+    tools: []
+    outputs: [contexto-de-sesion]
+
+  - name: spec
+    scope: /
+    tools: []
+    outputs: [spec]
+
+  - name: wiki-ingest
+    scope: /
+    tools: []
+    outputs: [wiki-ingerida]
+
+  - name: wiki-lint
+    scope: /
+    tools: []
+    outputs: [reporte-de-lint-de-wiki]
+
+  - name: wiki-query
+    scope: /
+    tools: []
+    outputs: [respuesta-de-wiki]
