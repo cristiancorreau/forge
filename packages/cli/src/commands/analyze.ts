@@ -66,7 +66,7 @@ function renderReport(a: CodeAnalysis): string {
 
   lines.push(`  Agentes sugeridos: ${a.suggestedAgents.join(', ')}`);
   lines.push('');
-  lines.push('  Siguiente paso: corré el skill /onboard para que los agentes');
+  lines.push('  Siguiente paso: ejecuta el skill /onboard para que los agentes');
   lines.push('  especializados lean el código y generen docs/architecture.md,');
   lines.push('  docs/onboarding.md y docs/security-review.md.');
   lines.push('');
@@ -114,7 +114,7 @@ function renderMarkdown(a: CodeAnalysis, date: string): string {
   md.push('');
   md.push('## Siguiente paso');
   md.push('');
-  md.push('Corré el skill `/onboard` para sintetizar `docs/architecture.md`,');
+  md.push('Ejecuta el skill `/onboard` para sintetizar `docs/architecture.md`,');
   md.push('`docs/onboarding.md` y `docs/security-review.md` con los agentes especializados.');
   md.push('');
   return md.join('\n');

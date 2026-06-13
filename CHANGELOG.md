@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.8.9] — 2026-06-13
+
+### Cambiado
+- **Español latino neutro** en el contenido reciente — se eliminó el voseo (corré→ejecuta, pegá→pega, anclá→ancla, verificá→verifica, etc.) en el skill `/onboard`, las secciones de resiliencia de `forge-skill-creator`/`forge-skill-improver` y el mensaje de `forge analyze`. Sin cambios funcionales.
+
+---
+
 ## [3.8.8] — 2026-06-13
 
 ### Agregado

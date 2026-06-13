@@ -27,8 +27,8 @@ eso está `/new-feature`).
 
 ## Prerequisitos
 
-Antes de empezar, verificá:
-- Estás en la raíz del repo (hay `project.yaml`; si no, corré `forge adopt` primero).
+Antes de empezar, verifica:
+- Estás en la raíz del repo (hay `project.yaml`; si no, ejecuta `forge adopt` primero).
 - El árbol de trabajo está limpio o respaldado en git (este skill escribe en `docs/`).
 - `forge analyze` corre sin error sobre el repo.
 
@@ -40,11 +40,11 @@ forge analyze --json > .forge/analysis.json
 
 Esto da el sustrato determinístico: stack, hotspots (directorios y archivos más
 grandes), marcadores TODO/FIXME, tests y los **agentes sugeridos**. No alucines
-la estructura: anclá todo lo que sigue en esta salida.
+la estructura: ancla todo lo que sigue en esta salida.
 
 ## Paso 2 — Despachar agentes especializados (lectura del código)
 
-Asigná cada entregable al agente correcto, en paralelo cuando no haya dependencia:
+Asigna cada entregable al agente correcto, en paralelo cuando no haya dependencia:
 
 1. `docs-writer` → `docs/architecture.md`: módulos, límites, flujo de datos y los
    entrypoints reales (los de `forge analyze`, no inventados).
@@ -57,7 +57,7 @@ Asigná cada entregable al agente correcto, en paralelo cuando no haya dependenc
 
 ## Paso 3 — Alimentar el wiki semántico
 
-Pasá cada documento generado por `/wiki-ingest` para que el conocimiento quede
+Pasa cada documento generado por `/wiki-ingest` para que el conocimiento quede
 consultable con `/wiki-query`. El wiki factual ya existe (lo siembra `forge
 adopt`); este paso agrega la capa interpretada.
 
@@ -78,7 +78,7 @@ forge analyze --write          # deja docs/analysis/<fecha>-analysis.md
 
 ## Manejo de errores
 
-Si `forge analyze` falla, frená: probablemente falta `project.yaml` (corré
+Si `forge analyze` falla, detente: probablemente falta `project.yaml` (ejecuta
 `forge adopt`) o la ruta no es un repo. Si un agente no puede anclar una
 afirmación en el código, debe marcarla como "a confirmar" en vez de inventar.
 
@@ -95,7 +95,7 @@ autocontenida y debería consumir menos de 4000 tokens de instrucción.
 
 | Excusa | Realidad |
 |---|---|
-| "Leo unos archivos y deduzco la arquitectura" | Sin `forge analyze` vas a inventar estructura; anclá en la salida real. |
+| "Leo unos archivos y deduzco la arquitectura" | Sin `forge analyze` vas a inventar estructura; ancla en la salida real. |
 | "La revisión de seguridad la hago después" | Después no se hace. Es un entregable del flujo, no opcional. |
 | "El proyecto es chico, no necesita onboarding" | Lo chico crece y rota gente; el costo de entender se paga igual. |
 
@@ -108,7 +108,7 @@ autocontenida y debería consumir menos de 4000 tokens de instrucción.
 
 ## Verificación
 
-- [ ] `forge analyze --json` corrió sin error — pegá la salida usada como base
+- [ ] `forge analyze --json` corrió sin error — pega la salida usada como base
 - [ ] Cada documento cita su evidencia (salida de analyze o archivo:línea)
 - [ ] Los comandos de onboarding se verificaron contra `scripts` (no inventados)
 - [ ] Los tres documentos quedaron ingeridos al wiki (`/wiki-query` los encuentra)
