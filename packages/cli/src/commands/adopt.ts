@@ -257,7 +257,7 @@ export async function adopt(args: string[]): Promise<number> {
 
     installCoreAgents(forgeRoot, join(claudeDir, 'agents'), activeAgents, profiles, opts.force, specialized);
     installHooks(forgeRoot, join(claudeDir, 'hooks'), opts.mode, opts.force);
-    installCommands(forgeRoot, join(claudeDir, 'commands'), opts.force);
+    installCommands(forgeRoot, join(claudeDir, 'commands'), opts.force, profiles);
     write(join(opts.target, 'CLAUDE.md'), generateClaudeMd(config), opts.force);
     writeSettingsJson(join(claudeDir, 'settings.json'), config.project.language ?? 'typescript', opts.mode, opts.force);
     installSpecScaffold(forgeRoot, opts.target, claudeDir, config);

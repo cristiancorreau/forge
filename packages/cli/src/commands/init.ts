@@ -425,11 +425,45 @@ export function writeSettingsJson(path: string, language: string, mode: string, 
   writeFileSync(path, JSON.stringify(generated, null, 2), 'utf-8');
 }
 
-export function installCommands(forgeRoot: string, destDir: string, force: boolean): void {
+// Slash commands tied to a stack profile: they only belong in a project that
+// activates that profile. e.g. the `laravel-*` commands must not land in a
+// non-Laravel project. The key is the profile id; the value is the command-name
+// prefix. Extend as new profiles ship stack-specific commands.
+const PROFILE_COMMAND_PREFIXES: Record<string, string> = {
+  laravel: 'laravel-',
+};
+
+/** True when `commandName` is gated to a profile that is NOT active. */
+function commandIsGatedOut(commandName: string, profiles: string[]): boolean {
+  for (const [profile, prefix] of Object.entries(PROFILE_COMMAND_PREFIXES)) {
+    if (commandName.startsWith(prefix)) return !profiles.includes(profile);
+  }
+  return false; // universal command
+}
+
+export function installCommands(forgeRoot: string, destDir: string, force: boolean, profiles: string[] = []): void {
   mkdirSync(destDir, { recursive: true });
   const commandsDir = join(forgeRoot, 'adapters', 'claude-code', 'commands');
   if (!existsSync(commandsDir)) return;
-  copyDir(commandsDir, destDir, force);
+
+  // Copy commands, skipping profile-gated ones whose profile isn't active.
+  for (const entry of readdirSync(commandsDir)) {
+    const src = join(commandsDir, entry);
+    if (statSync(src).isDirectory()) {
+      // Nested command groups (none are stack-gated today) — copy as-is.
+      copyDir(src, join(destDir, entry), force);
+    } else if (entry.endsWith('.md') && !commandIsGatedOut(basename(entry, '.md'), profiles)) {
+      copyFile(src, join(destDir, entry), force);
+    }
+  }
+
+  // Prune orphans: a stack-gated command left over from a previous stack (e.g.
+  // laravel-* after the project was reconfigured to another backend).
+  for (const file of readdirSync(destDir)) {
+    if (file.endsWith('.md') && commandIsGatedOut(basename(file, '.md'), profiles)) {
+      unlinkSync(join(destDir, file));
+    }
+  }
 }
 
 /**
@@ -639,7 +673,7 @@ export async function init(args: string[]): Promise<number> {
     const dryFiles = [
       { title: `.claude/agents/ — ${allAgents.length} agents`, tech: runtime },
       { title: '.claude/hooks/ — pre-edit-check.js, pre-bash-check.js', tech: 'guardrail' },
-      { title: '.claude/commands/ — 11 slash commands', tech: 'sdd' },
+      { title: '.claude/commands/ — slash commands (SDD + stack)', tech: 'sdd' },
       { title: 'CLAUDE.md', tech: 'config' },
       { title: '.claude/settings.json', tech: 'config' },
       { title: '.forge/manifest.json', tech: 'manifest' },
@@ -667,9 +701,9 @@ export async function init(args: string[]): Promise<number> {
         task: () => installHooks(forgeRoot, join(claudeDir, 'hooks'), mode, force),
       },
       {
-        title: 'Slash commands (11)',
+        title: 'Slash commands',
         tech: 'sdd workflow',
-        task: () => installCommands(forgeRoot, join(claudeDir, 'commands'), force),
+        task: () => installCommands(forgeRoot, join(claudeDir, 'commands'), force, profiles),
       },
       {
         title: 'CLAUDE.md',
