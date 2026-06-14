@@ -1097,3 +1097,60 @@ select:disabled {
   background: var(--border);
   border-radius: var(--r-pill);
 }
+
+/* ===== Tarjeta "Abrir proyecto" (post-config) ===== */
+.launch-card {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(255, 159, 28, 0.06), transparent 60%), var(--panel);
+}
+.launch-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.launch-head .ic {
+  width: 22px;
+  height: 22px;
+  color: var(--ember);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.launch-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.launch-sub {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.launch-group {
+  margin-top: 10px;
+}
+.launch-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.launch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.launch-row button .ic {
+  width: 15px;
+  height: 15px;
+  margin-right: 6px;
+}
+.launch-empty {
+  color: var(--muted);
+  font-size: 12.5px;
+}
