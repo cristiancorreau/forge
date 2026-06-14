@@ -7,6 +7,7 @@ import { specProbe } from './commands/spec-probe.js';
 import { audit } from './commands/audit.js';
 import { analyze } from './commands/analyze.js';
 import { generate } from './commands/generate.js';
+import { port } from './commands/port.js';
 import { update } from './commands/update.js';
 import { validate } from './commands/validate.js';
 import { doctor } from './commands/doctor.js';
@@ -61,6 +62,9 @@ switch (cmd) {
     break;
   case 'generate':
     exitCode = await generate(rest);
+    break;
+  case 'port':
+    exitCode = await port(rest);
     break;
   case 'update':
     exitCode = await update(rest);
