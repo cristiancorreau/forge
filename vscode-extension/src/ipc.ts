@@ -79,7 +79,35 @@ export interface WriteAnswersMessage {
   requestId?: string;
 }
 
-export type HostBoundMessage = RunMessage | WriteAnswersMessage;
+/**
+ * Request to open a VS Code integrated terminal in the workspace running the
+ * configured agent runtime. NOT a CLI command — handled with the VS Code
+ * terminal API, so it is not part of `toArgs`/the parity contract.
+ */
+export interface OpenTerminalMessage {
+  type: 'openTerminal';
+  /** forge runtime (claude-code, opencode, codex, gemini). */
+  runtime?: string;
+  requestId?: string;
+}
+
+export type HostBoundMessage = RunMessage | WriteAnswersMessage | OpenTerminalMessage;
+
+/** forge runtime → the agent CLI command to run in a terminal (or null). Pure. */
+const RUNTIME_TERMINAL_CMD: Record<string, string> = {
+  'claude-code': 'claude',
+  opencode: 'opencode',
+  codex: 'codex',
+  gemini: 'gemini',
+};
+
+/** The terminal command for a runtime, or null when none is known. */
+export function terminalCommandForRuntime(runtime?: string): string | null {
+  if (!runtime) {
+    return null;
+  }
+  return RUNTIME_TERMINAL_CMD[runtime] ?? null;
+}
 
 /** Successful CLI run, sent host → webview. */
 export interface ResultMessage {

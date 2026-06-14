@@ -3,7 +3,7 @@
   "publisher": "cristiancorreau",
   "displayName": "Forge AI — Agent Framework",
   "description": "Forge AI: configure and manage AI agent projects from VS Code — drives the @cristiancorreau/forge CLI for multi-runtime support (19 runtimes: 4 native + 15 rules-based)",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "engines": {
     "vscode": "^1.85.0"
   },

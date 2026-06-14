@@ -1,5 +1,14 @@
 # Changelog — forge (VS Code extension)
 
+## [0.7.1]
+
+### Added
+- **Abrir terminal con el runtime** — tras un `init`/`adopt` exitoso en el panel,
+  aparece la acción "Abrir terminal con \<runtime\>": abre una terminal integrada de
+  VS Code en el workspace ejecutando el agente configurado (`claude` / `opencode` /
+  `codex` / `gemini`). Usa la API de terminal de VS Code (no es un comando de la CLI;
+  no afecta la paridad). Mapeo runtime→comando puro y testeado.
+
 ## [0.7.0]
 
 ### Added
