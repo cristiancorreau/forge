@@ -54,6 +54,7 @@ Setup
   adopt          Onboard forge into an EXISTING codebase (analyze + auto-wiki)
   add            Install a skill from an external source (security pipeline, opt-in network)
   generate       Generate runtime config files from project.yaml
+  port           Port the project to another runtime + report how much config carries over
   update         Update managed files to the bundled catalog (--dry-run, --force)
   migrate        Migrate project.yaml from the v1 schema to v2 (--dry-run, --backup)
   scaffold       Scaffold a new agent: Tier 2 profile, or Tier 3 domain agent (--tier 3)
@@ -104,6 +105,7 @@ Setup
   adopt          Incorpora forge a un codebase EXISTENTE (análisis + auto-wiki)
   add            Instala un skill desde una fuente externa (pipeline de seguridad, red opt-in)
   generate       Genera los archivos de config nativos de cada runtime desde project.yaml
+  port           Porta el proyecto a otro runtime + reporta cuánta config se conserva
   update         Actualiza los archivos gestionados al catálogo bundleado (--dry-run, --force)
   migrate        Migra project.yaml del schema v1 al v2 (--dry-run, --backup)
   scaffold       Genera un agente nuevo: profile Tier 2, o agente de dominio Tier 3 (--tier 3)
