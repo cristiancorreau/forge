@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.10.2] — 2026-06-14
+
+### Corregido
+- **Comandos de stack en proyectos que no corresponden** — `forge init`/`adopt` instalaba TODOS los slash commands del bundle (`copyDir`), incluidos los `laravel-*`, en cualquier proyecto. Ahora los comandos atados a un profile (hoy `laravel-*` → profile `laravel`) solo se instalan cuando ese profile está activo, y se **podan** al reconfigurar el stack (mismo criterio que la poda de agentes). Un proyecto TypeScript/Next.js ya no recibe comandos de Laravel.
+
+---
+
 ## [3.10.1] — 2026-06-13
 
 ### Cambiado
