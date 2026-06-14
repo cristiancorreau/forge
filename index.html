@@ -416,6 +416,60 @@
     padding:.34rem .55rem;cursor:pointer;transition:color .15s,border-color .15s
   }
   .nav-lang:hover{color:#ff9f1c;border-color:#ff9f1c}
+  .nav-retro{color:#ffd700;border-color:#7a5}
+  .nav-retro:hover{color:#fff;border-color:#ffd700}
+
+  /* ============ MODO RETRO (web 1.0, 1996–2003) ============ */
+  #retro-page{display:none}
+  html.retro .nav, html.retro main, html.retro .ft{display:none !important}
+  html.retro{scroll-behavior:auto}
+  html.retro body{background:#000080;margin:0}
+  #retro-page{
+    display:none;
+    font-family:"Comic Sans MS","Times New Roman",cursive,serif;
+    color:#000;
+    background:#008080;
+    background-image:
+      radial-gradient(circle at 10% 20%, rgba(255,255,255,.12) 0 2px, transparent 2px),
+      radial-gradient(circle at 70% 60%, rgba(255,255,255,.10) 0 2px, transparent 2px),
+      radial-gradient(circle at 40% 80%, rgba(255,255,255,.08) 0 2px, transparent 2px);
+    background-size:60px 60px,90px 90px,120px 120px;
+    min-height:100vh;padding:14px;text-align:center;
+  }
+  html.retro #retro-page{display:block}
+  .rp-table{max-width:760px;margin:0 auto;background:#c0c0c0;border:4px ridge #fff;padding:14px;box-shadow:6px 6px 0 #000}
+  .rp-title{font-family:"Impact","Arial Black",sans-serif;font-size:46px;margin:6px 0 2px;font-weight:900;
+    background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);background-size:200% 100%;
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    animation:rp-rainbow 3s linear infinite;letter-spacing:2px}
+  @keyframes rp-rainbow{to{background-position:200% 0}}
+  .rp-sub{font-size:15px;color:#000080;font-weight:bold;margin:0 0 8px}
+  .blink{animation:rp-blink 1s steps(1) infinite}
+  @keyframes rp-blink{50%{visibility:hidden}}
+  .rp-marquee{overflow:hidden;white-space:nowrap;background:#000;color:#0f0;border:2px inset #888;
+    font-family:"Courier New",monospace;font-size:15px;padding:5px 0;margin:10px 0}
+  .rp-marquee span{display:inline-block;padding-left:100%;animation:rp-scroll 16s linear infinite}
+  @keyframes rp-scroll{to{transform:translateX(-100%)}}
+  .rp-hr{height:14px;border:0;margin:14px 0;background:repeating-linear-gradient(90deg,#f00 0 12px,#ff0 12px 24px,#0a0 24px 36px,#00f 36px 48px);
+    animation:rp-flame .6s linear infinite}
+  @keyframes rp-flame{to{background-position:48px 0}}
+  .rp-box{background:#fff;border:3px inset #999;padding:10px;margin:12px auto;max-width:560px;text-align:left;font-size:14px;line-height:1.6}
+  .rp-cmd{background:#000;color:#0f0;font-family:"Courier New",monospace;padding:10px;border:2px ridge #0f0;font-size:15px;font-weight:bold}
+  .rp-btn{display:inline-block;background:#c0c0c0;border:3px outset #fff;padding:6px 14px;margin:6px;
+    font-family:"Comic Sans MS",cursive;font-weight:bold;color:#000080;text-decoration:none;cursor:pointer;font-size:14px}
+  .rp-btn:active{border-style:inset}
+  .rp-counter{display:inline-flex;gap:2px;background:#000;padding:3px;border:2px inset #555;vertical-align:middle}
+  .rp-counter b{background:#111;color:#0f0;font-family:"Courier New",monospace;font-size:20px;width:16px;text-align:center;border:1px solid #333}
+  .rp-badges img, .rp-badges svg{margin:4px;vertical-align:middle;border:1px solid #000}
+  .rp-spin{animation:rp-spin 2.2s linear infinite;display:inline-block}
+  @keyframes rp-spin{to{transform:rotate(360deg)}}
+  .rp-new{color:#f00;font-weight:900;font-size:13px;font-family:"Arial Black",sans-serif}
+  .rp-fire{display:inline-block;animation:rp-fire .5s steps(2) infinite}
+  @keyframes rp-fire{50%{transform:scaleX(-1)}}
+  .rp-webring{font-size:13px;margin:10px 0;color:#000080}
+  .rp-foot{font-size:12px;color:#333;margin-top:12px}
+  .rp-bounce{display:inline-block;animation:rp-bounce 1s ease-in-out infinite}
+  @keyframes rp-bounce{50%{transform:translateY(-8px)}}
 </style>
 </head>
 <body>
@@ -440,6 +494,7 @@
       <a href="https://www.npmjs.com/package/@cristiancorreau/forge" target="_blank" rel="noopener noreferrer">npm</a>
       <a class="nav-cta" href="#quickstart" data-en="Get started">Empezar</a>
       <button class="nav-lang" id="langToggle" type="button" aria-label="Switch language to English">EN</button>
+      <button class="nav-lang nav-retro" id="retroToggle" type="button" aria-label="Modo retro 90s" title="Modo retro (web de los 90)">★ 90s</button>
     </nav>
     <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navLinks">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -836,6 +891,88 @@ npx @cristiancorreau/forge analyze   # leer el código; luego /onboard documenta
   </div>
 </footer>
 
+<!-- ============ MODO RETRO (web 1.0) ============ -->
+<section id="retro-page" aria-label="Forge AI — modo retro 90s">
+  <div class="rp-table">
+    <!-- GIFs reales de GeoCities, vía gifcities.org (Internet Archive) -->
+    <p><img src="assets/retro/construction.gif" alt="Sitio en construcción" width="220" loading="lazy"></p>
+
+    <h1 class="rp-title">FORGE AI</h1>
+    <p><img src="assets/retro/welcome.gif" alt="Welcome" height="42" loading="lazy"> &nbsp; <img src="assets/retro/globe.gif" alt="World Wide Web" width="46" loading="lazy"></p>
+    <p class="rp-sub"><span class="blink">&#9733;</span> ¡¡¡ BIENVENIDO A MI HOMEPAGE !!! <span class="blink">&#9733;</span></p>
+    <p style="font-size:14px;margin:0 0 6px"><img src="assets/retro/fire.gif" alt="" height="16" style="vertical-align:middle"> El framework de IA más cool de la WWW <img src="assets/retro/fire.gif" alt="" height="16" style="vertical-align:middle"></p>
+
+    <div class="rp-marquee"><span>&#9733;&#9733;&#9733; NUEVO !!! configura tu proyecto para agentes de IA en UN solo comando &middot; 19 runtimes &middot; ¡firma el guestbook! &middot; Best viewed in Netscape Navigator 4.0 &middot; ¡¡¡ no olvides marcar como favorito (Ctrl+D) !!! &#9733;&#9733;&#9733;</span></div>
+
+    <p style="margin:12px 0"><img src="assets/retro/fire.gif" alt="" style="width:100%;max-width:560px;height:20px;object-fit:cover" loading="lazy"></p>
+
+    <p style="font-size:15px;font-weight:bold">&#128187; ¿Qué es Forge AI? <img src="assets/retro/new.gif" alt="New!" height="22" style="vertical-align:middle" loading="lazy"></p>
+    <div class="rp-box">
+      <b>Forge AI</b> compila la configuración de tus agentes de IA desde un solo
+      <code>project.yaml</code> hacia <b>19 runtimes</b> (Claude Code, Cursor, Copilot, Gemini y 15 más).
+      ¡Un equipo de agentes, todos los editores! &#128640;
+    </div>
+
+    <p style="font-size:14px;font-weight:bold">&#9758; Pruébalo AHORA mismo: &#9756;</p>
+    <div class="rp-cmd">C:\&gt; npx @cristiancorreau/forge init<span class="blink">_</span></div>
+    <p style="margin:10px 0 0"><img src="assets/retro/dancing.gif" alt="Dancing baby" width="80" loading="lazy"><br><span style="font-size:12px;font-weight:bold;color:#000080">&#9835; ¡el baby aprueba tu setup! &#9835;</span></p>
+
+    <p style="margin:12px 0"><img src="assets/retro/fire.gif" alt="" style="width:100%;max-width:560px;height:20px;object-fit:cover" loading="lazy"></p>
+
+    <!-- Botones beveled -->
+    <p>
+      <a class="rp-btn" href="https://github.com/cristiancorreau/forge" target="_blank" rel="noopener noreferrer">&#128187; Ver en GitHub</a>
+      <a class="rp-btn" href="https://www.npmjs.com/package/@cristiancorreau/forge" target="_blank" rel="noopener noreferrer">&#128230; Bajar de npm</a>
+      <a class="rp-btn" href="#" id="retroSign">&#9997; Firmar guestbook</a>
+    </p>
+
+    <!-- Contador de visitas estilo odómetro -->
+    <p style="font-size:13px;font-weight:bold">Sos el visitante número:</p>
+    <p><span class="rp-counter" id="rp-counter"><b>0</b><b>0</b><b>0</b><b>1</b><b>3</b><b>3</b><b>7</b></span></p>
+
+    <!-- Email animado + webmaster -->
+    <p style="font-size:13px">
+      <img src="assets/retro/email.gif" alt="email" height="26" style="vertical-align:middle" loading="lazy"> Escríbele al webmaster &middot;
+      <span class="rp-bounce">&#128025;</span> hecho con <b>Notepad</b> en una <b>Mac</b>
+    </p>
+
+    <p style="margin:12px 0"><img src="assets/retro/fire.gif" alt="" style="width:100%;max-width:560px;height:20px;object-fit:cover" loading="lazy"></p>
+
+    <!-- Badges 88x31 clásicos (SVG inline) -->
+    <p class="rp-badges">
+      <svg width="88" height="31" viewBox="0 0 88 31" role="img" aria-label="Netscape Now">
+        <rect width="88" height="31" fill="#000"/><rect x="1" y="1" width="86" height="29" fill="none" stroke="#0c0"/>
+        <text x="44" y="13" text-anchor="middle" fill="#0f0" font-family="Arial" font-size="9" font-weight="bold">Netscape</text>
+        <text x="44" y="24" text-anchor="middle" fill="#ff0" font-family="Arial" font-size="9" font-weight="bold">NOW!</text>
+      </svg>
+      <svg width="88" height="31" viewBox="0 0 88 31" role="img" aria-label="Valid HTML">
+        <rect width="88" height="31" fill="#fff"/><rect width="40" height="31" fill="#c00"/>
+        <text x="20" y="14" text-anchor="middle" fill="#fff" font-family="Arial" font-size="9" font-weight="bold">VALID</text>
+        <text x="20" y="25" text-anchor="middle" fill="#fff" font-family="Arial" font-size="9" font-weight="bold">HTML</text>
+        <text x="64" y="14" text-anchor="middle" fill="#000" font-family="Arial" font-size="8">1996</text>
+        <text x="64" y="25" text-anchor="middle" fill="#000" font-family="Arial" font-size="8">W3C</text>
+      </svg>
+      <svg width="88" height="31" viewBox="0 0 88 31" role="img" aria-label="Made with Notepad">
+        <rect width="88" height="31" fill="#008080"/><rect x="2" y="2" width="84" height="27" fill="none" stroke="#fff"/>
+        <text x="44" y="14" text-anchor="middle" fill="#fff" font-family="Arial" font-size="8" font-weight="bold">MADE WITH</text>
+        <text x="44" y="25" text-anchor="middle" fill="#ff0" font-family="Arial" font-size="9" font-weight="bold">NOTEPAD</text>
+      </svg>
+    </p>
+
+    <!-- Webring -->
+    <p class="rp-webring">
+      [ <a href="#" style="color:#00c">&laquo; Anterior</a> | <a href="#" style="color:#00c">Aleatorio</a> | <a href="#" style="color:#00c">Siguiente &raquo;</a> ]<br>
+      Miembro del <b>Agentic Dev WebRing</b> &#127783;
+    </p>
+
+    <p style="font-size:13px">&#128421; Best viewed in <b>Netscape Navigator 4.0</b> @ 800&times;600 &#128421;</p>
+
+    <p><button class="rp-btn" id="retroBack" style="background:#ffd700;border-color:#fff">&#9664; Volver al sitio normal</button></p>
+
+    <p class="rp-foot">&copy; 1999&ndash;2026 Forge AI &middot; Apache-2.0 &middot; hosted on GeoForge&#8482;</p>
+  </div>
+</section>
+
 <!-- visually-hidden live region for copy/menu announcements -->
 <div class="sr-only" role="status" aria-live="polite" id="srStatus"></div>
 
@@ -950,6 +1087,30 @@ npx @cristiancorreau/forge analyze   # leer el código; luego /onboard documenta
     if (langToggle) {
       langToggle.addEventListener("click", function () {
         applyLang(document.documentElement.lang === "en" ? "es" : "en");
+      });
+    }
+
+    /* ---- modo retro (web 1.0) ---- */
+    var retroToggle = document.getElementById("retroToggle");
+    function setRetro(on) {
+      document.documentElement.classList.toggle("retro", on);
+      try { window.localStorage.setItem("forge-retro", on ? "1" : "0"); } catch (e) {}
+      if (on) { window.scrollTo(0, 0); }
+    }
+    try { if (window.localStorage.getItem("forge-retro") === "1") setRetro(true); } catch (e) {}
+    if (retroToggle) {
+      retroToggle.addEventListener("click", function () {
+        setRetro(!document.documentElement.classList.contains("retro"));
+      });
+    }
+    var retroBack = document.getElementById("retroBack");
+    if (retroBack) { retroBack.addEventListener("click", function () { setRetro(false); window.scrollTo(0, 0); }); }
+    var retroSign = document.getElementById("retroSign");
+    if (retroSign) {
+      retroSign.addEventListener("click", function (e) {
+        e.preventDefault();
+        announce("Gracias por firmar el guestbook!");
+        window.alert(":-) Gracias por visitar Forge AI !!!\n\nFirma tu nombre en el guestbook... (es 1999, esto era normal)\n\nPST: el sitio se ve mejor en Netscape 4.0 a 800x600.");
       });
     }
   })();
