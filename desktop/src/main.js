@@ -24,7 +24,10 @@ function resolveForgeCli() {
     const parts = override.trim().split(/\s+/);
     return { command: parts[0], baseArgs: parts.slice(1) };
   }
-  return { command: 'npx', baseArgs: ['-y', '@cristiancorreau/forge'] };
+  // Pin a floor that supports `init --from` (SPEC-069, forge >= 3.10.0). Without
+  // a version spec, npx may serve a stale cached "latest" that ignores --from
+  // and launches the interactive wizard, which then hangs on stdin.
+  return { command: 'npx', baseArgs: ['-y', '@cristiancorreau/forge@^3.10.0'] };
 }
 
 /**
@@ -41,6 +44,10 @@ function runForge(subArgs, cwd) {
       cwd: cwd || process.cwd(),
       shell: false,
       env: process.env,
+      // stdin closed: the GUI only runs non-interactive commands. If a wrong/old
+      // CLI ever launches an interactive wizard, it gets EOF and exits instead of
+      // hanging the panel forever on "Ejecutando…".
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
 
     let stdout = '';

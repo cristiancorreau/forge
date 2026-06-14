@@ -193,7 +193,80 @@ const PROFILE_CATALOG = [
   'vuenuxt',
   'wordpress',
 ];
-const SKILL_CATALOG = ['deploy-check', 'security-review', 'wiki', 'review'];
+// Catalogo real de skills: etiqueta, descripcion corta y si es recomendada.
+const SKILL_CATALOG = [
+  { value: 'spec', label: 'spec', desc: 'Redacta specs siguiendo la plantilla forge.', recommended: true },
+  { value: 'new-feature', label: 'new-feature', desc: 'Checklist de feature de plan a deploy.', recommended: true },
+  { value: 'security-audit', label: 'security-audit', desc: 'Checklist de seguridad de endpoints y auth.', recommended: true },
+  { value: 'onboard', label: 'onboard', desc: 'Analiza y documenta un repo existente.', recommended: false },
+  { value: 'local2prod', label: 'local2prod', desc: 'Deploy a prod hasta READY/SUCCESS.', recommended: false },
+  { value: 'db-migrate', label: 'db-migrate', desc: 'Migración segura de base de datos.', recommended: false },
+  { value: 'browser-test', label: 'browser-test', desc: 'Verifica UI en navegador.', recommended: false },
+  { value: 'phase-kickoff', label: 'phase-kickoff', desc: 'Arranque de fase/sprint.', recommended: false },
+  { value: 'wiki-ingest', label: 'wiki-ingest', desc: 'Ingesta conocimiento al wiki del proyecto.', recommended: false },
+  { value: 'wiki-query', label: 'wiki-query', desc: 'Responde citando el wiki.', recommended: false },
+];
+const RECOMMENDED_SKILLS = SKILL_CATALOG.filter((s) => s.recommended).map((s) => s.value);
+
+// ===== Agentes: Tier 1 por modo, explicaciones y mapa de Tier 2 =====
+function defaultAgentsForMode(mode) {
+  const startup = ['orchestrator', 'backend-engineer', 'frontend-engineer'];
+  const standard = startup.concat(['test-engineer', 'docs-writer']);
+  const enterprise = standard.concat(['compliance-reviewer', 'security-auditor']);
+  if (mode === 'minimal' || mode === 'startup') return startup;
+  if (mode === 'enterprise') return enterprise;
+  return standard; // standard (default)
+}
+const AGENT_EXPLAIN = {
+  orchestrator: 'coordina el equipo y delega cada tarea al agente correcto.',
+  'backend-engineer': 'endpoints, lógica de negocio y base de datos.',
+  'frontend-engineer': 'UI, componentes e integración con la API.',
+  'test-engineer': 'tests unitarios, de integración y E2E.',
+  'docs-writer': 'documentación, specs y ADRs.',
+  'compliance-reviewer': 'revisa GDPR/LGPD/CCPA con poder de veto.',
+  'security-auditor': 'auditoría de vulnerabilidades.',
+};
+// Mapa de profile -> agentes Tier 2 del stack.
+const TIER2_BY_PROFILE = {
+  'nextjs-admin': ['admin-engineer'],
+  laravel: ['api-engineer', 'fullstack-engineer', 'migration-specialist', 'laravel-specialist', 'laravel-test-engineer'],
+  rails: ['fullstack-engineer'],
+  fastapi: ['api-engineer'],
+  express: ['api-engineer'],
+  'hono-drizzle': ['api-engineer'],
+  nestjs: ['api-engineer'],
+  'go-gin': ['api-engineer'],
+  springboot: ['api-engineer'],
+  flask: ['api-engineer'],
+  rust: ['api-engineer'],
+  django: ['api-engineer'],
+  expo: ['mobile-engineer'],
+  flutter: ['mobile-engineer'],
+  astro: ['frontend-engineer'],
+  sveltekit: ['frontend-engineer'],
+  vuenuxt: ['frontend-engineer'],
+  wordpress: ['wp-engineer', 'divi-engineer', 'elementor-engineer'],
+  'playwright-crawler': ['scanner-engineer'],
+};
+
+// Framework -> id de profile de forge (mismo PROFILE_MAP que usa la CLI). Solo
+// estos frameworks generan un profile automatico; el resto no agrega profile,
+// igual que `forge init`. Asi el preview de agentes coincide con lo que se crea.
+const FRAMEWORK_TO_PROFILE = {
+  hono: 'hono-drizzle',
+  nextjs: 'nextjs-admin',
+  astro: 'astro',
+  fastapi: 'fastapi',
+  rails: 'rails',
+  laravel: 'laravel',
+  expo: 'expo',
+  springboot: 'springboot',
+  flutter: 'flutter',
+  flask: 'flask',
+  axum: 'rust',
+  actix: 'rust',
+  rocket: 'rust',
+};
 
 // ===== Estado del wizard =====
 const state = {
@@ -214,20 +287,43 @@ const state = {
 const TOTAL_STEPS = 7;
 
 // ----- Construir chips multi (testing / profiles / skills) -----
+// Cada item puede ser un string o un objeto { value, label, desc, recommended }.
 function buildChips(containerId, values, selectedSet) {
   const el = document.getElementById(containerId);
   el.textContent = '';
-  values.forEach((val) => {
+  values.forEach((item) => {
+    const isObj = item && typeof item === 'object';
+    const val = isObj ? item.value : item;
+    const label = isObj ? item.label || item.value : item;
+    const desc = isObj ? item.desc : null;
+    const recommended = isObj ? !!item.recommended : false;
+
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'option' + (selectedSet.has(val) ? ' selected' : '');
+    btn.className =
+      'option' +
+      (desc ? ' has-desc' : '') +
+      (selectedSet.has(val) ? ' selected' : '');
     btn.dataset.value = val;
     btn.setAttribute('role', 'checkbox');
     btn.setAttribute('aria-checked', selectedSet.has(val) ? 'true' : 'false');
+
     const title = document.createElement('span');
     title.className = 'opt-title';
-    title.textContent = val;
+    title.textContent = label;
+    if (recommended) {
+      const rb = document.createElement('span');
+      rb.className = 'badge-amber';
+      rb.textContent = 'Recomendada';
+      title.appendChild(rb);
+    }
     btn.appendChild(title);
+    if (desc) {
+      const sub = document.createElement('span');
+      sub.className = 'opt-sub';
+      sub.textContent = desc;
+      btn.appendChild(sub);
+    }
     btn.appendChild(svgUse('ic-check', 'chip-check'));
     btn.addEventListener('click', () => {
       if (selectedSet.has(val)) selectedSet.delete(val);
@@ -356,10 +452,12 @@ function recomputeStack() {
     state.backend = beFw.value || null;
     state.frontend = feFw.value || null;
   }
-  // Derivar profiles
+  // Derivar profiles: framework -> id de profile (PROFILE_MAP), no el nombre del framework.
   const derived = [];
-  if (state.backend) derived.push(state.backend);
-  if (state.frontend) derived.push(state.frontend);
+  const pBack = FRAMEWORK_TO_PROFILE[state.backend];
+  const pFront = FRAMEWORK_TO_PROFILE[state.frontend];
+  if (pBack && !derived.includes(pBack)) derived.push(pBack);
+  if (pFront && !derived.includes(pFront)) derived.push(pFront);
   // mantener profiles del catalogo elegidos manualmente + derivados
   profilesSet.forEach((p) => {
     if (!derived.includes(p)) derived.push(p);
@@ -435,6 +533,8 @@ wireRadioGrid('grid-runtime', (v) => {
 
 // ===== Paso 6 =====
 buildChips('grid-profiles', PROFILE_CATALOG, profilesSet);
+// Pre-seleccionar las skills recomendadas por default.
+RECOMMENDED_SKILLS.forEach((s) => skillsSet.add(s));
 buildChips('grid-skills', SKILL_CATALOG, skillsSet);
 
 // ===== Construir WizardResult =====
@@ -442,10 +542,10 @@ function buildResult() {
   // sincronizar sets -> arrays
   state.testing = Array.from(testingSet);
   state.skills = Array.from(skillsSet);
-  // profiles: derivados + manuales
+  // profiles: derivados (framework -> profile id, igual que forge) + manuales
   const profiles = new Set();
-  if (state.backend) profiles.add(state.backend);
-  if (state.frontend) profiles.add(state.frontend);
+  if (FRAMEWORK_TO_PROFILE[state.backend]) profiles.add(FRAMEWORK_TO_PROFILE[state.backend]);
+  if (FRAMEWORK_TO_PROFILE[state.frontend]) profiles.add(FRAMEWORK_TO_PROFILE[state.frontend]);
   profilesSet.forEach((p) => profiles.add(p));
   state.profiles = Array.from(profiles);
 
@@ -464,6 +564,33 @@ function buildResult() {
     profiles: state.profiles,
     skills: state.skills,
   };
+}
+
+// ===== Equipo de agentes (resumen) =====
+// Calcula el equipo a partir del modo y los profiles derivados.
+// Devuelve [{ name, tier, why }] deduplicado (Tier 1 gana al colisionar).
+function computeAgents(mode, profiles) {
+  const tier1 = defaultAgentsForMode(mode);
+  const seen = new Set();
+  const team = [];
+  tier1.forEach((name) => {
+    if (seen.has(name)) return;
+    seen.add(name);
+    team.push({ name, tier: 1, why: AGENT_EXPLAIN[name] || '' });
+  });
+  (profiles || []).forEach((profile) => {
+    const agents = TIER2_BY_PROFILE[profile] || [];
+    agents.forEach((name) => {
+      if (seen.has(name)) return; // ya esta como Tier 1 u otro Tier 2
+      seen.add(name);
+      team.push({
+        name,
+        tier: 2,
+        why: AGENT_EXPLAIN[name] || ('especialista del stack ' + profile + '.'),
+      });
+    });
+  });
+  return team;
 }
 
 // ===== Resumen =====
@@ -513,7 +640,55 @@ function renderSummary() {
     });
     summary.appendChild(g);
   });
+  renderAgentsSection(r);
   document.getElementById('answers-json').textContent = JSON.stringify(r, null, 2);
+}
+
+// ----- Seccion "Agentes que se crearan" dentro del resumen -----
+function renderAgentsSection(r) {
+  const host = document.getElementById('summary-agents');
+  if (!host) return;
+  host.textContent = '';
+
+  const intro = document.createElement('p');
+  intro.className = 'agents-intro';
+  intro.textContent =
+    'En vez de un prompt genérico, Forge AI instala un equipo de agentes con roles claros y reglas por dominio.';
+  host.appendChild(intro);
+
+  const team = computeAgents(r.mode, r.profiles);
+  const list = document.createElement('div');
+  list.className = 'agents-list';
+  team.forEach((agent) => {
+    const row = document.createElement('div');
+    row.className = 'agent-row';
+
+    const head = document.createElement('div');
+    head.className = 'agent-head';
+    const name = document.createElement('span');
+    name.className = 'agent-name';
+    name.textContent = agent.name;
+    const tier = document.createElement('span');
+    tier.className = 'agent-tier tier-' + agent.tier;
+    tier.textContent = 'Tier ' + agent.tier;
+    head.appendChild(name);
+    head.appendChild(tier);
+
+    const why = document.createElement('span');
+    why.className = 'agent-why';
+    why.textContent = agent.why;
+
+    row.appendChild(head);
+    row.appendChild(why);
+    list.appendChild(row);
+  });
+  host.appendChild(list);
+
+  const note = document.createElement('p');
+  note.className = 'agents-note';
+  note.textContent =
+    'Tier 1 = equipo universal (sirve a cualquier stack). Tier 2 = especialistas del framework elegido. Tier 3 = agentes de dominio que agregas después.';
+  host.appendChild(note);
 }
 
 // ===== Copiar answers.json =====

@@ -947,6 +947,141 @@ select:disabled {
   font-style: italic;
 }
 
+/* ===== Callout SDD ===== */
+.sdd-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  background: var(--ember-bg);
+  border: 1px solid var(--ember-ring);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.sdd-callout .sdd-icon {
+  color: var(--ember);
+  margin-top: 1px;
+}
+.sdd-callout p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.sdd-callout strong {
+  color: var(--text);
+  font-weight: 650;
+}
+
+/* ===== Guia de skills + chips con descripcion ===== */
+.skills-guide {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: -2px 0 var(--sp-3);
+}
+.option-grid.skills-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+.option-grid.chips .option.has-desc {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 10px 12px;
+  padding-right: 26px;
+}
+.option-grid.chips .option.has-desc .opt-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+.option-grid.chips .option.has-desc .opt-sub {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.option.has-desc .badge-amber {
+  margin-left: 2px;
+}
+
+/* ===== Tarjeta de agentes (resumen) ===== */
+.agents-card {
+  background: var(--panel-2);
+  border-radius: var(--r-lg);
+  margin-bottom: var(--sp-4);
+}
+.agents-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-2);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ember);
+}
+.agents-intro {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0 0 var(--sp-3);
+}
+.agents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.agent-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.agent-row:last-child {
+  border-bottom: none;
+}
+.agent-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.agent-name {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text);
+  font-family: var(--font-mono);
+}
+.agent-tier {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: var(--r-pill);
+  padding: 1px 8px;
+  border: 1px solid transparent;
+}
+.agent-tier.tier-1 {
+  color: var(--ember);
+  background: var(--ember-bg);
+  border-color: var(--ember-ring);
+}
+.agent-tier.tier-2 {
+  color: var(--info);
+  background: var(--info-bg);
+  border-color: rgba(127, 184, 255, 0.3);
+}
+.agent-why {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.agents-note {
+  font-size: 11.5px;
+  color: var(--faint);
+  line-height: 1.5;
+  margin: var(--sp-3) 0 0;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-soft);
+}
+
 /* Scrollbar custom */
 .output::-webkit-scrollbar,
 .answers-json::-webkit-scrollbar {

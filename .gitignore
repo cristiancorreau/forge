@@ -38,3 +38,6 @@ __pycache__/
 
 # Dogfood harness — repos config con rutas absolutas locales (no commitear)
 scripts/dogfood.repos.json
+
+desktop/node_modules/
+desktop/package-lock.json
