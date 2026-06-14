@@ -116,6 +116,13 @@
       <symbol id="ic-folder" viewBox="0 0 24 24">
         <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
       </symbol>
+      <symbol id="ic-info" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 7.5h.01" />
+      </symbol>
+      <symbol id="ic-users" viewBox="0 0 24 24">
+        <circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0" />
+        <path d="M16 5.5a3 3 0 0 1 0 5.5M17 14.5a6 6 0 0 1 4 5.5" />
+      </symbol>
     </svg>
 
     <!-- ===== Header ===== -->
@@ -147,6 +154,18 @@
       <!-- ============ Vista 1: Proyecto nuevo (wizard) ============ -->
       <section class="view active" id="view-nuevo" role="tabpanel">
         <div class="card wizard" id="wizard">
+          <!-- Callout SDD -->
+          <aside class="sdd-callout" role="note">
+            <svg class="ic-lg sdd-icon" aria-hidden="true"><use href="#ic-shield-check" /></svg>
+            <p>
+              <strong>Spec-Driven Development (SDD):</strong> Forge AI trabaja
+              spec-first. Antes de escribir código se aprueba una spec en
+              <code>docs/specs/</code>, y el orchestrator veta implementar sin
+              spec aprobada. Así los agentes no improvisan y el proyecto queda
+              auditable.
+            </p>
+          </aside>
+
           <!-- Stepper -->
           <ol class="stepper" id="stepper" aria-label="Progreso del asistente">
             <li class="step-node active" data-step="0"><span class="dot">1</span><span class="step-label">Tipo</span></li>
@@ -361,14 +380,24 @@
               </div>
               <div class="field">
                 <label>Skills</label>
-                <div class="option-grid chips" id="grid-skills" role="group" aria-label="Skills"></div>
+                <p class="skills-guide">
+                  Pre-seleccionamos las recomendadas; puedes ajustarlas.
+                </p>
+                <div class="option-grid chips skills-grid" id="grid-skills" role="group" aria-label="Skills"></div>
               </div>
             </div>
 
             <!-- Paso 7: Resumen -->
             <div class="wizard-step" data-step="6">
-              <p class="step-q">Revisá la configuración.</p>
+              <p class="step-q">Revisa la configuración.</p>
               <div class="card summary" id="summary"></div>
+              <div class="card agents-card">
+                <h5 class="agents-title">
+                  <svg class="ic" aria-hidden="true"><use href="#ic-users" /></svg>
+                  Agentes que se crearán
+                </h5>
+                <div id="summary-agents"></div>
+              </div>
               <div class="answers-block">
                 <div class="answers-head">
                   <span class="answers-label">answers.json</span>
