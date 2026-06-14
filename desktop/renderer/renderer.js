@@ -86,6 +86,7 @@ async function run(action, payload) {
   setButtonsDisabled(true);
   setStatus('running', 'Ejecutando');
   output.textContent = '';
+  hideLaunch();
   try {
     const result = await window.forge.runAction(action, payload);
     renderResult(result);
@@ -800,7 +801,8 @@ async function runWizardInit(dryRun) {
   setButtonsDisabled(false);
   const payload = { from: file };
   if (dryRun) payload.dryRun = true;
-  await run('init', payload);
+  const res = await run('init', payload);
+  if (!dryRun && res && res.ok) showLaunch(state.runtime);
 }
 
 btnCreate.addEventListener('click', () => runWizardInit(false));
@@ -819,22 +821,24 @@ document.getElementById('btn-init-preview').addEventListener('click', () => {
   }
   run('init', { from, dryRun: true });
 });
-document.getElementById('btn-init-apply').addEventListener('click', () => {
+document.getElementById('btn-init-apply').addEventListener('click', async () => {
   const from = initFrom();
   if (!from) {
     setStatus('err', 'Falta el archivo');
     output.textContent = 'Indica la ruta del archivo --from antes de crear el proyecto.';
     return;
   }
-  run('init', { from });
+  const res = await run('init', { from });
+  if (res && res.ok) showLaunch(state.runtime || '');
 });
 
 // ===== Adoptar =====
 document.getElementById('btn-adopt-preview').addEventListener('click', () => {
   run('adopt', { dryRun: true });
 });
-document.getElementById('btn-adopt-apply').addEventListener('click', () => {
-  run('adopt', {});
+document.getElementById('btn-adopt-apply').addEventListener('click', async () => {
+  const res = await run('adopt', {});
+  if (res && res.ok) showLaunch('claude-code');
 });
 
 // ===== Diagnostico =====
@@ -845,11 +849,76 @@ document.getElementById('btn-audit').addEventListener('click', () => {
   run('audit', {});
 });
 
+// ===== Abrir proyecto (post-configuracion) =====
+const RUNTIME_LABELS = {
+  'claude-code': 'Claude Code',
+  opencode: 'OpenCode',
+  codex: 'Codex',
+  gemini: 'Gemini CLI',
+};
+let detectedTools = { editors: [], runtimes: {}, platform: '' };
+const launchSection = document.getElementById('launch-actions');
+const launchEditors = document.getElementById('launch-editors');
+const launchTerminal = document.getElementById('launch-terminal');
+
+async function loadTools() {
+  try {
+    if (window.forge && window.forge.detectTools) detectedTools = await window.forge.detectTools();
+  } catch (_e) {
+    /* sin deteccion: la tarjeta igual ofrece "abrir terminal" */
+  }
+}
+
+function hideLaunch() {
+  if (launchSection) launchSection.hidden = true;
+}
+
+function showLaunch(runtime) {
+  if (!launchSection) return;
+  // Editores instalados
+  launchEditors.textContent = '';
+  if (detectedTools.editors && detectedTools.editors.length) {
+    detectedTools.editors.forEach((ed) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'secondary';
+      b.appendChild(svgUse('ic-box', 'ic'));
+      b.appendChild(document.createTextNode('Abrir en ' + ed.label));
+      b.addEventListener('click', () => window.forge.openEditor(ed.id));
+      launchEditors.appendChild(b);
+    });
+  } else {
+    const span = document.createElement('span');
+    span.className = 'launch-empty';
+    span.textContent = 'No detectamos editores con CLI en el PATH (code, cursor, windsurf…).';
+    launchEditors.appendChild(span);
+  }
+  // Terminal con el runtime configurado
+  launchTerminal.textContent = '';
+  const tb = document.createElement('button');
+  tb.type = 'button';
+  tb.className = 'primary';
+  tb.appendChild(svgUse('ic-terminal', 'ic'));
+  const rtLabel = RUNTIME_LABELS[runtime];
+  const installed = runtime && detectedTools.runtimes && detectedTools.runtimes[runtime];
+  tb.appendChild(document.createTextNode(rtLabel ? 'Abrir terminal con ' + rtLabel : 'Abrir terminal'));
+  tb.addEventListener('click', () => window.forge.openTerminal(runtime || ''));
+  launchTerminal.appendChild(tb);
+  if (rtLabel && !installed) {
+    const hint = document.createElement('span');
+    hint.className = 'launch-empty';
+    hint.textContent = rtLabel + ' no parece instalado; la terminal abrirá igual en la carpeta del proyecto.';
+    launchTerminal.appendChild(hint);
+  }
+  launchSection.hidden = false;
+}
+
 // ===== Init =====
 const versionChip = document.getElementById('version-chip');
 if (versionChip && window.forge && window.forge.appVersion) {
   versionChip.textContent = 'v' + window.forge.appVersion;
 }
+loadTools();
 applyTypeVisibility();
 refreshPackageManagers();
 showStep(0);

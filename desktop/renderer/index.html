@@ -60,6 +60,9 @@
       <symbol id="ic-terminal" viewBox="0 0 24 24">
         <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9l3 3-3 3M13 15h4" />
       </symbol>
+      <symbol id="ic-rocket" viewBox="0 0 24 24">
+        <path d="M5 15c-1 1-1.5 4-1.5 4s3-.5 4-1.5M9 11a4 4 0 0 1 1-2c2.5-2.5 6-3 8-3 0 2-.5 5.5-3 8a4 4 0 0 1-2 1l-1-1-1-2-2-1z" />
+      </symbol>
       <symbol id="ic-box" viewBox="0 0 24 24">
         <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" /><path d="M3 8l9 5 9-5M12 13v8" />
       </symbol>
@@ -514,6 +517,25 @@
             <span class="terminal-cmd mono" id="terminal-cmd">forge</span>
           </div>
           <pre id="output" class="output mono" aria-live="polite"></pre>
+        </div>
+      </section>
+
+      <!-- Acciones post-configuración: abrir el proyecto en un editor o terminal -->
+      <section class="launch-card" id="launch-actions" hidden>
+        <div class="launch-head">
+          <svg class="ic" aria-hidden="true"><use href="#ic-rocket" /></svg>
+          <div>
+            <h3>Listo — abre tu proyecto</h3>
+            <p class="launch-sub" id="launch-sub">Abre el proyecto en tu editor o en una terminal con el runtime configurado.</p>
+          </div>
+        </div>
+        <div class="launch-group">
+          <span class="launch-label">Abrir en editor</span>
+          <div class="launch-row" id="launch-editors"></div>
+        </div>
+        <div class="launch-group">
+          <span class="launch-label">Trabajar en terminal</span>
+          <div class="launch-row" id="launch-terminal"></div>
         </div>
       </section>
     </main>

@@ -5,8 +5,33 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 const crypto = require('crypto');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const { toArgs } = require('./args');
+const {
+  EDITORS, RUNTIME_CLI, editorById, runtimeCli, editorOpenSpec, terminalOpenSpec, detectInstalled,
+} = require('./launch');
+
+/** True when `cmd` resolves on PATH (cross-platform: `where` on Windows). */
+function isInstalled(cmd) {
+  try {
+    const probe = process.platform === 'win32' ? 'where' : 'which';
+    const r = spawnSync(probe, [cmd], { stdio: 'ignore' });
+    return r.status === 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Launch a detached GUI/terminal process and return whether it started. */
+function launchDetached(command, args) {
+  try {
+    const child = spawn(command, args, { detached: true, stdio: 'ignore' });
+    child.unref();
+    return true;
+  } catch (err) {
+    return { error: String((err && err.message) || err) };
+  }
+}
 
 /**
  * Resolucion de la CLI de forge.
@@ -121,6 +146,37 @@ ipcMain.handle('forge:writeAnswers', async (_event, answers) => {
   } catch (err) {
     return { ok: false, file: '', error: String(err && err.message ? err.message : err) };
   }
+});
+
+// IPC: detectar editores instalados + disponibilidad de cada runtime CLI, para
+// que el renderer muestre solo botones que van a funcionar.
+ipcMain.handle('forge:detect', async () => {
+  const editors = detectInstalled(EDITORS, isInstalled).map((e) => ({ id: e.id, label: e.label }));
+  const runtimes = {};
+  for (const [key, info] of Object.entries(RUNTIME_CLI)) runtimes[key] = isInstalled(info.cmd);
+  return { editors, runtimes, platform: process.platform };
+});
+
+// IPC: abrir la carpeta del proyecto en el editor elegido.
+ipcMain.handle('forge:openEditor', async (_event, message) => {
+  const { editorId, dir } = message || {};
+  const ed = editorById(editorId);
+  if (!ed) return { ok: false, error: 'editor desconocido' };
+  const target = dir || process.cwd();
+  const spec = editorOpenSpec(ed.cmd, target);
+  const r = launchDetached(spec.command, spec.args);
+  return r === true ? { ok: true } : { ok: false, error: r.error };
+});
+
+// IPC: abrir una terminal en el proyecto ejecutando el runtime configurado.
+ipcMain.handle('forge:openTerminal', async (_event, message) => {
+  const { runtime, dir } = message || {};
+  const cli = runtimeCli(runtime);
+  const inner = cli ? cli.cmd : 'echo "forge listo — ejecuta tu agente en esta terminal"';
+  const target = dir || process.cwd();
+  const spec = terminalOpenSpec(inner, target, process.platform);
+  const r = launchDetached(spec.command, spec.args);
+  return r === true ? { ok: true } : { ok: false, error: r.error };
 });
 
 app.whenReady().then(() => {

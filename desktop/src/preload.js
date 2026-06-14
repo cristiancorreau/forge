@@ -35,6 +35,21 @@ contextBridge.exposeInMainWorld('forge', {
     return ipcRenderer.invoke('forge:writeAnswers', answers);
   },
 
+  /** Editores instalados + disponibilidad de cada runtime CLI. */
+  detectTools() {
+    return ipcRenderer.invoke('forge:detect');
+  },
+
+  /** Abrir la carpeta del proyecto en un editor instalado. */
+  openEditor(editorId, dir) {
+    return ipcRenderer.invoke('forge:openEditor', { editorId, dir });
+  },
+
+  /** Abrir una terminal en el proyecto con el runtime configurado. */
+  openTerminal(runtime, dir) {
+    return ipcRenderer.invoke('forge:openTerminal', { runtime, dir });
+  },
+
   /** The desktop app version (from its package.json). */
   appVersion,
 });
