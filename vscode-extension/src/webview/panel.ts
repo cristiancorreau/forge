@@ -24,7 +24,9 @@ import {
   type HostBoundMessage,
   type RunMessage,
   type WriteAnswersMessage,
+  type OpenTerminalMessage,
   type WebviewBoundMessage,
+  terminalCommandForRuntime,
 } from '../ipc';
 
 function getWorkspaceRoot(): string | null {
@@ -137,6 +139,22 @@ export class ForgeConfigPanel {
     if (msg.type === 'run') {
       await this.handleRun(msg);
       return;
+    }
+    if (msg.type === 'openTerminal') {
+      this.handleOpenTerminal(msg);
+      return;
+    }
+  }
+
+  /** Open an integrated terminal in the workspace running the configured runtime. */
+  private handleOpenTerminal(msg: OpenTerminalMessage): void {
+    const root = getWorkspaceRoot() ?? undefined;
+    const cmd = terminalCommandForRuntime(msg.runtime);
+    const name = msg.runtime ? `Forge AI — ${msg.runtime}` : 'Forge AI';
+    const terminal = vscode.window.createTerminal({ name, cwd: root });
+    terminal.show();
+    if (cmd) {
+      terminal.sendText(cmd);
     }
   }
 

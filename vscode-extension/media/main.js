@@ -68,6 +68,34 @@
     outputEl.textContent = text || '';
   }
 
+  // --- Abrir terminal con el runtime (post-configuración) ----------------
+  const RUNTIME_LABELS = {
+    'claude-code': 'Claude Code',
+    opencode: 'OpenCode',
+    codex: 'Codex',
+    gemini: 'Gemini CLI',
+  };
+  const launchSection = $('launch-actions');
+  const launchTerminal = $('launch-terminal');
+
+  function hideLaunch() {
+    if (launchSection) launchSection.hidden = true;
+  }
+
+  function showLaunch(runtime) {
+    if (!launchSection || !launchTerminal) return;
+    launchTerminal.textContent = '';
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'primary';
+    b.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-terminal" /></svg>';
+    const label = RUNTIME_LABELS[runtime];
+    b.appendChild(document.createTextNode(label ? 'Abrir terminal con ' + label : 'Abrir terminal'));
+    b.addEventListener('click', () => vscode.postMessage({ type: 'openTerminal', runtime: runtime || '' }));
+    launchTerminal.appendChild(b);
+    launchSection.hidden = false;
+  }
+
   function csvToArray(v) {
     return (v || '')
       .split(',')
@@ -202,6 +230,7 @@
     }
     setStatus('run', dryRun ? 'previsualizando…' : 'creando…');
     setOutput('');
+    hideLaunch();
     try {
       const written = await request({ type: 'writeAnswers', answers: collectAnswers() });
       const res = await request({
@@ -210,6 +239,9 @@
         payload: { answersFile: written.path, dryRun: !!dryRun },
       });
       renderResult(res);
+      if (!dryRun && res && res.code === 0) {
+        showLaunch(/** @type {HTMLSelectElement} */ ($('runtime-new')).value);
+      }
     } catch (err) {
       setStatus('err', 'error');
       setOutput(String(err && err.message ? err.message : err));
@@ -234,9 +266,13 @@
   async function runAdopt(dryRun) {
     setStatus('run', dryRun ? 'previsualizando…' : 'aplicando…');
     setOutput('');
+    hideLaunch();
     try {
       const res = await request({ type: 'run', action: 'runAdopt', payload: adoptPayload(dryRun) });
       renderResult(res);
+      if (!dryRun && res && res.code === 0) {
+        showLaunch(/** @type {HTMLSelectElement} */ ($('runtime-adopt')).value);
+      }
     } catch (err) {
       setStatus('err', 'error');
       setOutput(String(err && err.message ? err.message : err));
