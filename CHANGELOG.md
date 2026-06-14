@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.11.0] — 2026-06-14
+
+### Agregado
+- **`forge port <runtime>` — portabilidad entre runtimes + reporte (SPEC-073)** — nuevo comando que materializa la tesis central de forge: `project.yaml` es la única fuente de verdad y la config nativa de cada runtime se **genera**, no se escribe a mano. Responde con datos a "¿cuánto de lo que configuro en un CLI de IA es portable al siguiente?". Clasifica cada dimensión de config en tres baldes honestos: **portable** (mismo artefacto sin cambios: project.yaml, docs/specs, MCP), **adapted** (regenerado por runtime, misma semántica: agentes, skills, prompts, `.forge/state`) y **vendor** (sin equivalente, manual o se pierde: settings/secrets nativos). Es target-aware: hooks y contexto degradan a `vendor` en runtimes rules-based; compliance solo aparece si hay frameworks declarados.
+  - `forge port codex` genera la config nativa del destino (delegando en `generate`) + escribe `.forge/port/<runtime>-report.md`.
+  - `forge port cursor --report` solo emite el reporte; `forge port codex --json` da la matriz legible por máquina.
+  - Lib pura `lib/portability.ts` (`portabilityMatrix()` + `renderPortabilityReport()`), doc `docs/portability.md`, 9 tests nuevos.
+
+---
+
 ## [3.10.2] — 2026-06-14
 
 ### Corregido
