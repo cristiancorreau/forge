@@ -52,14 +52,17 @@ function shQuote(p) {
  * platform: 'darwin' | 'linux' | 'win32'.
  */
 function terminalOpenSpec(innerCmd, dir, platform) {
+  if (platform === 'win32') {
+    // `cd /d` also switches drive; a plain `cd` silently stays on the current
+    // drive and the runtime would start in the wrong folder.
+    const cdWin = 'cd /d ' + shQuote(dir) + ' && ' + innerCmd;
+    return { command: 'cmd', args: ['/c', 'start', 'cmd', '/k', cdWin] };
+  }
   const cd = 'cd ' + shQuote(dir) + ' && ' + innerCmd;
   if (platform === 'darwin') {
     const script = 'tell application "Terminal" to activate\n' +
       'tell application "Terminal" to do script ' + JSON.stringify(cd);
     return { command: 'osascript', args: ['-e', script] };
-  }
-  if (platform === 'win32') {
-    return { command: 'cmd', args: ['/c', 'start', 'cmd', '/k', cd] };
   }
   // linux / others: best-effort via x-terminal-emulator, keep the shell open.
   return { command: 'x-terminal-emulator', args: ['-e', 'bash', '-lc', cd + '; exec bash'] };
@@ -74,6 +77,36 @@ function detectInstalled(candidates, isInstalled) {
   return candidates.filter((c) => isInstalled(c.cmd));
 }
 
+/**
+ * PATH augmentation for GUI launches. Apps lanzadas desde Finder/Dock heredan
+ * un PATH minimo (/usr/bin:/bin:...) sin los directorios del shell del
+ * usuario, asi que `npx`, `code`, `claude`… no resolverian y la app fallaria
+ * con ENOENT. Pure: devuelve el PATH con los directorios conocidos agregados
+ * al final si faltan. En win32 no aplica (el PATH de GUI es el del sistema).
+ *
+ * @param {string} currentPath
+ * @param {string} home
+ * @param {string} platform
+ * @param {string} [delimiter]  ':' por defecto
+ */
+function augmentedPath(currentPath, home, platform, delimiter) {
+  if (platform === 'win32') return currentPath || '';
+  const sep = delimiter || ':';
+  const extra = [
+    '/usr/local/bin',
+    '/opt/homebrew/bin',
+    home + '/.local/bin',
+    home + '/.bun/bin',
+    home + '/.volta/bin',
+    home + '/.npm-global/bin',
+  ];
+  const parts = (currentPath || '').split(sep).filter(Boolean);
+  for (const dir of extra) {
+    if (!parts.includes(dir)) parts.push(dir);
+  }
+  return parts.join(sep);
+}
+
 module.exports = {
   EDITORS,
   RUNTIME_CLI,
@@ -83,4 +116,5 @@ module.exports = {
   terminalOpenSpec,
   detectInstalled,
   shQuote,
+  augmentedPath,
 };

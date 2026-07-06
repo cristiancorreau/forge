@@ -807,6 +807,34 @@ select:disabled {
   border: 1px solid rgba(127, 184, 255, 0.3);
 }
 
+/* ===== Selector de carpeta del proyecto ===== */
+.cwd-block {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px var(--sp-2);
+  align-items: center;
+}
+.cwd-block .cwd-label {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+.dir-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.dir-row .cwd-path,
+.cwd-block .cwd-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dir-field .hint {
+  margin-top: 6px;
+}
+
 /* ===== Diagnostico ===== */
 .diag-grid {
   margin-bottom: 0;

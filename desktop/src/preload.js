@@ -2,10 +2,12 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 
-// The app's own version, read once at preload time (Node access is available
-// here but not in the renderer). Exposed so the UI badge never drifts.
+// The app's own version. With sandbox:true the preload CANNOT require()
+// arbitrary files (only 'electron'), so main.js passes it via
+// webPreferences.additionalArguments and we read it from process.argv.
 let appVersion = '';
-try { appVersion = require('../package.json').version; } catch { /* ignore */ }
+const versionFlag = process.argv.find((a) => a.startsWith('--forge-desktop-version='));
+if (versionFlag) appVersion = versionFlag.slice('--forge-desktop-version='.length);
 
 /**
  * API segura expuesta al renderer via contextBridge.
@@ -38,6 +40,16 @@ contextBridge.exposeInMainWorld('forge', {
   /** Editores instalados + disponibilidad de cada runtime CLI. */
   detectTools() {
     return ipcRenderer.invoke('forge:detect');
+  },
+
+  /** Carpeta de trabajo inicial (cwd del proceso, o home si es la raiz). */
+  defaultDir() {
+    return ipcRenderer.invoke('forge:defaultDir');
+  },
+
+  /** Selector nativo de carpeta. @returns {Promise<{ok:boolean, dir:string}>} */
+  pickDir(current) {
+    return ipcRenderer.invoke('forge:pickDir', { current });
   },
 
   /** Abrir la carpeta del proyecto en un editor instalado. */

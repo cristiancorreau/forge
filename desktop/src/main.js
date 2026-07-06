@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -9,7 +9,13 @@ const { spawn, spawnSync } = require('child_process');
 const { toArgs } = require('./args');
 const {
   EDITORS, RUNTIME_CLI, editorById, runtimeCli, editorOpenSpec, terminalOpenSpec, detectInstalled,
+  augmentedPath,
 } = require('./launch');
+
+// Lanzada desde Finder/Dock la app hereda un PATH minimo: sin esto, `npx`
+// (la CLI de forge) y la deteccion de editores/runtimes fallarian con ENOENT.
+// Se aplica una sola vez, antes de cualquier spawn/deteccion.
+process.env.PATH = augmentedPath(process.env.PATH, os.homedir(), process.platform, path.delimiter);
 
 /** True when `cmd` resolves on PATH (cross-platform: `where` on Windows). */
 function isInstalled(cmd) {
@@ -103,6 +109,9 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      // Con sandbox:true el preload no puede hacer require() de package.json:
+      // la version viaja por argv y el preload la lee de process.argv.
+      additionalArguments: ['--forge-desktop-version=' + app.getVersion()],
     },
   });
 
@@ -146,6 +155,28 @@ ipcMain.handle('forge:writeAnswers', async (_event, answers) => {
   } catch (err) {
     return { ok: false, file: '', error: String(err && err.message ? err.message : err) };
   }
+});
+
+// IPC: carpeta de trabajo por defecto para el renderer. Lanzada desde Finder,
+// process.cwd() es '/' (o la raiz del volumen): en ese caso se cae al home,
+// nunca se ofrece escribir un proyecto en la raiz del sistema.
+ipcMain.handle('forge:defaultDir', async () => {
+  const cwd = process.cwd();
+  const isRoot = cwd === path.parse(cwd).root;
+  return { dir: isRoot ? app.getPath('home') : cwd };
+});
+
+// IPC: selector nativo de carpeta del proyecto (unico acceso del renderer al
+// filesystem para elegir donde correr init/adopt/doctor/audit).
+ipcMain.handle('forge:pickDir', async (_event, message) => {
+  const current = (message && message.current) || undefined;
+  const r = await dialog.showOpenDialog({
+    title: 'Elegir carpeta del proyecto',
+    defaultPath: current,
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  if (r.canceled || !r.filePaths || !r.filePaths.length) return { ok: false, dir: '' };
+  return { ok: true, dir: r.filePaths[0] };
 });
 
 // IPC: detectar editores instalados + disponibilidad de cada runtime CLI, para
