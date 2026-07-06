@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "forge://schemas/v4/team-role",
+  "title": "TeamRole",
+  "description": "A role inside a team: preferred runtime, system prompt reference and tool tier permissions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "teamId", "roleName"],
+  "properties": {
+    "id": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "teamId": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "roleName": { "type": "string", "minLength": 1 },
+    "runtimePref": { "type": "string" },
+    "systemPromptRef": { "type": "string" },
+    "tierPermissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allow": { "type": "array", "items": { "type": "string" } },
+        "deny": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

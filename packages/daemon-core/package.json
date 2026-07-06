@@ -1,0 +1,35 @@
+{
+  "name": "@cristiancorreau/forge-daemon-core",
+  "version": "0.1.0",
+  "description": "FORGE v4 — pure domain of the control plane: ports, use cases, in-memory fakes and SQL migrations (SPEC-076). No node:/bun:/sqlite/http imports.",
+  "author": "Cristian Correa <cristian@socialweb.cl>",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "default": "./dist/testing/index.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "node scripts/build-migrations.mjs",
+    "build": "tsc",
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@cristiancorreau/forge-schemas": "file:../schemas"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

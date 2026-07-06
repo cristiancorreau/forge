@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "forge://schemas/v4/event",
+  "title": "Event",
+  "description": "Append-only domain event. id is the SQLite rowid assigned by the store.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "ts", "kind", "entity", "entityId"],
+  "properties": {
+    "id": { "type": "integer", "minimum": 1 },
+    "ts": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" },
+    "kind": { "type": "string", "pattern": "^[a-z_]+\\.[a-z_]+$" },
+    "entity": {
+      "type": "string",
+      "enum": ["project", "harness", "team", "team_role", "task", "session", "approval"]
+    },
+    "entityId": { "type": "string", "minLength": 1 },
+    "payload": { "type": "object" }
+  }
+}
