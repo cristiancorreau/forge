@@ -65,3 +65,31 @@ jobs:
       - name: Desktop — args mapping tests
         working-directory: desktop
         run: node --test test/*.test.mjs
+
+  test-v4-packages:
+    name: v4 packages (schemas + daemon-core)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # packages/schemas: fuente de verdad JSON Schema + artefactos generados.
+      # `generate` debe ser idempotente: si el diff no queda limpio, alguien
+      # editó *.gen.* a mano o los schemas divergieron (criterio de SPEC-075).
+      - name: Schemas — install + generate (idempotencia) + build + tests
+        working-directory: packages/schemas
+        run: |
+          npm install --no-audit --no-fund
+          npm run generate
+          git diff --exit-code src/
+          npm run build
+          npm test
+      # packages/daemon-core: dominio puro (SPEC-076). El purity test verifica
+      # que src/ no importa node:/bun:/sqlite/http; corre sin tmux ni SQLite.
+      - name: Daemon-core — install + build + tests
+        working-directory: packages/daemon-core
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+          npm test
