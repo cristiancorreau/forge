@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "forge://schemas/v4/approval",
+  "title": "Approval",
+  "description": "A permission request raised by an agent session, resolved from the UI.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "sessionId", "kind", "payload"],
+  "properties": {
+    "id": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "sessionId": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "kind": { "type": "string", "enum": ["tool_use", "plan_review", "question"] },
+    "payload": { "type": "object" },
+    "resolution": { "type": "string", "enum": ["approved", "denied", "timeout"] },
+    "resolvedAt": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "forge://schemas/v4/project",
+  "title": "Project",
+  "description": "A project registered in the FORGE v4 daemon registry. Distinct from the per-project project.yaml config contract (core/schemas/project.schema.json).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "path", "createdAt"],
+  "properties": {
+    "id": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "name": { "type": "string", "minLength": 1 },
+    "path": { "$ref": "forge://schemas/v4/common#/$defs/absolutePath" },
+    "vcsRemote": { "type": "string" },
+    "profile": { "type": "string" },
+    "createdAt": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" },
+    "lastSeenAt": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" }
+  }
+}

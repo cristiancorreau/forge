@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "forge://schemas/v4/session",
+  "title": "Session",
+  "description": "An agent session running a task on a harness (tmux-managed).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "taskId", "harnessId", "status", "startedAt", "tokensIn", "tokensOut"],
+  "properties": {
+    "id": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "taskId": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "harnessId": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "roleName": { "type": "string" },
+    "tmuxSession": { "type": "string" },
+    "transcriptRef": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["starting", "running", "exited", "failed", "orphaned"]
+    },
+    "startedAt": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" },
+    "endedAt": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" },
+    "tokensIn": { "type": "integer", "minimum": 0 },
+    "tokensOut": { "type": "integer", "minimum": 0 },
+    "handoffFrom": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" }
+  }
+}

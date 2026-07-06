@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "forge://schemas/v4/harness",
+  "title": "Harness",
+  "description": "A (runtime x account) execution target with an isolated HOME. runtime is a free string: the runtime catalog is validated by the daemon, not by the contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "runtime", "label", "homeDir", "priority", "status", "createdAt"],
+  "properties": {
+    "id": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "runtime": { "type": "string", "minLength": 1 },
+    "label": { "type": "string", "minLength": 1 },
+    "homeDir": { "$ref": "forge://schemas/v4/common#/$defs/absolutePath" },
+    "priority": { "type": "integer", "minimum": 0 },
+    "status": { "type": "string", "enum": ["active", "rate_limited", "disabled"] },
+    "rateLimitedUntil": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" },
+    "createdAt": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "forge://schemas/v4/common",
+  "title": "Common",
+  "description": "Shared $defs for the FORGE v4 domain contracts (SPEC-075).",
+  "$defs": {
+    "forgeId": {
+      "type": "string",
+      "pattern": "^(prj|hrn|tm|rol|tsk|ses|apr)_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "absolutePath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "forge://schemas/v4/task",
+  "title": "Task",
+  "description": "A unit of work on a project, executed by agent sessions in a git worktree.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "projectId", "title", "status", "createdAt", "updatedAt"],
+  "properties": {
+    "id": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "projectId": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "teamId": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "title": { "type": "string", "minLength": 1 },
+    "specRef": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["backlog", "queued", "running", "needs_input", "review", "done", "failed", "orphaned"]
+    },
+    "worktreePath": { "$ref": "forge://schemas/v4/common#/$defs/absolutePath" },
+    "baseSha": { "$ref": "forge://schemas/v4/common#/$defs/sha" },
+    "createdAt": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" },
+    "updatedAt": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" }
+  }
+}
