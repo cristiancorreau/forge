@@ -88,7 +88,11 @@ async function run(action, payload) {
   output.textContent = '';
   hideLaunch();
   try {
-    const result = await window.forge.runAction(action, payload);
+    // Toda accion corre en la carpeta elegida por el usuario, nunca en el
+    // cwd del proceso Electron (que desde Finder es '/').
+    const p = Object.assign({}, payload);
+    if (projectDir && !p.cwd) p.cwd = projectDir;
+    const result = await window.forge.runAction(action, p);
     renderResult(result);
     return result;
   } catch (err) {
@@ -99,6 +103,39 @@ async function run(action, payload) {
     setButtonsDisabled(false);
   }
 }
+
+// ===== Carpeta del proyecto (compartida por las tres vistas) =====
+let projectDir = '';
+
+function renderDirDisplays() {
+  document.querySelectorAll('[data-dir-display]').forEach((el) => {
+    el.textContent = projectDir || '—';
+  });
+}
+
+async function loadDefaultDir() {
+  try {
+    const r = await window.forge.defaultDir();
+    projectDir = (r && r.dir) || '';
+  } catch (_e) {
+    /* sin default: el usuario puede elegir con el picker */
+  }
+  renderDirDisplays();
+}
+
+document.querySelectorAll('.btn-pick-dir').forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    try {
+      const r = await window.forge.pickDir(projectDir);
+      if (r && r.ok && r.dir) {
+        projectDir = r.dir;
+        renderDirDisplays();
+      }
+    } catch (_e) {
+      /* picker cancelado o no disponible */
+    }
+  });
+});
 
 // ===== Navegacion de vistas =====
 document.querySelectorAll('.tab').forEach((tab) => {
@@ -250,9 +287,10 @@ const TIER2_BY_PROFILE = {
   'playwright-crawler': ['scanner-engineer'],
 };
 
-// Framework -> id de profile de forge (mismo PROFILE_MAP que usa la CLI). Solo
-// estos frameworks generan un profile automatico; el resto no agrega profile,
-// igual que `forge init`. Asi el preview de agentes coincide con lo que se crea.
+// Framework -> id de profile de forge (mismo PROFILE_MAP que usa la CLI),
+// para valores que llegan como nombre de framework. Los <select> del wizard
+// ya usan ids de profile directamente ('hono-drizzle', 'nextjs-admin', …):
+// eso lo resuelve profileFor(), que acepta ambas formas.
 const FRAMEWORK_TO_PROFILE = {
   hono: 'hono-drizzle',
   nextjs: 'nextjs-admin',
@@ -268,6 +306,16 @@ const FRAMEWORK_TO_PROFILE = {
   actix: 'rust',
   rocket: 'rust',
 };
+
+// Deriva el profile de un valor de framework del wizard. Acepta el id de
+// profile directo (valores de los <select>) o el nombre de framework
+// ('hono', 'nextjs'…). Devuelve null si no mapea, igual que `forge init`
+// (no todo framework tiene profile).
+function profileFor(fw) {
+  if (!fw) return null;
+  if (PROFILE_CATALOG.includes(fw)) return fw;
+  return FRAMEWORK_TO_PROFILE[fw] || null;
+}
 
 // ===== Estado del wizard =====
 const state = {
@@ -453,10 +501,10 @@ function recomputeStack() {
     state.backend = beFw.value || null;
     state.frontend = feFw.value || null;
   }
-  // Derivar profiles: framework -> id de profile (PROFILE_MAP), no el nombre del framework.
+  // Derivar profiles: valor del select (id de profile) o framework -> profile.
   const derived = [];
-  const pBack = FRAMEWORK_TO_PROFILE[state.backend];
-  const pFront = FRAMEWORK_TO_PROFILE[state.frontend];
+  const pBack = profileFor(state.backend);
+  const pFront = profileFor(state.frontend);
   if (pBack && !derived.includes(pBack)) derived.push(pBack);
   if (pFront && !derived.includes(pFront)) derived.push(pFront);
   // mantener profiles del catalogo elegidos manualmente + derivados
@@ -543,10 +591,12 @@ function buildResult() {
   // sincronizar sets -> arrays
   state.testing = Array.from(testingSet);
   state.skills = Array.from(skillsSet);
-  // profiles: derivados (framework -> profile id, igual que forge) + manuales
+  // profiles: derivados (id de profile o framework -> profile) + manuales
   const profiles = new Set();
-  if (FRAMEWORK_TO_PROFILE[state.backend]) profiles.add(FRAMEWORK_TO_PROFILE[state.backend]);
-  if (FRAMEWORK_TO_PROFILE[state.frontend]) profiles.add(FRAMEWORK_TO_PROFILE[state.frontend]);
+  const pBack = profileFor(state.backend);
+  const pFront = profileFor(state.frontend);
+  if (pBack) profiles.add(pBack);
+  if (pFront) profiles.add(pFront);
   profilesSet.forEach((p) => profiles.add(p));
   state.profiles = Array.from(profiles);
 
@@ -833,11 +883,57 @@ document.getElementById('btn-init-apply').addEventListener('click', async () => 
 });
 
 // ===== Adoptar =====
-document.getElementById('btn-adopt-preview').addEventListener('click', () => {
-  run('adopt', { dryRun: true });
+// Chips de deteccion: se llenan parseando el box "Proyecto detectado" que
+// imprime `forge adopt` (lineas "Clave: valor"; el output llega sin ANSI
+// porque la CLI corre con stdout pipe, pero se limpia igual por robustez).
+const DETECT_KEYS = new Set([
+  'Proyecto', 'Tipo', 'Lenguaje', 'Ecosistema', 'Backend', 'Frontend',
+  'Mobile', 'Datos', 'Testing', 'Package manager',
+]);
+
+function renderDetectChips(stdout) {
+  const host = document.getElementById('detect-chips');
+  if (!host) return;
+  const clean = String(stdout || '').replace(/\x1b\[[0-9;]*m/g, '');
+  const chips = [];
+  clean.split('\n').forEach((line) => {
+    const l = line.replace(/[│┃┆┇┊┋╎╏|┌┐└┘─━╭╮╰╯]/g, ' ').trim();
+    // Una linea del box puede traer varios pares separados por 2+ espacios:
+    // "Tipo: fullstack   Lenguaje: TypeScript   Ecosistema: node"
+    l.split(/\s{2,}/).forEach((frag) => {
+      const m = frag.match(/^([A-Za-zÁÉÍÓÚáéíóúñ ]+):\s*(.+)$/);
+      if (m && DETECT_KEYS.has(m[1].trim())) {
+        const v = m[2].trim();
+        if (v && v !== '—') chips.push([m[1].trim(), v]);
+      }
+    });
+  });
+  host.textContent = '';
+  if (!chips.length) {
+    const s = document.createElement('span');
+    s.className = 'detect-empty';
+    s.textContent = 'Sin datos de detección en la última salida.';
+    host.appendChild(s);
+    return;
+  }
+  chips.forEach(([k, v]) => {
+    const c = document.createElement('span');
+    c.className = 'detect-chip';
+    const ks = document.createElement('strong');
+    ks.textContent = k + ': ';
+    c.appendChild(ks);
+    c.appendChild(document.createTextNode(v));
+    host.appendChild(c);
+  });
+}
+
+document.getElementById('btn-adopt-preview').addEventListener('click', async () => {
+  const res = await run('adopt', { dryRun: true });
+  if (res) renderDetectChips(res.stdout || '');
 });
 document.getElementById('btn-adopt-apply').addEventListener('click', async () => {
   const res = await run('adopt', {});
+  if (res) renderDetectChips(res.stdout || '');
   if (res && res.ok) showLaunch('claude-code');
 });
 
@@ -884,7 +980,7 @@ function showLaunch(runtime) {
       b.className = 'secondary';
       b.appendChild(svgUse('ic-box', 'ic'));
       b.appendChild(document.createTextNode('Abrir en ' + ed.label));
-      b.addEventListener('click', () => window.forge.openEditor(ed.id));
+      b.addEventListener('click', () => window.forge.openEditor(ed.id, projectDir));
       launchEditors.appendChild(b);
     });
   } else {
@@ -902,7 +998,7 @@ function showLaunch(runtime) {
   const rtLabel = RUNTIME_LABELS[runtime];
   const installed = runtime && detectedTools.runtimes && detectedTools.runtimes[runtime];
   tb.appendChild(document.createTextNode(rtLabel ? 'Abrir terminal con ' + rtLabel : 'Abrir terminal'));
-  tb.addEventListener('click', () => window.forge.openTerminal(runtime || ''));
+  tb.addEventListener('click', () => window.forge.openTerminal(runtime || '', projectDir));
   launchTerminal.appendChild(tb);
   if (rtLabel && !installed) {
     const hint = document.createElement('span');
@@ -919,6 +1015,7 @@ if (versionChip && window.forge && window.forge.appVersion) {
   versionChip.textContent = 'v' + window.forge.appVersion;
 }
 loadTools();
+loadDefaultDir();
 applyTypeVisibility();
 refreshPackageManagers();
 showStep(0);
