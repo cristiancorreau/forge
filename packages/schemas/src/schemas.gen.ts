@@ -56,11 +56,49 @@ export const SCHEMAS = {
       "profile": {
         "type": "string"
       },
+      "status": {
+        "enum": [
+          "active",
+          "missing",
+          "invalid"
+        ]
+      },
+      "metadata": {
+        "$ref": "#/$defs/ProjectMetadata"
+      },
       "createdAt": {
         "$ref": "forge://schemas/v4/common#/$defs/timestamp"
       },
       "lastSeenAt": {
         "$ref": "forge://schemas/v4/common#/$defs/timestamp"
+      }
+    },
+    "$defs": {
+      "ProjectMetadata": {
+        "title": "ProjectMetadata",
+        "description": "Cached subset of the project's project.yaml (SPEC-077). Refreshed by the manifest watcher; the domain default for status is 'active'.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "language": {
+            "type": "string"
+          },
+          "runtimes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "frameworks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "specsDir": {
+            "type": "string"
+          }
+        }
       }
     }
   },

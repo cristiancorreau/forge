@@ -8,4 +8,6 @@ export interface VcsPort {
   removeWorktree(repoPath: string, worktreePath: string): Promise<void>;
   commitWip(worktreePath: string, message: string): Promise<string>;                  // sha
   isDirty(worktreePath: string): Promise<boolean>;
+  /** URL del remoto origin, o null si no hay repo/remoto (extensión aditiva, SPEC-077 § 2). */
+  remoteUrl(repoPath: string): Promise<string | null>;
 }

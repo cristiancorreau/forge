@@ -157,6 +157,52 @@ describe('validadores — casos negativos', () => {
   });
 });
 
+describe('Project.status y Project.metadata (SPEC-077)', () => {
+  const withMeta = {
+    ...FIXTURES.project.valid,
+    status: 'active',
+    metadata: {
+      language: 'typescript',
+      runtimes: ['claude-code'],
+      frameworks: ['laravel', 'react'],
+      specsDir: 'docs/specs',
+    },
+  };
+
+  test('fixture con status y metadata completos → true', () => {
+    assert.equal(validateProject(withMeta), true, JSON.stringify(validateProject.errors));
+  });
+
+  test('metadata vacía y parcial → true (todos los campos opcionales)', () => {
+    assert.equal(validateProject({ ...FIXTURES.project.valid, metadata: {} }), true);
+    assert.equal(validateProject({ ...FIXTURES.project.valid, metadata: { language: 'php' } }), true);
+  });
+
+  test('status "missing" e "invalid" → true; "gone" → false', () => {
+    assert.equal(validateProject({ ...FIXTURES.project.valid, status: 'missing' }), true);
+    assert.equal(validateProject({ ...FIXTURES.project.valid, status: 'invalid' }), true);
+    assert.equal(validateProject({ ...FIXTURES.project.valid, status: 'gone' }), false);
+  });
+
+  test('metadata rechaza propiedades extra (additionalProperties: false)', () => {
+    assert.equal(validateProject({ ...withMeta, metadata: { ...withMeta.metadata, foo: 1 } }), false);
+  });
+
+  test('metadata.runtimes debe ser array de strings', () => {
+    assert.equal(validateProject({ ...FIXTURES.project.valid, metadata: { runtimes: 'claude-code' } }), false);
+    assert.equal(validateProject({ ...FIXTURES.project.valid, metadata: { runtimes: [1] } }), false);
+  });
+
+  test('el schema define $defs/ProjectMetadata con additionalProperties: false', () => {
+    const schema = JSON.parse(
+      readFileSync(join(SCHEMAS_DIR, 'project.schema.json'), 'utf-8'),
+    );
+    assert.ok(schema.$defs?.ProjectMetadata, 'falta $defs/ProjectMetadata');
+    assert.equal(schema.$defs.ProjectMetadata.additionalProperties, false);
+    assert.deepEqual(schema.properties.status.enum, ['active', 'missing', 'invalid']);
+  });
+});
+
 describe('parse<X> y SchemaValidationError', () => {
   test('parseTask(válido) retorna el objeto', () => {
     assert.deepEqual(parseTask(FIXTURES.task.valid), FIXTURES.task.valid);

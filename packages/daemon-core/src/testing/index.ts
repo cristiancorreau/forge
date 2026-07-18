@@ -6,6 +6,7 @@ export { InMemoryRegistry } from './in-memory-registry.js';
 export { FakeSessionPort } from './fake-session-port.js';
 export { FakeRuntime, FakeRuntimeProvider } from './fake-runtime.js';
 export { FakeVcs } from './fake-vcs.js';
+export { FakeManifest } from './fake-manifest.js';
 export { FakeMemory } from './fake-memory.js';
 export { FakeApprovals } from './fake-approvals.js';
 export { InMemoryEventBus } from './in-memory-event-bus.js';

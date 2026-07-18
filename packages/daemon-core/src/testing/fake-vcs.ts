@@ -5,8 +5,14 @@ export class FakeVcs implements VcsPort {
   readonly worktrees: Array<{ repoPath: string; branch: string; baseSha: string; worktreePath: string }> = [];
   readonly removed: string[] = [];
   readonly commits: Array<{ worktreePath: string; message: string; sha: string }> = [];
+  /** repoPath → remote origin URL; ausencia = sin remoto (remoteUrl → null). */
+  readonly remotes = new Map<string, string>();
   dirty = false;
   private shaCounter = 0;
+
+  async remoteUrl(repoPath: string): Promise<string | null> {
+    return this.remotes.get(repoPath) ?? null;
+  }
 
   private nextSha(): string {
     return `sha-${++this.shaCounter}`;

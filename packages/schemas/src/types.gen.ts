@@ -10,8 +10,19 @@ export interface Project {
   path: string;
   vcsRemote?: string;
   profile?: string;
+  status?: "active" | "missing" | "invalid";
+  metadata?: ProjectMetadata;
   createdAt: string;
   lastSeenAt?: string;
+}
+/**
+ * Cached subset of the project's project.yaml (SPEC-077). Refreshed by the manifest watcher; the domain default for status is 'active'.
+ */
+export interface ProjectMetadata {
+  language?: string;
+  runtimes?: string[];
+  frameworks?: string[];
+  specsDir?: string;
 }
 
 /**

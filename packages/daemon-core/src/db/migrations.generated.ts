@@ -105,4 +105,16 @@ CREATE INDEX idx_events_ts          ON events (ts);
 CREATE INDEX idx_approvals_session  ON approvals (session_id);
 `,
   },
+  {
+    id: 2,
+    name: "002-projects-metadata",
+    sql: `-- 002-projects-metadata — registro multi-proyecto (SPEC-077 § 4)
+-- Agrega el subconjunto cacheado de project.yaml (metadata_json) y el estado
+-- del proyecto (active | missing | invalid) a la tabla projects.
+-- No crea índice de path: el UNIQUE (projects.path) ya viene de 001-init.sql.
+
+ALTER TABLE projects ADD COLUMN metadata_json TEXT NOT NULL DEFAULT '{}';
+ALTER TABLE projects ADD COLUMN status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','missing','invalid'));
+`,
+  },
 ];

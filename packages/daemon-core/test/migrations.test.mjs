@@ -88,3 +88,32 @@ describe('001-init — aplica limpio sobre SQLite vacía', () => {
     db.close();
   });
 });
+
+describe('002-projects-metadata — aplica sobre una DB recién migrada con 001 (SPEC-077 § 4)', () => {
+  const sql002 = readFileSync(join(MIGRATIONS_DIR, '002-projects-metadata.sql'), 'utf-8');
+
+  test('agrega metadata_json y status con CHECK, sin índice de path nuevo', () => {
+    assert.match(sql002, /ALTER TABLE projects ADD COLUMN metadata_json TEXT NOT NULL DEFAULT '\{\}'/);
+    assert.match(sql002, /ALTER TABLE projects ADD COLUMN status TEXT NOT NULL DEFAULT 'active' CHECK \(status IN \('active','missing','invalid'\)\)/);
+    assert.doesNotMatch(sql002, /CREATE\s+(UNIQUE\s+)?INDEX/i, 'el UNIQUE(path) ya viene de 001-init');
+  });
+
+  test('exec de 001 + 002 en :memory: deja las columnas nuevas y el CHECK activo', { skip: !DatabaseSync && 'node:sqlite no disponible' }, () => {
+    const db = new DatabaseSync(':memory:');
+    db.exec(MIGRATIONS[0].sql);
+    db.exec(MIGRATIONS[1].sql);
+    const cols = db.prepare('PRAGMA table_info(projects)').all().map((r) => r.name);
+    assert.ok(cols.includes('metadata_json'), 'falta columna metadata_json');
+    assert.ok(cols.includes('status'), 'falta columna status');
+    db.prepare(
+      "INSERT INTO projects (id, name, path, created_at, status) VALUES ('prj_1', 'ok', '/tmp/ok', '2026-07-05T00:00:00Z', 'missing')",
+    ).run();
+    assert.throws(
+      () => db.prepare(
+        "INSERT INTO projects (id, name, path, created_at, status) VALUES ('prj_2', 'bad', '/tmp/bad', '2026-07-05T00:00:00Z', 'gone')",
+      ).run(),
+      /CHECK/i,
+    );
+    db.close();
+  });
+});

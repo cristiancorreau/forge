@@ -16,6 +16,18 @@ export class DuplicateProjectPathError extends DomainError {
   }
 }
 
+/** Error tipado del registro de proyectos (SPEC-077 § 2). */
+export type ProjectErrorCode = 'manifest-missing' | 'manifest-invalid';
+
+export class ProjectError extends DomainError {
+  constructor(code: ProjectErrorCode, detail?: string) {
+    const base = code === 'manifest-missing'
+      ? 'No project.yaml found at the given path'
+      : 'project.yaml is invalid';
+    super(code, detail ? `${base}: ${detail}` : base);
+  }
+}
+
 export class ProjectNotFoundError extends DomainError {
   constructor(projectId: string) {
     super('PROJECT_NOT_FOUND', `Project not found: ${projectId}`);

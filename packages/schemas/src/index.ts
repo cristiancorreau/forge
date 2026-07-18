@@ -16,7 +16,7 @@ import type { ValidateFn } from './validators.gen.mjs';
 import { SCHEMAS as GENERATED_SCHEMAS } from './schemas.gen.js';
 
 export type {
-  Project, Harness, Team, TeamRole, Task, Session, Approval, Event,
+  Project, ProjectMetadata, Harness, Team, TeamRole, Task, Session, Approval, Event,
   TaskStatus, SessionStatus, HarnessStatus, ApprovalKind,
   ApprovalResolution, EventEntity,
 } from './types.gen.js';

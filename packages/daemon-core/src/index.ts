@@ -13,6 +13,7 @@ export type { SessionPort } from './ports/session.js';
 export type { RuntimeCommand, RuntimeEvent, RuntimePort, RuntimeProvider } from './ports/runtime.js';
 export type { MemoryPort } from './ports/memory.js';
 export type { ApprovalPort } from './ports/approval.js';
+export type { ManifestPort, ManifestResult, ProjectManifest } from './ports/manifest.js';
 export type { VcsPort } from './ports/vcs.js';
 export type { EventBus } from './ports/event-bus.js';
 export type { ClockPort } from './ports/clock.js';
@@ -24,13 +25,19 @@ export { sessionName } from './domain/session-name.js';
 export {
   DomainError, DuplicateProjectPathError, ProjectNotFoundError,
   TaskNotFoundError, HarnessNotFoundError, InvalidTransitionError,
+  ProjectError,
 } from './domain/errors.js';
+export type { ProjectErrorCode } from './domain/errors.js';
 
 // Casos de uso
 export { registerProject } from './usecases/register-project.js';
 export { createTask } from './usecases/create-task.js';
 export { openSession } from './usecases/open-session.js';
 export { reconcileOnBoot } from './usecases/reconcile-on-boot.js';
+export {
+  addProject, removeProject, listProjects, scanForProjects, refreshProject,
+} from './usecases/projects.js';
+export type { ProjectsDeps, ScanCandidate } from './usecases/projects.js';
 
 // Migraciones (SQL inlineado — generado desde migrations/*.sql)
 export { MIGRATIONS } from './db/migrations.generated.js';
