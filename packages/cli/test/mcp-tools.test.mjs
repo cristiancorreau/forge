@@ -7,6 +7,7 @@
 import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdtempSync, mkdirSync, writeFileSync, copyFileSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -119,7 +120,7 @@ describe('golden rule — exact tool allowlist (SPEC-047)', () => {
 });
 
 describe('forge mcp — minimal server startup (SDK ships with forge since SPEC-083 P4)', () => {
-  test('starts the stdio server: banner on stderr, stdout clean of non-protocol output', async () => {
+  test('starts the stdio server: banner on stderr, stdout clean of non-protocol output', { timeout: 30_000 }, async () => {
     const dir = mkdtempSync(join(tmpdir(), 'forge-mcp-cli-'));
     const child = spawn(process.execPath, [CLI, 'mcp'], {
       cwd: dir, env: { ...process.env, FORGE_HOME: '' }, stdio: ['pipe', 'pipe', 'pipe'],
@@ -138,7 +139,26 @@ describe('forge mcp — minimal server startup (SDK ships with forge since SPEC-
       });
       assert.equal(stdout, '', 'stdout must stay clean for the stdio protocol');
     } finally {
-      child.kill('SIGTERM');
+      // Windows: SIGTERM también termina, pero para no depender de eso y no
+      // esperar sin deadline, SIGKILL directo. En el resto, SIGTERM primero y
+      // SIGKILL de fallback si no salió en 5s. Siempre esperar el exit real
+      // para no dejar handles vivos (hang de CI en Windows).
+      if (child.exitCode === null && child.signalCode === null) {
+        const exited = once(child, 'exit').catch(() => {});
+        try {
+          child.kill(process.platform === 'win32' ? 'SIGKILL' : 'SIGTERM');
+        } catch { /* ya salió */ }
+        let timer;
+        const timedOut = await Promise.race([
+          exited.then(() => false),
+          new Promise((resolve) => { timer = setTimeout(() => resolve(true), 5000); }),
+        ]);
+        clearTimeout(timer);
+        if (timedOut) {
+          try { child.kill('SIGKILL'); } catch { /* ya salió */ }
+          await exited;
+        }
+      }
       rmSync(dir, { recursive: true, force: true });
     }
   });
