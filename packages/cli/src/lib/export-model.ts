@@ -58,7 +58,7 @@ export interface ProjectExportModel {
   commands: ExportCommand[];
   skills: string[];
   mcpServers: ExportMcpServer[];
-  porRuntime?: Record<string, ExportRuntimeInfo>;
+  perRuntime?: Record<string, ExportRuntimeInfo>;
 }
 
 /** Normaliza un valor de frontmatter a lista de strings (CSV o lista YAML). */
@@ -163,7 +163,7 @@ export function buildExportModel(root: string = process.cwd()): ProjectExportMod
 
   // Desglose por runtime activo: superficies nativas que forge generaría.
   if (runtimes.length) {
-    const porRuntime: Record<string, ExportRuntimeInfo> = {};
+    const perRuntime: Record<string, ExportRuntimeInfo> = {};
     for (const id of runtimes) {
       const descriptor = getRuntime(id);
       if (!descriptor) continue;
@@ -173,9 +173,9 @@ export function buildExportModel(root: string = process.cwd()): ProjectExportMod
       } catch {
         surfaces = [];
       }
-      porRuntime[id] = { label: descriptor.label, kind: descriptor.kind, surfaces };
+      perRuntime[id] = { label: descriptor.label, kind: descriptor.kind, surfaces };
     }
-    if (Object.keys(porRuntime).length) model.porRuntime = porRuntime;
+    if (Object.keys(perRuntime).length) model.perRuntime = perRuntime;
   }
 
   return model;

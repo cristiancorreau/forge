@@ -499,12 +499,12 @@ mingako) puede consumirlas sin parsear texto humano.
 
 | Comando | Claves estables del `--json` | Exit codes |
 |---------|------------------------------|------------|
-| `forge export --json` | Modelo resuelto completo — valida contra `export.schema.json` (`forge://schemas/v4/export` en `@cristiancorreau/forge-schemas`): `project`, `agents[]`, `commands[]`, `skills[]`, `mcpServers[]`, `porRuntime` | `0` export generado · `1` error de ejecución (sin `project.yaml` o inválido) |
+| `forge export --json` | Modelo resuelto completo — valida contra `export.schema.json` (`forge://schemas/v4/export` en `@cristiancorreau/forge-schemas`): `project`, `agents[]`, `commands[]`, `skills[]`, `mcpServers[]`, `perRuntime` | `0` export generado · `1` error de ejecución (sin `project.yaml` o inválido) |
 | `forge audit --json` | `summary {errors, warnings, ok, info}`, `issues[] {level, check, message}` | `0` sin errores de auditoría · `1` con al menos un error |
 | `forge doctor --json` | `ok`, `nodeVersion`, `forgeRootOk`, `assetsOk`, `projectYaml`, `configMode`, `runtimes[] {id, installed, version, active}` | `0` entorno sano (`ok: true`) · `1` algún check falló |
 | `forge recommend --json` | `stack {language, backend, frontend, …}`, `recommendations[] {type, id, label, installable, why, signal}` | `0` recomendaciones emitidas · `1` error de ejecución o instalación fallida |
 | `forge port <runtime> --json` | Matriz de portabilidad: `target`, `targetLabel`, `surfaces[]`, `dimensions[] {id, portability}`, `summary {portable, adapted, vendor, total}` | `0` matriz emitida · `1` error de ejecución (runtime desconocido, sin `project.yaml`) |
-| `forge validate --json` | Resultado de validación del `project.yaml` | `0` válido · `1` inválido |
+| `forge validate --json` | `valid`, `errors[]`, `warnings[]` | `0` válido · `1` inválido |
 
 > Convención general: `0` = ok, `1` = error de ejecución o hallazgos que fallan
 > el comando. `audit` y `doctor` ya usaban `1` para "hallazgos/checks fallidos";

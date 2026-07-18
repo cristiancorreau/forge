@@ -63,7 +63,7 @@
         }
       }
     },
-    "porRuntime": {
+    "perRuntime": {
       "type": "object",
       "additionalProperties": {
         "type": "object",

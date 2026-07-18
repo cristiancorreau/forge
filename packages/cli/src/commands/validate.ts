@@ -18,7 +18,7 @@ Validate project.yaml in the current directory against the forge v2 schema.
 Exits with code 1 if validation fails (CI-safe).
 
 Options:
-  --json      Output results as JSON
+  --json      Output results as JSON (schemaVersion "1": valid, errors, warnings)
   -h, --help  Show this help
 `;
 
@@ -110,7 +110,7 @@ export async function validate(args: string[]): Promise<number> {
 
   const projectYamlPath = findProjectYaml(process.cwd());
   if (!projectYamlPath) {
-    const result = { valid: false, errors: ['No se encontró project.yaml'], warnings: [] };
+    const result = { schemaVersion: '1', valid: false, errors: ['No se encontró project.yaml'], warnings: [] };
     jsonMode ? console.log(JSON.stringify(result, null, 2)) : console.error('ERROR: No se encontró project.yaml');
     return 1;
   }
@@ -120,7 +120,7 @@ export async function validate(args: string[]): Promise<number> {
     data = loadProjectYaml(projectYamlPath) as unknown as Record<string, unknown>;
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    const result = { valid: false, errors: [msg], warnings: [] };
+    const result = { schemaVersion: '1', valid: false, errors: [msg], warnings: [] };
     jsonMode ? console.log(JSON.stringify(result, null, 2)) : console.error(`ERROR: ${msg}`);
     return 1;
   }
@@ -157,7 +157,7 @@ export async function validate(args: string[]): Promise<number> {
 
   const warnings = businessWarnings(data);
   const valid = errors.length === 0;
-  const result = { valid, errors, warnings };
+  const result = { schemaVersion: '1', valid, errors, warnings };
 
   if (jsonMode) {
     console.log(JSON.stringify(result, null, 2));

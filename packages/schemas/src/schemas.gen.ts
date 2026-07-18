@@ -560,7 +560,7 @@ export const SCHEMAS = {
           }
         }
       },
-      "porRuntime": {
+      "perRuntime": {
         "type": "object",
         "additionalProperties": {
           "type": "object",

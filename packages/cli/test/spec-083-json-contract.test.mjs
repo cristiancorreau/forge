@@ -111,8 +111,8 @@ describe('SPEC-083 P2 — forge export --json', () => {
     assert.equal(agent.sourceFile, '.claude/agents/demo-agent.md');
 
     // Desglose por runtime activo.
-    assert.equal(model.porRuntime['claude-code'].kind, 'native');
-    assert.ok(model.porRuntime['claude-code'].surfaces.includes('CLAUDE.md'));
+    assert.equal(model.perRuntime['claude-code'].kind, 'native');
+    assert.ok(model.perRuntime['claude-code'].surfaces.includes('CLAUDE.md'));
 
     // Validación formal contra el schema publicado en forge-schemas.
     const schema = JSON.parse(readFileSync(EXPORT_SCHEMA_PATH, 'utf-8'));

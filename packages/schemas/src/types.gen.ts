@@ -141,7 +141,7 @@ export interface ProjectExport {
     name: string;
     autoApprove?: string[];
   }[];
-  porRuntime?: {
+  perRuntime?: {
     [k: string]: {
       label: string;
       kind: "native" | "rules";

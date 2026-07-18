@@ -499,12 +499,12 @@ can consume them without parsing human-oriented text.
 
 | Command | Stable `--json` keys | Exit codes |
 |---------|----------------------|------------|
-| `forge export --json` | Full resolved model — validates against `export.schema.json` (`forge://schemas/v4/export` in `@cristiancorreau/forge-schemas`): `project`, `agents[]`, `commands[]`, `skills[]`, `mcpServers[]`, `porRuntime` | `0` export emitted · `1` execution error (missing/invalid `project.yaml`) |
+| `forge export --json` | Full resolved model — validates against `export.schema.json` (`forge://schemas/v4/export` in `@cristiancorreau/forge-schemas`): `project`, `agents[]`, `commands[]`, `skills[]`, `mcpServers[]`, `perRuntime` | `0` export emitted · `1` execution error (missing/invalid `project.yaml`) |
 | `forge audit --json` | `summary {errors, warnings, ok, info}`, `issues[] {level, check, message}` | `0` no audit errors · `1` at least one error |
 | `forge doctor --json` | `ok`, `nodeVersion`, `forgeRootOk`, `assetsOk`, `projectYaml`, `configMode`, `runtimes[] {id, installed, version, active}` | `0` healthy (`ok: true`) · `1` some check failed |
 | `forge recommend --json` | `stack {language, backend, frontend, …}`, `recommendations[] {type, id, label, installable, why, signal}` | `0` recommendations emitted · `1` execution error or failed install |
 | `forge port <runtime> --json` | Portability matrix: `target`, `targetLabel`, `surfaces[]`, `dimensions[] {id, portability}`, `summary {portable, adapted, vendor, total}` | `0` matrix emitted · `1` execution error (unknown runtime, missing `project.yaml`) |
-| `forge validate --json` | `project.yaml` validation result | `0` valid · `1` invalid |
+| `forge validate --json` | `valid`, `errors[]`, `warnings[]` | `0` valid · `1` invalid |
 
 > General convention: `0` = ok, `1` = execution error or failing findings.
 > `audit` and `doctor` already used `1` for "findings/failed checks"; that

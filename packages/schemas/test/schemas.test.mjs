@@ -102,7 +102,7 @@ const FIXTURES = {
       commands: [{ name: 'plan', sourceFile: '.claude/commands/plan.md' }],
       skills: ['audit'],
       mcpServers: [{ name: 'postgres', autoApprove: ['query'] }],
-      porRuntime: {
+      perRuntime: {
         'claude-code': { label: 'Claude Code', kind: 'native', surfaces: ['CLAUDE.md'] },
       },
     },
@@ -188,9 +188,9 @@ describe('validadores — casos negativos', () => {
     assert.equal(validateProjectExport(bad), false);
   });
 
-  test('validateProjectExport rechaza porRuntime con kind desconocido', () => {
+  test('validateProjectExport rechaza perRuntime con kind desconocido', () => {
     const bad = structuredClone(FIXTURES.export.valid);
-    bad.porRuntime['claude-code'].kind = 'daemon';
+    bad.perRuntime['claude-code'].kind = 'daemon';
     assert.equal(validateProjectExport(bad), false);
   });
 
