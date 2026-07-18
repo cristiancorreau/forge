@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "forge://schemas/v4/approval-resolution",
+  "title": "ApprovalResolution",
+  "description": "Wire contract of the approvals circuit (SPEC-081, forge half): the resolution returned by GET /api/v1/approvals/:id/wait and accepted by POST /api/v1/approvals/:id/resolve. decision 'timeout' always maps to DENY on the runtime side (kept distinct from 'deny' for audit). Forge owns this shape.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decision", "resolvedBy", "resolvedAt"],
+  "properties": {
+    "decision": { "type": "string", "enum": ["allow", "deny", "answer", "timeout"] },
+    "answer": {
+      "description": "Human answer for kind question/plan",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "optionIds": { "type": "array", "items": { "type": "string" } },
+        "text": { "type": "string" }
+      }
+    },
+    "reason": {
+      "description": "Optional human-readable motive; the hook forwards it as permissionDecisionReason",
+      "type": "string"
+    },
+    "alwaysForTask": {
+      "description": "\"Always allow for this task\" (inserts an approval rule, SPEC-081 §6)",
+      "type": "boolean"
+    },
+    "resolvedBy": { "type": "string", "enum": ["user", "rule", "timeout"] },
+    "resolvedAt": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" }
+  }
+}

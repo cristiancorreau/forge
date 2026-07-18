@@ -43,8 +43,10 @@ approvals:
     matcher: "Bash|Edit|Write|ExitPlanMode|AskUserQuestion"
     description: >-
       Approval gate fail-open: reenvía la tool call al circuito externo de
-      aprobaciones (mingako) descubierto vía ~/.forge/daemon.json y solo
-      bloquea ante un deny explícito. Sin daemon, corrupto o colgado: permite.
+      aprobaciones (mingako) descubierto vía ~/.forge/daemon.json (POST
+      /api/v1/approvals + long-poll /wait, SPEC-081) y deniega solo ante una
+      resolución explícita del daemon (deny, timeout o answer). Sin daemon,
+      corrupto o colgado: permite.
 
 # NOTA (issue #23): los hooks de enterprise y por stack (audit-log-append,
 # check-destructive-sql, prisma-safety, composer-check) aún no están

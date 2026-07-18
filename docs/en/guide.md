@@ -614,7 +614,8 @@ Enabled via a `project.yaml` key:
 
 ```yaml
 approvals:
-  enabled: true    # default: false
+  enabled: true         # default: false
+  timeout_seconds: 300  # human-resolution wait (default 300, max 3600)
 ```
 
 With `approvals.enabled: true`, `forge generate` (claude-code runtime):
@@ -628,27 +629,42 @@ With `approvals.enabled: true`, `forge generate` (claude-code runtime):
 With `false` or absent, nothing is installed and, if the registration existed,
 it is removed from `settings.json`; an already-copied `.js` file is left as a
 harmless orphan (unregistered hooks never run), consistent with the other
-hooks forge never prunes.
+hooks forge never prunes. `forge init` and `forge adopt` apply the same rule:
+when the effective `project.yaml` declares `approvals.enabled: true`, both
+copy the hook **and** register it (never registration without installation).
 
 **What the hook does**: it discovers the local daemon by reading
 `~/.forge/daemon.json` (or `$FORGE_HOME/daemon.json`) — a
 `{pid, port, token, startedAt}` file written by mingako with mode 0600, whose
 shape validates against `daemon-discovery.schema.json`
 (`forge://schemas/v4/daemon-discovery` in `@cristiancorreau/forge-schemas`).
-When a daemon is up, it `POST`s to
-`http://127.0.0.1:<port>/api/v1/approvals` (bearer token, kind `tool_use`) and
-waits for the resolution; only an explicit `deny` blocks the tool call.
+With a daemon up, it follows the SPEC-081 protocol:
+`POST http://127.0.0.1:<port>/api/v1/approvals` (bearer token, body
+`ApprovalRequest` — `approval-request.schema.json`) → `201 {id}`, then
+long-polls `GET /api/v1/approvals/:id/wait` for the `ApprovalResolution`
+(`approval-resolution.schema.json`). `kind` maps the tool: `ExitPlanMode` →
+`plan`, `AskUserQuestion` → `question`, everything else → `tool_use`;
+`timeoutMs` comes from `approvals.timeout_seconds`. The decision reaches the
+runtime as structured PreToolUse JSON
+(`hookSpecificOutput.permissionDecision: "allow" | "deny"`, exit 0): `deny`
+blocks, a circuit `timeout` **denies** (a human who does not answer is not an
+allow), and `answer` denies with the human answer in
+`permissionDecisionReason` so the agent incorporates it.
 
-**Fail-open ALWAYS**: without `daemon.json`, with a corrupt file, a dead or
-hung daemon, or on any error, the hook allows (exit 0) in under ~2s and
-silently — a project with `approvals.enabled: true` and no daemon behaves
-exactly as before. Local guardrails (`pre-bash-check`, `pre-edit-check`) stay
-active and independent: the approval gate adds human supervision, it does not
-replace them. The token is never written to logs.
+**Fail-open ALWAYS** (infrastructure, not decisions): without `daemon.json`,
+with a corrupt file, or a daemon that is dead or hung before acknowledging the
+request, the hook allows (exit 0) in under ~2s and silently — a project with
+`approvals.enabled: true` and no daemon behaves exactly as before. Once the
+request is acknowledged (201), it waits for the human resolution up to
+`timeoutMs + 5s` and only then falls back to the same fail-open path. Local
+guardrails (`pre-bash-check`, `pre-edit-check`) stay active and independent:
+the approval gate adds human supervision, it does not replace them. The token
+is never written to logs, and the hook only ever connects to loopback: a
+`FORGE_DAEMON_URL` pointing at any other host is ignored (anti-exfiltration).
 
-**Survival**: `forge generate --force` keeps both hook and registration; a
-hand-edited `pre-approval-gate.js` (without the forge marker) is never
-overwritten, not even with `--force`.
+**Survival**: `forge generate --force` and `forge init --force` keep both hook
+and registration; a hand-edited `pre-approval-gate.js` (without the forge
+marker) is never overwritten, not even with `--force`.
 
 ---
 

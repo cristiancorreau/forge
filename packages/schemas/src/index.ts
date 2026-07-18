@@ -5,32 +5,37 @@
  * GENERADOS con `npm run generate` (SPEC-075). Este archivo es la API pública.
  */
 import type {
-  Project, Harness, Team, TeamRole, Task, Session, Approval, Event,
+  Project, Harness, Team, TeamRole, Task, Session, Approval,
+  ApprovalRequest, ApprovalResolution, Event,
   ProjectExport, McpPolicy, DaemonDiscovery, TaskStatus,
 } from './types.gen.js';
 import {
   validateProject, validateHarness, validateTeam, validateTeamRole,
-  validateTask, validateSession, validateApproval, validateEvent,
+  validateTask, validateSession, validateApproval,
+  validateApprovalRequest, validateApprovalResolution, validateEvent,
   validateProjectExport, validateMcpPolicy, validateDaemonDiscovery,
 } from './validators.gen.mjs';
 import type { ValidateFn } from './validators.gen.mjs';
 import { SCHEMAS as GENERATED_SCHEMAS } from './schemas.gen.js';
 
 export type {
-  Project, Harness, Team, TeamRole, Task, Session, Approval, Event,
+  Project, Harness, Team, TeamRole, Task, Session, Approval,
+  ApprovalRequest, ApprovalResolution, Event,
   ProjectExport, McpPolicy, DaemonDiscovery, TaskStatus, SessionStatus,
-  HarnessStatus, ApprovalKind, ApprovalResolution, EventEntity,
+  HarnessStatus, ApprovalKind, ApprovalResolutionState, ApprovalDecision,
+  EventEntity,
 } from './types.gen.js';
 
 export {
   validateProject, validateHarness, validateTeam, validateTeamRole,
-  validateTask, validateSession, validateApproval, validateEvent,
+  validateTask, validateSession, validateApproval,
+  validateApprovalRequest, validateApprovalResolution, validateEvent,
   validateProjectExport, validateMcpPolicy, validateDaemonDiscovery,
 } from './validators.gen.mjs';
 
 export type EntityName = 'project' | 'harness' | 'team' | 'teamRole'
-  | 'task' | 'session' | 'approval' | 'event' | 'export' | 'mcpPolicy'
-  | 'daemonDiscovery';
+  | 'task' | 'session' | 'approval' | 'approvalRequest' | 'approvalResolution'
+  | 'event' | 'export' | 'mcpPolicy' | 'daemonDiscovery';
 
 /** Schemas crudos (JSON importado), para SPEC-076/082 y tooling externo. */
 export const SCHEMAS: Readonly<Record<EntityName, object>> = GENERATED_SCHEMAS;
@@ -82,6 +87,12 @@ export function parseSession(data: unknown): Session {
 }
 export function parseApproval(data: unknown): Approval {
   return parseWith<Approval>('approval', validateApproval, data);
+}
+export function parseApprovalRequest(data: unknown): ApprovalRequest {
+  return parseWith<ApprovalRequest>('approvalRequest', validateApprovalRequest, data);
+}
+export function parseApprovalResolution(data: unknown): ApprovalResolution {
+  return parseWith<ApprovalResolution>('approvalResolution', validateApprovalResolution, data);
 }
 export function parseEvent(data: unknown): Event {
   return parseWith<Event>('event', validateEvent, data);

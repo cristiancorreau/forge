@@ -20,6 +20,8 @@ export declare const validateTeamRole: ValidateFn;
 export declare const validateTask: ValidateFn;
 export declare const validateSession: ValidateFn;
 export declare const validateApproval: ValidateFn;
+export declare const validateApprovalRequest: ValidateFn;
+export declare const validateApprovalResolution: ValidateFn;
 export declare const validateEvent: ValidateFn;
 export declare const validateProjectExport: ValidateFn;
 export declare const validateMcpPolicy: ValidateFn;

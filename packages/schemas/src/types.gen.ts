@@ -99,6 +99,67 @@ export interface Approval {
 }
 
 /**
+ * Wire contract of the approvals circuit (SPEC-081, forge half): the body that pre-approval-gate.js POSTs to /api/v1/approvals. The daemon (mingako) assigns id/createdAt and builds card, so those are optional on the wire. Forge owns this shape.
+ */
+export interface ApprovalRequest {
+  id?: string;
+  /**
+   * Runtime session identifier (Claude Code session_id; opaque string, not a forgeId)
+   */
+  sessionId: string;
+  kind: "tool_use" | "plan" | "question";
+  /**
+   * 'Bash' | 'Edit' | 'Write' | 'ExitPlanMode' | 'AskUserQuestion' | 'ask_user' | ...
+   */
+  tool: string;
+  /**
+   * What the UI renders (built by the daemon via buildApprovalCard, SPEC-081 §5)
+   */
+  card?: {
+    title: string;
+    body: string;
+    control: "confirm" | "radio" | "checkbox" | "text";
+    options?: {
+      id: string;
+      label: string;
+    }[];
+    offerAlwaysForTask: boolean;
+  };
+  /**
+   * Raw tool_input (audit trail); any JSON value
+   */
+  payload: {
+    [k: string]: unknown;
+  };
+  timeoutMs: number;
+  createdAt?: string;
+}
+
+/**
+ * Wire contract of the approvals circuit (SPEC-081, forge half): the resolution returned by GET /api/v1/approvals/:id/wait and accepted by POST /api/v1/approvals/:id/resolve. decision 'timeout' always maps to DENY on the runtime side (kept distinct from 'deny' for audit). Forge owns this shape.
+ */
+export interface ApprovalResolution {
+  decision: "allow" | "deny" | "answer" | "timeout";
+  /**
+   * Human answer for kind question/plan
+   */
+  answer?: {
+    optionIds?: string[];
+    text?: string;
+  };
+  /**
+   * Optional human-readable motive; the hook forwards it as permissionDecisionReason
+   */
+  reason?: string;
+  /**
+   * "Always allow for this task" (inserts an approval rule, SPEC-081 §6)
+   */
+  alwaysForTask?: boolean;
+  resolvedBy: "user" | "rule" | "timeout";
+  resolvedAt: string;
+}
+
+/**
  * Append-only domain event. id is the SQLite rowid assigned by the store.
  */
 export interface Event {
@@ -179,6 +240,7 @@ export interface DaemonDiscovery {
 export type TaskStatus = Task['status'];
 export type SessionStatus = Session['status'];
 export type HarnessStatus = Harness['status'];
-export type ApprovalKind = Approval['kind'];
-export type ApprovalResolution = NonNullable<Approval['resolution']>;
+export type ApprovalKind = ApprovalRequest['kind'];
+export type ApprovalResolutionState = NonNullable<Approval['resolution']>;
+export type ApprovalDecision = ApprovalResolution['decision'];
 export type EventEntity = Event['entity'];

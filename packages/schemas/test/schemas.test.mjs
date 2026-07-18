@@ -24,6 +24,7 @@ const api = await import('../dist/index.js');
 const {
   validateProject, validateHarness, validateTeam, validateTeamRole,
   validateTask, validateSession, validateApproval, validateEvent,
+  validateApprovalRequest, validateApprovalResolution, parseApprovalRequest,
   validateProjectExport, parseProjectExport,
   validateMcpPolicy, parseMcpPolicy,
   validateDaemonDiscovery, parseDaemonDiscovery,
@@ -86,6 +87,19 @@ const FIXTURES = {
     valid: { id: ID.approval, sessionId: ID.session, kind: 'tool_use', payload: { tool: 'Bash' } },
     validate: validateApproval,
   },
+  approvalRequest: {
+    // Exactamente el body que POSTea pre-approval-gate.js (SPEC-081 §3/§4):
+    // sin id/createdAt (los asigna el daemon) ni card (la construye el daemon).
+    valid: {
+      kind: 'tool_use', tool: 'Bash', sessionId: 'claude-session-abc123',
+      payload: { command: 'ls -la' }, timeoutMs: 300000,
+    },
+    validate: validateApprovalRequest,
+  },
+  approvalResolution: {
+    valid: { decision: 'deny', reason: 'rm en produccion', resolvedBy: 'user', resolvedAt: NOW },
+    validate: validateApprovalResolution,
+  },
   event: {
     valid: { id: 1, ts: NOW, kind: 'task.created', entity: 'task', entityId: ID.task },
     validate: validateEvent,
@@ -131,9 +145,10 @@ const FIXTURES = {
 };
 
 describe('convenciones de schema (Decisión 3 de SPEC-075)', () => {
-  test('hay exactamente 12 archivos *.schema.json con los nombres exactos', () => {
+  test('hay exactamente 14 archivos *.schema.json con los nombres exactos', () => {
     const files = readdirSync(SCHEMAS_DIR).filter((f) => f.endsWith('.schema.json')).sort();
     assert.deepEqual(files, [
+      'approval-request.schema.json', 'approval-resolution.schema.json',
       'approval.schema.json', 'common.schema.json', 'daemon-discovery.schema.json',
       'event.schema.json', 'export.schema.json', 'harness.schema.json',
       'mcp-policy.schema.json', 'project.schema.json', 'session.schema.json',
@@ -246,6 +261,50 @@ describe('validadores — casos negativos', () => {
     assert.deepEqual(parseMcpPolicy(FIXTURES.mcpPolicy.valid), FIXTURES.mcpPolicy.valid);
   });
 
+  test('validateApprovalRequest acepta el body exacto del hook (kind plan/question incluidos)', () => {
+    assert.equal(validateApprovalRequest({
+      ...FIXTURES.approvalRequest.valid, kind: 'plan', tool: 'ExitPlanMode',
+    }), true);
+    assert.equal(validateApprovalRequest({
+      ...FIXTURES.approvalRequest.valid, kind: 'question', tool: 'AskUserQuestion',
+    }), true);
+  });
+
+  test('validateApprovalRequest rechaza kind "plan_review" (enum del wire es tool_use|plan|question)', () => {
+    assert.equal(validateApprovalRequest({ ...FIXTURES.approvalRequest.valid, kind: 'plan_review' }), false);
+  });
+
+  test('validateApprovalRequest rechaza objeto sin timeoutMs', () => {
+    const { timeoutMs, ...rest } = FIXTURES.approvalRequest.valid;
+    assert.equal(validateApprovalRequest(rest), false);
+  });
+
+  test('validateApprovalRequest rechaza timeoutMs: 0 y propiedad extra', () => {
+    assert.equal(validateApprovalRequest({ ...FIXTURES.approvalRequest.valid, timeoutMs: 0 }), false);
+    assert.equal(validateApprovalRequest({ ...FIXTURES.approvalRequest.valid, url: 'http://x' }), false);
+  });
+
+  test('parseApprovalRequest(válido) retorna el objeto', () => {
+    assert.deepEqual(parseApprovalRequest(FIXTURES.approvalRequest.valid), FIXTURES.approvalRequest.valid);
+  });
+
+  test('validateApprovalResolution acepta decision answer con answer.text', () => {
+    assert.equal(validateApprovalResolution({
+      decision: 'answer', answer: { optionIds: ['a'], text: 'usa pnpm' },
+      resolvedBy: 'user', resolvedAt: NOW,
+    }), true);
+  });
+
+  test('validateApprovalResolution rechaza decision "approved" (enum es allow|deny|answer|timeout)', () => {
+    assert.equal(validateApprovalResolution({ ...FIXTURES.approvalResolution.valid, decision: 'approved' }), false);
+  });
+
+  test('validateApprovalResolution rechaza la respuesta {id} del POST (no es una resolución)', () => {
+    // Documenta SPEC-081 §3: POST /api/v1/approvals responde 201 {id}; la
+    // resolución solo llega por GET /api/v1/approvals/:id/wait.
+    assert.equal(validateApprovalResolution({ id: ID.approval }), false);
+  });
+
   test('validateDaemonDiscovery rechaza port: 0', () => {
     assert.equal(validateDaemonDiscovery({ ...FIXTURES.daemonDiscovery.valid, port: 0 }), false);
   });
@@ -292,9 +351,10 @@ describe('SCHEMAS crudos', () => {
     assert.deepEqual(JSON.parse(JSON.stringify(SCHEMAS.task)), file);
   });
 
-  test('SCHEMAS expone las 11 entidades', () => {
+  test('SCHEMAS expone las 13 entidades', () => {
     assert.deepEqual(Object.keys(SCHEMAS).sort(), [
-      'approval', 'daemonDiscovery', 'event', 'export', 'harness', 'mcpPolicy',
+      'approval', 'approvalRequest', 'approvalResolution', 'daemonDiscovery',
+      'event', 'export', 'harness', 'mcpPolicy',
       'project', 'session', 'task', 'team', 'teamRole',
     ]);
   });

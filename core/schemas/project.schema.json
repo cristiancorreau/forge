@@ -349,7 +349,7 @@
           "type": ["boolean", "null"]
         },
         "timeout_seconds": {
-          "description": "Timeout de espera de la resolución en el circuito externo (semántica de mingako)",
+          "description": "Timeout de espera de la resolución humana: el hook lo lee de project.yaml y lo envía como timeoutMs en el POST /api/v1/approvals (default 300, máximo 3600)",
           "type": ["integer", "null"],
           "minimum": 1,
           "maximum": 3600
