@@ -613,7 +613,7 @@ export const SCHEMAS = {
       },
       "generatedBy": {
         "type": "string",
-        "pattern": "^forge@\\d+\\.\\d+\\.\\d+"
+        "pattern": "^forge@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
       },
       "project": {
         "type": "string",

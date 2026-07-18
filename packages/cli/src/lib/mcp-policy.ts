@@ -66,7 +66,7 @@ export const MCP_POLICY_SCHEMA = {
     schemaVersion: { const: '1' },
     generatedBy: {
       type: 'string',
-      pattern: '^forge@\\d+\\.\\d+\\.\\d+',
+      pattern: '^forge@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$',
     },
     project: { type: 'string', minLength: 1 },
     defaultPolicy: { const: 'deny' },
@@ -95,6 +95,12 @@ const POLICY_NOTES =
   'Generado por forge (SPEC-083 P5) — derivado de project.yaml (mcp.servers). ' +
   'No editar a mano: regenerar con forge generate --force. ' +
   'Default-deny: toda tool MCP no listada en autoApprove requiere aprobación.';
+
+/**
+ * Cota superior del archivo de política como input no confiable: una política
+ * real pesa un puñado de KB; cualquier cosa mayor es corrupción o abuso.
+ */
+const MAX_POLICY_BYTES = 256 * 1024;
 
 /**
  * Deriva la política MCP efectiva desde project.yaml. PURA y determinista:
@@ -191,10 +197,19 @@ export function auditMcpPolicy(root: string = process.cwd()): AuditIssue[] {
     return issues;
   }
 
-  // (b) JSON parseable + válido contra el schema.
+  // (b) JSON parseable + válido contra el schema. Cota de tamaño primero: el
+  // archivo es input no confiable y un JSON gigante no debe tumbar el audit.
   let policy: unknown;
   try {
-    policy = JSON.parse(readFileSync(policyPath, 'utf-8'));
+    const raw = readFileSync(policyPath, 'utf-8');
+    if (raw.length > MAX_POLICY_BYTES) {
+      issues.push({
+        level: 'error', check,
+        message: `${MCP_POLICY_FILE} excede el tamaño máximo esperado (${MAX_POLICY_BYTES} bytes) — regenerar con forge generate --force`,
+      });
+      return issues;
+    }
+    policy = JSON.parse(raw);
   } catch {
     issues.push({ level: 'error', check, message: `${MCP_POLICY_FILE} no es JSON válido — regenerar con forge generate --force` });
     return issues;
@@ -215,11 +230,12 @@ export function auditMcpPolicy(root: string = process.cwd()): AuditIssue[] {
   }
   issues.push({ level: 'ok', check, message: `${MCP_POLICY_FILE} valida contra mcp-policy.schema.json (schemaVersion "1")` });
 
-  // (c) Drift vs project.yaml actual. generatedBy y notes no cuentan como
-  // drift (cambian con la versión de forge sin alterar la política efectiva).
+  // (c) Drift vs project.yaml actual. Solo generatedBy queda fuera (cambia
+  // con la versión de forge sin alterar la política); notes es una constante
+  // determinista, así que un notes adulterado SÍ cuenta como drift.
   const found = policy as McpPolicy;
   const effective = (p: McpPolicy): string =>
-    JSON.stringify({ project: p.project, defaultPolicy: p.defaultPolicy, servers: p.servers });
+    JSON.stringify({ project: p.project, defaultPolicy: p.defaultPolicy, servers: p.servers, notes: p.notes });
   if (effective(found) !== effective(expected)) {
     issues.push({
       level: 'error', check,
