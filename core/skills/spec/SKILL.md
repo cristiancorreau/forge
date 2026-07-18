@@ -1,3 +1,8 @@
+---
+name: spec
+description: "Redacta specs de features siguiendo la plantilla del framework forge. Usar antes de escribir cualquier spec nueva."
+---
+
 # Skill: spec
 
 Redactar specs de features siguiendo la plantilla del framework forge.

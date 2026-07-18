@@ -1,3 +1,8 @@
+---
+name: laravel-pest
+description: "TDD con Pest 3 en Laravel: estructura tests/Feature y tests/Unit, RefreshDatabase, factories y states, datasets, expectations, HTTP tests, fakes, time travel y coverage con umbral mínimo. Usar al escribir o correr tests en un proyecto Laravel."
+---
+
 # Skill: laravel-pest
 
 TDD con Pest 3 en Laravel: estructura `tests/Feature` y `tests/Unit`, `RefreshDatabase`,

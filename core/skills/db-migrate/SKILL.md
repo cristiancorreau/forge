@@ -1,3 +1,8 @@
+---
+name: db-migrate
+description: "Flujo seguro para ejecutar migraciones de base de datos, compatible con Prisma, Drizzle, ActiveRecord (Rails), Alembic (Python) y Goose (Go). Usar antes de aplicar cambios de schema o migrar la base de datos."
+---
+
 # Skill: db-migrate
 
 Flujo seguro para ejecutar migraciones de base de datos. Compatible con Prisma, Drizzle,

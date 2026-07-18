@@ -1,3 +1,8 @@
+---
+name: laravel-verify
+description: "Loop de verificación reproducible para Laravel antes de commit/PR: formato (Pint), análisis estático (Larastan/PHPStan), tests con coverage (Pest), audit de dependencias y checks de configuración. Devuelve PASA o FALLA con acciones concretas."
+---
+
 # Skill: laravel-verify
 
 Loop de verificación reproducible para Laravel antes de commit/PR: formato (Pint),

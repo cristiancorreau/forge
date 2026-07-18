@@ -19,7 +19,8 @@ export function generateCodexAgentsMd(config: ProjectYaml): string {
   const agentList = allAgents.map(a => `- \`${a}\``).join('\n') || '- (ninguno declarado)';
 
   return `# AGENTS.md — ${name}
-# Generado por forge v2 para Codex CLI
+
+> Generado por forge v2 para Codex CLI. Actualizar project.yaml para cambiar la configuración.
 
 ## Proyecto
 

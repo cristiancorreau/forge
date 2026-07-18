@@ -1,3 +1,8 @@
+---
+name: wiki-query
+description: "Responde preguntas usando el wiki del proyecto como base de conocimiento, citando las páginas relevantes; opcionalmente archiva la respuesta como página de síntesis. Usar al consultar qué sabe el wiki sobre un tema."
+---
+
 # Skill: wiki-query
 
 Responde preguntas usando el wiki del proyecto como base de conocimiento,

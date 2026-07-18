@@ -1,3 +1,8 @@
+---
+name: browser-test
+description: "Automatización de navegador para verificar UI en desarrollo, testear visualmente flujos críticos y capturar evidencia con agent-browser (CLI en Rust sobre CDP). Usar al verificar cambios de UI en el navegador o capturar screenshots."
+---
+
 # Skill: browser-test
 
 Automatización de navegador para verificar UI en desarrollo, testear visualmente

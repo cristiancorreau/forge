@@ -1,3 +1,8 @@
+---
+name: new-feature
+description: "Checklist completo para implementar una nueva feature desde planificación hasta deploy, orquestando los otros skills del proyecto en el orden correcto. Usar al iniciar cualquier feature nueva."
+---
+
 # Skill: new-feature
 
 Checklist completo para implementar una nueva feature desde planificación hasta deploy.
