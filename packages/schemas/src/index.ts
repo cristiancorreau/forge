@@ -6,30 +6,30 @@
  */
 import type {
   Project, Harness, Team, TeamRole, Task, Session, Approval, Event,
-  ProjectExport, TaskStatus,
+  ProjectExport, McpPolicy, TaskStatus,
 } from './types.gen.js';
 import {
   validateProject, validateHarness, validateTeam, validateTeamRole,
   validateTask, validateSession, validateApproval, validateEvent,
-  validateProjectExport,
+  validateProjectExport, validateMcpPolicy,
 } from './validators.gen.mjs';
 import type { ValidateFn } from './validators.gen.mjs';
 import { SCHEMAS as GENERATED_SCHEMAS } from './schemas.gen.js';
 
 export type {
   Project, Harness, Team, TeamRole, Task, Session, Approval, Event,
-  ProjectExport, TaskStatus, SessionStatus, HarnessStatus, ApprovalKind,
-  ApprovalResolution, EventEntity,
+  ProjectExport, McpPolicy, TaskStatus, SessionStatus, HarnessStatus,
+  ApprovalKind, ApprovalResolution, EventEntity,
 } from './types.gen.js';
 
 export {
   validateProject, validateHarness, validateTeam, validateTeamRole,
   validateTask, validateSession, validateApproval, validateEvent,
-  validateProjectExport,
+  validateProjectExport, validateMcpPolicy,
 } from './validators.gen.mjs';
 
 export type EntityName = 'project' | 'harness' | 'team' | 'teamRole'
-  | 'task' | 'session' | 'approval' | 'event' | 'export';
+  | 'task' | 'session' | 'approval' | 'event' | 'export' | 'mcpPolicy';
 
 /** Schemas crudos (JSON importado), para SPEC-076/082 y tooling externo. */
 export const SCHEMAS: Readonly<Record<EntityName, object>> = GENERATED_SCHEMAS;
@@ -87,4 +87,7 @@ export function parseEvent(data: unknown): Event {
 }
 export function parseProjectExport(data: unknown): ProjectExport {
   return parseWith<ProjectExport>('export', validateProjectExport, data);
+}
+export function parseMcpPolicy(data: unknown): McpPolicy {
+  return parseWith<McpPolicy>('mcpPolicy', validateMcpPolicy, data);
 }

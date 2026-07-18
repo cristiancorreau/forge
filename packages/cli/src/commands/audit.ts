@@ -15,6 +15,9 @@ Audit a project against the forge standard. Checks installed agents,
 hooks, runtime config, and project.yaml completeness.
 
 Options:
+  --mcp       Escanea solo la política MCP (.forge/mcp-policy.json, SPEC-083 P5):
+              valida contra mcp-policy.schema.json, detecta drift vs project.yaml
+              y autoApprove demasiado amplio
   --json      Output results as JSON (schemaVersion "1": summary + issues)
   -h, --help  Show this help
 
@@ -458,6 +461,38 @@ export async function audit(args: string[]): Promise<number> {
     return 0;
   }
   const jsonMode = args.includes('--json');
+  const mcpMode = args.includes('--mcp');
+
+  // SPEC-083 P5 — escáner enfocado de la política MCP. Mismo formato de
+  // issues y mismo contrato --json (schemaVersion "1": summary + issues);
+  // exit codes idénticos al audit completo (1 con al menos un error).
+  if (mcpMode) {
+    const { auditMcpPolicy } = await import('../lib/mcp-policy.js');
+    const mcpIssues = auditMcpPolicy(process.cwd());
+    const summary = {
+      errors: mcpIssues.filter(i => i.level === 'error').length,
+      warnings: mcpIssues.filter(i => i.level === 'warn').length,
+      ok: mcpIssues.filter(i => i.level === 'ok').length,
+      info: mcpIssues.filter(i => i.level === 'info').length,
+    };
+    if (jsonMode) {
+      console.log(JSON.stringify({ schemaVersion: '1', summary, issues: mcpIssues }, null, 2));
+    } else {
+      console.log(cyan(bold('forge audit --mcp')) + '\n');
+      for (const issue of mcpIssues) {
+        const levelIcon = icons[issue.level] ?? gray('·');
+        console.log(`  [${levelIcon}] ${bold(issue.check.padEnd(20))} ${dim(issue.message)}`);
+      }
+      const summaryLine = `Resumen: ${green(String(summary.ok) + ' OK')} · ${cyan(String(summary.info) + ' info')} · ${yellow(String(summary.warnings) + ' warn')} · ${red(String(summary.errors) + ' ✗')}`;
+      const boxTitle = summary.errors === 0 && summary.warnings === 0
+        ? green('Política MCP en orden')
+        : summary.errors > 0
+          ? red('Política MCP con errores')
+          : yellow('Política MCP con advertencias');
+      console.log('\n' + box(boxTitle, [summaryLine]));
+    }
+    return summary.errors > 0 ? 1 : 0;
+  }
 
   const report = runAudit(process.cwd());
   const { issues } = report;

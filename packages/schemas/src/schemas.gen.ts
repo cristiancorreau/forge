@@ -593,4 +593,62 @@ export const SCHEMAS = {
       }
     }
   },
+  mcpPolicy: {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "forge://schemas/v4/mcp-policy",
+    "title": "McpPolicy",
+    "description": "Política MCP efectiva de un proyecto forge, emitida por `forge generate` en .forge/mcp-policy.json (SPEC-083 P5). Default-deny: toda tool no listada en autoApprove requiere aprobación. Un orquestador (mingako) la consume para sandboxing y approval gates sin re-derivarla de project.yaml.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "schemaVersion",
+      "generatedBy",
+      "project",
+      "defaultPolicy",
+      "servers"
+    ],
+    "properties": {
+      "schemaVersion": {
+        "const": "1"
+      },
+      "generatedBy": {
+        "type": "string",
+        "pattern": "^forge@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+      },
+      "project": {
+        "type": "string",
+        "minLength": 1
+      },
+      "defaultPolicy": {
+        "const": "deny"
+      },
+      "servers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "autoApprove"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "autoApprove": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      },
+      "notes": {
+        "type": "string"
+      }
+    }
+  },
 } as const;

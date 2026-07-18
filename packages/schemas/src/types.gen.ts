@@ -150,6 +150,21 @@ export interface ProjectExport {
   };
 }
 
+/**
+ * Política MCP efectiva de un proyecto forge, emitida por `forge generate` en .forge/mcp-policy.json (SPEC-083 P5). Default-deny: toda tool no listada en autoApprove requiere aprobación. Un orquestador (mingako) la consume para sandboxing y approval gates sin re-derivarla de project.yaml.
+ */
+export interface McpPolicy {
+  schemaVersion: "1";
+  generatedBy: string;
+  project: string;
+  defaultPolicy: "deny";
+  servers: {
+    name: string;
+    autoApprove: string[];
+  }[];
+  notes?: string;
+}
+
 // Union types de enums, derivados de las entidades (única fuente: schemas/)
 export type TaskStatus = Task['status'];
 export type SessionStatus = Session['status'];
