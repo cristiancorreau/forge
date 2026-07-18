@@ -1,8 +1,10 @@
 # SPEC-082 API HTTP/WS (Hono sobre Bun) + UI web (Vite+React)
 
-> Estado: APPROVED
+> Estado: APPROVED — TRANSFERIDA A MINGAKO (2026-07-18)
 > Responsable: forge maintainers
 > Creada: 2026-07-05 | Actualizada: 2026-07-05
+
+> **Replanteo 2026-07-18 — split forge ↔ mingako**: la API HTTP/WS, el terminal y la web UI React pasan enteros a mingako. Forge retiene los tokens visuales ember (ya usados por desktop/ y vscode-extension/), extraíbles como paquete CSS si mingako los necesita. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
 ## Contexto
 

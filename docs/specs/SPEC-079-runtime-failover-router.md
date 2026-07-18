@@ -1,10 +1,12 @@
 # SPEC-079 Router multi-runtime con failover y handoff semántico
 
-> Estado: APPROVED
+> Estado: APPROVED — DIVIDIDA (2026-07-18)
 > Responsable: forge maintainers
 > Creada: 2026-07-05 | Actualizada: 2026-07-05
 > Deriva de: SPEC-074 (componente "Router multi-runtime con failover", Fase 5)
 > Depende de: SPEC-075 (schemas), SPEC-076 (daemon-core), SPEC-078 (daemon + drivers)
+
+> **Replanteo 2026-07-18 — split forge ↔ mingako**: forge declara la cadena de fallback como configuración en project.yaml y mantiene la portabilidad estática ya existente (forge port, SPEC-073); la ejecución del failover (pool de harnesses, rate limits, selectHarness, handoff en vivo) pasa a mingako. El formato del paquete de handoff (nota Markdown + frontmatter) es contrato compartido. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
 ## Contexto
 

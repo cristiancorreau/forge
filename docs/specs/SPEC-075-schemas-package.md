@@ -1,9 +1,11 @@
 # SPEC-075 Paquete schemas — contratos neutrales del dominio
 
-> Estado: APPROVED
+> Estado: APPROVED — ALCANCE DIVIDIDO (2026-07-18)
 > Responsable: forge maintainers
 > Creada: 2026-07-05 | Actualizada: 2026-07-05
 > Deriva de: SPEC-074 (Principio 3 — contratos en esquema neutral; Modelo de datos) | Fase 0
+
+> **Replanteo 2026-07-18 — split forge ↔ mingako**: forge-schemas retiene las entidades de generación (common, Project, y los futuros schemas de project.yaml/manifiesto/export de SPEC-083) y se publicará a npm como contrato para mingako. Las entidades de ejecución (Task, Session, Harness, Approval, Event, TeamRole) se transplantarán a mingako-schemas (namespace mingako://) cuando exista ese repo; hasta entonces permanecen aquí congeladas. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
 ## Contexto
 

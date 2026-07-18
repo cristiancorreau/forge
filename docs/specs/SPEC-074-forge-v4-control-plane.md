@@ -1,10 +1,12 @@
 # SPEC-074 FORGE v4 — plano de control local-first (spec maestro)
 
-> Estado: DRAFT
+> Estado: DRAFT — REPLANTEADA (2026-07-18)
 > Responsable: forge maintainers
 > Creada: 2026-07-05 | Actualizada: 2026-07-05
 > Alternativa A: evolución del proyecto existente en TypeScript/Bun
 > Versión objetivo: 4.0.0 | Stack: TypeScript, Bun, SQLite, React, tmux
+
+> **Replanteo 2026-07-18 — split forge ↔ mingako**: el plano de control (daemon, SQLite, sesiones tmux, web UI) pasa al proyecto separado mingako. Forge conserva los principios 1–4 como doctrina y toda la capa de generación spec-first. Las fases 1–3 y 5 se transfieren o dividen según el banner de cada spec derivada; la Fase 4 se redefine como compatibilidad con mingako en SPEC-083. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
 ## Contexto
 

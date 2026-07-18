@@ -1,10 +1,12 @@
 # SPEC-078 Daemon forged + gestor de sesiones tmux + drivers de runtime
 
-> Estado: APPROVED
+> Estado: APPROVED — TRANSFERIDA A MINGAKO (2026-07-18)
 > Responsable: forge maintainers
 > Creada: 2026-07-05 | Actualizada: 2026-07-05
 > Deriva de: SPEC-074 (componente "Gestor de sesiones tmux", Fase 2)
 > Depende de: SPEC-075 (paquete `schemas`), SPEC-076 (`daemon-core`: puertos y modelo de datos)
+
+> **Replanteo 2026-07-18 — split forge ↔ mingako**: el daemon forged, las sesiones tmux y los drivers de runtime son orquestación pura y pasan enteros a mingako; en forge no se implementa nada de esta spec (forge nunca ejecuta un runtime, solo genera su configuración). Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
 ## Contexto
 

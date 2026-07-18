@@ -1,10 +1,12 @@
 # SPEC-080 Vault de memoria compatible con Obsidian + MCP forge-memory
 
-> Estado: APPROVED
+> Estado: APPROVED — DIVIDIDA (2026-07-18)
 > Responsable: forge maintainers
 > Creada: 2026-07-05 | Actualizada: 2026-07-05
 > Deriva de: SPEC-074 (componente "Vault de memoria compatible con Obsidian", Fase 4)
 > Depende de: SPEC-075 (`packages/schemas`), SPEC-076 (`packages/daemon-core`)
+
+> **Replanteo 2026-07-18 — split forge ↔ mingako**: forge es dueño del dominio y formato de nota (wikilinks, frontmatter, plantillas; extiende wiki.ts e integrations.obsidian); el MCP de escritura en runtime, las notas de handoff y las retros de tarea pasan a mingako. El formato de nota es el contrato compartido. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
 ## Contexto
 
