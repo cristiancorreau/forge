@@ -8,13 +8,19 @@ import {
   type GuardrailInput,
 } from '../lib/mcp-tools.js';
 
-const HELP = `Usage: forge mcp [options]
+const HELP = `Usage: forge mcp [serve] [options]
 
 Run forge's MCP server (stdio) so an MCP-aware runtime can query the project's
-LIVE state. Opt-in and additive: everything forge knows is still in the static
-files; MCP only adds two dynamic, read-only tools.
+LIVE state.
 
-Tools:
+Subcommands:
+  (none)   Minimal server: two dynamic, read-only tools.
+  serve    Full server (SPEC-083 P4): resources (specs, export, audit),
+           prompts (agents/commands as templates) and tools
+           (forge_audit, forge_recommend, forge_generate).
+           Run 'forge mcp serve --help' for details.
+
+Tools (minimal server):
   guardrail_status   Live verdict of the project's guardrail hooks for a command
                      or a file edit (would it be blocked/warned?).
   wiki_search        Search the project's wiki/ knowledge pages (confined corpus).
@@ -22,15 +28,11 @@ Tools:
 Transport: stdio only (no network, no HTTP). Register it once with your runtime:
   claude mcp add -s local -t stdio forge -- forge mcp
 
-Requires @modelcontextprotocol/sdk (lazy, NOT a forge dependency — install it in
-your project: npm i @modelcontextprotocol/sdk). This keeps the cold-start of
-forge's other commands untouched for everyone who does not use MCP.
-
 Options:
   -h, --help   Show this help
 `;
 
-function findProjectRoot(start: string): string {
+export function findProjectRoot(start: string): string {
   let dir = start;
   while (true) {
     if (existsSync(join(dir, '.forge', 'manifest.json')) ||
@@ -95,6 +97,12 @@ export const TOOL_DEFS = [
 ];
 
 export async function mcp(args: string[]): Promise<number> {
+  // `forge mcp serve` (SPEC-083 P4): server completo con resources/prompts/tools.
+  // import() dinámico para que el SDK no pese en el cold-start del resto de la CLI.
+  if (args[0] === 'serve') {
+    const { mcpServe } = await import('./mcp-serve.js');
+    return mcpServe(args.slice(1));
+  }
   if (args.includes('-h') || args.includes('--help')) { process.stdout.write(HELP); return 0; }
 
   const sdk = loadSdk();

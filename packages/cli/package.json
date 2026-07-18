@@ -28,7 +28,7 @@
     "build:all": "node scripts/build-assets.mjs && tsc",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build:all",
-    "test": "node --test test/commands.test.mjs test/assets.test.mjs test/hook-spec-gate.test.mjs test/claude-md-specialized.test.mjs test/wiki.test.mjs test/panel.test.mjs test/catalog-install.test.mjs test/windows-compat.test.mjs test/bun-relaunch.test.mjs test/wizard-project-type.test.mjs test/adopt.test.mjs test/more-technologies.test.mjs test/tier2-profiles.test.mjs test/python-sunset.test.mjs test/update.test.mjs test/laravel-skills.test.mjs test/skill-security.test.mjs test/add.test.mjs test/hook-guardrail.test.mjs test/mcp-tools.test.mjs test/i18n.test.mjs test/catalog-unified.test.mjs test/recommend.test.mjs test/marker.test.mjs test/registry.test.mjs test/skill-eval.test.mjs test/meta-skills.test.mjs test/tui-panel-guard.test.mjs test/panel-modes-guard.test.mjs test/panel-actions.test.mjs test/i18n-parity.test.mjs test/panel-commands.test.mjs test/panel-home.test.mjs test/box.test.mjs test/agent-prune.test.mjs test/analyze.test.mjs test/spec-probe.test.mjs test/unit-registry.test.mjs test/state-generator.test.mjs test/gsd-next.test.mjs test/init-from.test.mjs test/commands-gate.test.mjs test/portability.test.mjs test/spec-083-json-contract.test.mjs test/spec-083-conformance.test.mjs"
+    "test": "node --test test/commands.test.mjs test/assets.test.mjs test/hook-spec-gate.test.mjs test/claude-md-specialized.test.mjs test/wiki.test.mjs test/panel.test.mjs test/catalog-install.test.mjs test/windows-compat.test.mjs test/bun-relaunch.test.mjs test/wizard-project-type.test.mjs test/adopt.test.mjs test/more-technologies.test.mjs test/tier2-profiles.test.mjs test/python-sunset.test.mjs test/update.test.mjs test/laravel-skills.test.mjs test/skill-security.test.mjs test/add.test.mjs test/hook-guardrail.test.mjs test/mcp-tools.test.mjs test/i18n.test.mjs test/catalog-unified.test.mjs test/recommend.test.mjs test/marker.test.mjs test/registry.test.mjs test/skill-eval.test.mjs test/meta-skills.test.mjs test/tui-panel-guard.test.mjs test/panel-modes-guard.test.mjs test/panel-actions.test.mjs test/i18n-parity.test.mjs test/panel-commands.test.mjs test/panel-home.test.mjs test/box.test.mjs test/agent-prune.test.mjs test/analyze.test.mjs test/spec-probe.test.mjs test/unit-registry.test.mjs test/state-generator.test.mjs test/gsd-next.test.mjs test/init-from.test.mjs test/commands-gate.test.mjs test/portability.test.mjs test/spec-083-json-contract.test.mjs test/spec-083-conformance.test.mjs test/spec-083-mcp-server.test.mjs"
   },
   "files": [
     "dist",
@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.9.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@opentui/core": "^0.3.1",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",

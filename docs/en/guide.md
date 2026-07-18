@@ -531,6 +531,35 @@ npx @cristiancorreau/forge audit --json | jq -e '.summary.errors == 0'
 npx @cristiancorreau/forge port codex --json | jq '.summary'
 ```
 
+### forge MCP server (SPEC-083 P4)
+
+`forge mcp serve` runs a full MCP server over stdio for the project in the
+current directory (or `--dir <path>`). Any MCP-aware orchestrator (mingako,
+Claude Code, LangGraph, ...) can consume the catalog, the SDD methodology and
+the audit at runtime without coupling to the CLI:
+
+```bash
+claude mcp add forge -- forge mcp serve
+```
+
+It exposes:
+
+- **Resources**: each spec in `docs/specs/` (`forge://specs/SPEC-083`), the
+  resolved project model (`forge://project/export`, same JSON as
+  `forge export --json`) and the audit result (`forge://project/audit`, same
+  JSON as `forge audit --json`).
+- **Prompts**: the project's agents and commands (`.claude/agents/`,
+  `.claude/commands/`) plus the forge catalog agents, as prompt templates
+  (markdown content as the message; an `arguments` argument when the template
+  uses `$ARGUMENTS`).
+- **Tools**: `forge_audit`, `forge_recommend` and `forge_generate` — each
+  returns the SPEC-083 JSON contract (`schemaVersion: "1"`, identical to the
+  CLI `--json` output). `forge_generate` honors the existing guards: without
+  `force` it never overwrites, and hand-written files are never overwritten.
+
+> `forge mcp` (no subcommand) keeps its minimal server with the two read-only
+> tools `guardrail_status` and `wiki_search`.
+
 ---
 
 ## forge repo structure (reference)

@@ -186,3 +186,40 @@ export function buildBundle(result: RecommendResult, intent?: string): Recommend
     items,
   };
 }
+
+/**
+ * Contrato JSON de `forge recommend --json` (SPEC-083 P3, schemaVersion "1").
+ * Única fuente del shape: la CLI y el server MCP (`forge mcp serve`) delegan
+ * acá para que ambos emitan exactamente el mismo payload.
+ */
+export function recommendJsonContract(
+  result: RecommendResult,
+  topN: number,
+  category?: string,
+): object {
+  const groups = groupRecommendations(result.recommendations, topN, category);
+  const flat = Object.values(groups).flat();
+  return {
+    schemaVersion: '1',
+    stack: {
+      language: result.stack.language,
+      backend: result.stack.backend,
+      frontend: result.stack.frontend,
+      mobile: result.stack.mobile,
+      database: result.stack.database,
+      orm: result.stack.orm,
+      testing: result.stack.testing,
+      hasDocker: result.stack.hasDocker,
+    },
+    recommendations: flat.map(r => ({
+      type: r.item.type,
+      id: r.item.id,
+      label: r.item.label,
+      category: r.item.category,
+      installable: r.item.installable,
+      why: r.why,
+      signal: r.signal,
+      installCommand: r.item.installable ? null : manualInstallCommand(r.item),
+    })),
+  };
+}
