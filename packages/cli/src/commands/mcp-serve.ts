@@ -298,7 +298,23 @@ export async function mcpServe(args: string[]): Promise<number> {
     process.stderr.write('forge mcp serve: --dir requiere una ruta.\n');
     return 1;
   }
-  const root = findProjectRoot(resolve(dirArg ?? process.cwd()));
+  // Root efectivo ÚNICO para todo el server: el directorio del project.yaml
+  // resuelto desde el root candidato. findProjectRoot puede aceptar un dir con
+  // solo .forge/manifest.json, pero export/audit/generate resuelven subiendo
+  // hasta el project.yaml más cercano: si ese project.yaml vive en un ANCESTRO
+  // del root candidato, el server expondría (y escribiría, con forge_generate)
+  // fuera del root que anuncia. Se rechaza el arranque en ese caso.
+  const rootCandidate = findProjectRoot(resolve(dirArg ?? process.cwd()));
+  const yamlPath = findProjectYaml(rootCandidate);
+  const root = yamlPath ? dirname(yamlPath) : null;
+  if (!root || !isInsideRoot(rootCandidate, root)) {
+    process.stderr.write(root
+      ? `forge mcp serve: el project.yaml más cercano está fuera del root del proyecto (${rootCandidate}). Servir ${root} con --dir o crear un project.yaml con forge init.\n`
+      : `forge mcp serve: no se encontró project.yaml desde ${rootCandidate}. Ejecutar forge init primero.\n`);
+    return 1;
+  }
+  // Invariante: project.yaml existe directamente en `root`, así que specs,
+  // export, audit y generate (hijo con cwd=root) resuelven TODOS este root.
 
   const server = new Server(
     { name: 'forge', version: VERSION },

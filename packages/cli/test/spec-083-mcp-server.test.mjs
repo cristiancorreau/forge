@@ -244,6 +244,43 @@ paths:
     assert.equal(code, 0, `exit code tras cerrar stdin debe ser 0, fue ${code}`);
   });
 
+  test('subdir con .forge/manifest.json sin project.yaml: rechaza el arranque (no sirve el ancestro)', async (t) => {
+    const dir = makeFixtureProject(t);
+    // inner parece un root forge (tiene manifest) pero su project.yaml más
+    // cercano es el del ANCESTRO: servirlo expondría/escribiría fuera del root.
+    const inner = join(dir, 'inner');
+    mkdirSync(join(inner, '.forge'), { recursive: true });
+    writeFileSync(join(inner, '.forge', 'manifest.json'), '{}');
+
+    const child = spawn(process.execPath, [CLI, 'mcp', 'serve', '--dir', inner], {
+      env: { ...process.env, FORGE_HOME: '' },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    t.after(() => { try { child.kill('SIGKILL'); } catch { /* ya salió */ } });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', d => { stdout += d.toString(); });
+    child.stderr.on('data', d => { stderr += d.toString(); });
+
+    const code = await new Promise((resolve, reject) => {
+      const deadline = setTimeout(() => reject(new Error(`el server no salió — stderr: ${stderr}`)), 15000);
+      child.on('exit', c => { clearTimeout(deadline); resolve(c); });
+    });
+    assert.equal(code, 1, `debe rechazar el arranque (exit 1), fue ${code}; stderr: ${stderr}`);
+    assert.match(stderr, /project\.yaml/, `stderr debe explicar el motivo: ${stderr}`);
+    assert.doesNotMatch(stderr, /\n\s+at /, `sin stack trace en stderr: ${stderr}`);
+    assert.equal(stdout, '', 'stdout limpio: nada del protocolo antes de rechazar');
+  });
+
+  test('root con .forge/manifest.json Y project.yaml sigue sirviendo normal', async (t) => {
+    const dir = makeFixtureProject(t);
+    mkdirSync(join(dir, '.forge'), { recursive: true });
+    writeFileSync(join(dir, '.forge', 'manifest.json'), '{}');
+    const client = await connectClient(t, dir);
+    const exportRes = await client.readResource({ uri: 'forge://project/export' });
+    assert.equal(JSON.parse(exportRes.contents[0].text).project.name, 'demo');
+  });
+
   test('--dir expone un proyecto distinto del cwd', async (t) => {
     const dir = makeFixtureProject(t);
     const elsewhere = makeTmpDir(t);
