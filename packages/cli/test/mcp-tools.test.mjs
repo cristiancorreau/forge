@@ -159,7 +159,11 @@ describe('forge mcp — minimal server startup (SDK ships with forge since SPEC-
           await exited;
         }
       }
-      rmSync(dir, { recursive: true, force: true });
+      // Windows: EBUSY si el rmdir llega antes de que el hijo (cwd = dir)
+      // termine de morir — reintentos + best-effort.
+      try {
+        rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+      } catch { /* best-effort */ }
     }
   });
 

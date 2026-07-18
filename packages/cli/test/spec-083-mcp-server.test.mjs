@@ -64,7 +64,14 @@ async function reapPid(pid) {
 
 function makeTmpDir(t) {
   const dir = mkdtempSync(join(tmpdir(), 'forge-083-mcp-'));
-  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  // En Windows el rmdir falla con EBUSY si el server hijo (cwd = dir) aún no
+  // terminó de morir: reintentos + best-effort (el temp del runner se limpia
+  // solo; un residuo no debe tumbar el test).
+  t.after(() => {
+    try {
+      rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    } catch { /* best-effort */ }
+  });
   return dir;
 }
 
