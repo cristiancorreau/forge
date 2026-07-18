@@ -26,6 +26,7 @@ const {
   validateTask, validateSession, validateApproval, validateEvent,
   validateProjectExport, parseProjectExport,
   validateMcpPolicy, parseMcpPolicy,
+  validateDaemonDiscovery, parseDaemonDiscovery,
   parseTask, SchemaValidationError, SCHEMAS, TASK_STATUSES,
 } = api;
 
@@ -123,16 +124,20 @@ const FIXTURES = {
     },
     validate: validateMcpPolicy,
   },
+  daemonDiscovery: {
+    valid: { pid: 4321, port: 45813, token: 'tok-local-0600', startedAt: NOW },
+    validate: validateDaemonDiscovery,
+  },
 };
 
 describe('convenciones de schema (Decisión 3 de SPEC-075)', () => {
-  test('hay exactamente 11 archivos *.schema.json con los nombres exactos', () => {
+  test('hay exactamente 12 archivos *.schema.json con los nombres exactos', () => {
     const files = readdirSync(SCHEMAS_DIR).filter((f) => f.endsWith('.schema.json')).sort();
     assert.deepEqual(files, [
-      'approval.schema.json', 'common.schema.json', 'event.schema.json',
-      'export.schema.json', 'harness.schema.json', 'mcp-policy.schema.json',
-      'project.schema.json', 'session.schema.json', 'task.schema.json',
-      'team-role.schema.json', 'team.schema.json',
+      'approval.schema.json', 'common.schema.json', 'daemon-discovery.schema.json',
+      'event.schema.json', 'export.schema.json', 'harness.schema.json',
+      'mcp-policy.schema.json', 'project.schema.json', 'session.schema.json',
+      'task.schema.json', 'team-role.schema.json', 'team.schema.json',
     ]);
   });
 
@@ -240,6 +245,27 @@ describe('validadores — casos negativos', () => {
   test('parseMcpPolicy(válido) retorna el objeto', () => {
     assert.deepEqual(parseMcpPolicy(FIXTURES.mcpPolicy.valid), FIXTURES.mcpPolicy.valid);
   });
+
+  test('validateDaemonDiscovery rechaza port: 0', () => {
+    assert.equal(validateDaemonDiscovery({ ...FIXTURES.daemonDiscovery.valid, port: 0 }), false);
+  });
+
+  test('validateDaemonDiscovery rechaza objeto sin token', () => {
+    const { token, ...rest } = FIXTURES.daemonDiscovery.valid;
+    assert.equal(validateDaemonDiscovery(rest), false);
+  });
+
+  test('validateDaemonDiscovery rechaza startedAt: "ayer" (format date-time)', () => {
+    assert.equal(validateDaemonDiscovery({ ...FIXTURES.daemonDiscovery.valid, startedAt: 'ayer' }), false);
+  });
+
+  test('validateDaemonDiscovery rechaza propiedad extra url', () => {
+    assert.equal(validateDaemonDiscovery({ ...FIXTURES.daemonDiscovery.valid, url: 'http://127.0.0.1:1' }), false);
+  });
+
+  test('parseDaemonDiscovery(válido) retorna el objeto', () => {
+    assert.deepEqual(parseDaemonDiscovery(FIXTURES.daemonDiscovery.valid), FIXTURES.daemonDiscovery.valid);
+  });
 });
 
 describe('parse<X> y SchemaValidationError', () => {
@@ -266,10 +292,10 @@ describe('SCHEMAS crudos', () => {
     assert.deepEqual(JSON.parse(JSON.stringify(SCHEMAS.task)), file);
   });
 
-  test('SCHEMAS expone las 10 entidades', () => {
+  test('SCHEMAS expone las 11 entidades', () => {
     assert.deepEqual(Object.keys(SCHEMAS).sort(), [
-      'approval', 'event', 'export', 'harness', 'mcpPolicy', 'project',
-      'session', 'task', 'team', 'teamRole',
+      'approval', 'daemonDiscovery', 'event', 'export', 'harness', 'mcpPolicy',
+      'project', 'session', 'task', 'team', 'teamRole',
     ]);
   });
 });

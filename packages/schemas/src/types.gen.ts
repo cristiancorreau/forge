@@ -165,6 +165,16 @@ export interface McpPolicy {
   notes?: string;
 }
 
+/**
+ * Discovery file ~/.forge/daemon.json written by the local orchestrator daemon (mingako) with mode 0600 and read by the pre-approval-gate.js hook to reach the approvals endpoint at http://127.0.0.1:<port>. Forge owns this shape; mingako owns the runtime semantics (SPEC-081 / SPEC-083 P6).
+ */
+export interface DaemonDiscovery {
+  pid: number;
+  port: number;
+  token: string;
+  startedAt: string;
+}
+
 // Union types de enums, derivados de las entidades (única fuente: schemas/)
 export type TaskStatus = Task['status'];
 export type SessionStatus = Session['status'];

@@ -6,30 +6,31 @@
  */
 import type {
   Project, Harness, Team, TeamRole, Task, Session, Approval, Event,
-  ProjectExport, McpPolicy, TaskStatus,
+  ProjectExport, McpPolicy, DaemonDiscovery, TaskStatus,
 } from './types.gen.js';
 import {
   validateProject, validateHarness, validateTeam, validateTeamRole,
   validateTask, validateSession, validateApproval, validateEvent,
-  validateProjectExport, validateMcpPolicy,
+  validateProjectExport, validateMcpPolicy, validateDaemonDiscovery,
 } from './validators.gen.mjs';
 import type { ValidateFn } from './validators.gen.mjs';
 import { SCHEMAS as GENERATED_SCHEMAS } from './schemas.gen.js';
 
 export type {
   Project, Harness, Team, TeamRole, Task, Session, Approval, Event,
-  ProjectExport, McpPolicy, TaskStatus, SessionStatus, HarnessStatus,
-  ApprovalKind, ApprovalResolution, EventEntity,
+  ProjectExport, McpPolicy, DaemonDiscovery, TaskStatus, SessionStatus,
+  HarnessStatus, ApprovalKind, ApprovalResolution, EventEntity,
 } from './types.gen.js';
 
 export {
   validateProject, validateHarness, validateTeam, validateTeamRole,
   validateTask, validateSession, validateApproval, validateEvent,
-  validateProjectExport, validateMcpPolicy,
+  validateProjectExport, validateMcpPolicy, validateDaemonDiscovery,
 } from './validators.gen.mjs';
 
 export type EntityName = 'project' | 'harness' | 'team' | 'teamRole'
-  | 'task' | 'session' | 'approval' | 'event' | 'export' | 'mcpPolicy';
+  | 'task' | 'session' | 'approval' | 'event' | 'export' | 'mcpPolicy'
+  | 'daemonDiscovery';
 
 /** Schemas crudos (JSON importado), para SPEC-076/082 y tooling externo. */
 export const SCHEMAS: Readonly<Record<EntityName, object>> = GENERATED_SCHEMAS;
@@ -90,4 +91,7 @@ export function parseProjectExport(data: unknown): ProjectExport {
 }
 export function parseMcpPolicy(data: unknown): McpPolicy {
   return parseWith<McpPolicy>('mcpPolicy', validateMcpPolicy, data);
+}
+export function parseDaemonDiscovery(data: unknown): DaemonDiscovery {
+  return parseWith<DaemonDiscovery>('daemonDiscovery', validateDaemonDiscovery, data);
 }

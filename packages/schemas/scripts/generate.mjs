@@ -37,6 +37,7 @@ const ENTITIES = [
   ['event', 'Event', 'event.schema.json'],
   ['export', 'ProjectExport', 'export.schema.json'],
   ['mcpPolicy', 'McpPolicy', 'mcp-policy.schema.json'],
+  ['daemonDiscovery', 'DaemonDiscovery', 'daemon-discovery.schema.json'],
 ];
 
 const readSchema = (file) => JSON.parse(readFileSync(join(SCHEMAS_DIR, file), 'utf-8'));

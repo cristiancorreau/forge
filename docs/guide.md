@@ -602,6 +602,51 @@ Mismo contrato `--json` que `forge audit` (`schemaVersion: "1"`, `summary`,
 npx @cristiancorreau/forge audit --mcp --json | jq -e '.summary.errors == 0'
 ```
 
+### Instalador de approvals (SPEC-083 P6)
+
+Aprobaciones fuera de la terminal, divididas entre dos proyectos (SPEC-081):
+**forge es dueño del instalador y del schema del contrato; mingako (el
+orquestador externo) es dueño del circuito de aprobación en runtime** (daemon,
+UI, resolución humana). Forge nunca corre un daemon.
+
+Se activa por clave en `project.yaml`:
+
+```yaml
+approvals:
+  enabled: true    # default: false
+```
+
+Con `approvals.enabled: true`, `forge generate` (runtime claude-code):
+
+- instala el hook `.claude/hooks/pre-approval-gate.js` (JS puro, cero
+  dependencias);
+- lo registra en `.claude/settings.json` como entrada `PreToolUse` con matcher
+  `Bash|Edit|Write|ExitPlanMode|AskUserQuestion` (registro idempotente: no
+  duplica y preserva el resto del archivo).
+
+Con `false` o ausente no instala nada y, si el registro existía, lo retira de
+`settings.json`; el archivo `.js` ya copiado queda huérfano inocuo (sin
+registro no se ejecuta), igual que los demás hooks que forge no poda.
+
+**Qué hace el hook**: descubre el daemon local leyendo `~/.forge/daemon.json`
+(o `$FORGE_HOME/daemon.json`) — archivo `{pid, port, token, startedAt}` que
+mingako escribe con modo 0600 y cuyo shape valida contra
+`daemon-discovery.schema.json` (`forge://schemas/v4/daemon-discovery` en
+`@cristiancorreau/forge-schemas`). Si hay daemon, hace `POST
+http://127.0.0.1:<port>/api/v1/approvals` (bearer token, kind `tool_use`) y
+espera la resolución; solo un `deny` explícito bloquea la tool call.
+
+**Fail-open SIEMPRE**: sin `daemon.json`, con archivo corrupto, daemon caído,
+colgado o cualquier error, el hook permite (exit 0) en menos de ~2s y en
+silencio — un proyecto con `approvals.enabled: true` y sin daemon se comporta
+exactamente igual que antes. Los guardrails locales (`pre-bash-check`,
+`pre-edit-check`) siguen activos e independientes: el approval gate agrega
+supervisión humana, no la reemplaza. El token nunca se escribe en logs.
+
+**Supervivencia**: `forge generate --force` conserva hook y registro; un
+`pre-approval-gate.js` editado a mano (sin el marcador de forge) nunca se
+sobrescribe, ni con `--force`.
+
 ---
 
 ## Estructura del repo forge (referencia)

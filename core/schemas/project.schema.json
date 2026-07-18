@@ -339,6 +339,23 @@
         }
       }
     },
+    "approvals": {
+      "description": "Aprobaciones fuera de la terminal (SPEC-083 P6 / SPEC-081). Forge instala el hook pre-approval-gate.js; el circuito en runtime es del orquestador externo (mingako). Fail-open: sin daemon nada se bloquea",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Instala y registra el hook PreToolUse pre-approval-gate.js en forge generate. Default: false",
+          "type": ["boolean", "null"]
+        },
+        "timeout_seconds": {
+          "description": "Timeout de espera de la resolución en el circuito externo (semántica de mingako)",
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 3600
+        }
+      }
+    },
     "mcp": {
       "description": "Configuración de servidores MCP (Model Context Protocol) (nuevo en v2)",
       "type": ["object", "null"],

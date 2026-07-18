@@ -326,7 +326,7 @@ export function installHooks(forgeRoot: string, destDir: string, mode: string, f
   }
 }
 
-function buildSettings(language: string, mode: string): Record<string, unknown> {
+function buildSettings(language: string, mode: string, approvalsEnabled = false): Record<string, unknown> {
   const allowList: string[] = [];
 
   if (language === 'typescript' || language === 'javascript') {
@@ -363,6 +363,15 @@ function buildSettings(language: string, mode: string): Record<string, unknown> 
     (hooks.PreToolUse as Array<Record<string, unknown>>).push({
       matcher: 'Bash',
       hooks: [{ type: 'command', command: 'node .claude/hooks/pre-bash-check.js' }],
+    });
+  }
+  // Approval gate fail-open (SPEC-083 P6): solo si project.yaml declara
+  // approvals.enabled: true. Así la entrada sobrevive a regeneraciones que
+  // reemplazan `hooks` por completo (mergeSettings).
+  if (approvalsEnabled) {
+    (hooks.PreToolUse as Array<Record<string, unknown>>).push({
+      matcher: 'Bash|Edit|Write|ExitPlanMode|AskUserQuestion',
+      hooks: [{ type: 'command', command: 'node .claude/hooks/pre-approval-gate.js' }],
     });
   }
 
@@ -406,8 +415,8 @@ function mergeSettings(
  * existe o no se puede parsear, escribe los settings generados tal cual.
  * Respeta `force`: con `force=false` no toca un archivo existente.
  */
-export function writeSettingsJson(path: string, language: string, mode: string, force: boolean): void {
-  const generated = buildSettings(language, mode);
+export function writeSettingsJson(path: string, language: string, mode: string, force: boolean, approvalsEnabled = false): void {
+  const generated = buildSettings(language, mode, approvalsEnabled);
   if (existsSync(path)) {
     if (!force) return;
     let existing: Record<string, unknown> | null = null;

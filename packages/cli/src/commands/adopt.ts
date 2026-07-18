@@ -259,7 +259,7 @@ export async function adopt(args: string[]): Promise<number> {
     installHooks(forgeRoot, join(claudeDir, 'hooks'), opts.mode, opts.force);
     installCommands(forgeRoot, join(claudeDir, 'commands'), opts.force, profiles);
     write(join(opts.target, 'CLAUDE.md'), generateClaudeMd(config), opts.force);
-    writeSettingsJson(join(claudeDir, 'settings.json'), config.project.language ?? 'typescript', opts.mode, opts.force);
+    writeSettingsJson(join(claudeDir, 'settings.json'), config.project.language ?? 'typescript', opts.mode, opts.force, config.approvals?.enabled === true);
     installSpecScaffold(forgeRoot, opts.target, claudeDir, config);
     // SPEC-062: emit .forge/state/ before the manifest so it is tracked.
     emitStateArtifact(opts.target, config);

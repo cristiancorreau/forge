@@ -11,6 +11,7 @@ import {
 } from '../lib/generators/kiro.js';
 import { getRuntime, runtimeIds, stateSurfaces } from '../lib/generators/registry.js';
 import { buildMcpPolicy, renderMcpPolicy, MCP_POLICY_FILE } from '../lib/mcp-policy.js';
+import { resolveForgeRoot } from '../lib/paths.js';
 import { bold, dim, green, red, yellow, cyan, gray } from '../ui/colors.js';
 import { createSpinner } from '../ui/spinner.js';
 
@@ -96,6 +97,65 @@ function writeNestedAgentsMd(path: string, content: string, dryRun: boolean, for
     return 'SKIP (archivo manual, forge no lo sobrescribe)';
   }
   return writeFile(path, content, dryRun, force);
+}
+
+// ---------------------------------------------------------------------------
+// Instalador de approvals (SPEC-083 P6 / SPEC-081, mitad forge). Forge instala
+// y registra el hook fail-open pre-approval-gate.js cuando project.yaml declara
+// approvals.enabled: true; el circuito de aprobación en runtime es de mingako.
+// ---------------------------------------------------------------------------
+export const APPROVAL_HOOK_FILE = 'pre-approval-gate.js';
+export const APPROVAL_HOOK_COMMAND = 'node .claude/hooks/pre-approval-gate.js';
+export const APPROVAL_HOOK_MATCHER = 'Bash|Edit|Write|ExitPlanMode|AskUserQuestion';
+
+/**
+ * Registra (enabled=true) o retira (enabled=false) la entrada PreToolUse del
+ * approval gate en `.claude/settings.json`. Idempotente: registrar dos veces
+ * no duplica; retirar sin entrada no toca el archivo. Nunca pisa un
+ * settings.json con JSON inválido. El archivo del hook NO se borra al retirar
+ * el registro (queda huérfano inocuo, documentado en docs/guide.md), igual que
+ * installHooks nunca poda hooks copiados.
+ */
+export function syncApprovalHookRegistration(settingsPath: string, enabled: boolean, dryRun: boolean): string {
+  let settings: Record<string, unknown> = {};
+  if (existsSync(settingsPath)) {
+    try {
+      const parsed = JSON.parse(readFileSync(settingsPath, 'utf-8'));
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) settings = parsed;
+      else return 'SKIP (settings.json inválido, hook no registrado)';
+    } catch {
+      return 'SKIP (settings.json inválido, hook no registrado)';
+    }
+  } else if (!enabled) {
+    return 'NOOP';
+  }
+
+  const hooks = (settings.hooks && typeof settings.hooks === 'object' && !Array.isArray(settings.hooks))
+    ? settings.hooks as Record<string, unknown>
+    : {};
+  const pre = Array.isArray(hooks.PreToolUse)
+    ? hooks.PreToolUse as Array<Record<string, unknown>>
+    : [];
+  const isGateEntry = (entry: Record<string, unknown>): boolean =>
+    Array.isArray(entry?.hooks) && (entry.hooks as Array<Record<string, unknown>>).some(
+      h => typeof h?.command === 'string' && (h.command as string).includes(APPROVAL_HOOK_FILE),
+    );
+  const present = pre.some(isGateEntry);
+
+  if (enabled) {
+    if (present) return 'SKIP (ya registrado)';
+    hooks.PreToolUse = [...pre, {
+      matcher: APPROVAL_HOOK_MATCHER,
+      hooks: [{ type: 'command', command: APPROVAL_HOOK_COMMAND }],
+    }];
+  } else {
+    if (!present) return 'NOOP';
+    hooks.PreToolUse = pre.filter(e => !isGateEntry(e));
+  }
+  settings.hooks = hooks;
+  if (dryRun) return 'DRY-RUN';
+  writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+  return enabled ? 'OK' : 'OK (registro retirado)';
 }
 
 // Write an executable file (e.g. a git hook), chmod 0o755 so it can run.
@@ -187,6 +247,33 @@ export async function generate(args: string[]): Promise<number> {
         const claudeMdPath = join(root, 'CLAUDE.md');
         const status = writeFile(claudeMdPath, generateClaudeMd(config), dryRun, force);
         results.push({ runtime, file: 'CLAUDE.md', status });
+
+        // Approvals installer (SPEC-083 P6): con approvals.enabled true se
+        // instala el hook fail-open y se registra en settings.json; con
+        // false/ausente se retira el registro (el .js queda huérfano inocuo).
+        const settingsPath = join(root, '.claude', 'settings.json');
+        if (config.approvals?.enabled === true) {
+          const hooksDir = join(root, '.claude', 'hooks');
+          if (!dryRun) mkdirSync(hooksDir, { recursive: true });
+          const hookSource = readFileSync(
+            join(resolveForgeRoot(), 'core', 'hooks', APPROVAL_HOOK_FILE), 'utf-8',
+          );
+          results.push({
+            runtime,
+            file: `.claude/hooks/${APPROVAL_HOOK_FILE}`,
+            status: writeFile(join(hooksDir, APPROVAL_HOOK_FILE), hookSource, dryRun, force),
+          });
+          results.push({
+            runtime,
+            file: '.claude/settings.json',
+            status: syncApprovalHookRegistration(settingsPath, true, dryRun),
+          });
+        } else {
+          const unregister = syncApprovalHookRegistration(settingsPath, false, dryRun);
+          if (unregister !== 'NOOP') {
+            results.push({ runtime, file: '.claude/settings.json', status: unregister });
+          }
+        }
         spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'CLAUDE.md');
 
       } else if (runtime === 'opencode') {

@@ -34,6 +34,18 @@ standard:
     matcher: "Bash"
     description: "Bloquea comandos destructivos en producción"
 
+approvals:
+  # Solo si project.yaml declara approvals.enabled: true (SPEC-083 P6 / SPEC-081).
+  # forge instala el hook y lo registra; el circuito de aprobación en runtime
+  # (daemon, UI, resolución) es de mingako. FAIL-OPEN: sin daemon no bloquea nada.
+  - hook: pre-approval-gate.js
+    event: PreToolUse
+    matcher: "Bash|Edit|Write|ExitPlanMode|AskUserQuestion"
+    description: >-
+      Approval gate fail-open: reenvía la tool call al circuito externo de
+      aprobaciones (mingako) descubierto vía ~/.forge/daemon.json y solo
+      bloquea ante un deny explícito. Sin daemon, corrupto o colgado: permite.
+
 # NOTA (issue #23): los hooks de enterprise y por stack (audit-log-append,
 # check-destructive-sql, prisma-safety, composer-check) aún no están
 # implementados como .js/.sh, por lo que se omiten del registry hasta que
