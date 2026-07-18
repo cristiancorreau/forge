@@ -6,7 +6,7 @@
 > Deriva de: SPEC-074 (spec maestro v4), componente "Aprobaciones fuera de la terminal" — Fase 3
 > Depende de: SPEC-075 (schemas), SPEC-076 (daemon-core), SPEC-078 (daemon). La UI que renderiza las cards es de SPEC-082; esta spec define el contrato completo que esa UI consume.
 
-> **Replanteo 2026-07-18 — split forge ↔ mingako**: forge es dueño del instalador (hook pre-approval-gate.js fail-open, hooks-registry.yaml, clave approvals.enabled en project.yaml, supervivencia a forge generate); el circuito de aprobación (endpoint del daemon, packages/mcp con ask_user, UI, resolución) pasa a mingako. El contrato ApprovalRequest/Resolution y el shape de ~/.forge/daemon.json son compartidos vía schemas. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
+> **Replanteo 2026-07-18 — split forge ↔ mingako**: forge es dueño del instalador (hook pre-approval-gate.cjs fail-open, hooks-registry.yaml, clave approvals.enabled en project.yaml, supervivencia a forge generate); el circuito de aprobación (endpoint del daemon, packages/mcp con ask_user, UI, resolución) pasa a mingako. El contrato ApprovalRequest/Resolution y el shape de ~/.forge/daemon.json son compartidos vía schemas. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
 ## Contexto
 
@@ -127,9 +127,9 @@ export interface ApprovalPort {
 - Eventos `approval.created` / `approval.resolved` salen por el WebSocket de
   eventos (SPEC-082) y se registran en la tabla `events`.
 
-### 4. Hook `pre-approval-gate.js` + instalador por proyecto
+### 4. Hook `pre-approval-gate.cjs` + instalador por proyecto
 
-- **Archivo** `core/hooks/pre-approval-gate.js` (JS puro, cero dependencias,
+- **Archivo** `core/hooks/pre-approval-gate.cjs` (JS puro, cero dependencias,
   mismo estilo que `pre-bash-check.js`). Comportamiento:
   1. Lee stdin JSON (`tool_name`, `tool_input`, `session_id`).
   2. Descubre el daemon leyendo `~/.forge/daemon.json` — el archivo global
@@ -148,7 +148,7 @@ export interface ApprovalPort {
      daemon. El fail-open se loguea a stderr solo con `DEBUG`.
 - **Registro en el registry, no a mano**: `core/hooks/hooks-registry.yaml`
   gana la sección `approvals:` con la entrada
-  `{hook: pre-approval-gate.js, event: PreToolUse, matcher: "Bash|Edit|Write|ExitPlanMode|AskUserQuestion"}`.
+  `{hook: pre-approval-gate.cjs, event: PreToolUse, matcher: "Bash|Edit|Write|ExitPlanMode|AskUserQuestion"}`.
   `buildSettings` (init.ts) la incluye **solo** si `project.yaml` declara
   `approvals.enabled: true`. Así el hook sobrevive a `forge generate`
   (recordar: `mergeSettings` reemplaza `hooks` por completo).
@@ -239,7 +239,7 @@ esta spec.
       no devuelve resultados (regla hexagonal del maestro).
 - [ ] Migración `approval_rules` numerada, aplicable sobre SQLite vacía, con
       índice único `(task_id, tool, pattern_digest)`.
-- [ ] `core/hooks/pre-approval-gate.js` existe, sin `require` de paquetes
+- [ ] `core/hooks/pre-approval-gate.cjs` existe, sin `require` de paquetes
       externos, y ante stdin con `tool_name: 'Bash'` y un daemon fake HTTP en
       puerto efímero que responde `allow`, imprime el JSON con
       `permissionDecision: "allow"` y sale 0. Test:
@@ -273,7 +273,7 @@ esta spec.
 
 | Riesgo | Mitigación |
 |--------|------------|
-| Claude Code cambia el formato `hookSpecificOutput` de PreToolUse | Único punto de emisión en `pre-approval-gate.js`; test de contrato con el JSON exacto; documentar versión mínima soportada |
+| Claude Code cambia el formato `hookSpecificOutput` de PreToolUse | Único punto de emisión en `pre-approval-gate.cjs`; test de contrato con el JSON exacto; documentar versión mínima soportada |
 | Fail-open percibido como agujero de seguridad | Los guardrails locales (`pre-bash-check`, `pre-edit-check`) siguen activos e independientes; el approval gate agrega supervisión humana, no la reemplaza. `forge approvals status` hace visible el estado |
 | Long-poll colgado si el daemon muere a mitad de espera | Timeout duro en el cliente HTTP del hook = `timeoutMs + 5s`; al vencer, mismo camino fail-open |
 | Digest de "always" demasiado laxo (allow de más) o estricto (cards repetidas) | Digest por herramienta: Bash normaliza espacios y hace hash del comando completo (no por prefijo); Edit/Write usan el path. Empezar estricto; relajar con datos |

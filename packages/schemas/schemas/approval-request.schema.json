@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "forge://schemas/v4/approval-request",
   "title": "ApprovalRequest",
-  "description": "Wire contract of the approvals circuit (SPEC-081, forge half): the body that pre-approval-gate.js POSTs to /api/v1/approvals. The daemon (mingako) assigns id/createdAt and builds card, so those are optional on the wire. Forge owns this shape.",
+  "description": "Wire contract of the approvals circuit (SPEC-081, forge half): the body that pre-approval-gate.cjs POSTs to /api/v1/approvals. The daemon (mingako) assigns id/createdAt and builds card, so those are optional on the wire. Forge owns this shape.",
   "type": "object",
   "additionalProperties": false,
   "required": ["sessionId", "kind", "tool", "payload", "timeoutMs"],

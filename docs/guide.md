@@ -619,21 +619,23 @@ approvals:
 
 Con `approvals.enabled: true`, `forge generate` (runtime claude-code):
 
-- instala el hook `.claude/hooks/pre-approval-gate.js` (JS puro, cero
-  dependencias);
+- instala el hook `.claude/hooks/pre-approval-gate.cjs` (JS puro, cero
+  dependencias; extensión `.cjs` para que corra igual en proyectos con
+  `"type": "module"`);
 - lo registra en `.claude/settings.json` como entrada `PreToolUse` con matcher
   `Bash|Edit|Write|ExitPlanMode|AskUserQuestion` (registro idempotente: no
   duplica y preserva el resto del archivo).
 
 Con `false` o ausente no instala nada y, si el registro existía, lo retira de
-`settings.json`; el archivo `.js` ya copiado queda huérfano inocuo (sin
+`settings.json`; el archivo `.cjs` ya copiado queda huérfano inocuo (sin
 registro no se ejecuta), igual que los demás hooks que forge no poda.
 `forge init` y `forge adopt` aplican la misma regla: si el `project.yaml`
 efectivo declara `approvals.enabled: true`, ambos copian el hook **y** lo
 registran (nunca registro sin instalación).
 
 **Qué hace el hook**: descubre el daemon local leyendo `~/.forge/daemon.json`
-(o `$FORGE_HOME/daemon.json`) — archivo `{pid, port, token, startedAt}` que
+(ubicación fija; `FORGE_HOME` no aplica: para la CLI significa la raíz de
+assets de forge, otra cosa) — archivo `{pid, port, token, startedAt}` que
 mingako escribe con modo 0600 y cuyo shape valida contra
 `daemon-discovery.schema.json` (`forge://schemas/v4/daemon-discovery` en
 `@cristiancorreau/forge-schemas`). Con daemon, sigue el protocolo de SPEC-081:
@@ -661,7 +663,7 @@ escribe en logs, y el hook solo conecta a loopback: un `FORGE_DAEMON_URL` que
 apunte a cualquier otro host se ignora (anti-exfiltración).
 
 **Supervivencia**: `forge generate --force` y `forge init --force` conservan
-hook y registro; un `pre-approval-gate.js` editado a mano (sin el marcador de
+hook y registro; un `pre-approval-gate.cjs` editado a mano (sin el marcador de
 forge) nunca se sobrescribe, ni con `--force`.
 
 ---

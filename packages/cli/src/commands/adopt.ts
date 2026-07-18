@@ -251,7 +251,7 @@ export async function adopt(args: string[]): Promise<number> {
   // approvals.enabled se lee del project.yaml EFECTIVO en disco (puede ser uno
   // preexistente preservado que ya declaraba approvals): el flag decide tanto
   // la copia del hook (installHooks) como su registro (writeSettingsJson) —
-  // registrar sin instalar dejaría settings.json apuntando a un .js inexistente.
+  // registrar sin instalar dejaría settings.json apuntando a un .cjs inexistente.
   let approvalsEnabled = false;
   try {
     approvalsEnabled = loadProjectYaml(projectYamlPath).approvals?.enabled === true;

@@ -104,7 +104,7 @@ detecta una edición manual (drift) en un test.
 
 ### P6 — Instalador de approvals (mitad forge de SPEC-081)
 
-Hook `pre-approval-gate.js` **fail-open**, registrado en hooks-registry.yaml,
+Hook `pre-approval-gate.cjs` **fail-open**, registrado en hooks-registry.yaml,
 activado por `approvals.enabled` en project.yaml, y que sobrevive a
 `forge generate`. El hook apunta al circuito externo (mingako) vía
 `~/.forge/daemon.json`; si no hay daemon, no bloquea nada.

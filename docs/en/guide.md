@@ -620,21 +620,23 @@ approvals:
 
 With `approvals.enabled: true`, `forge generate` (claude-code runtime):
 
-- installs the `.claude/hooks/pre-approval-gate.js` hook (pure JS, zero
-  dependencies);
+- installs the `.claude/hooks/pre-approval-gate.cjs` hook (pure JS, zero
+  dependencies; `.cjs` extension so it also runs in projects declaring
+  `"type": "module"`);
 - registers it in `.claude/settings.json` as a `PreToolUse` entry with matcher
   `Bash|Edit|Write|ExitPlanMode|AskUserQuestion` (idempotent registration: no
   duplicates, the rest of the file is preserved).
 
 With `false` or absent, nothing is installed and, if the registration existed,
-it is removed from `settings.json`; an already-copied `.js` file is left as a
+it is removed from `settings.json`; an already-copied `.cjs` file is left as a
 harmless orphan (unregistered hooks never run), consistent with the other
 hooks forge never prunes. `forge init` and `forge adopt` apply the same rule:
 when the effective `project.yaml` declares `approvals.enabled: true`, both
 copy the hook **and** register it (never registration without installation).
 
 **What the hook does**: it discovers the local daemon by reading
-`~/.forge/daemon.json` (or `$FORGE_HOME/daemon.json`) — a
+`~/.forge/daemon.json` (fixed location; `FORGE_HOME` does not apply here — for
+the CLI it means the forge assets root, a different thing) — a
 `{pid, port, token, startedAt}` file written by mingako with mode 0600, whose
 shape validates against `daemon-discovery.schema.json`
 (`forge://schemas/v4/daemon-discovery` in `@cristiancorreau/forge-schemas`).
@@ -663,7 +665,7 @@ is never written to logs, and the hook only ever connects to loopback: a
 `FORGE_DAEMON_URL` pointing at any other host is ignored (anti-exfiltration).
 
 **Survival**: `forge generate --force` and `forge init --force` keep both hook
-and registration; a hand-edited `pre-approval-gate.js` (without the forge
+and registration; a hand-edited `pre-approval-gate.cjs` (without the forge
 marker) is never overwritten, not even with `--force`.
 
 ---

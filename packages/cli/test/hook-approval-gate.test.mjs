@@ -1,4 +1,4 @@
-// SPEC-083 P6 / SPEC-081 (mitad forge) — hook pre-approval-gate.js aislado.
+// SPEC-083 P6 / SPEC-081 (mitad forge) — hook pre-approval-gate.cjs aislado.
 //
 // Protocolo (SPEC-081 §3): POST /api/v1/approvals → 201 {id} y long-poll
 // GET /api/v1/approvals/:id/wait → ApprovalResolution. La decisión sale como
@@ -17,14 +17,14 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
-const GATE_HOOK = join(REPO_ROOT, 'core', 'hooks', 'pre-approval-gate.js');
+const GATE_HOOK = join(REPO_ROOT, 'core', 'hooks', 'pre-approval-gate.cjs');
 
 const TOKEN = 'tok-secret-approval-gate';
 const APPROVAL_ID = 'apr_01ARZ3NDEKTSV4RRFFQ69G5FAV';
@@ -43,19 +43,30 @@ function parseHookOutput(stdout) {
   return parsed.hookSpecificOutput ?? null;
 }
 
+/** Escribe <home>/.forge/daemon.json (la ÚNICA ubicación que el hook consulta). */
+function writeDaemonJson(home, content) {
+  mkdirSync(join(home, '.forge'), { recursive: true });
+  writeFileSync(join(home, '.forge', 'daemon.json'),
+    typeof content === 'string' ? content : JSON.stringify(content));
+}
+
 /**
- * Corre el hook con FORGE_HOME=forgeHome (ahí busca daemon.json). Usa spawn
- * async (NO spawnSync): el daemon fake corre en este mismo proceso y spawnSync
- * bloquearía el event loop, impidiendo que el server responda. Se espera el
- * exit del hijo (sin hijos vivos) con kill de seguridad configurable.
+ * Corre el hook con HOME/USERPROFILE=home (busca daemon.json SOLO en
+ * ~/.forge/daemon.json; FORGE_HOME es la raíz de assets de la CLI y se
+ * ignora a propósito). Usa spawn async (NO spawnSync): el daemon fake corre
+ * en este mismo proceso y spawnSync bloquearía el event loop, impidiendo que
+ * el server responda. Se espera el exit del hijo (sin hijos vivos) con kill
+ * de seguridad configurable.
  */
-function runGate(forgeHome, payload = PAYLOAD, extraEnv = {}, killAfterMs = 5000) {
+function runGate(home, payload = PAYLOAD, extraEnv = {}, killAfterMs = 5000, hookPath = GATE_HOOK) {
   return new Promise((resolve, reject) => {
     const started = Date.now();
-    const child = spawn(process.execPath, [GATE_HOOK], {
+    const child = spawn(process.execPath, [hookPath], {
       env: {
         ...process.env,
-        FORGE_HOME: forgeHome,
+        HOME: home,
+        USERPROFILE: home,
+        FORGE_HOME: '',
         FORGE_DAEMON_URL: '',
         FORGE_DAEMON_TOKEN: '',
         DEBUG: '',
@@ -119,9 +130,9 @@ async function withFakeDaemon(t, handler, fn) {
   });
   const port = server.address().port;
   const home = makeTmpDir(t);
-  writeFileSync(join(home, 'daemon.json'), JSON.stringify({
+  writeDaemonJson(home, {
     pid: 4321, port, token: TOKEN, startedAt: new Date().toISOString(),
-  }));
+  });
   await fn(home, port);
 }
 
@@ -136,7 +147,7 @@ describe('pre-approval-gate — fail-open sin daemon (SPEC-083 P6)', () => {
 
   test('daemon.json corrupto (JSON inválido): exit 0', async (t) => {
     const home = makeTmpDir(t);
-    writeFileSync(join(home, 'daemon.json'), '{ no es json');
+    writeDaemonJson(home, '{ no es json');
     const { status, stdout } = await runGate(home);
     assert.equal(status, 0);
     assert.equal(stdout, '');
@@ -144,16 +155,16 @@ describe('pre-approval-gate — fail-open sin daemon (SPEC-083 P6)', () => {
 
   test('daemon.json con shape inválido (port fuera de rango): exit 0', async (t) => {
     const home = makeTmpDir(t);
-    writeFileSync(join(home, 'daemon.json'), JSON.stringify({ pid: 1, port: 0, token: 'x', startedAt: 'hoy' }));
+    writeDaemonJson(home, { pid: 1, port: 0, token: 'x', startedAt: 'hoy' });
     const { status } = await runGate(home);
     assert.equal(status, 0);
   });
 
   test('daemon caído (puerto cerrado): exit 0', async (t) => {
     const home = makeTmpDir(t);
-    writeFileSync(join(home, 'daemon.json'), JSON.stringify({
+    writeDaemonJson(home, {
       pid: 1, port: 1, token: TOKEN, startedAt: new Date().toISOString(),
-    }));
+    });
     const { status, stdout } = await runGate(home);
     assert.equal(status, 0);
     assert.equal(stdout, '');
@@ -163,6 +174,58 @@ describe('pre-approval-gate — fail-open sin daemon (SPEC-083 P6)', () => {
     const home = makeTmpDir(t);
     const { status } = await runGate(home, null);
     assert.equal(status, 0);
+  });
+});
+
+describe('pre-approval-gate — FORGE_HOME no participa del discovery', () => {
+  // FORGE_HOME es la raíz de assets de la CLI (packages/cli/src/lib/paths.ts):
+  // si el hook lo usara para buscar daemon.json, un usuario con FORGE_HOME
+  // apuntando a su forge root tendría approvals silenciosamente desactivadas.
+  test('daemon.json bajo $FORGE_HOME se ignora: fail-open sin tocar el daemon', async (t) => {
+    const seen = {};
+    await withFakeDaemon(t, approvalsHandler({ decision: 'deny' }, seen), async (home) => {
+      // Movemos el discovery a un FORGE_HOME "forge root": el hook NO debe leerlo.
+      const forgeRoot = makeTmpDir(t);
+      writeFileSync(join(forgeRoot, 'daemon.json'),
+        JSON.stringify({ pid: 1, port: 65000, token: 'decoy', startedAt: new Date().toISOString() }));
+      const emptyHome = makeTmpDir(t); // ~/.forge/daemon.json inexistente
+      const { status, stdout } = await runGate(emptyHome, PAYLOAD, { FORGE_HOME: forgeRoot });
+      assert.equal(status, 0);
+      assert.equal(stdout, '', 'sin ~/.forge/daemon.json debe fail-open, FORGE_HOME no cuenta');
+      assert.equal(seen.postAuth, undefined, 'jamás debe conectarse por un daemon.json de FORGE_HOME');
+    });
+  });
+
+  test('con FORGE_HOME seteado a otra cosa, ~/.forge/daemon.json sigue funcionando', async (t) => {
+    const resolution = { decision: 'deny', reason: 'via home', resolvedBy: 'user', resolvedAt: new Date().toISOString() };
+    await withFakeDaemon(t, approvalsHandler(resolution), async (home) => {
+      const forgeRoot = makeTmpDir(t);
+      const { status, stdout } = await runGate(home, PAYLOAD, { FORGE_HOME: forgeRoot });
+      assert.equal(status, 0);
+      assert.equal(parseHookOutput(stdout).permissionDecision, 'deny');
+    });
+  });
+});
+
+describe('pre-approval-gate — instalado como .cjs en proyectos ESM', () => {
+  // Regresión: el hook es CommonJS; instalado como .js en un proyecto destino
+  // con "type": "module" crasheaba (ReferenceError: require is not defined)
+  // antes de correr el circuito. La extensión .cjs lo hace inmune al scope.
+  test('el circuito funciona con el hook copiado a un proyecto con "type": "module"', async (t) => {
+    const seen = {};
+    const resolution = { decision: 'deny', reason: 'esm ok', resolvedBy: 'user', resolvedAt: new Date().toISOString() };
+    await withFakeDaemon(t, approvalsHandler(resolution, seen), async (home) => {
+      const project = makeTmpDir(t);
+      writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'demo-esm', type: 'module' }));
+      mkdirSync(join(project, '.claude', 'hooks'), { recursive: true });
+      const installed = join(project, '.claude', 'hooks', 'pre-approval-gate.cjs');
+      copyFileSync(GATE_HOOK, installed);
+      const { status, stdout, stderr } = await runGate(home, PAYLOAD, {}, 5000, installed);
+      assert.equal(status, 0);
+      assert.equal(stderr, '', 'sin stack trace: el hook no debe crashear en scope ESM');
+      assert.equal(parseHookOutput(stdout).permissionDecision, 'deny');
+      assert.equal(seen.postAuth, `Bearer ${TOKEN}`);
+    });
   });
 });
 

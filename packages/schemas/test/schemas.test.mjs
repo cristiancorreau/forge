@@ -88,7 +88,7 @@ const FIXTURES = {
     validate: validateApproval,
   },
   approvalRequest: {
-    // Exactamente el body que POSTea pre-approval-gate.js (SPEC-081 §3/§4):
+    // Exactamente el body que POSTea pre-approval-gate.cjs (SPEC-081 §3/§4):
     // sin id/createdAt (los asigna el daemon) ni card (la construye el daemon).
     valid: {
       kind: 'tool_use', tool: 'Bash', sessionId: 'claude-session-abc123',
@@ -297,6 +297,44 @@ describe('validadores — casos negativos', () => {
 
   test('validateApprovalResolution rechaza decision "approved" (enum es allow|deny|answer|timeout)', () => {
     assert.equal(validateApprovalResolution({ ...FIXTURES.approvalResolution.valid, decision: 'approved' }), false);
+  });
+
+  // La entidad Approval (DB) está ALINEADA al wire (SPEC-081 §1): cuando
+  // mingako persiste un ApprovalRequest, la entidad tiene que validarlo tal
+  // cual — mismos enums, mismo sessionId opaco.
+  test('entidad Approval alineada al wire: kind comparte enum con ApprovalRequest.kind', () => {
+    assert.deepEqual(
+      SCHEMAS.approval.properties.kind.enum,
+      SCHEMAS.approvalRequest.properties.kind.enum,
+    );
+  });
+
+  test('entidad Approval alineada al wire: resolution comparte enum con ApprovalResolution.decision', () => {
+    assert.deepEqual(
+      SCHEMAS.approval.properties.resolution.enum,
+      SCHEMAS.approvalResolution.properties.decision.enum,
+    );
+  });
+
+  test('validateApproval acepta un ApprovalRequest persistido (kind plan, sessionId opaco, resolution del wire)', () => {
+    assert.equal(validateApproval({
+      id: ID.approval,
+      sessionId: 'claude-session-abc123',
+      kind: 'plan',
+      payload: { plan: '1. hacer X' },
+      resolution: 'allow',
+      resolvedAt: NOW,
+    }), true);
+    assert.equal(validateApproval({
+      id: ID.approval, sessionId: 'claude-session-abc123', kind: 'question',
+      payload: {}, resolution: 'answer', resolvedAt: NOW,
+    }), true);
+  });
+
+  test('validateApproval rechaza los enums viejos "plan_review" y "approved" (divergencia resuelta)', () => {
+    assert.equal(validateApproval({ ...FIXTURES.approval.valid, kind: 'plan_review' }), false);
+    assert.equal(validateApproval({ ...FIXTURES.approval.valid, resolution: 'approved' }), false);
+    assert.equal(validateApproval({ ...FIXTURES.approval.valid, sessionId: '' }), false);
   });
 
   test('validateApprovalResolution rechaza la respuesta {id} del POST (no es una resolución)', () => {

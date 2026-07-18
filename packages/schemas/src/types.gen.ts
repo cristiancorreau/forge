@@ -87,19 +87,22 @@ export interface Session {
 }
 
 /**
- * A permission request raised by an agent session, resolved from the UI.
+ * A permission request raised by an agent session, resolved from the UI. Enums aligned with the SPEC-081 wire contract (approval-request/approval-resolution): kind mirrors ApprovalRequest.kind and resolution mirrors ApprovalResolution.decision, so a persisted ApprovalRequest validates as-is.
  */
 export interface Approval {
   id: string;
+  /**
+   * Runtime session identifier (Claude Code session_id; opaque string, not a forgeId — same shape as ApprovalRequest.sessionId)
+   */
   sessionId: string;
-  kind: "tool_use" | "plan_review" | "question";
+  kind: "tool_use" | "plan" | "question";
   payload: {};
-  resolution?: "approved" | "denied" | "timeout";
+  resolution?: "allow" | "deny" | "answer" | "timeout";
   resolvedAt?: string;
 }
 
 /**
- * Wire contract of the approvals circuit (SPEC-081, forge half): the body that pre-approval-gate.js POSTs to /api/v1/approvals. The daemon (mingako) assigns id/createdAt and builds card, so those are optional on the wire. Forge owns this shape.
+ * Wire contract of the approvals circuit (SPEC-081, forge half): the body that pre-approval-gate.cjs POSTs to /api/v1/approvals. The daemon (mingako) assigns id/createdAt and builds card, so those are optional on the wire. Forge owns this shape.
  */
 export interface ApprovalRequest {
   id?: string;
@@ -227,7 +230,7 @@ export interface McpPolicy {
 }
 
 /**
- * Discovery file ~/.forge/daemon.json written by the local orchestrator daemon (mingako) with mode 0600 and read by the pre-approval-gate.js hook to reach the approvals endpoint at http://127.0.0.1:<port>. Forge owns this shape; mingako owns the runtime semantics (SPEC-081 / SPEC-083 P6).
+ * Discovery file ~/.forge/daemon.json written by the local orchestrator daemon (mingako) with mode 0600 and read by the pre-approval-gate.cjs hook to reach the approvals endpoint at http://127.0.0.1:<port>. Forge owns this shape; mingako owns the runtime semantics (SPEC-081 / SPEC-083 P6).
  */
 export interface DaemonDiscovery {
   pid: number;

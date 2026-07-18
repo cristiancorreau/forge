@@ -101,11 +101,13 @@ function writeNestedAgentsMd(path: string, content: string, dryRun: boolean, for
 
 // ---------------------------------------------------------------------------
 // Instalador de approvals (SPEC-083 P6 / SPEC-081, mitad forge). Forge instala
-// y registra el hook fail-open pre-approval-gate.js cuando project.yaml declara
-// approvals.enabled: true; el circuito de aprobación en runtime es de mingako.
+// y registra el hook fail-open pre-approval-gate.cjs cuando project.yaml
+// declara approvals.enabled: true; el circuito de aprobación en runtime es de
+// mingako. Extensión .cjs a propósito: el hook es CommonJS y en un proyecto
+// destino con "type": "module" un .js crashearía en cada tool call.
 // ---------------------------------------------------------------------------
-export const APPROVAL_HOOK_FILE = 'pre-approval-gate.js';
-export const APPROVAL_HOOK_COMMAND = 'node .claude/hooks/pre-approval-gate.js';
+export const APPROVAL_HOOK_FILE = 'pre-approval-gate.cjs';
+export const APPROVAL_HOOK_COMMAND = 'node .claude/hooks/pre-approval-gate.cjs';
 export const APPROVAL_HOOK_MATCHER = 'Bash|Edit|Write|ExitPlanMode|AskUserQuestion';
 
 /**
@@ -250,7 +252,7 @@ export async function generate(args: string[]): Promise<number> {
 
         // Approvals installer (SPEC-083 P6): con approvals.enabled true se
         // instala el hook fail-open y se registra en settings.json; con
-        // false/ausente se retira el registro (el .js queda huérfano inocuo).
+        // false/ausente se retira el registro (el .cjs queda huérfano inocuo).
         const settingsPath = join(root, '.claude', 'settings.json');
         if (config.approvals?.enabled === true) {
           const hooksDir = join(root, '.claude', 'hooks');

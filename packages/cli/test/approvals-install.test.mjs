@@ -1,7 +1,7 @@
 // SPEC-083 P6 — instalador de approvals (mitad forge de SPEC-081).
 //
 // `forge generate --runtime claude-code` con approvals.enabled: true instala
-// .claude/hooks/pre-approval-gate.js y registra la entrada PreToolUse en
+// .claude/hooks/pre-approval-gate.cjs y registra la entrada PreToolUse en
 // .claude/settings.json; con false/ausente no instala y retira el registro.
 // Supervivencia: --force conserva hook y registro sin duplicar; un hook
 // editado a mano (sin marcador forge) jamás se pisa.
@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLI = join(__dirname, '..', 'dist', 'cli.js');
 
-const HOOK_REL = join('.claude', 'hooks', 'pre-approval-gate.js');
+const HOOK_REL = join('.claude', 'hooks', 'pre-approval-gate.cjs');
 const SETTINGS_REL = join('.claude', 'settings.json');
 const MATCHER = 'Bash|Edit|Write|ExitPlanMode|AskUserQuestion';
 
@@ -70,7 +70,7 @@ function gateEntries(dir) {
   if (!existsSync(path)) return [];
   const settings = JSON.parse(readFileSync(path, 'utf-8'));
   const pre = settings.hooks?.PreToolUse ?? [];
-  return pre.filter(e => (e.hooks ?? []).some(h => String(h.command ?? '').includes('pre-approval-gate.js')));
+  return pre.filter(e => (e.hooks ?? []).some(h => String(h.command ?? '').includes('pre-approval-gate.cjs')));
 }
 
 /** Shape que valida la suite de conformidad P1 sobre settings.json. */
@@ -106,7 +106,7 @@ describe('SPEC-083 P6 — approvals.enabled: true instala y registra', () => {
     const entries = gateEntries(dir);
     assert.equal(entries.length, 1, 'debe haber exactamente una entrada del gate');
     assert.equal(entries[0].matcher, MATCHER);
-    assert.equal(entries[0].hooks[0].command, 'node .claude/hooks/pre-approval-gate.js');
+    assert.equal(entries[0].hooks[0].command, 'node .claude/hooks/pre-approval-gate.cjs');
     assertP1Shape(dir);
   });
 
@@ -141,7 +141,7 @@ describe('SPEC-083 P6 — approvals false/ausente no instala y retira el registr
     assert.ok(!existsSync(join(dir, SETTINGS_REL)), 'no debe crear settings.json');
   });
 
-  test('approvals.enabled: false tras true → retira el registro (el .js queda huérfano inocuo)', (t) => {
+  test('approvals.enabled: false tras true → retira el registro (el .cjs queda huérfano inocuo)', (t) => {
     const dir = makeTmpDir(t);
     writeYaml(dir, { approvals: true });
     assert.equal(runGenerate(dir).status, 0);
@@ -168,7 +168,7 @@ describe('SPEC-083 P6 — supervivencia a regeneraciones', () => {
     assert.equal(gateEntries(dir).length, 1, 'el registro sobrevive sin duplicarse');
   });
 
-  test('un pre-approval-gate.js manual (sin marcador forge) no se pisa ni con --force', (t) => {
+  test('un pre-approval-gate.cjs manual (sin marcador forge) no se pisa ni con --force', (t) => {
     const dir = makeTmpDir(t);
     writeYaml(dir, { approvals: true });
     mkdirSync(join(dir, '.claude', 'hooks'), { recursive: true });
@@ -220,7 +220,7 @@ describe('SPEC-083 P6 — supervivencia a regeneraciones', () => {
     writeYaml(dir, { approvals: true }); // preexistente: adopt lo preserva sin --force
 
     // Regresión: adopt registraba el gate en settings.json pero installHooks
-    // no copiaba pre-approval-gate.js → hook fantasma en cada tool call.
+    // no copiaba pre-approval-gate.cjs → hook fantasma en cada tool call.
     const res = runForge(dir, ['adopt', '--yes', '--no-wiki', dir]);
     assert.equal(res.status, 0, res.stderr || res.stdout);
     assert.ok(existsSync(join(dir, HOOK_REL)), 'adopt debe instalar el hook que registra');
