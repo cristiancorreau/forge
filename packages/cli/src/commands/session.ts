@@ -36,7 +36,19 @@ Options:
 `;
 }
 
-/** Read the central SKILL.md for the given session phase, if bundled. */
+/**
+ * Quita el frontmatter YAML (`---` ... `---`) del inicio del documento, si
+ * existe. El frontmatter es metadata para el runtime (agentskills.io); el
+ * cuerpo que consume el agente (terminal o --json) no debe incluirlo.
+ * Tolera CRLF (checkouts de Windows).
+ */
+function stripFrontmatter(md: string): string {
+  return md
+    .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
+    .replace(/^(?:[ \t]*\r?\n)+/, '');
+}
+
+/** Read the central SKILL.md body (sin frontmatter) for the given phase. */
 function readSkillBody(phase: Phase): string | null {
   let root: string;
   try {
@@ -46,7 +58,7 @@ function readSkillBody(phase: Phase): string | null {
   }
   const path = join(root, 'core', 'skills', META[phase].id, 'SKILL.md');
   if (!existsSync(path)) return null;
-  return readFileSync(path, 'utf-8');
+  return stripFrontmatter(readFileSync(path, 'utf-8'));
 }
 
 async function run(phase: Phase, args: string[]): Promise<number> {

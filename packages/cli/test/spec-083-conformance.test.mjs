@@ -335,6 +335,38 @@ describe('SPEC-083 P1 — skills conformes a agentskills.io', () => {
       'assets/core/skills desincronizado del repo — correr npm run build:assets',
     );
   });
+
+  // El bundle estático (validado arriba) no es lo único que hereda un consumidor:
+  // la CLI también ENTREGA cuerpos de skill por stdout (forge session-start /
+  // session-close, con y sin --json). Ese output es cuerpo markdown puro: el
+  // frontmatter YAML es metadata del bundle y no debe filtrarse al consumidor.
+  const SKILL_FM = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
+  for (const cmd of ['session-start', 'session-close']) {
+    test(`forge ${cmd} --json: body es el cuerpo del skill sin frontmatter`, () => {
+      const res = runForge([cmd, '--json']);
+      assert.equal(res.status, 0, res.stderr || res.stdout);
+
+      const json = JSON.parse(res.stdout);
+      assert.equal(json.id, cmd);
+      assert.equal(typeof json.body, 'string', `${cmd}: body ausente`);
+      assert.ok(!/^---\r?\n/.test(json.body), `${cmd}: body incluye frontmatter YAML`);
+      assert.match(json.body, /^# Skill: /, `${cmd}: body debe empezar en el H1 del skill`);
+
+      // Contrato exacto: body === SKILL.md del bundle menos su frontmatter.
+      const raw = readFileSync(join(ASSETS, 'core', 'skills', cmd, 'SKILL.md'), 'utf-8');
+      assert.equal(json.body, raw.replace(SKILL_FM, '').replace(/^(?:[ \t]*\r?\n)+/, ''));
+    });
+
+    test(`forge ${cmd}: la salida de terminal no filtra el frontmatter`, () => {
+      const res = runForge([cmd]);
+      assert.equal(res.status, 0, res.stderr || res.stdout);
+      // eslint-disable-next-line no-control-regex
+      const plain = res.stdout.replace(/\x1b\[[0-9;]*m/g, '');
+      assert.ok(!new RegExp(`^name: ${cmd}$`, 'm').test(plain), `${cmd}: imprime el name del frontmatter`);
+      assert.ok(!/^description: /m.test(plain), `${cmd}: imprime la description del frontmatter`);
+      assert.match(plain, /^# Skill: /m, `${cmd}: no imprime el cuerpo del skill`);
+    });
+  }
 });
 
 // ── Config MCP (modelo exportado) ────────────────────────────────────────────
