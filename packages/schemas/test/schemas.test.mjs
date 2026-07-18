@@ -116,7 +116,7 @@ const FIXTURES = {
       project: 'demo',
       defaultPolicy: 'deny',
       servers: [
-        { name: 'postgres', autoApprove: ['query'], timeoutMs: 30000 },
+        { name: 'postgres', autoApprove: ['query'] },
         { name: 'github', autoApprove: [] },
       ],
       notes: 'Generado por forge (SPEC-083 P5).',

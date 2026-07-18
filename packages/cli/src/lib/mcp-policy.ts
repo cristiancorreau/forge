@@ -37,10 +37,7 @@ export const MCP_POLICY_FILE = '.forge/mcp-policy.json';
 
 export interface McpPolicyServer {
   name: string;
-  command?: string;
   autoApprove: string[];
-  timeoutMs?: number;
-  permissions?: string[];
 }
 
 export interface McpPolicy {
@@ -81,10 +78,7 @@ export const MCP_POLICY_SCHEMA = {
         required: ['name', 'autoApprove'],
         properties: {
           name: { type: 'string', minLength: 1 },
-          command: { type: 'string', minLength: 1 },
           autoApprove: { type: 'array', items: { type: 'string', minLength: 1 } },
-          timeoutMs: { type: 'integer', minimum: 1 },
-          permissions: { type: 'array', items: { type: 'string', minLength: 1 } },
         },
       },
     },

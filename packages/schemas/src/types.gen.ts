@@ -160,10 +160,7 @@ export interface McpPolicy {
   defaultPolicy: "deny";
   servers: {
     name: string;
-    command?: string;
     autoApprove: string[];
-    timeoutMs?: number;
-    permissions?: string[];
   }[];
   notes?: string;
 }

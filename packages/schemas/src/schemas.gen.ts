@@ -636,22 +636,7 @@ export const SCHEMAS = {
               "type": "string",
               "minLength": 1
             },
-            "command": {
-              "type": "string",
-              "minLength": 1
-            },
             "autoApprove": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "timeoutMs": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "permissions": {
               "type": "array",
               "items": {
                 "type": "string",
