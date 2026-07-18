@@ -191,6 +191,7 @@ The 18 CLI commands.
 | `forge migrate` | Migrates `project.yaml` from schema v1 to v2 (`--dry-run`, `--backup`). |
 | `forge audit` | Verifies the project against the manifest; detects modified or missing files. |
 | `forge export` | Emits the project's resolved model (agents, skills, commands, MCP servers) as stable JSON (`--json`, validates against `export.schema.json`). |
+| `forge mcp serve` | Full MCP server over stdio: resources (specs, export, audit), prompts (agents/commands as templates) and tools (`forge_audit`, `forge_recommend`, `forge_generate`). Connect with `claude mcp add forge -- forge mcp serve`. |
 | `forge scaffold` | Generates a new agent: Tier 2 profile or Tier 3 domain agent. |
 | `forge teardown` | Cleanly uninstalls forge from the project via the manifest (`--dry-run`, `--keep-config`). |
 | `forge skills` | Lists the available skills grouped by category. |

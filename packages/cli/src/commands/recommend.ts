@@ -10,6 +10,7 @@ import {
   groupRecommendations,
   manualInstallCommand,
   buildBundle,
+  recommendJsonContract,
   type RecommendBundle,
 } from '../lib/recommend.js';
 
@@ -279,37 +280,9 @@ export async function recommend(args: string[]): Promise<number> {
   const groups = groupRecommendations(result.recommendations, topN, category);
   const flat = Object.values(groups).flat();
 
-  // --json output.
+  // --json output (contrato compartido con el server MCP — SPEC-083).
   if (jsonMode) {
-    console.log(
-      JSON.stringify(
-        {
-          schemaVersion: '1',
-          stack: {
-            language: result.stack.language,
-            backend: result.stack.backend,
-            frontend: result.stack.frontend,
-            mobile: result.stack.mobile,
-            database: result.stack.database,
-            orm: result.stack.orm,
-            testing: result.stack.testing,
-            hasDocker: result.stack.hasDocker,
-          },
-          recommendations: flat.map(r => ({
-            type: r.item.type,
-            id: r.item.id,
-            label: r.item.label,
-            category: r.item.category,
-            installable: r.item.installable,
-            why: r.why,
-            signal: r.signal,
-            installCommand: r.item.installable ? null : manualInstallCommand(r.item),
-          })),
-        },
-        null,
-        2,
-      ),
-    );
+    console.log(JSON.stringify(recommendJsonContract(result, topN, category), null, 2));
     return 0;
   }
 

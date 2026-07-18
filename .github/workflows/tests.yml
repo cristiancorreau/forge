@@ -10,6 +10,9 @@ jobs:
   test-cli:
     name: CLI tests (${{ matrix.os }}, Node ${{ matrix.node-version }})
     runs-on: ${{ matrix.os }}
+    # Un test colgado (visto en Windows con el server MCP) no debe retener el
+    # runner las 6h por defecto.
+    timeout-minutes: 15
     strategy:
       # Keep running the other matrix legs if one fails — we want to see whether
       # a failure is Windows-specific or universal.
@@ -42,6 +45,7 @@ jobs:
   test-gui:
     name: GUI tests (extension parity + desktop args)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2

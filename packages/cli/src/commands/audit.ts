@@ -439,6 +439,19 @@ export function runAudit(root: string = process.cwd()): AuditReport {
   };
 }
 
+/**
+ * Contrato JSON de `forge audit --json` (SPEC-083 P3, schemaVersion "1").
+ * Única fuente del shape: la CLI y el server MCP (`forge mcp serve`) delegan
+ * acá para que ambos emitan exactamente el mismo payload.
+ */
+export function auditJsonContract(report: AuditReport): object {
+  return {
+    schemaVersion: '1',
+    summary: report.summary,
+    issues: report.issues,
+  };
+}
+
 export async function audit(args: string[]): Promise<number> {
   if (args.includes('-h') || args.includes('--help')) {
     process.stdout.write(HELP);
@@ -451,11 +464,7 @@ export async function audit(args: string[]): Promise<number> {
   const { errors, warnings, ok, info } = report.summary;
 
   if (jsonMode) {
-    console.log(JSON.stringify({
-      schemaVersion: '1',
-      summary: { errors, warnings, ok, info },
-      issues,
-    }, null, 2));
+    console.log(JSON.stringify(auditJsonContract(report), null, 2));
   } else {
     console.log(cyan(bold('forge audit')) + '\n');
     for (const issue of issues) {

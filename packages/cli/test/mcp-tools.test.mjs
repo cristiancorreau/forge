@@ -1,12 +1,13 @@
 // forge mcp (SPEC-047 / RFC-003) — the two pure dynamic tools + the golden-rule
-// allowlist + graceful degradation without the SDK. Imports compiled dist —
-// build first (npm run build:all). No MCP SDK is needed for these tests.
+// allowlist + minimal-server startup. Imports compiled dist —
+// build first (npm run build:all).
 //
 //     node --test test/mcp-tools.test.mjs
 
 import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdtempSync, mkdirSync, writeFileSync, copyFileSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -118,24 +119,59 @@ describe('golden rule — exact tool allowlist (SPEC-047)', () => {
   });
 });
 
-describe('forge mcp — graceful degradation without the SDK', () => {
-  test('exits 1 with an actionable message when the SDK is absent', () => {
+describe('forge mcp — minimal server startup (SDK ships with forge since SPEC-083 P4)', () => {
+  test('starts the stdio server: banner on stderr, stdout clean of non-protocol output', { timeout: 30_000 }, async () => {
     const dir = mkdtempSync(join(tmpdir(), 'forge-mcp-cli-'));
+    const child = spawn(process.execPath, [CLI, 'mcp'], {
+      cwd: dir, env: { ...process.env, FORGE_HOME: '' }, stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', d => { stdout += d.toString(); });
+    child.stderr.on('data', d => { stderr += d.toString(); });
     try {
-      const res = spawnSync(process.execPath, [CLI, 'mcp'], {
-        cwd: dir, encoding: 'utf-8', timeout: 8000, env: { ...process.env, FORGE_HOME: '' },
+      await new Promise((resolve, reject) => {
+        const deadline = setTimeout(
+          () => reject(new Error(`server did not start — stderr:\n${stderr}\nstdout:\n${stdout}`)), 8000);
+        child.stderr.on('data', () => {
+          if (stderr.includes('servidor MCP (stdio) activo')) { clearTimeout(deadline); resolve(); }
+        });
       });
-      const out = (res.stdout ?? '') + (res.stderr ?? '');
-      // In this environment @modelcontextprotocol/sdk is not installed.
-      assert.equal(res.status, 1, `expected exit 1 without the SDK; output:\n${out}`);
-      assert.match(out, /@modelcontextprotocol\/sdk/);
-    } finally { rmSync(dir, { recursive: true, force: true }); }
+      assert.equal(stdout, '', 'stdout must stay clean for the stdio protocol');
+    } finally {
+      // Windows: SIGTERM también termina, pero para no depender de eso y no
+      // esperar sin deadline, SIGKILL directo. En el resto, SIGTERM primero y
+      // SIGKILL de fallback si no salió en 5s. Siempre esperar el exit real
+      // para no dejar handles vivos (hang de CI en Windows).
+      if (child.exitCode === null && child.signalCode === null) {
+        const exited = once(child, 'exit').catch(() => {});
+        try {
+          child.kill(process.platform === 'win32' ? 'SIGKILL' : 'SIGTERM');
+        } catch { /* ya salió */ }
+        let timer;
+        const timedOut = await Promise.race([
+          exited.then(() => false),
+          new Promise((resolve) => { timer = setTimeout(() => resolve(true), 5000); }),
+        ]);
+        clearTimeout(timer);
+        if (timedOut) {
+          try { child.kill('SIGKILL'); } catch { /* ya salió */ }
+          await exited;
+        }
+      }
+      // Windows: EBUSY si el rmdir llega antes de que el hijo (cwd = dir)
+      // termine de morir — reintentos + best-effort.
+      try {
+        rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+      } catch { /* best-effort */ }
+    }
   });
 
-  test('forge mcp --help works without the SDK', () => {
+  test('forge mcp --help works and documents both servers', () => {
     const res = spawnSync(process.execPath, [CLI, 'mcp', '--help'], { encoding: 'utf-8', timeout: 8000 });
     assert.equal(res.status, 0);
     assert.match(res.stdout, /stdio/);
     assert.match(res.stdout, /guardrail_status/);
+    assert.match(res.stdout, /serve/);
   });
 });
