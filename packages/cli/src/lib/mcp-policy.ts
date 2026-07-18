@@ -17,7 +17,7 @@
  * spec-083-mcp-policy.test.mjs fija la paridad byte a byte entre ambas.
  */
 import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { createRequire } from 'module';
 import type { ProjectYaml } from './yaml.js';
 import { findProjectYaml, loadProjectYaml } from './yaml.js';
@@ -136,6 +136,20 @@ export function renderMcpPolicy(policy: McpPolicy): string {
 const BROAD_AUTO_APPROVE = new Set(['*', 'all']);
 
 /**
+ * Elimina caracteres de control (C0/C1, incluye ESC de secuencias ANSI) antes
+ * de interpolar valores externos en mensajes que se imprimen en terminal.
+ */
+function stripControlChars(value: string): string {
+  let out = '';
+  for (const ch of value) {
+    const code = ch.codePointAt(0) ?? 0;
+    const isControl = code < 0x20 || (code >= 0x7f && code <= 0x9f);
+    if (!isControl) out += ch;
+  }
+  return out;
+}
+
+/**
  * `forge audit --mcp` — escanea `.forge/mcp-policy.json`:
  *   (a) presencia: error si hay mcp.servers declarados y el archivo falta;
  *   (b) schema: el archivo valida contra mcp-policy.schema.json;
@@ -162,7 +176,10 @@ export function auditMcpPolicy(root: string = process.cwd()): AuditIssue[] {
 
   const expected = buildMcpPolicy(config);
   const declared = expected.servers.length;
-  const policyPath = join(root, MCP_POLICY_FILE);
+  // La política vive junto a project.yaml (generate.ts la escribe en la raíz
+  // del proyecto), NO en el cwd: si audit corre desde un subdirectorio debe
+  // escanear el archivo real que consume el orquestador, no una copia local.
+  const policyPath = join(dirname(yamlPath), MCP_POLICY_FILE);
 
   // (a) Presencia del archivo.
   if (!existsSync(policyPath)) {
@@ -218,13 +235,17 @@ export function auditMcpPolicy(root: string = process.cwd()): AuditIssue[] {
     issues.push({ level: 'ok', check, message: `Política al día con project.yaml — ${declared} server(s), default deny` });
   }
 
-  // (d) autoApprove demasiado amplio.
-  for (const server of found.servers ?? []) {
-    const broad = (server.autoApprove ?? []).filter(t => BROAD_AUTO_APPROVE.has(t.toLowerCase()));
+  // (d) autoApprove demasiado amplio. Se itera la política ESPERADA (derivada
+  // de project.yaml), no el contenido del archivo: el archivo es input no
+  // confiable (cualquier divergencia ya la reporta el chequeo de drift) y su
+  // `name` podría inyectar secuencias ANSI en la salida de terminal. Los
+  // nombres se sanitizan igualmente antes de interpolar.
+  for (const server of expected.servers) {
+    const broad = server.autoApprove.filter(t => BROAD_AUTO_APPROVE.has(t.toLowerCase()));
     if (broad.length > 0) {
       issues.push({
         level: 'warn', check,
-        message: `Server '${server.name}' con autoApprove demasiado amplio (${broad.join(', ')}) — contradice default-deny; listar tools explícitas`,
+        message: `Server '${stripControlChars(server.name)}' con autoApprove demasiado amplio (${broad.map(stripControlChars).join(', ')}) — contradice default-deny; listar tools explícitas`,
       });
     }
   }

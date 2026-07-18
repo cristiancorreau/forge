@@ -16,16 +16,22 @@
 //
 //     node --test test/spec-083-mcp-policy.test.mjs
 
-import { test, describe, before } from 'node:test';
+import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import {
-  existsSync, mkdtempSync, writeFileSync, readFileSync, rmSync, unlinkSync,
+  existsSync, mkdirSync, mkdtempSync, writeFileSync, readFileSync, rmSync, unlinkSync,
 } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import Ajv from 'ajv';
+// Import ESTÁTICO del módulo compilado, NO dinámico dentro de before(async):
+// bajo `node --test --test-force-exit` cualquier gap asíncrono a nivel raíz
+// (before async o top-level await) hacía que el runner recortara tests en
+// silencio (corrían 5-6 de 13 con exit 0 y el describe de audit --mcp nunca
+// ejecutaba). Si dist no existe, el archivo falla al cargar (fail visible).
+import { MCP_POLICY_SCHEMA, buildMcpPolicy } from '../dist/lib/mcp-policy.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, '..', 'dist');
@@ -35,23 +41,34 @@ const SCHEMA_PATH = join(
   __dirname, '..', '..', 'schemas', 'schemas', 'mcp-policy.schema.json',
 );
 
-let MCP_POLICY_SCHEMA, buildMcpPolicy;
-before(async () => {
-  assert.ok(existsSync(CLI), 'dist/cli.js no existe — correr npm run build:all primero');
-  assert.ok(existsSync(SCHEMA_PATH), 'packages/schemas/schemas/mcp-policy.schema.json no existe');
-  const mod = await import(pathToFileURL(join(DIST, 'lib', 'mcp-policy.js')).href);
-  MCP_POLICY_SCHEMA = mod.MCP_POLICY_SCHEMA;
-  buildMcpPolicy = mod.buildMcpPolicy;
-});
+assert.ok(existsSync(CLI), 'dist/cli.js no existe — correr npm run build:all primero');
+assert.ok(existsSync(SCHEMA_PATH), 'packages/schemas/schemas/mcp-policy.schema.json no existe');
 
-/** Corre la CLI compilada. Devuelve { status, stdout, stderr }. */
+/**
+ * Corre la CLI compilada. Devuelve Promise<{ status, stdout, stderr }>.
+ *
+ * ASYNC a propósito (spawn, no spawnSync): bajo `node --test
+ * --test-force-exit` (el comando de test del repo) los cuerpos de test que
+ * bloquean el event loop con spawnSync hacen que el runner recorte tests en
+ * silencio con exit 0 (corrían 5-6 de los 13 y el describe de audit --mcp
+ * nunca ejecutaba). Con spawn asíncrono los 13 corren deterministas. El hijo
+ * se espera hasta 'close' (streams cerrados): no quedan procesos vivos.
+ */
 function runForge(args, opts = {}) {
-  const res = spawnSync(process.execPath, [CLI, ...args], {
-    cwd: opts.cwd ?? process.cwd(),
-    encoding: 'utf-8',
-    env: { ...process.env, FORGE_HOME: '', FORGE_NO_BUN: '1', FORGE_NO_DASHBOARD: '1' },
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [CLI, ...args], {
+      cwd: opts.cwd ?? process.cwd(),
+      env: { ...process.env, FORGE_HOME: '', FORGE_NO_BUN: '1', FORGE_NO_DASHBOARD: '1' },
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf-8');
+    child.stderr.setEncoding('utf-8');
+    child.stdout.on('data', chunk => { stdout += chunk; });
+    child.stderr.on('data', chunk => { stderr += chunk; });
+    child.on('error', reject);
+    child.on('close', code => resolve({ status: code ?? 1, stdout, stderr }));
   });
-  return { status: res.status ?? 1, stdout: res.stdout ?? '', stderr: res.stderr ?? '' };
 }
 
 function makeTmpDir(t) {
@@ -118,9 +135,9 @@ describe('SPEC-083 P5 — schema mcp-policy', () => {
 });
 
 describe('SPEC-083 P5 — forge generate emite .forge/mcp-policy.json', () => {
-  test('emite la política derivada de project.yaml y valida contra el schema', (t) => {
+  test('emite la política derivada de project.yaml y valida contra el schema', async (t) => {
     const dir = makeProjectWithServers(t);
-    const res = runForge(['generate'], { cwd: dir });
+    const res = await runForge(['generate'], { cwd: dir });
     assert.equal(res.status, 0, res.stderr);
     assert.ok(existsSync(join(dir, POLICY_FILE)), `${POLICY_FILE} no fue emitido`);
 
@@ -142,18 +159,18 @@ describe('SPEC-083 P5 — forge generate emite .forge/mcp-policy.json', () => {
     assert.ok(validate(policy), JSON.stringify(validate.errors));
   });
 
-  test('determinista: dos corridas producen bytes idénticos (sin timestamps)', (t) => {
+  test('determinista: dos corridas producen bytes idénticos (sin timestamps)', async (t) => {
     const dir = makeProjectWithServers(t);
-    assert.equal(runForge(['generate'], { cwd: dir }).status, 0);
+    assert.equal((await runForge(['generate'], { cwd: dir })).status, 0);
     const first = readFileSync(join(dir, POLICY_FILE));
-    assert.equal(runForge(['generate', '--force'], { cwd: dir }).status, 0);
+    assert.equal((await runForge(['generate', '--force'], { cwd: dir })).status, 0);
     const second = readFileSync(join(dir, POLICY_FILE));
     assert.ok(first.equals(second), 'las dos corridas difieren byte a byte');
   });
 
-  test('sin mcp.servers declarados emite la política vacía con defaultPolicy deny', (t) => {
+  test('sin mcp.servers declarados emite la política vacía con defaultPolicy deny', async (t) => {
     const dir = makeProjectWithoutServers(t);
-    const res = runForge(['generate'], { cwd: dir });
+    const res = await runForge(['generate'], { cwd: dir });
     assert.equal(res.status, 0, res.stderr);
 
     const policy = readPolicy(dir);
@@ -175,11 +192,11 @@ describe('SPEC-083 P5 — forge generate emite .forge/mcp-policy.json', () => {
 });
 
 describe('SPEC-083 P5 — forge audit --mcp', () => {
-  test('caso limpio: política al día → exit 0 y contrato JSON schemaVersion "1"', (t) => {
+  test('caso limpio: política al día → exit 0 y contrato JSON schemaVersion "1"', async (t) => {
     const dir = makeProjectWithServers(t);
-    assert.equal(runForge(['generate'], { cwd: dir }).status, 0);
+    assert.equal((await runForge(['generate'], { cwd: dir })).status, 0);
 
-    const res = runForge(['audit', '--mcp', '--json'], { cwd: dir });
+    const res = await runForge(['audit', '--mcp', '--json'], { cwd: dir });
     assert.equal(res.status, 0, res.stdout + res.stderr);
     const out = JSON.parse(res.stdout);
     assert.equal(out.schemaVersion, '1');
@@ -193,9 +210,9 @@ describe('SPEC-083 P5 — forge audit --mcp', () => {
     assert.ok(out.issues.some(i => i.level === 'ok' && /al día con project\.yaml/.test(i.message)));
   });
 
-  test('drift: archivo editado a mano → error y exit 1', (t) => {
+  test('drift: archivo editado a mano → error y exit 1', async (t) => {
     const dir = makeProjectWithServers(t);
-    assert.equal(runForge(['generate'], { cwd: dir }).status, 0);
+    assert.equal((await runForge(['generate'], { cwd: dir })).status, 0);
 
     // Edición manual: se auto-aprueba una tool que project.yaml no declara.
     const policyPath = join(dir, POLICY_FILE);
@@ -203,15 +220,15 @@ describe('SPEC-083 P5 — forge audit --mcp', () => {
     policy.servers[0].autoApprove.push('drop_table');
     writeFileSync(policyPath, JSON.stringify(policy, null, 2) + '\n');
 
-    const res = runForge(['audit', '--mcp', '--json'], { cwd: dir });
+    const res = await runForge(['audit', '--mcp', '--json'], { cwd: dir });
     assert.equal(res.status, 1, 'drift debe fallar la auditoría');
     const out = JSON.parse(res.stdout);
     assert.ok(out.issues.some(i => i.level === 'error' && /drift/.test(i.message)));
   });
 
-  test('drift: project.yaml cambió después de generar → error y exit 1', (t) => {
+  test('drift: project.yaml cambió después de generar → error y exit 1', async (t) => {
     const dir = makeProjectWithServers(t);
-    assert.equal(runForge(['generate'], { cwd: dir }).status, 0);
+    assert.equal((await runForge(['generate'], { cwd: dir })).status, 0);
 
     // La política quedó desactualizada: se agrega un server a project.yaml.
     const yamlPath = join(dir, 'project.yaml');
@@ -220,17 +237,17 @@ describe('SPEC-083 P5 — forge audit --mcp', () => {
         - ping
 `);
 
-    const res = runForge(['audit', '--mcp', '--json'], { cwd: dir });
+    const res = await runForge(['audit', '--mcp', '--json'], { cwd: dir });
     assert.equal(res.status, 1);
     const out = JSON.parse(res.stdout);
     assert.ok(out.issues.some(i => i.level === 'error' && /drift/.test(i.message)));
   });
 
-  test('autoApprove "*" → warn (no falla) con mensaje de alcance', (t) => {
+  test('autoApprove "*" → warn (no falla) con mensaje de alcance', async (t) => {
     const dir = makeProjectWithServers(t, { broad: true });
-    assert.equal(runForge(['generate'], { cwd: dir }).status, 0);
+    assert.equal((await runForge(['generate'], { cwd: dir })).status, 0);
 
-    const res = runForge(['audit', '--mcp', '--json'], { cwd: dir });
+    const res = await runForge(['audit', '--mcp', '--json'], { cwd: dir });
     assert.equal(res.status, 0, 'warn no cambia el exit code');
     const out = JSON.parse(res.stdout);
     assert.equal(out.summary.errors, 0);
@@ -239,37 +256,82 @@ describe('SPEC-083 P5 — forge audit --mcp', () => {
     ));
   });
 
-  test('archivo ausente con mcp.servers declarados → error y exit 1', (t) => {
+  test('archivo ausente con mcp.servers declarados → error y exit 1', async (t) => {
     const dir = makeProjectWithServers(t);
-    assert.equal(runForge(['generate'], { cwd: dir }).status, 0);
+    assert.equal((await runForge(['generate'], { cwd: dir })).status, 0);
     unlinkSync(join(dir, POLICY_FILE));
 
-    const res = runForge(['audit', '--mcp', '--json'], { cwd: dir });
+    const res = await runForge(['audit', '--mcp', '--json'], { cwd: dir });
     assert.equal(res.status, 1);
     const out = JSON.parse(res.stdout);
     assert.ok(out.issues.some(i => i.level === 'error' && /ausente/.test(i.message)));
   });
 
-  test('archivo ausente sin mcp.servers → info y exit 0', (t) => {
+  test('archivo ausente sin mcp.servers → info y exit 0', async (t) => {
     const dir = makeProjectWithoutServers(t);
-    const res = runForge(['audit', '--mcp', '--json'], { cwd: dir });
+    const res = await runForge(['audit', '--mcp', '--json'], { cwd: dir });
     assert.equal(res.status, 0);
     const out = JSON.parse(res.stdout);
     assert.equal(out.summary.errors, 0);
     assert.ok(out.issues.some(i => i.level === 'info' && /ausente/.test(i.message)));
   });
 
-  test('archivo inválido contra el schema → error y exit 1', (t) => {
+  test('archivo inválido contra el schema → error y exit 1', async (t) => {
     const dir = makeProjectWithServers(t);
-    assert.equal(runForge(['generate'], { cwd: dir }).status, 0);
+    assert.equal((await runForge(['generate'], { cwd: dir })).status, 0);
 
     const policy = readPolicy(dir);
     policy.defaultPolicy = 'allow'; // viola el const "deny"
     writeFileSync(join(dir, POLICY_FILE), JSON.stringify(policy, null, 2) + '\n');
 
-    const res = runForge(['audit', '--mcp', '--json'], { cwd: dir });
+    const res = await runForge(['audit', '--mcp', '--json'], { cwd: dir });
     assert.equal(res.status, 1);
     const out = JSON.parse(res.stdout);
     assert.ok(out.issues.some(i => i.level === 'error' && /no valida contra/.test(i.message)));
+  });
+
+  test('desde un subdirectorio audita el archivo junto a project.yaml, no el cwd', async (t) => {
+    const dir = makeProjectWithServers(t);
+    assert.equal((await runForge(['generate'], { cwd: dir })).status, 0);
+    const sub = join(dir, 'src', 'nested');
+    mkdirSync(sub, { recursive: true });
+
+    // Caso limpio: encuentra la política real en la raíz del proyecto.
+    let res = await runForge(['audit', '--mcp', '--json'], { cwd: sub });
+    assert.equal(res.status, 0, res.stdout + res.stderr);
+    let out = JSON.parse(res.stdout);
+    assert.ok(out.issues.some(i => i.level === 'ok' && /al día con project\.yaml/.test(i.message)));
+
+    // Drift en el archivo REAL de la raíz se detecta igual desde el subdir,
+    // aunque haya una copia limpia plantada en <subdir>/.forge/.
+    mkdirSync(join(sub, '.forge'), { recursive: true });
+    writeFileSync(join(sub, POLICY_FILE), readFileSync(join(dir, POLICY_FILE)));
+    const policy = readPolicy(dir);
+    policy.servers[0].autoApprove.push('drop_table');
+    writeFileSync(join(dir, POLICY_FILE), JSON.stringify(policy, null, 2) + '\n');
+
+    res = await runForge(['audit', '--mcp', '--json'], { cwd: sub });
+    assert.equal(res.status, 1, 'drift en la raíz debe detectarse desde un subdirectorio');
+    out = JSON.parse(res.stdout);
+    assert.ok(out.issues.some(i => i.level === 'error' && /drift/.test(i.message)));
+  });
+
+  test('server name malicioso en el archivo no inyecta secuencias ANSI en la salida', async (t) => {
+    const dir = makeProjectWithServers(t);
+    assert.equal((await runForge(['generate'], { cwd: dir })).status, 0);
+
+    // Archivo adulterado que VALIDA contra el schema: server con secuencias
+    // ANSI (cursor arriba + borrar línea) en name y autoApprove "*".
+    const policy = readPolicy(dir);
+    policy.servers.push({ name: 'evil\u001b[1A\u001b[2K', autoApprove: ['*'] });
+    writeFileSync(join(dir, POLICY_FILE), JSON.stringify(policy, null, 2) + '\n');
+
+    const res = await runForge(['audit', '--mcp'], { cwd: dir });
+    assert.equal(res.status, 1, 'el drift debe fallar la auditoría');
+    // El chequeo de alcance itera project.yaml (no el archivo): el server
+    // inyectado no aparece y las secuencias de control no llegan a la salida.
+    assert.ok(!res.stdout.includes('\u001b[1A'), 'la salida contiene cursor-up inyectado');
+    assert.ok(!res.stdout.includes('\u001b[2K'), 'la salida contiene erase-line inyectado');
+    assert.ok(!res.stdout.includes('evil'), 'el server del archivo no debe interpolarse');
   });
 });
