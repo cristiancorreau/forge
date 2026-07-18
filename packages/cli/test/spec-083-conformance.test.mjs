@@ -3,15 +3,18 @@
 // Garantiza que todo lo que forge genera es 100% conforme a los estándares que
 // un orquestador externo (mingako) hereda sin integración:
 //   - AGENTS.md (agents.md / Linux Foundation): markdown plano, sin frontmatter,
-//     un solo H1, fences balanceados, tablas bien formadas. Forge emite un único
-//     AGENTS.md en la raíz (la precedencia anidada queda en manos del estándar:
-//     el más cercano al código gana; forge no genera AGENTS.md anidados).
+//     un solo H1, fences balanceados, tablas bien formadas. Forge emite el
+//     AGENTS.md de la raíz y, cuando agents.scope mapea agentes a subdirectorios
+//     (monorepo), un AGENTS.md anidado por scope que materializa la precedencia
+//     del estándar (el archivo más cercano al código gana).
 //   - Skills (agentskills.io): SKILL.md con frontmatter YAML, `name` kebab-case
 //     (<=64 chars) igual al directorio, `description` no vacía (<=1024 chars).
 //   - Agentes `.claude/agents/*.md`: frontmatter YAML parseable con name,
 //     description y tools; model presente; skills/mcpServers tipados cuando existen.
 //   - Config JSON generada (settings.json, hooks de Kiro, mcpServers del export):
 //     parseable y con el shape que esperan los runtimes.
+//   - Runtimes rules-based (los 15 del registro): documento de reglas markdown
+//     estándar en la ruta convencional de cada runtime.
 //
 // Corre la CLI compilada (dist/cli.js) en directorios temporales, como
 // spec-083-json-contract.test.mjs. Requiere build previo (npm run build:all).
@@ -22,7 +25,7 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import {
-  existsSync, mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync,
+  existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync,
 } from 'node:fs';
 import { join, dirname, basename } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -132,6 +135,20 @@ function assertStandardMarkdown(md, label) {
 
 // ── AGENTS.md (opencode, codex) ──────────────────────────────────────────────
 
+/** Rutas absolutas de todos los archivos llamados `name` bajo `dir`. */
+function findFilesNamed(dir, name) {
+  const found = [];
+  const walk = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const full = join(d, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (e.name === name) found.push(full);
+    }
+  };
+  walk(dir);
+  return found.sort();
+}
+
 describe('SPEC-083 P1 — AGENTS.md conforme al estándar', () => {
   for (const runtime of ['opencode', 'codex']) {
     test(`generate --runtime ${runtime}: AGENTS.md es markdown estándar`, (t) => {
@@ -145,24 +162,58 @@ describe('SPEC-083 P1 — AGENTS.md conforme al estándar', () => {
       assertStandardMarkdown(readFileSync(path, 'utf-8'), `${runtime}/AGENTS.md`);
     });
 
-    test(`generate --runtime ${runtime}: un único AGENTS.md en la raíz (sin anidados)`, (t) => {
-      // Forge no emite AGENTS.md anidados: la precedencia anidada del estándar
-      // (el archivo más cercano al código gana) queda intacta para el usuario.
+    test(`generate --runtime ${runtime}: sin agents.scope, un único AGENTS.md en la raíz`, (t) => {
+      // Sin scopes por agente no hay precedencia que materializar: un solo
+      // AGENTS.md en la raíz, sin archivos anidados espurios.
       const dir = makeTmpDir(t);
       writeFixtureYaml(dir);
       const res = runForge(['generate', '--runtime', runtime, '--force'], { cwd: dir });
       assert.equal(res.status, 0, res.stderr || res.stdout);
 
-      const found = [];
-      const walk = (d) => {
-        for (const e of readdirSync(d, { withFileTypes: true })) {
-          const full = join(d, e.name);
-          if (e.isDirectory()) walk(full);
-          else if (e.name === 'AGENTS.md') found.push(full);
-        }
-      };
-      walk(dir);
-      assert.deepEqual(found, [join(dir, 'AGENTS.md')], `${runtime}: AGENTS.md solo en la raíz`);
+      assert.deepEqual(
+        findFilesNamed(dir, 'AGENTS.md'), [join(dir, 'AGENTS.md')],
+        `${runtime}: AGENTS.md solo en la raíz`,
+      );
+    });
+
+    test(`generate --runtime ${runtime}: agents.scope emite AGENTS.md anidados (precedencia de monorepo)`, (t) => {
+      // SPEC-083 P1: "AGENTS.md conforme al estándar (incluida precedencia
+      // anidada en monorepos)". Cada directorio con agentes scoped recibe su
+      // AGENTS.md; el estándar resuelve por cercanía (el más próximo gana).
+      const dir = makeTmpDir(t);
+      writeFileSync(join(dir, 'project.yaml'), `project:
+  name: "demo-mono"
+  slug: "demo-mono"
+  mode: standard
+agents:
+  active:
+    - orchestrator
+    - backend-engineer
+    - frontend-engineer
+  scope:
+    orchestrator: /
+    backend-engineer: apps/api
+    frontend-engineer: apps/web/
+`);
+      const res = runForge(['generate', '--runtime', runtime, '--force'], { cwd: dir });
+      assert.equal(res.status, 0, res.stderr || res.stdout);
+
+      for (const [sub, agent] of [['apps/api', 'backend-engineer'], ['apps/web', 'frontend-engineer']]) {
+        const nested = join(dir, sub, 'AGENTS.md');
+        assert.ok(existsSync(nested), `${runtime}: falta ${sub}/AGENTS.md`);
+        const md = readFileSync(nested, 'utf-8');
+        assertStandardMarkdown(md, `${runtime}/${sub}/AGENTS.md`);
+        assert.ok(md.includes(agent), `${runtime}: ${sub}/AGENTS.md no menciona ${agent}`);
+        assert.ok(/precedencia|prioridad/i.test(md), `${runtime}: ${sub}/AGENTS.md no documenta la precedencia`);
+      }
+
+      // scope '/' (orchestrator) no genera anidado: raíz + los dos scopes, nada más.
+      assert.deepEqual(
+        findFilesNamed(dir, 'AGENTS.md'),
+        [join(dir, 'AGENTS.md'), join(dir, 'apps', 'api', 'AGENTS.md'), join(dir, 'apps', 'web', 'AGENTS.md')].sort(),
+        `${runtime}: AGENTS.md esperados en raíz y scopes`,
+      );
+      assertStandardMarkdown(readFileSync(join(dir, 'AGENTS.md'), 'utf-8'), `${runtime}/AGENTS.md (con scopes)`);
     });
   }
 
@@ -174,6 +225,34 @@ describe('SPEC-083 P1 — AGENTS.md conforme al estándar', () => {
       const md = readFileSync(join(dir, 'AGENTS.md'), 'utf-8');
       for (const agent of ['orchestrator', 'backend-engineer', 'frontend-engineer', 'compliance-reviewer']) {
         assert.ok(md.includes(agent), `${runtime}: AGENTS.md no menciona ${agent}`);
+      }
+    }
+  });
+});
+
+// ── Runtimes rules-based (los 15 del registro) ───────────────────────────────
+
+describe('SPEC-083 P1 — runtimes rules-based emiten markdown estándar', () => {
+  test('cada runtime rules-based genera su documento de reglas conforme en la ruta convencional', async (t) => {
+    // "Test de conformidad en CI por cada emisor": el registro es la fuente de
+    // verdad — todo runtime kind:'rules' queda cubierto automáticamente.
+    const { RUNTIMES } = await import(pathToFileURL(join(DIST, 'lib', 'generators', 'registry.js')).href);
+    const rules = RUNTIMES.filter(r => r.kind === 'rules');
+    assert.ok(rules.length >= 15, `esperaba >=15 runtimes rules-based en el registro, hay ${rules.length}`);
+
+    for (const rt of rules) {
+      const dir = makeTmpDir(t);
+      writeFixtureYaml(dir);
+      const res = runForge(['generate', '--runtime', rt.id, '--force'], { cwd: dir });
+      assert.equal(res.status, 0, `${rt.id}: ${res.stderr || res.stdout}`);
+
+      const relPath = rt.surfaces({ project: { name: 'x', mode: 'standard' } })[0].path;
+      const abs = join(dir, relPath);
+      assert.ok(existsSync(abs), `${rt.id}: falta ${relPath}`);
+      const md = readFileSync(abs, 'utf-8');
+      assertStandardMarkdown(md, `${rt.id}/${relPath}`);
+      for (const agent of ['orchestrator', 'backend-engineer', 'compliance-reviewer']) {
+        assert.ok(md.includes(agent), `${rt.id}: ${relPath} no menciona ${agent}`);
       }
     }
   });
@@ -334,6 +413,35 @@ describe('SPEC-083 P1 — skills conformes a agentskills.io', () => {
       listDirs(join(ASSETS, 'core', 'skills')), listDirs(repoSkills),
       'assets/core/skills desincronizado del repo — correr npm run build:assets',
     );
+  });
+
+  test('forge add: el SKILL.md instalado conserva el frontmatter YAML al inicio', (t) => {
+    // forge add también ESCRIBE un SKILL.md (.claude/skills/<name>/). Según
+    // agentskills.io el frontmatter debe abrir el archivo; el header de
+    // provenance de forge va después del frontmatter, nunca antes.
+    const dir = makeTmpDir(t);
+    writeFixtureYaml(dir); // marca la raíz del proyecto para forge add
+    const src = join(dir, 'src-skill');
+    mkdirSync(src, { recursive: true });
+    writeFileSync(join(src, 'SKILL.md'), `---
+name: demo-ext
+description: Skill externa de prueba para la suite de conformidad.
+---
+# Skill: demo-ext
+
+Contenido de prueba, sin hallazgos de seguridad.
+
+Triggers: /demo-ext
+`);
+    const res = runForge(['add', './src-skill', '--yes'], { cwd: dir });
+    assert.equal(res.status, 0, res.stderr || res.stdout);
+
+    const installed = readFileSync(join(dir, '.claude', 'skills', 'demo-ext', 'SKILL.md'), 'utf-8');
+    assert.match(installed, /^---\r?\n/, 'el frontmatter YAML debe abrir el archivo instalado');
+    const fm = parseFrontmatter(installed);
+    assert.equal(fm.name, 'demo-ext', 'name del frontmatter debe sobrevivir la instalación');
+    assert.equal(typeof fm.description, 'string', 'description del frontmatter debe sobrevivir la instalación');
+    assert.ok(installed.includes('Origen externo (forge add)'), 'la provenance sigue presente tras el frontmatter');
   });
 
   // El bundle estático (validado arriba) no es lo único que hereda un consumidor:

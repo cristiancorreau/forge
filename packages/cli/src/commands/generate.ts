@@ -2,7 +2,7 @@ import { existsSync, writeFileSync, mkdirSync, chmodSync } from 'fs';
 import { join, dirname } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { generateClaudeMd } from '../lib/generators/claude-code.js';
-import { generateAgentsMd, generateSharedPreCommitHook } from '../lib/generators/opencode.js';
+import { generateAgentsMd, generateSharedPreCommitHook, nestedAgentsSurfaces } from '../lib/generators/opencode.js';
 import { generateCodexAgentsMd } from '../lib/generators/codex.js';
 import {
   generateKiroProduct, generateKiroStructure,
@@ -162,6 +162,11 @@ export async function generate(args: string[]): Promise<number> {
         mkdirSync(join(root, '.opencode'), { recursive: true });
         const status = writeFile(join(root, 'AGENTS.md'), generateAgentsMd(config), dryRun, force);
         results.push({ runtime, file: 'AGENTS.md', status });
+        for (const s of nestedAgentsSurfaces(config)) {
+          const absPath = join(root, s.path);
+          if (!dryRun) mkdirSync(dirname(absPath), { recursive: true });
+          results.push({ runtime, file: s.path, status: writeFile(absPath, s.content, dryRun, force) });
+        }
         results.push(writeSharedGitHook(root, runtime, dryRun, force));
         spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md + .githooks/');
 
@@ -169,6 +174,11 @@ export async function generate(args: string[]): Promise<number> {
         // codex: AGENTS.md + shared git hook fallback
         const status = writeFile(join(root, 'AGENTS.md'), generateCodexAgentsMd(config), dryRun, force);
         results.push({ runtime, file: 'AGENTS.md', status });
+        for (const s of nestedAgentsSurfaces(config)) {
+          const absPath = join(root, s.path);
+          if (!dryRun) mkdirSync(dirname(absPath), { recursive: true });
+          results.push({ runtime, file: s.path, status: writeFile(absPath, s.content, dryRun, force) });
+        }
         results.push(writeSharedGitHook(root, runtime, dryRun, force));
         spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md + .githooks/');
 

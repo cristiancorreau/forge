@@ -123,6 +123,58 @@ manualmente, ejecutando un agente a la vez.
 `;
 }
 
+/**
+ * Nested AGENTS.md for monorepo scopes. The AGENTS.md standard resolves
+ * precedence by proximity: the file closest to the code wins. When
+ * `agents.scope` maps agents to subdirectories, forge emits one AGENTS.md
+ * per scoped directory so the nested precedence is materialized, not implied.
+ */
+export function generateNestedAgentsMd(config: ProjectYaml, dir: string, scoped: string[]): string {
+  const name = config.project?.name ?? 'Mi Proyecto';
+  const rows = scoped
+    .map(a => `| \`${a}\` | ${AGENT_DESCRIPTIONS[a] ?? 'Agente especializado'} |`)
+    .join('\n');
+
+  return `# AGENTS.md — ${name} (\`${dir}/\`)
+
+> Generado por forge v2. Actualizar project.yaml para cambiar la configuración.
+> Precedencia del estándar AGENTS.md: este archivo aplica a todo lo que está
+> bajo \`${dir}/\` y tiene prioridad sobre el \`AGENTS.md\` de la raíz.
+
+## Agentes con scope en \`${dir}/\`
+
+| Agente | Descripción |
+|--------|-------------|
+${rows}
+
+Usar estos agentes para el código bajo \`${dir}/\`. Las reglas generales del
+proyecto (workflow SDD y guardrails) están en el \`AGENTS.md\` de la raíz y
+siguen aplicando salvo indicación contraria en este archivo.
+`;
+}
+
+/**
+ * Surfaces of the nested AGENTS.md files derived from `agents.scope`
+ * (monorepo precedence). Scopes that resolve to the repo root ('/', '', '.')
+ * are covered by the root AGENTS.md and produce no nested file.
+ */
+export function nestedAgentsSurfaces(config: ProjectYaml): Array<{ path: string; content: string }> {
+  const scope = config.agents?.scope ?? {};
+  const byDir = new Map<string, string[]>();
+  for (const [agent, raw] of Object.entries(scope)) {
+    const dir = String(raw ?? '').trim()
+      .replace(/^\.\//, '')
+      .replace(/^\/+/, '')
+      .replace(/\/+$/, '');
+    if (!dir || dir === '.' || dir.split('/').includes('..')) continue;
+    byDir.set(dir, [...(byDir.get(dir) ?? []), agent]);
+  }
+  return [...byDir.keys()].sort().map(dir => ({
+    path: `${dir}/AGENTS.md`,
+    content: generateNestedAgentsMd(config, dir, byDir.get(dir)!),
+  }));
+}
+
 export function generateAgentsMd(config: ProjectYaml): string {
   const proj = config.project;
   const stack = config.stack ?? {};

@@ -78,7 +78,12 @@ function printReport(a: Assessment, label: string, sha: string): void {
   process.stdout.write('\n');
 }
 
-/** Builds the installed file: a provenance/scope header + demoted risky lines. */
+/**
+ * Builds the installed file: a provenance/scope header + demoted risky lines.
+ * If the skill ships YAML frontmatter (agentskills.io: it must open the file
+ * for the runtime to parse name/description), the header is inserted right
+ * after it — never before.
+ */
 function buildInstalled(a: Assessment, clean: string, label: string, sha: string): string {
   const caps = a.capabilities;
   const scope = caps
@@ -98,7 +103,11 @@ function buildInstalled(a: Assessment, clean: string, label: string, sha: string
     '',
   ].join('\n');
 
-  return header + '\n' + demoteRiskyLines(clean, a.findings) + '\n';
+  const demoted = demoteRiskyLines(clean, a.findings);
+  const fmMatch = demoted.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+  const fm = fmMatch ? fmMatch[0] : '';
+  const body = demoted.slice(fm.length).replace(/^\r?\n/, '');
+  return fm + header + '\n' + body + '\n';
 }
 
 interface ExternalRecord {

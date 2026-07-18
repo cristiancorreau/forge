@@ -15,7 +15,7 @@
  */
 import type { ProjectYaml } from '../yaml.js';
 import { generateClaudeMd } from './claude-code.js';
-import { generateAgentsMd } from './opencode.js';
+import { generateAgentsMd, nestedAgentsSurfaces } from './opencode.js';
 import { generateCodexAgentsMd } from './codex.js';
 import { generateKiroProduct } from './kiro.js';
 import { generateRulesDoc } from './rules-doc.js';
@@ -64,7 +64,10 @@ const opencodeDescriptor: RuntimeDescriptor = {
   label: 'OpenCode',
   kind: 'native',
   surfaces(config) {
-    return [{ path: 'AGENTS.md', content: generateAgentsMd(config) }];
+    return [
+      { path: 'AGENTS.md', content: generateAgentsMd(config) },
+      ...nestedAgentsSurfaces(config),
+    ];
   },
 };
 
@@ -73,7 +76,10 @@ const codexDescriptor: RuntimeDescriptor = {
   label: 'Codex CLI',
   kind: 'native',
   surfaces(config) {
-    return [{ path: 'AGENTS.md', content: generateCodexAgentsMd(config) }];
+    return [
+      { path: 'AGENTS.md', content: generateCodexAgentsMd(config) },
+      ...nestedAgentsSurfaces(config),
+    ];
   },
 };
 
