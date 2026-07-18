@@ -6,6 +6,8 @@
 
 > **Replanteo 2026-07-18 — split forge ↔ mingako**: el registro SQLite con watcher y API HTTP se diseñó para el daemon y pasa a mingako; el trabajo parcial de implementación quedó archivado en el branch archive/v4-fase1-for-mingako (no mergear en forge). Forge evaluará por separado un `forge projects` liviano sin daemon (JSON plano) solo si muestra uso real. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
+> **Nota de frontera (2026-07-18)**: las convenciones concretas de esta spec — puerto `41414`, prefijo `/api/v1`, `~/.forge/daemon.json` — describen el diseño del **daemon TS standalone** y no aplican a mingako, que se construyó en Go con sus propias convenciones. En sesiones orquestadas por un plane externo, el canal de integración con los artefactos de forge es el override `FORGE_DAEMON_URL`/`FORGE_DAEMON_TOKEN` que ya soporta el hook de SPEC-083 P6.
+
 Deriva de: SPEC-074 (spec maestro v4), componente "Registro multi-proyecto", Fase 1.
 Depende de: SPEC-075 (`packages/schemas`) y SPEC-076 (`packages/daemon-core`: puertos, modelo de datos, migraciones). Esta spec **no redefine** ningún contrato de sus dependencias: los extiende de forma aditiva o los compone.
 

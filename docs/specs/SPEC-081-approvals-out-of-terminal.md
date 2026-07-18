@@ -8,6 +8,8 @@
 
 > **Replanteo 2026-07-18 — split forge ↔ mingako**: forge es dueño del instalador (hook pre-approval-gate.cjs fail-open, hooks-registry.yaml, clave approvals.enabled en project.yaml, supervivencia a forge generate); el circuito de aprobación (endpoint del daemon, packages/mcp con ask_user, UI, resolución) pasa a mingako. El contrato ApprovalRequest/Resolution y el shape de ~/.forge/daemon.json son compartidos vía schemas. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
+> **Nota de frontera (2026-07-18)**: `~/.forge/daemon.json` aplica solo al escenario **standalone** (daemon TS local). En sesiones orquestadas por un plane externo el descubrimiento es por `FORGE_DAEMON_URL`/`FORGE_DAEMON_TOKEN` inyectados en el entorno de la sesión (el hook ya lo soporta, loopback-only) — imprescindible cuando el orquestador aísla el `HOME` por sesión. El contrato del circuito (`POST /api/v1/approvals`, Bearer, decision `deny` bloquea) no cambia entre escenarios.
+
 ## Contexto
 
 Hoy (v3.11) las decisiones de permiso viven atrapadas en la terminal donde
