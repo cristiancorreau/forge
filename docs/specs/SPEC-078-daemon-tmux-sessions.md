@@ -8,6 +8,8 @@
 
 > **Replanteo 2026-07-18 — split forge ↔ mingako**: el daemon forged, las sesiones tmux y los drivers de runtime son orquestación pura y pasan enteros a mingako; en forge no se implementa nada de esta spec (forge nunca ejecuta un runtime, solo genera su configuración). Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
+> **Nota de frontera (2026-07-18)**: las convenciones concretas de esta spec — `forged`, puerto `41414`, `~/.forge/daemon.json`, `~/.forge/forged.pid` — describen el diseño del **daemon TS standalone** y no aplican a mingako, que implementó su propio plane en Go con otras convenciones. `daemon.json` (schema `daemon-discovery` de SPEC-083 P6) queda como contrato exclusivo de ese escenario standalone.
+
 ## Contexto
 
 forge v3.11 es un generador stateless: `registry.ts` conoce 19 runtimes y sabe

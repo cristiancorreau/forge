@@ -6,6 +6,8 @@
 
 > **Replanteo 2026-07-18 — split forge ↔ mingako**: la API HTTP/WS, el terminal y la web UI React pasan enteros a mingako. Forge retiene los tokens visuales ember (ya usados por desktop/ y vscode-extension/), extraíbles como paquete CSS si mingako los necesita. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
+> **Nota de frontera (2026-07-18)**: el puerto `41414`, el prefijo `/api/v1` y el descubrimiento por `~/.forge/daemon.json` describen el diseño del **daemon TS standalone** y no aplican a mingako (Go, con su propia API y auth). El único fragmento de `/api/v1` que es contrato vivo de forge es el circuito de approvals que consume el hook de SPEC-083 P6 (`POST /api/v1/approvals` + `GET /api/v1/approvals/:id/wait`), implementable por cualquier plane externo en el puerto que anuncie vía `FORGE_DAEMON_URL`.
+
 ## Contexto
 
 Deriva de SPEC-074 (spec maestro v4), componente "API y UI web" y Fase 3.
