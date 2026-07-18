@@ -24,8 +24,10 @@ const api = await import('../dist/index.js');
 const {
   validateProject, validateHarness, validateTeam, validateTeamRole,
   validateTask, validateSession, validateApproval, validateEvent,
+  validateApprovalRequest, validateApprovalResolution, parseApprovalRequest,
   validateProjectExport, parseProjectExport,
   validateMcpPolicy, parseMcpPolicy,
+  validateDaemonDiscovery, parseDaemonDiscovery,
   parseTask, SchemaValidationError, SCHEMAS, TASK_STATUSES,
 } = api;
 
@@ -85,6 +87,19 @@ const FIXTURES = {
     valid: { id: ID.approval, sessionId: ID.session, kind: 'tool_use', payload: { tool: 'Bash' } },
     validate: validateApproval,
   },
+  approvalRequest: {
+    // Exactamente el body que POSTea pre-approval-gate.cjs (SPEC-081 §3/§4):
+    // sin id/createdAt (los asigna el daemon) ni card (la construye el daemon).
+    valid: {
+      kind: 'tool_use', tool: 'Bash', sessionId: 'claude-session-abc123',
+      payload: { command: 'ls -la' }, timeoutMs: 300000,
+    },
+    validate: validateApprovalRequest,
+  },
+  approvalResolution: {
+    valid: { decision: 'deny', reason: 'rm en produccion', resolvedBy: 'user', resolvedAt: NOW },
+    validate: validateApprovalResolution,
+  },
   event: {
     valid: { id: 1, ts: NOW, kind: 'task.created', entity: 'task', entityId: ID.task },
     validate: validateEvent,
@@ -123,16 +138,21 @@ const FIXTURES = {
     },
     validate: validateMcpPolicy,
   },
+  daemonDiscovery: {
+    valid: { pid: 4321, port: 45813, token: 'tok-local-0600', startedAt: NOW },
+    validate: validateDaemonDiscovery,
+  },
 };
 
 describe('convenciones de schema (Decisión 3 de SPEC-075)', () => {
-  test('hay exactamente 11 archivos *.schema.json con los nombres exactos', () => {
+  test('hay exactamente 14 archivos *.schema.json con los nombres exactos', () => {
     const files = readdirSync(SCHEMAS_DIR).filter((f) => f.endsWith('.schema.json')).sort();
     assert.deepEqual(files, [
-      'approval.schema.json', 'common.schema.json', 'event.schema.json',
-      'export.schema.json', 'harness.schema.json', 'mcp-policy.schema.json',
-      'project.schema.json', 'session.schema.json', 'task.schema.json',
-      'team-role.schema.json', 'team.schema.json',
+      'approval-request.schema.json', 'approval-resolution.schema.json',
+      'approval.schema.json', 'common.schema.json', 'daemon-discovery.schema.json',
+      'event.schema.json', 'export.schema.json', 'harness.schema.json',
+      'mcp-policy.schema.json', 'project.schema.json', 'session.schema.json',
+      'task.schema.json', 'team-role.schema.json', 'team.schema.json',
     ]);
   });
 
@@ -240,6 +260,109 @@ describe('validadores — casos negativos', () => {
   test('parseMcpPolicy(válido) retorna el objeto', () => {
     assert.deepEqual(parseMcpPolicy(FIXTURES.mcpPolicy.valid), FIXTURES.mcpPolicy.valid);
   });
+
+  test('validateApprovalRequest acepta el body exacto del hook (kind plan/question incluidos)', () => {
+    assert.equal(validateApprovalRequest({
+      ...FIXTURES.approvalRequest.valid, kind: 'plan', tool: 'ExitPlanMode',
+    }), true);
+    assert.equal(validateApprovalRequest({
+      ...FIXTURES.approvalRequest.valid, kind: 'question', tool: 'AskUserQuestion',
+    }), true);
+  });
+
+  test('validateApprovalRequest rechaza kind "plan_review" (enum del wire es tool_use|plan|question)', () => {
+    assert.equal(validateApprovalRequest({ ...FIXTURES.approvalRequest.valid, kind: 'plan_review' }), false);
+  });
+
+  test('validateApprovalRequest rechaza objeto sin timeoutMs', () => {
+    const { timeoutMs, ...rest } = FIXTURES.approvalRequest.valid;
+    assert.equal(validateApprovalRequest(rest), false);
+  });
+
+  test('validateApprovalRequest rechaza timeoutMs: 0 y propiedad extra', () => {
+    assert.equal(validateApprovalRequest({ ...FIXTURES.approvalRequest.valid, timeoutMs: 0 }), false);
+    assert.equal(validateApprovalRequest({ ...FIXTURES.approvalRequest.valid, url: 'http://x' }), false);
+  });
+
+  test('parseApprovalRequest(válido) retorna el objeto', () => {
+    assert.deepEqual(parseApprovalRequest(FIXTURES.approvalRequest.valid), FIXTURES.approvalRequest.valid);
+  });
+
+  test('validateApprovalResolution acepta decision answer con answer.text', () => {
+    assert.equal(validateApprovalResolution({
+      decision: 'answer', answer: { optionIds: ['a'], text: 'usa pnpm' },
+      resolvedBy: 'user', resolvedAt: NOW,
+    }), true);
+  });
+
+  test('validateApprovalResolution rechaza decision "approved" (enum es allow|deny|answer|timeout)', () => {
+    assert.equal(validateApprovalResolution({ ...FIXTURES.approvalResolution.valid, decision: 'approved' }), false);
+  });
+
+  // La entidad Approval (DB) está ALINEADA al wire (SPEC-081 §1): cuando
+  // mingako persiste un ApprovalRequest, la entidad tiene que validarlo tal
+  // cual — mismos enums, mismo sessionId opaco.
+  test('entidad Approval alineada al wire: kind comparte enum con ApprovalRequest.kind', () => {
+    assert.deepEqual(
+      SCHEMAS.approval.properties.kind.enum,
+      SCHEMAS.approvalRequest.properties.kind.enum,
+    );
+  });
+
+  test('entidad Approval alineada al wire: resolution comparte enum con ApprovalResolution.decision', () => {
+    assert.deepEqual(
+      SCHEMAS.approval.properties.resolution.enum,
+      SCHEMAS.approvalResolution.properties.decision.enum,
+    );
+  });
+
+  test('validateApproval acepta un ApprovalRequest persistido (kind plan, sessionId opaco, resolution del wire)', () => {
+    assert.equal(validateApproval({
+      id: ID.approval,
+      sessionId: 'claude-session-abc123',
+      kind: 'plan',
+      payload: { plan: '1. hacer X' },
+      resolution: 'allow',
+      resolvedAt: NOW,
+    }), true);
+    assert.equal(validateApproval({
+      id: ID.approval, sessionId: 'claude-session-abc123', kind: 'question',
+      payload: {}, resolution: 'answer', resolvedAt: NOW,
+    }), true);
+  });
+
+  test('validateApproval rechaza los enums viejos "plan_review" y "approved" (divergencia resuelta)', () => {
+    assert.equal(validateApproval({ ...FIXTURES.approval.valid, kind: 'plan_review' }), false);
+    assert.equal(validateApproval({ ...FIXTURES.approval.valid, resolution: 'approved' }), false);
+    assert.equal(validateApproval({ ...FIXTURES.approval.valid, sessionId: '' }), false);
+  });
+
+  test('validateApprovalResolution rechaza la respuesta {id} del POST (no es una resolución)', () => {
+    // Documenta SPEC-081 §3: POST /api/v1/approvals responde 201 {id}; la
+    // resolución solo llega por GET /api/v1/approvals/:id/wait.
+    assert.equal(validateApprovalResolution({ id: ID.approval }), false);
+  });
+
+  test('validateDaemonDiscovery rechaza port: 0', () => {
+    assert.equal(validateDaemonDiscovery({ ...FIXTURES.daemonDiscovery.valid, port: 0 }), false);
+  });
+
+  test('validateDaemonDiscovery rechaza objeto sin token', () => {
+    const { token, ...rest } = FIXTURES.daemonDiscovery.valid;
+    assert.equal(validateDaemonDiscovery(rest), false);
+  });
+
+  test('validateDaemonDiscovery rechaza startedAt: "ayer" (format date-time)', () => {
+    assert.equal(validateDaemonDiscovery({ ...FIXTURES.daemonDiscovery.valid, startedAt: 'ayer' }), false);
+  });
+
+  test('validateDaemonDiscovery rechaza propiedad extra url', () => {
+    assert.equal(validateDaemonDiscovery({ ...FIXTURES.daemonDiscovery.valid, url: 'http://127.0.0.1:1' }), false);
+  });
+
+  test('parseDaemonDiscovery(válido) retorna el objeto', () => {
+    assert.deepEqual(parseDaemonDiscovery(FIXTURES.daemonDiscovery.valid), FIXTURES.daemonDiscovery.valid);
+  });
 });
 
 describe('parse<X> y SchemaValidationError', () => {
@@ -266,10 +389,11 @@ describe('SCHEMAS crudos', () => {
     assert.deepEqual(JSON.parse(JSON.stringify(SCHEMAS.task)), file);
   });
 
-  test('SCHEMAS expone las 10 entidades', () => {
+  test('SCHEMAS expone las 13 entidades', () => {
     assert.deepEqual(Object.keys(SCHEMAS).sort(), [
-      'approval', 'event', 'export', 'harness', 'mcpPolicy', 'project',
-      'session', 'task', 'team', 'teamRole',
+      'approval', 'approvalRequest', 'approvalResolution', 'daemonDiscovery',
+      'event', 'export', 'harness', 'mcpPolicy',
+      'project', 'session', 'task', 'team', 'teamRole',
     ]);
   });
 });

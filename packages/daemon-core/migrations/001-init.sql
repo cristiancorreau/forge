@@ -69,9 +69,9 @@ CREATE TABLE sessions (
 CREATE TABLE approvals (
   id           TEXT PRIMARY KEY,
   session_id   TEXT NOT NULL REFERENCES sessions(id),
-  kind         TEXT NOT NULL CHECK (kind IN ('tool_use','plan_review','question')),
+  kind         TEXT NOT NULL CHECK (kind IN ('tool_use','plan','question')),
   payload_json TEXT NOT NULL,
-  resolution   TEXT CHECK (resolution IN ('approved','denied','timeout')),
+  resolution   TEXT CHECK (resolution IN ('allow','deny','answer','timeout')),
   resolved_at  TEXT
 );
 

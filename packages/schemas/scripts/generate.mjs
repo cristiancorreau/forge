@@ -34,9 +34,12 @@ const ENTITIES = [
   ['task', 'Task', 'task.schema.json'],
   ['session', 'Session', 'session.schema.json'],
   ['approval', 'Approval', 'approval.schema.json'],
+  ['approvalRequest', 'ApprovalRequest', 'approval-request.schema.json'],
+  ['approvalResolution', 'ApprovalResolution', 'approval-resolution.schema.json'],
   ['event', 'Event', 'event.schema.json'],
   ['export', 'ProjectExport', 'export.schema.json'],
   ['mcpPolicy', 'McpPolicy', 'mcp-policy.schema.json'],
+  ['daemonDiscovery', 'DaemonDiscovery', 'daemon-discovery.schema.json'],
 ];
 
 const readSchema = (file) => JSON.parse(readFileSync(join(SCHEMAS_DIR, file), 'utf-8'));
@@ -80,8 +83,9 @@ typesOut += `// Union types de enums, derivados de las entidades (única fuente:
 export type TaskStatus = Task['status'];
 export type SessionStatus = Session['status'];
 export type HarnessStatus = Harness['status'];
-export type ApprovalKind = Approval['kind'];
-export type ApprovalResolution = NonNullable<Approval['resolution']>;
+export type ApprovalKind = ApprovalRequest['kind'];
+export type ApprovalResolutionState = NonNullable<Approval['resolution']>;
+export type ApprovalDecision = ApprovalResolution['decision'];
 export type EventEntity = Event['entity'];
 `;
 writeFileSync(join(SRC, 'types.gen.ts'), typesOut);

@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "forge://schemas/v4/approval-request",
+  "title": "ApprovalRequest",
+  "description": "Wire contract of the approvals circuit (SPEC-081, forge half): the body that pre-approval-gate.cjs POSTs to /api/v1/approvals. The daemon (mingako) assigns id/createdAt and builds card, so those are optional on the wire. Forge owns this shape.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sessionId", "kind", "tool", "payload", "timeoutMs"],
+  "properties": {
+    "id": { "$ref": "forge://schemas/v4/common#/$defs/forgeId" },
+    "sessionId": {
+      "description": "Runtime session identifier (Claude Code session_id; opaque string, not a forgeId)",
+      "type": "string"
+    },
+    "kind": { "type": "string", "enum": ["tool_use", "plan", "question"] },
+    "tool": {
+      "description": "'Bash' | 'Edit' | 'Write' | 'ExitPlanMode' | 'AskUserQuestion' | 'ask_user' | ...",
+      "type": "string",
+      "minLength": 1
+    },
+    "card": {
+      "description": "What the UI renders (built by the daemon via buildApprovalCard, SPEC-081 §5)",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "body", "control", "offerAlwaysForTask"],
+      "properties": {
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "control": { "type": "string", "enum": ["confirm", "radio", "checkbox", "text"] },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "label"],
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" }
+            }
+          }
+        },
+        "offerAlwaysForTask": { "type": "boolean" }
+      }
+    },
+    "payload": {
+      "description": "Raw tool_input (audit trail); any JSON value"
+    },
+    "timeoutMs": { "type": "integer", "minimum": 1 },
+    "createdAt": { "$ref": "forge://schemas/v4/common#/$defs/timestamp" }
+  }
+}

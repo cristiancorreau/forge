@@ -25,7 +25,8 @@ export class FakeApprovals implements ApprovalPort {
     this.resolutions.push({ approvalId, resolution });
     const approval = this.requests.get(approvalId);
     if (approval) {
-      approval.resolution = resolution === 'deny' ? 'denied' : 'approved';
+      // Enums de la entidad alineados al wire (SPEC-081): allow|deny|answer|timeout.
+      approval.resolution = resolution === 'deny' ? 'deny' : 'allow';
     }
   }
 

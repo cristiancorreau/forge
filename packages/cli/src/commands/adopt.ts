@@ -15,6 +15,7 @@
  */
 import { existsSync, mkdirSync, writeFileSync, statSync, chmodSync } from 'fs';
 import { join, resolve, dirname } from 'path';
+import { loadProjectYaml } from '../lib/yaml.js';
 import { resolveForgeRoot } from '../lib/paths.js';
 import { generateClaudeMd } from '../lib/generators/claude-code.js';
 import { generateAgentsMd } from '../lib/generators/opencode.js';
@@ -247,6 +248,15 @@ export async function adopt(args: string[]): Promise<number> {
   // 3. Install the forge config, reusing init's exported installers.
   const forgeRoot = resolveForgeRoot();
 
+  // approvals.enabled se lee del project.yaml EFECTIVO en disco (puede ser uno
+  // preexistente preservado que ya declaraba approvals): el flag decide tanto
+  // la copia del hook (installHooks) como su registro (writeSettingsJson) —
+  // registrar sin instalar dejaría settings.json apuntando a un .cjs inexistente.
+  let approvalsEnabled = false;
+  try {
+    approvalsEnabled = loadProjectYaml(projectYamlPath).approvals?.enabled === true;
+  } catch { /* config derivado del análisis: sin approvals */ }
+
   if (opts.runtime === 'claude-code') {
     const claudeDir = join(opts.target, '.claude');
     mkdirSync(claudeDir, { recursive: true });
@@ -256,10 +266,10 @@ export async function adopt(args: string[]): Promise<number> {
     const specialized = config.agents?.specialized ?? [];
 
     installCoreAgents(forgeRoot, join(claudeDir, 'agents'), activeAgents, profiles, opts.force, specialized);
-    installHooks(forgeRoot, join(claudeDir, 'hooks'), opts.mode, opts.force);
+    installHooks(forgeRoot, join(claudeDir, 'hooks'), opts.mode, opts.force, approvalsEnabled);
     installCommands(forgeRoot, join(claudeDir, 'commands'), opts.force, profiles);
     write(join(opts.target, 'CLAUDE.md'), generateClaudeMd(config), opts.force);
-    writeSettingsJson(join(claudeDir, 'settings.json'), config.project.language ?? 'typescript', opts.mode, opts.force);
+    writeSettingsJson(join(claudeDir, 'settings.json'), config.project.language ?? 'typescript', opts.mode, opts.force, approvalsEnabled);
     installSpecScaffold(forgeRoot, opts.target, claudeDir, config);
     // SPEC-062: emit .forge/state/ before the manifest so it is tracked.
     emitStateArtifact(opts.target, config);

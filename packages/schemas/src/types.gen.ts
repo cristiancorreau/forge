@@ -87,15 +87,79 @@ export interface Session {
 }
 
 /**
- * A permission request raised by an agent session, resolved from the UI.
+ * A permission request raised by an agent session, resolved from the UI. Enums aligned with the SPEC-081 wire contract (approval-request/approval-resolution): kind mirrors ApprovalRequest.kind and resolution mirrors ApprovalResolution.decision, so a persisted ApprovalRequest validates as-is.
  */
 export interface Approval {
   id: string;
+  /**
+   * Runtime session identifier (Claude Code session_id; opaque string, not a forgeId — same shape as ApprovalRequest.sessionId)
+   */
   sessionId: string;
-  kind: "tool_use" | "plan_review" | "question";
+  kind: "tool_use" | "plan" | "question";
   payload: {};
-  resolution?: "approved" | "denied" | "timeout";
+  resolution?: "allow" | "deny" | "answer" | "timeout";
   resolvedAt?: string;
+}
+
+/**
+ * Wire contract of the approvals circuit (SPEC-081, forge half): the body that pre-approval-gate.cjs POSTs to /api/v1/approvals. The daemon (mingako) assigns id/createdAt and builds card, so those are optional on the wire. Forge owns this shape.
+ */
+export interface ApprovalRequest {
+  id?: string;
+  /**
+   * Runtime session identifier (Claude Code session_id; opaque string, not a forgeId)
+   */
+  sessionId: string;
+  kind: "tool_use" | "plan" | "question";
+  /**
+   * 'Bash' | 'Edit' | 'Write' | 'ExitPlanMode' | 'AskUserQuestion' | 'ask_user' | ...
+   */
+  tool: string;
+  /**
+   * What the UI renders (built by the daemon via buildApprovalCard, SPEC-081 §5)
+   */
+  card?: {
+    title: string;
+    body: string;
+    control: "confirm" | "radio" | "checkbox" | "text";
+    options?: {
+      id: string;
+      label: string;
+    }[];
+    offerAlwaysForTask: boolean;
+  };
+  /**
+   * Raw tool_input (audit trail); any JSON value
+   */
+  payload: {
+    [k: string]: unknown;
+  };
+  timeoutMs: number;
+  createdAt?: string;
+}
+
+/**
+ * Wire contract of the approvals circuit (SPEC-081, forge half): the resolution returned by GET /api/v1/approvals/:id/wait and accepted by POST /api/v1/approvals/:id/resolve. decision 'timeout' always maps to DENY on the runtime side (kept distinct from 'deny' for audit). Forge owns this shape.
+ */
+export interface ApprovalResolution {
+  decision: "allow" | "deny" | "answer" | "timeout";
+  /**
+   * Human answer for kind question/plan
+   */
+  answer?: {
+    optionIds?: string[];
+    text?: string;
+  };
+  /**
+   * Optional human-readable motive; the hook forwards it as permissionDecisionReason
+   */
+  reason?: string;
+  /**
+   * "Always allow for this task" (inserts an approval rule, SPEC-081 §6)
+   */
+  alwaysForTask?: boolean;
+  resolvedBy: "user" | "rule" | "timeout";
+  resolvedAt: string;
 }
 
 /**
@@ -165,10 +229,21 @@ export interface McpPolicy {
   notes?: string;
 }
 
+/**
+ * Discovery file ~/.forge/daemon.json written by the local orchestrator daemon (mingako) with mode 0600 and read by the pre-approval-gate.cjs hook to reach the approvals endpoint at http://127.0.0.1:<port>. Forge owns this shape; mingako owns the runtime semantics (SPEC-081 / SPEC-083 P6).
+ */
+export interface DaemonDiscovery {
+  pid: number;
+  port: number;
+  token: string;
+  startedAt: string;
+}
+
 // Union types de enums, derivados de las entidades (única fuente: schemas/)
 export type TaskStatus = Task['status'];
 export type SessionStatus = Session['status'];
 export type HarnessStatus = Harness['status'];
-export type ApprovalKind = Approval['kind'];
-export type ApprovalResolution = NonNullable<Approval['resolution']>;
+export type ApprovalKind = ApprovalRequest['kind'];
+export type ApprovalResolutionState = NonNullable<Approval['resolution']>;
+export type ApprovalDecision = ApprovalResolution['decision'];
 export type EventEntity = Event['entity'];

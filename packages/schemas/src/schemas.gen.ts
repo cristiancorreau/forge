@@ -315,7 +315,7 @@ export const SCHEMAS = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "forge://schemas/v4/approval",
     "title": "Approval",
-    "description": "A permission request raised by an agent session, resolved from the UI.",
+    "description": "A permission request raised by an agent session, resolved from the UI. Enums aligned with the SPEC-081 wire contract (approval-request/approval-resolution): kind mirrors ApprovalRequest.kind and resolution mirrors ApprovalResolution.decision, so a persisted ApprovalRequest validates as-is.",
     "type": "object",
     "additionalProperties": false,
     "required": [
@@ -329,13 +329,15 @@ export const SCHEMAS = {
         "$ref": "forge://schemas/v4/common#/$defs/forgeId"
       },
       "sessionId": {
-        "$ref": "forge://schemas/v4/common#/$defs/forgeId"
+        "description": "Runtime session identifier (Claude Code session_id; opaque string, not a forgeId — same shape as ApprovalRequest.sessionId)",
+        "type": "string",
+        "minLength": 1
       },
       "kind": {
         "type": "string",
         "enum": [
           "tool_use",
-          "plan_review",
+          "plan",
           "question"
         ]
       },
@@ -345,8 +347,165 @@ export const SCHEMAS = {
       "resolution": {
         "type": "string",
         "enum": [
-          "approved",
-          "denied",
+          "allow",
+          "deny",
+          "answer",
+          "timeout"
+        ]
+      },
+      "resolvedAt": {
+        "$ref": "forge://schemas/v4/common#/$defs/timestamp"
+      }
+    }
+  },
+  approvalRequest: {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "forge://schemas/v4/approval-request",
+    "title": "ApprovalRequest",
+    "description": "Wire contract of the approvals circuit (SPEC-081, forge half): the body that pre-approval-gate.cjs POSTs to /api/v1/approvals. The daemon (mingako) assigns id/createdAt and builds card, so those are optional on the wire. Forge owns this shape.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "sessionId",
+      "kind",
+      "tool",
+      "payload",
+      "timeoutMs"
+    ],
+    "properties": {
+      "id": {
+        "$ref": "forge://schemas/v4/common#/$defs/forgeId"
+      },
+      "sessionId": {
+        "description": "Runtime session identifier (Claude Code session_id; opaque string, not a forgeId)",
+        "type": "string"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "tool_use",
+          "plan",
+          "question"
+        ]
+      },
+      "tool": {
+        "description": "'Bash' | 'Edit' | 'Write' | 'ExitPlanMode' | 'AskUserQuestion' | 'ask_user' | ...",
+        "type": "string",
+        "minLength": 1
+      },
+      "card": {
+        "description": "What the UI renders (built by the daemon via buildApprovalCard, SPEC-081 §5)",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "body",
+          "control",
+          "offerAlwaysForTask"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "control": {
+            "type": "string",
+            "enum": [
+              "confirm",
+              "radio",
+              "checkbox",
+              "text"
+            ]
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "label"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "offerAlwaysForTask": {
+            "type": "boolean"
+          }
+        }
+      },
+      "payload": {
+        "description": "Raw tool_input (audit trail); any JSON value"
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "createdAt": {
+        "$ref": "forge://schemas/v4/common#/$defs/timestamp"
+      }
+    }
+  },
+  approvalResolution: {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "forge://schemas/v4/approval-resolution",
+    "title": "ApprovalResolution",
+    "description": "Wire contract of the approvals circuit (SPEC-081, forge half): the resolution returned by GET /api/v1/approvals/:id/wait and accepted by POST /api/v1/approvals/:id/resolve. decision 'timeout' always maps to DENY on the runtime side (kept distinct from 'deny' for audit). Forge owns this shape.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "decision",
+      "resolvedBy",
+      "resolvedAt"
+    ],
+    "properties": {
+      "decision": {
+        "type": "string",
+        "enum": [
+          "allow",
+          "deny",
+          "answer",
+          "timeout"
+        ]
+      },
+      "answer": {
+        "description": "Human answer for kind question/plan",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "optionIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "reason": {
+        "description": "Optional human-readable motive; the hook forwards it as permissionDecisionReason",
+        "type": "string"
+      },
+      "alwaysForTask": {
+        "description": "\"Always allow for this task\" (inserts an approval rule, SPEC-081 §6)",
+        "type": "boolean"
+      },
+      "resolvedBy": {
+        "type": "string",
+        "enum": [
+          "user",
+          "rule",
           "timeout"
         ]
       },
@@ -648,6 +807,38 @@ export const SCHEMAS = {
       },
       "notes": {
         "type": "string"
+      }
+    }
+  },
+  daemonDiscovery: {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "forge://schemas/v4/daemon-discovery",
+    "title": "DaemonDiscovery",
+    "description": "Discovery file ~/.forge/daemon.json written by the local orchestrator daemon (mingako) with mode 0600 and read by the pre-approval-gate.cjs hook to reach the approvals endpoint at http://127.0.0.1:<port>. Forge owns this shape; mingako owns the runtime semantics (SPEC-081 / SPEC-083 P6).",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "pid",
+      "port",
+      "token",
+      "startedAt"
+    ],
+    "properties": {
+      "pid": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "port": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 65535
+      },
+      "token": {
+        "type": "string",
+        "minLength": 1
+      },
+      "startedAt": {
+        "$ref": "forge://schemas/v4/common#/$defs/timestamp"
       }
     }
   },

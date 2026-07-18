@@ -1,6 +1,6 @@
 # Forge v2 — Hooks registry
 # Define qué hooks se instalan según mode y stack del proyecto.
-# Solo se referencian hooks JavaScript puro (.js) o shell scripts (.sh):
+# Solo se referencian hooks JavaScript puro (.js/.cjs) o shell scripts (.sh):
 # sin dependencias de Python. Cada entrada debe tener un archivo real en core/hooks/.
 
 universal:
@@ -33,6 +33,22 @@ standard:
     event: PreToolUse
     matcher: "Bash"
     description: "Bloquea comandos destructivos en producción"
+
+approvals:
+  # Solo si project.yaml declara approvals.enabled: true (SPEC-083 P6 / SPEC-081).
+  # forge instala el hook y lo registra; el circuito de aprobación en runtime
+  # (daemon, UI, resolución) es de mingako. FAIL-OPEN: sin daemon no bloquea nada.
+  # Extensión .cjs a propósito: el hook es CommonJS y en proyectos destino con
+  # "type": "module" un .js crashearía antes de correr el circuito.
+  - hook: pre-approval-gate.cjs
+    event: PreToolUse
+    matcher: "Bash|Edit|Write|ExitPlanMode|AskUserQuestion"
+    description: >-
+      Approval gate fail-open: reenvía la tool call al circuito externo de
+      aprobaciones (mingako) descubierto vía ~/.forge/daemon.json (POST
+      /api/v1/approvals + long-poll /wait, SPEC-081) y deniega solo ante una
+      resolución explícita del daemon (deny, timeout o answer). Sin daemon,
+      corrupto o colgado: permite.
 
 # NOTA (issue #23): los hooks de enterprise y por stack (audit-log-append,
 # check-destructive-sql, prisma-safety, composer-check) aún no están

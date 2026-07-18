@@ -91,6 +91,12 @@ export interface ProjectYaml {
   sprint?: ProjectSprint;
   paths?: ProjectPaths;
   runtimes?: { active?: string[] };
+  /**
+   * Aprobaciones fuera de la terminal (SPEC-083 P6 / SPEC-081). Forge es dueño
+   * del instalador (hook pre-approval-gate.cjs, fail-open); mingako del
+   * circuito en runtime. Default: deshabilitado.
+   */
+  approvals?: { enabled?: boolean; timeout_seconds?: number };
   mcp?: { servers?: Array<{ name: string; auto_approve?: string[] }> };
   scripts?: Record<string, string>;
   /** Active skills (slash-command ids without the leading slash). */
