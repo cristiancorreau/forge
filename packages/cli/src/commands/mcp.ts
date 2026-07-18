@@ -45,28 +45,26 @@ export function findProjectRoot(start: string): string {
 }
 
 /**
- * Lazily resolves @modelcontextprotocol/sdk, trying the consuming project's
- * node_modules first, then forge's own. Returns null if not resolvable (the
- * caller prints an actionable message). Typed `any` on purpose: the SDK is not a
- * forge dependency, so tsc must not try to resolve it at build time.
+ * Lazily resolves @modelcontextprotocol/sdk from forge's OWN installation
+ * (hard dependency, pinned in the lockfile). It must never resolve from the
+ * consuming project's node_modules: running `forge mcp` inside an arbitrary
+ * repo would otherwise load and execute whatever SDK copy (any version, any
+ * code) that repo ships, bypassing the pin. Lazy (runtime require) so the SDK
+ * does not weigh on the CLI's cold start. Returns null only if forge's own
+ * installation is broken (the caller prints an actionable message).
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function loadSdk(): any | null {
-  const makers = [
-    () => createRequire(join(process.cwd(), 'index.js')),
-    () => createRequire(fileURLToPath(import.meta.url)),
-  ];
-  for (const make of makers) {
-    try {
-      const req = make();
-      return {
-        Server: req('@modelcontextprotocol/sdk/server/index.js').Server,
-        StdioServerTransport: req('@modelcontextprotocol/sdk/server/stdio.js').StdioServerTransport,
-        types: req('@modelcontextprotocol/sdk/types.js'),
-      };
-    } catch { /* try the next resolver */ }
+  try {
+    const req = createRequire(fileURLToPath(import.meta.url));
+    return {
+      Server: req('@modelcontextprotocol/sdk/server/index.js').Server,
+      StdioServerTransport: req('@modelcontextprotocol/sdk/server/stdio.js').StdioServerTransport,
+      types: req('@modelcontextprotocol/sdk/types.js'),
+    };
+  } catch {
+    return null;
   }
-  return null;
 }
 
 /** The advertised tools. MUST stay a subset of MCP_TOOLS (golden-rule allowlist). */
@@ -108,9 +106,9 @@ export async function mcp(args: string[]): Promise<number> {
   const sdk = loadSdk();
   if (!sdk) {
     process.stderr.write(
-      'forge mcp: falta @modelcontextprotocol/sdk.\n' +
-      '  Es una dependencia opt-in (no se instala con forge para no pesar en el cold-start).\n' +
-      '  Instalala en tu proyecto:  npm i @modelcontextprotocol/sdk\n',
+      'forge mcp: no se pudo cargar @modelcontextprotocol/sdk desde la instalación de forge.\n' +
+      '  La instalación parece incompleta o corrupta. Reinstala forge:\n' +
+      '    npm i -g @cristiancorreau/forge\n',
     );
     return 1;
   }

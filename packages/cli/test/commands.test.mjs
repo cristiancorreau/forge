@@ -916,3 +916,58 @@ describe('forge generate — runtime hooks (issue #32)', () => {
     assert.ok(!existsSync(join(dir, '.kiro', 'hooks', 'pre-bash-check.json')), 'dry-run must not write kiro hooks');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Manual-file guard (SPEC-083 P4) — `generate --force` must never overwrite
+// hand-written config files (existing files WITHOUT the forge marker). This is
+// the guarantee the forge_generate MCP tool advertises to orchestrators.
+// ---------------------------------------------------------------------------
+
+describe('forge generate — manual-file guard (SPEC-083 P4)', () => {
+  const GUARD_YAML = `project:
+  name: "Manual Guard"
+  mode: "standard"
+  language: "typescript"
+runtimes:
+  active:
+    - claude-code
+    - codex
+`;
+
+  test('--force never overwrites a hand-written CLAUDE.md (no forge marker)', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, GUARD_YAML);
+    const manual = '# CLAUDE.md escrito a mano\n\nNo tocar.\n';
+    writeFileSync(join(dir, 'CLAUDE.md'), manual, 'utf-8');
+
+    const { status, all } = runForge(['generate', '--force'], { cwd: dir });
+    assert.equal(status, 0, `generate --force should exit 0; output:\n${all}`);
+    assert.equal(readFileSync(join(dir, 'CLAUDE.md'), 'utf-8'), manual, 'manual CLAUDE.md must be preserved');
+    assert.match(all, /archivo manual/, 'output must flag the manual file skip');
+  });
+
+  test('--force never overwrites a hand-written AGENTS.md (no forge marker)', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, GUARD_YAML);
+    const manual = '# AGENTS.md escrito a mano\n';
+    writeFileSync(join(dir, 'AGENTS.md'), manual, 'utf-8');
+
+    const { status } = runForge(['generate', '--runtime', 'codex', '--force'], { cwd: dir });
+    assert.equal(status, 0);
+    assert.equal(readFileSync(join(dir, 'AGENTS.md'), 'utf-8'), manual, 'manual AGENTS.md must be preserved');
+  });
+
+  test('--force does regenerate files that carry the forge marker', (t) => {
+    const dir = makeTmpDir(t);
+    writeProjectYaml(dir, GUARD_YAML);
+
+    let r = runForge(['generate', '--runtime', 'claude-code', '--force'], { cwd: dir });
+    assert.equal(r.status, 0);
+    const generated = readFileSync(join(dir, 'CLAUDE.md'), 'utf-8');
+    assert.match(generated, /Generado por forge/, 'generated CLAUDE.md must carry the marker');
+
+    r = runForge(['generate', '--runtime', 'claude-code', '--force'], { cwd: dir });
+    assert.equal(r.status, 0, 'regenerating forge-generated files with --force must work');
+    assert.doesNotMatch(r.all, /archivo manual/, 'marker-bearing files are not manual');
+  });
+});

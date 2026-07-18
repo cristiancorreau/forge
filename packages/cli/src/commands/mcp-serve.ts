@@ -200,13 +200,14 @@ const TOOL_DEFS = [
     description:
       'Regenera la configuración de runtimes desde project.yaml. Respeta los guards ' +
       'de forge: sin `force` no sobrescribe archivos existentes, y los archivos ' +
-      'manuales (sin marcador forge) nunca se sobrescriben.',
+      'manuales de CLAUDE.md, AGENTS.md, rules y git hooks (sin marcador forge) ' +
+      'nunca se sobrescriben, ni siquiera con `force`.',
     inputSchema: {
       type: 'object',
       properties: {
         runtime: { type: 'string', description: "Runtime destino (p. ej. claude-code) o 'all'." },
         dryRun: { type: 'boolean', description: 'Solo muestra qué se generaría, sin escribir.' },
-        force: { type: 'boolean', description: 'Sobrescribe archivos generados por forge (los manuales nunca).' },
+        force: { type: 'boolean', description: 'Sobrescribe archivos generados por forge (los manuales, sin marcador forge, se conservan).' },
       },
     },
   },
