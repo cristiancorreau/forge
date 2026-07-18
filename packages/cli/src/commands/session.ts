@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { resolveForgeRoot } from '../lib/paths.js';
+import { stripFrontmatter } from '../lib/unit-registry.js';
 import { bold, dim, cyan } from '../ui/colors.js';
 import { box } from '../ui/box.js';
 
@@ -36,7 +37,7 @@ Options:
 `;
 }
 
-/** Read the central SKILL.md for the given session phase, if bundled. */
+/** Read the central SKILL.md body (sin frontmatter) for the given phase. */
 function readSkillBody(phase: Phase): string | null {
   let root: string;
   try {
@@ -46,7 +47,7 @@ function readSkillBody(phase: Phase): string | null {
   }
   const path = join(root, 'core', 'skills', META[phase].id, 'SKILL.md');
   if (!existsSync(path)) return null;
-  return readFileSync(path, 'utf-8');
+  return stripFrontmatter(readFileSync(path, 'utf-8'));
 }
 
 async function run(phase: Phase, args: string[]): Promise<number> {

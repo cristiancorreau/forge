@@ -1,3 +1,8 @@
+---
+name: laravel-security
+description: "Seguridad de aplicaciones Laravel: auth, autorización, validación, mass assignment, CSRF, rate limiting, inyección SQL, XSS, secrets, uploads y deploy seguro. Usar al crear o revisar endpoints, modelos, formularios o configuración que toque datos de usuario, autenticación o producción."
+---
+
 # Skill: laravel-security
 
 Seguridad de aplicaciones Laravel: auth, autorización, validación, mass assignment,

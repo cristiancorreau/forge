@@ -1,3 +1,8 @@
+---
+name: phase-kickoff
+description: "Protocolo para iniciar una nueva fase de desarrollo en un proyecto forge. Usar al comienzo de cada sprint o fase nueva."
+---
+
 # Skill: phase-kickoff
 
 Protocolo para iniciar una nueva fase de desarrollo en un proyecto forge.

@@ -1,3 +1,8 @@
+---
+name: laravel-mcp
+description: "Laravel para agentes y MCP: instala Laravel Boost (MCP de desarrollo), construye servidores MCP con laravel/mcp, usa el AI SDK first-party (laravel/ai) y expone la app a clientes de IA de forma segura. Usar cuando el proyecto es Laravel y hay que integrar IA, MCP o introspección por agentes."
+---
+
 # Skill: laravel-mcp
 
 Laravel para agentes y MCP: instala Laravel Boost (MCP de desarrollo), construye tu propio

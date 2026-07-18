@@ -1,3 +1,8 @@
+---
+name: session-start
+description: "Inicializa una sesión de trabajo: detecta el estado del repo, identifica el escenario y enruta según corresponda. Es el primer paso del flujo SDD, antes de cualquier edición de código."
+---
+
 # Skill: session-start
 
 Inicializa una sesión de trabajo: detecta el estado del repo, identifica el

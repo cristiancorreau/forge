@@ -1,8 +1,8 @@
-import { existsSync, writeFileSync, mkdirSync, chmodSync } from 'fs';
+import { existsSync, writeFileSync, readFileSync, mkdirSync, chmodSync } from 'fs';
 import { join, dirname } from 'path';
 import { findProjectYaml, loadProjectYaml } from '../lib/yaml.js';
 import { generateClaudeMd } from '../lib/generators/claude-code.js';
-import { generateAgentsMd, generateSharedPreCommitHook } from '../lib/generators/opencode.js';
+import { generateAgentsMd, generateSharedPreCommitHook, nestedAgentsSurfaces } from '../lib/generators/opencode.js';
 import { generateCodexAgentsMd } from '../lib/generators/codex.js';
 import {
   generateKiroProduct, generateKiroStructure,
@@ -64,6 +64,24 @@ function writeFile(path: string, content: string, dryRun: boolean, force: boolea
   if (existsSync(path) && !force) return 'SKIP (usa --force para sobreescribir)';
   writeFileSync(path, content, 'utf-8');
   return 'OK';
+}
+
+/** Marcador que identifica los archivos que forge generó y puede regenerar. */
+const FORGE_MARKER = 'Generado por forge';
+
+/**
+ * Escribe un AGENTS.md anidado (scopes de monorepo). Si el archivo ya existe y
+ * NO contiene el marcador de forge, es un archivo escrito a mano: NUNCA se
+ * sobrescribe, ni siquiera con --force.
+ */
+function writeNestedAgentsMd(path: string, content: string, dryRun: boolean, force: boolean): string {
+  if (existsSync(path) && !readFileSync(path, 'utf-8').includes(FORGE_MARKER)) {
+    console.warn(yellow(
+      `  Aviso: ${path} existe y no fue generado por forge — se conserva sin cambios (ni --force lo sobrescribe).`,
+    ));
+    return 'SKIP (archivo manual, forge no lo sobrescribe)';
+  }
+  return writeFile(path, content, dryRun, force);
 }
 
 // Write an executable file (e.g. a git hook), chmod 0o755 so it can run.
@@ -162,6 +180,11 @@ export async function generate(args: string[]): Promise<number> {
         mkdirSync(join(root, '.opencode'), { recursive: true });
         const status = writeFile(join(root, 'AGENTS.md'), generateAgentsMd(config), dryRun, force);
         results.push({ runtime, file: 'AGENTS.md', status });
+        for (const s of nestedAgentsSurfaces(config)) {
+          const absPath = join(root, s.path);
+          if (!dryRun) mkdirSync(dirname(absPath), { recursive: true });
+          results.push({ runtime, file: s.path, status: writeNestedAgentsMd(absPath, s.content, dryRun, force) });
+        }
         results.push(writeSharedGitHook(root, runtime, dryRun, force));
         spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md + .githooks/');
 
@@ -169,6 +192,11 @@ export async function generate(args: string[]): Promise<number> {
         // codex: AGENTS.md + shared git hook fallback
         const status = writeFile(join(root, 'AGENTS.md'), generateCodexAgentsMd(config), dryRun, force);
         results.push({ runtime, file: 'AGENTS.md', status });
+        for (const s of nestedAgentsSurfaces(config)) {
+          const absPath = join(root, s.path);
+          if (!dryRun) mkdirSync(dirname(absPath), { recursive: true });
+          results.push({ runtime, file: s.path, status: writeNestedAgentsMd(absPath, s.content, dryRun, force) });
+        }
         results.push(writeSharedGitHook(root, runtime, dryRun, force));
         spinner.update(runtime, status.startsWith('SKIP') ? 'skip' : 'done', 'AGENTS.md + .githooks/');
 

@@ -6,6 +6,7 @@ import {
   assessSkill, demoteRiskyLines, type Assessment, type Finding,
 } from '../lib/skill-security.js';
 import { evalSkill, checkQualityGate } from '../lib/skill-eval.js';
+import { splitFrontmatter } from '../lib/unit-registry.js';
 
 const HELP = `Usage: forge add <source> [options]
 
@@ -78,7 +79,12 @@ function printReport(a: Assessment, label: string, sha: string): void {
   process.stdout.write('\n');
 }
 
-/** Builds the installed file: a provenance/scope header + demoted risky lines. */
+/**
+ * Builds the installed file: a provenance/scope header + demoted risky lines.
+ * If the skill ships YAML frontmatter (agentskills.io: it must open the file
+ * for the runtime to parse name/description), the header is inserted right
+ * after it — never before.
+ */
 function buildInstalled(a: Assessment, clean: string, label: string, sha: string): string {
   const caps = a.capabilities;
   const scope = caps
@@ -98,7 +104,10 @@ function buildInstalled(a: Assessment, clean: string, label: string, sha: string
     '',
   ].join('\n');
 
-  return header + '\n' + demoteRiskyLines(clean, a.findings) + '\n';
+  const demoted = demoteRiskyLines(clean, a.findings);
+  const { frontmatter: fm, body: rawBody } = splitFrontmatter(demoted);
+  const body = rawBody.replace(/^\r?\n/, '');
+  return fm + header + '\n' + body + '\n';
 }
 
 interface ExternalRecord {

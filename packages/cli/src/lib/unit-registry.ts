@@ -37,12 +37,39 @@ export interface ParityResult {
 // ── Parsing ──────────────────────────────────────────────────────────────────
 
 /**
+ * Fence del frontmatter YAML al inicio del documento. Fuente unica del regex
+ * (parseFrontmatter, splitFrontmatter, stripFrontmatter). Tolera CRLF
+ * (checkouts de Windows). Captura 1: contenido interno del frontmatter.
+ */
+const FRONTMATTER_FENCE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n)?/;
+
+/**
+ * Divide el documento en su bloque de frontmatter (fences incluidos, con el
+ * salto de linea de cierre) y el cuerpo restante. Si no hay fence valido,
+ * frontmatter es '' y body es el documento completo.
+ */
+export function splitFrontmatter(content: string): { frontmatter: string; body: string } {
+  const match = content.match(FRONTMATTER_FENCE);
+  if (!match) return { frontmatter: '', body: content };
+  return { frontmatter: match[0], body: content.slice(match[0].length) };
+}
+
+/**
+ * Quita el frontmatter YAML del inicio del documento (si existe) y los
+ * renglones en blanco que lo siguen. El frontmatter es metadata para el
+ * runtime; el cuerpo que consume el agente no debe incluirlo.
+ */
+export function stripFrontmatter(content: string): string {
+  return splitFrontmatter(content).body.replace(/^(?:[ \t]*\r?\n)+/, '');
+}
+
+/**
  * Reusa el contrato del frontmatter `---` ya presente en agentes/skills core.
  * Devuelve el objeto del frontmatter o {} si no hay fence valido.
  * Tolera CRLF (checkouts de Windows).
  */
 export function parseFrontmatter(content: string): Record<string, unknown> {
-  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  const match = content.match(FRONTMATTER_FENCE);
   if (!match) return {};
   try {
     const data = yaml.load(match[1]);

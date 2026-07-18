@@ -1,3 +1,8 @@
+---
+name: local2prod
+description: "Flujo completo de publicación a producción, compatible con Vercel, Railway, Fly.io, GitHub Actions y pipelines custom. Usar al hacer deploy; nunca dar una tarea por terminada sin el deploy en estado READY/SUCCESS."
+---
+
 # Skill: local2prod
 
 Flujo completo de publicación a producción. Compatible con Vercel, Railway, Fly.io,

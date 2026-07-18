@@ -1,3 +1,8 @@
+---
+name: wiki-lint
+description: "Verifica la integridad estructural del wiki: índice, links, huérfanos y salud general. Auto-repara lo que puede y reporta lo que necesita decisión humana. Usar al revisar la salud del wiki."
+---
+
 # Skill: wiki-lint
 
 Verifica la integridad estructural del wiki: índice, links, huérfanos y salud

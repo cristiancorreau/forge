@@ -1,3 +1,8 @@
+---
+name: wiki-ingest
+description: "Ingesta una fuente nueva en el wiki del proyecto: almacena el original en raw/, compila conocimiento en páginas wiki, actualiza el índice y registra la operación. Usar al incorporar documentos o fuentes al wiki."
+---
+
 # Skill: wiki-ingest
 
 Ingesta una fuente nueva en el wiki del proyecto. Almacena el original en `raw/`,

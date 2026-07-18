@@ -1,3 +1,8 @@
+---
+name: laravel-eloquent
+description: "Eloquent productivo en Laravel: relaciones, eager loading para evitar N+1, casts y accessors modernos, scopes, recorridos eficientes de datasets grandes y búsqueda vectorial con pgvector. Usar al escribir o revisar modelos, queries o migraciones de Eloquent."
+---
+
 # Skill: laravel-eloquent
 
 Eloquent productivo en Laravel: modelar relaciones, eager loading para evitar N+1, casts y

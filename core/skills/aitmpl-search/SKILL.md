@@ -1,3 +1,8 @@
+---
+name: aitmpl-search
+description: "Busca en el catálogo curado de forge: frameworks de agentes IA, MCP servers instalables, profiles de stack y herramientas. La búsqueda es offline (catálogo local). Usar al buscar templates, agentes o MCP servers en el catálogo."
+---
+
 # Skill: aitmpl-search
 
 Busca en el catálogo curado de forge: frameworks de agentes IA, MCP servers instalables,

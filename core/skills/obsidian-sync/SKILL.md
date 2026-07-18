@@ -1,3 +1,8 @@
+---
+name: obsidian-sync
+description: "Mantiene un vault de Obsidian sincronizado con el código del proyecto. Skill de integración: requiere Obsidian corriendo localmente con el plugin Local REST API. Usar al documentar cambios o sincronizar el vault."
+---
+
 # Skill: obsidian-sync
 
 Mantiene un vault de Obsidian sincronizado con el código del proyecto.

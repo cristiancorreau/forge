@@ -1,3 +1,8 @@
+---
+name: security-audit
+description: "Checklist de seguridad para endpoints de API y módulos que manejan autenticación, autorización o datos sensibles, agnóstico al stack. Usar al auditar seguridad o revisar endpoints sensibles."
+---
+
 # Skill: security-audit
 
 Checklist de seguridad para endpoints de API y módulos que manejan autenticación,
