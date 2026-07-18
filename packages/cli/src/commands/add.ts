@@ -6,6 +6,7 @@ import {
   assessSkill, demoteRiskyLines, type Assessment, type Finding,
 } from '../lib/skill-security.js';
 import { evalSkill, checkQualityGate } from '../lib/skill-eval.js';
+import { splitFrontmatter } from '../lib/unit-registry.js';
 
 const HELP = `Usage: forge add <source> [options]
 
@@ -104,9 +105,8 @@ function buildInstalled(a: Assessment, clean: string, label: string, sha: string
   ].join('\n');
 
   const demoted = demoteRiskyLines(clean, a.findings);
-  const fmMatch = demoted.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
-  const fm = fmMatch ? fmMatch[0] : '';
-  const body = demoted.slice(fm.length).replace(/^\r?\n/, '');
+  const { frontmatter: fm, body: rawBody } = splitFrontmatter(demoted);
+  const body = rawBody.replace(/^\r?\n/, '');
   return fm + header + '\n' + body + '\n';
 }
 

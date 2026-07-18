@@ -162,7 +162,13 @@ export function nestedAgentsSurfaces(config: ProjectYaml): Array<{ path: string;
   const scope = config.agents?.scope ?? {};
   const byDir = new Map<string, string[]>();
   for (const [agent, raw] of Object.entries(scope)) {
-    const dir = String(raw ?? '').trim()
+    // Normalizar separadores Windows ANTES del guard: sin esto, un scope
+    // '..\\..\\fuera' pasa el split('/') y path.join escribiría fuera de la
+    // raíz del proyecto en Windows.
+    const normalized = String(raw ?? '').trim().replace(/\\/g, '/');
+    // Rechazar drive letters (C:/x, C:x) — rutas absolutas de Windows.
+    if (/^[a-zA-Z]:/.test(normalized)) continue;
+    const dir = normalized
       .replace(/^\.\//, '')
       .replace(/^\/+/, '')
       .replace(/\/+$/, '');

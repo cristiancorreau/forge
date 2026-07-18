@@ -230,6 +230,116 @@ agents:
   });
 });
 
+// ── Nested AGENTS.md: guards de seguridad ────────────────────────────────────
+
+describe('SPEC-083 P1 — nested AGENTS.md: traversal y archivos manuales', () => {
+  test('nestedAgentsSurfaces rechaza traversal, separadores Windows y drive letters', async () => {
+    const { nestedAgentsSurfaces } = await import(
+      pathToFileURL(join(DIST, 'lib', 'generators', 'opencode.js')).href
+    );
+    const surfacesFor = (scope) => nestedAgentsSurfaces({
+      project: { name: 'x', mode: 'standard' },
+      agents: { active: Object.keys(scope), scope },
+    });
+
+    // Escapes que deben rechazarse: POSIX, Windows y mixtos.
+    for (const bad of [
+      '../../outside', '..', './..',
+      '..\\x', 'a\\..\\..\\b', '..\\..\\outside',
+      'C:\\x', 'C:/x', 'c:x',
+      '/', '', '.',
+    ]) {
+      assert.deepEqual(
+        surfacesFor({ 'backend-engineer': bad }), [],
+        `scope '${bad}' no debe emitir AGENTS.md anidado`,
+      );
+    }
+
+    // Casos legítimos: separador POSIX y separador Windows normalizado.
+    for (const good of ['apps/api', 'apps\\api', './apps/api/', '/apps/api']) {
+      const surfaces = surfacesFor({ 'backend-engineer': good });
+      assert.equal(surfaces.length, 1, `scope '${good}' debe emitir un anidado`);
+      assert.equal(surfaces[0].path, 'apps/api/AGENTS.md', `scope '${good}' debe normalizar a apps/api/AGENTS.md`);
+    }
+  });
+
+  test('generate con scopes maliciosos no escribe AGENTS.md fuera de los scopes válidos', (t) => {
+    const dir = makeTmpDir(t);
+    writeFileSync(join(dir, 'project.yaml'), `project:
+  name: "demo-evil"
+  slug: "demo-evil"
+  mode: standard
+agents:
+  active:
+    - backend-engineer
+    - frontend-engineer
+  scope:
+    backend-engineer: "..\\\\..\\\\outside"
+    frontend-engineer: "../../outside"
+`);
+    const res = runForge(['generate', '--runtime', 'opencode', '--force'], { cwd: dir });
+    assert.equal(res.status, 0, res.stderr || res.stdout);
+    assert.deepEqual(
+      findFilesNamed(dir, 'AGENTS.md'), [join(dir, 'AGENTS.md')],
+      'solo debe existir el AGENTS.md de la raíz',
+    );
+    assert.ok(!existsSync(join(dirname(dirname(dir)), 'outside')), 'no debe escribir fuera de la raíz');
+  });
+
+  for (const runtime of ['opencode', 'codex']) {
+    test(`generate --runtime ${runtime} --force: un AGENTS.md anidado escrito a mano NUNCA se sobrescribe`, (t) => {
+      const dir = makeTmpDir(t);
+      writeFileSync(join(dir, 'project.yaml'), `project:
+  name: "demo-manual"
+  slug: "demo-manual"
+  mode: standard
+agents:
+  active:
+    - backend-engineer
+  scope:
+    backend-engineer: apps/api
+`);
+      const manual = '# Guía interna del equipo API\n\nEscrita a mano, sin marcador de forge.\n';
+      mkdirSync(join(dir, 'apps', 'api'), { recursive: true });
+      writeFileSync(join(dir, 'apps', 'api', 'AGENTS.md'), manual);
+
+      const res = runForge(['generate', '--runtime', runtime, '--force'], { cwd: dir });
+      assert.equal(res.status, 0, res.stderr || res.stdout);
+      assert.equal(
+        readFileSync(join(dir, 'apps', 'api', 'AGENTS.md'), 'utf-8'), manual,
+        `${runtime}: --force no debe destruir un AGENTS.md manual`,
+      );
+      const out = res.stdout + res.stderr;
+      assert.ok(/manual/i.test(out), `${runtime}: debe avisar que el archivo manual se conserva`);
+    });
+
+    test(`generate --runtime ${runtime} --force: un AGENTS.md anidado generado por forge SÍ se regenera`, (t) => {
+      const dir = makeTmpDir(t);
+      writeFileSync(join(dir, 'project.yaml'), `project:
+  name: "demo-regen"
+  slug: "demo-regen"
+  mode: standard
+agents:
+  active:
+    - backend-engineer
+  scope:
+    backend-engineer: apps/api
+`);
+      mkdirSync(join(dir, 'apps', 'api'), { recursive: true });
+      writeFileSync(
+        join(dir, 'apps', 'api', 'AGENTS.md'),
+        '# Viejo\n\n> Generado por forge v2 (versión anterior).\n',
+      );
+
+      const res = runForge(['generate', '--runtime', runtime, '--force'], { cwd: dir });
+      assert.equal(res.status, 0, res.stderr || res.stdout);
+      const md = readFileSync(join(dir, 'apps', 'api', 'AGENTS.md'), 'utf-8');
+      assert.ok(md.includes('backend-engineer'), `${runtime}: el anidado con marcador debe regenerarse con --force`);
+      assert.ok(!md.includes('# Viejo'), `${runtime}: el contenido viejo debe reemplazarse`);
+    });
+  }
+});
+
 // ── Runtimes rules-based (los 15 del registro) ───────────────────────────────
 
 describe('SPEC-083 P1 — runtimes rules-based emiten markdown estándar', () => {
@@ -314,6 +424,29 @@ describe('SPEC-083 P1 — claude-code: CLAUDE.md, agentes y settings.json', () =
         for (const v of val) assert.equal(typeof v, 'string', `${label}: ${key} contiene un valor no-string`);
       }
     }
+  });
+
+  test('skills/mcpServers del frontmatter sobreviven la instalación (caso positivo, no vacuo)', () => {
+    // El fixture instala el profile laravel (backend: laravel), cuyo
+    // laravel-specialist declara skills y mcpServers en su markdown fuente.
+    // Este test garantiza que el check de arriba tiene un caso positivo real:
+    // si un emisor rompe esas claves (las pierde o las malforma), esto falla.
+    const path = join(projectDir, '.claude', 'agents', 'laravel-specialist.md');
+    assert.ok(existsSync(path), 'laravel-specialist.md no instalado por el profile laravel');
+    const fm = parseFrontmatter(readFileSync(path, 'utf-8'));
+
+    const toList = (v) => Array.isArray(v)
+      ? v.map(s => String(s).trim())
+      : String(v ?? '').split(',').map(s => s.trim()).filter(Boolean);
+
+    const skills = toList(fm.skills);
+    assert.ok(skills.length > 0, 'laravel-specialist debe declarar skills en el frontmatter instalado');
+    assert.ok(skills.includes('laravel-eloquent'), `skills no incluye laravel-eloquent: ${JSON.stringify(skills)}`);
+    for (const s of skills) assert.match(s, /^[a-z0-9]+(-[a-z0-9]+)*$/, `skill malformada: '${s}'`);
+
+    const servers = toList(fm.mcpServers);
+    assert.ok(servers.length > 0, 'laravel-specialist debe declarar mcpServers en el frontmatter instalado');
+    assert.ok(servers.includes('laravel-boost'), `mcpServers no incluye laravel-boost: ${JSON.stringify(servers)}`);
   });
 
   test('.claude/settings.json es JSON válido con el shape de Claude Code', () => {

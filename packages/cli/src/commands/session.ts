@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { resolveForgeRoot } from '../lib/paths.js';
+import { stripFrontmatter } from '../lib/unit-registry.js';
 import { bold, dim, cyan } from '../ui/colors.js';
 import { box } from '../ui/box.js';
 
@@ -34,18 +35,6 @@ Options:
   --json      Output the skill metadata and body as JSON
   -h, --help  Show this help
 `;
-}
-
-/**
- * Quita el frontmatter YAML (`---` ... `---`) del inicio del documento, si
- * existe. El frontmatter es metadata para el runtime (agentskills.io); el
- * cuerpo que consume el agente (terminal o --json) no debe incluirlo.
- * Tolera CRLF (checkouts de Windows).
- */
-function stripFrontmatter(md: string): string {
-  return md
-    .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
-    .replace(/^(?:[ \t]*\r?\n)+/, '');
 }
 
 /** Read the central SKILL.md body (sin frontmatter) for the given phase. */

@@ -3,6 +3,8 @@ name: laravel-specialist
 description: "Especialista estrella de Laravel. Eloquent + optimización de queries, auth (Sanctum/Fortify), colas con Horizon/Redis, eventos, API Resources + JSON:API, caching, Livewire/Filament, service layer y capacidades AI (AI SDK, MCP, Boost). Scope: app/."
 model: sonnet
 tools: Read, Grep, Glob, Bash, Edit, Write
+skills: laravel-eloquent, laravel-mcp, laravel-security
+mcpServers: laravel-boost
 tier: 2
 profile: laravel
 last_verified: "2026-06"

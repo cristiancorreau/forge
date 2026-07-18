@@ -213,3 +213,39 @@ skills:
     assert.deepEqual(tools, ['Read', 'Grep', 'Glob']);
   });
 });
+
+// ── splitFrontmatter / stripFrontmatter (helper único del fence '---') ───────
+
+describe('splitFrontmatter / stripFrontmatter', () => {
+  const DOC = '---\nname: demo\ndescription: x\n---\n\n# Título\n\ncuerpo\n';
+
+  test('splitFrontmatter separa fence y cuerpo', () => {
+    const { frontmatter, body } = R.splitFrontmatter(DOC);
+    assert.equal(frontmatter, '---\nname: demo\ndescription: x\n---\n');
+    assert.equal(body, '\n# Título\n\ncuerpo\n');
+    assert.equal(frontmatter + body, DOC, 'split debe ser sin pérdida');
+  });
+
+  test('splitFrontmatter sin fence devuelve el documento entero como body', () => {
+    const md = '# Sin frontmatter\n';
+    assert.deepEqual(R.splitFrontmatter(md), { frontmatter: '', body: md });
+  });
+
+  test('stripFrontmatter quita fence y blancos posteriores; tolera CRLF', () => {
+    assert.equal(R.stripFrontmatter(DOC), '# Título\n\ncuerpo\n');
+    assert.equal(
+      R.stripFrontmatter('---\r\nname: demo\r\n---\r\n\r\n# T\r\n'),
+      '# T\r\n',
+    );
+    assert.equal(R.stripFrontmatter('# Plano\n'), '# Plano\n');
+  });
+
+  test('parseFrontmatter y splitFrontmatter comparten el mismo contrato de fence', () => {
+    const fm = R.parseFrontmatter(DOC);
+    assert.equal(fm.name, 'demo');
+    // Un documento que parseFrontmatter no reconoce tampoco debe dividirse.
+    const noFence = 'texto\n---\nname: x\n---\n';
+    assert.deepEqual(R.parseFrontmatter(noFence), {});
+    assert.equal(R.splitFrontmatter(noFence).frontmatter, '');
+  });
+});
