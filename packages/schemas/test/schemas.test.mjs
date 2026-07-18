@@ -25,6 +25,7 @@ const {
   validateProject, validateHarness, validateTeam, validateTeamRole,
   validateTask, validateSession, validateApproval, validateEvent,
   validateProjectExport, parseProjectExport,
+  validateMcpPolicy, parseMcpPolicy,
   parseTask, SchemaValidationError, SCHEMAS, TASK_STATUSES,
 } = api;
 
@@ -108,16 +109,30 @@ const FIXTURES = {
     },
     validate: validateProjectExport,
   },
+  mcpPolicy: {
+    valid: {
+      schemaVersion: '1',
+      generatedBy: 'forge@3.11.0',
+      project: 'demo',
+      defaultPolicy: 'deny',
+      servers: [
+        { name: 'postgres', autoApprove: ['query'], timeoutMs: 30000 },
+        { name: 'github', autoApprove: [] },
+      ],
+      notes: 'Generado por forge (SPEC-083 P5).',
+    },
+    validate: validateMcpPolicy,
+  },
 };
 
 describe('convenciones de schema (Decisión 3 de SPEC-075)', () => {
-  test('hay exactamente 10 archivos *.schema.json con los nombres exactos', () => {
+  test('hay exactamente 11 archivos *.schema.json con los nombres exactos', () => {
     const files = readdirSync(SCHEMAS_DIR).filter((f) => f.endsWith('.schema.json')).sort();
     assert.deepEqual(files, [
       'approval.schema.json', 'common.schema.json', 'event.schema.json',
-      'export.schema.json', 'harness.schema.json', 'project.schema.json',
-      'session.schema.json', 'task.schema.json', 'team-role.schema.json',
-      'team.schema.json',
+      'export.schema.json', 'harness.schema.json', 'mcp-policy.schema.json',
+      'project.schema.json', 'session.schema.json', 'task.schema.json',
+      'team-role.schema.json', 'team.schema.json',
     ]);
   });
 
@@ -197,6 +212,34 @@ describe('validadores — casos negativos', () => {
   test('parseProjectExport(válido) retorna el objeto', () => {
     assert.deepEqual(parseProjectExport(FIXTURES.export.valid), FIXTURES.export.valid);
   });
+
+  test('validateMcpPolicy rechaza defaultPolicy: "allow"', () => {
+    assert.equal(validateMcpPolicy({ ...FIXTURES.mcpPolicy.valid, defaultPolicy: 'allow' }), false);
+  });
+
+  test('validateMcpPolicy rechaza schemaVersion: "2"', () => {
+    assert.equal(validateMcpPolicy({ ...FIXTURES.mcpPolicy.valid, schemaVersion: '2' }), false);
+  });
+
+  test('validateMcpPolicy rechaza generatedBy sin el formato forge@x.y.z', () => {
+    assert.equal(validateMcpPolicy({ ...FIXTURES.mcpPolicy.valid, generatedBy: 'otro-tool' }), false);
+  });
+
+  test('validateMcpPolicy rechaza un server sin autoApprove', () => {
+    const bad = structuredClone(FIXTURES.mcpPolicy.valid);
+    delete bad.servers[0].autoApprove;
+    assert.equal(validateMcpPolicy(bad), false);
+  });
+
+  test('validateMcpPolicy rechaza propiedad extra en un server', () => {
+    const bad = structuredClone(FIXTURES.mcpPolicy.valid);
+    bad.servers[0].env = { TOKEN: 'x' };
+    assert.equal(validateMcpPolicy(bad), false);
+  });
+
+  test('parseMcpPolicy(válido) retorna el objeto', () => {
+    assert.deepEqual(parseMcpPolicy(FIXTURES.mcpPolicy.valid), FIXTURES.mcpPolicy.valid);
+  });
 });
 
 describe('parse<X> y SchemaValidationError', () => {
@@ -223,10 +266,10 @@ describe('SCHEMAS crudos', () => {
     assert.deepEqual(JSON.parse(JSON.stringify(SCHEMAS.task)), file);
   });
 
-  test('SCHEMAS expone las 9 entidades', () => {
+  test('SCHEMAS expone las 10 entidades', () => {
     assert.deepEqual(Object.keys(SCHEMAS).sort(), [
-      'approval', 'event', 'export', 'harness', 'project', 'session', 'task',
-      'team', 'teamRole',
+      'approval', 'event', 'export', 'harness', 'mcpPolicy', 'project',
+      'session', 'task', 'team', 'teamRole',
     ]);
   });
 });

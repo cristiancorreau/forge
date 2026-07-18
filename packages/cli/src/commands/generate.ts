@@ -10,6 +10,7 @@ import {
   generateKiroBashCheckHook, generateKiroPostTurnHook
 } from '../lib/generators/kiro.js';
 import { getRuntime, runtimeIds, stateSurfaces } from '../lib/generators/registry.js';
+import { buildMcpPolicy, renderMcpPolicy, MCP_POLICY_FILE } from '../lib/mcp-policy.js';
 import { bold, dim, green, red, yellow, cyan, gray } from '../ui/colors.js';
 import { createSpinner } from '../ui/spinner.js';
 
@@ -288,6 +289,19 @@ export async function generate(args: string[]): Promise<number> {
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     results.push({ runtime: 'state', file: '.forge/state/', status: `ERROR: ${msg}` });
+  }
+
+  // Política MCP escaneable (SPEC-083 P5): emit .forge/mcp-policy.json once,
+  // derived from project.yaml (default-deny). Deterministic: no timestamps.
+  // Emitted even without mcp.servers (empty policy, defaultPolicy "deny").
+  try {
+    const policyPath = join(root, MCP_POLICY_FILE);
+    if (!dryRun) mkdirSync(dirname(policyPath), { recursive: true });
+    const status = writeFile(policyPath, renderMcpPolicy(buildMcpPolicy(config)), dryRun, force);
+    results.push({ runtime: 'mcp-policy', file: MCP_POLICY_FILE, status });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    results.push({ runtime: 'mcp-policy', file: MCP_POLICY_FILE, status: `ERROR: ${msg}` });
   }
 
   // Print final results table with colors

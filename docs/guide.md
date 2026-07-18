@@ -560,6 +560,48 @@ Expone:
 > `forge mcp` (sin subcomando) conserva su server mínimo con las dos tools
 > read-only `guardrail_status` y `wiki_search`.
 
+### Política MCP escaneable (SPEC-083 P5)
+
+`forge generate` emite `.forge/mcp-policy.json`: la política MCP **efectiva**
+del proyecto, derivada de `mcp.servers` en `project.yaml`. Es **default-deny**
+— toda tool no listada en `autoApprove` requiere aprobación — y determinista
+(sin timestamps: dos corridas producen bytes idénticos). Un orquestador
+(mingako) la consume para sandboxing y approval gates sin re-derivarla.
+
+```json
+{
+  "schemaVersion": "1",
+  "generatedBy": "forge@3.11.0",
+  "project": "demo",
+  "defaultPolicy": "deny",
+  "servers": [
+    { "name": "postgres", "autoApprove": ["query", "list_tables"] }
+  ]
+}
+```
+
+El archivo valida contra `mcp-policy.schema.json`
+(`forge://schemas/v4/mcp-policy` en `@cristiancorreau/forge-schemas`). Se
+emite incluso sin `mcp.servers` declarados (política vacía, `defaultPolicy`
+deny igualmente).
+
+`forge audit --mcp` escanea esa política:
+
+- **Schema**: el archivo valida contra `mcp-policy.schema.json`.
+- **Drift**: la política coincide con la derivada del `project.yaml` actual —
+  detecta ediciones a mano y políticas desactualizadas tras cambiar
+  `project.yaml` (error; regenerar con `forge generate --force`).
+- **Alcance**: `autoApprove` con `"*"`/`"all"` aprueba todo y contradice
+  default-deny (warn; listar tools explícitas).
+- **Presencia**: error si hay `mcp.servers` declarados y el archivo falta.
+
+Mismo contrato `--json` que `forge audit` (`schemaVersion: "1"`, `summary`,
+`issues[]`) y mismos exit codes (`0` sin errores, `1` con al menos un error):
+
+```bash
+npx @cristiancorreau/forge audit --mcp --json | jq -e '.summary.errors == 0'
+```
+
 ---
 
 ## Estructura del repo forge (referencia)

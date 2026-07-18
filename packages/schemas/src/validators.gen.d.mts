@@ -22,3 +22,4 @@ export declare const validateSession: ValidateFn;
 export declare const validateApproval: ValidateFn;
 export declare const validateEvent: ValidateFn;
 export declare const validateProjectExport: ValidateFn;
+export declare const validateMcpPolicy: ValidateFn;
