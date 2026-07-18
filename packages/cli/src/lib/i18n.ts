@@ -65,6 +65,7 @@ Inspect
   analyze        Analyze an existing codebase (stack, hotspots, TODOs) — base for the /onboard skill
   spec-probe     Probe a spec for verifiability (acceptance checklist, resolved status) — offline gate
   audit          Audit project against the forge standard
+  export         Emit the project's resolved model (agents, skills, MCP) — stable --json
   validate       Validate project.yaml schema (exit 1 on error, CI-safe)
   doctor         Check environment, installed runtimes and project.yaml completeness
   skills         List available forge skills grouped by category
@@ -116,6 +117,7 @@ Inspección
   analyze        Analiza un repo existente (stack, hotspots, TODOs) — base para el skill /onboard
   spec-probe     Evalúa si una spec es verificable (checklist de criterios, estado resuelto) — gate offline
   audit          Audita el proyecto contra el estándar forge
+  export         Emite el modelo resuelto del proyecto (agentes, skills, MCP) — --json estable
   validate       Valida el schema de project.yaml (exit 1 si falla, apto CI)
   doctor         Verifica el entorno, runtimes instalados y completitud de project.yaml
   skills         Lista los skills de forge agrupados por categoría

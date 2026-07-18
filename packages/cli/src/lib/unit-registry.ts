@@ -41,7 +41,7 @@ export interface ParityResult {
  * Devuelve el objeto del frontmatter o {} si no hay fence valido.
  * Tolera CRLF (checkouts de Windows).
  */
-function parseFrontmatter(content: string): Record<string, unknown> {
+export function parseFrontmatter(content: string): Record<string, unknown> {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return {};
   try {
