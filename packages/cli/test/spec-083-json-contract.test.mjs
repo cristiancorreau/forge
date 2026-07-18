@@ -121,6 +121,43 @@ describe('SPEC-083 P2 — forge export --json', () => {
     assert.equal(validate(model), true, JSON.stringify(validate.errors, null, 2));
   });
 
+  test('round-trip (SPEC-083 P2): export → generate --force → export emite el mismo JSON', (t) => {
+    const dir = makeFixtureProject(t);
+    const first = runForge(['export', '--json'], { cwd: dir });
+    assert.equal(first.status, 0, first.stderr);
+
+    const gen = runForge(['generate', '--force'], { cwd: dir });
+    assert.equal(gen.status, 0, gen.stderr);
+
+    const second = runForge(['export', '--json'], { cwd: dir });
+    assert.equal(second.status, 0, second.stderr);
+    assert.equal(
+      second.stdout, first.stdout,
+      'el modelo exportado es estable tras regenerar (project.yaml → export → generate → export)',
+    );
+  });
+
+  test('project.yaml con name vacío y runtime vacío: fallback y filtrado, valida contra el schema', (t) => {
+    const dir = makeTmpDir(t);
+    writeFileSync(join(dir, 'project.yaml'), `project:
+  name: ""
+runtimes:
+  active:
+    - ""
+    - claude-code
+`);
+    const res = runForge(['export', '--json'], { cwd: dir });
+    assert.equal(res.status, 0, res.stderr);
+    const model = JSON.parse(res.stdout);
+    assert.equal(model.project.name, '(sin nombre)', 'name vacío cae al placeholder');
+    assert.deepEqual(model.project.runtimes, ['claude-code'], 'ids de runtime vacíos filtrados');
+
+    const schema = JSON.parse(readFileSync(EXPORT_SCHEMA_PATH, 'utf-8'));
+    const ajv = new Ajv({ allErrors: true, strict: false });
+    const validate = ajv.compile(schema);
+    assert.equal(validate(model), true, JSON.stringify(validate.errors, null, 2));
+  });
+
   test('sin project.yaml sale 1 con mensaje en stderr', (t) => {
     const dir = makeTmpDir(t);
     const res = runForge(['export', '--json'], { cwd: dir });

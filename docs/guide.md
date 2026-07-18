@@ -510,6 +510,13 @@ mingako) puede consumirlas sin parsear texto humano.
 > el comando. `audit` y `doctor` ya usaban `1` para "hallazgos/checks fallidos";
 > esa convención se mantiene por compatibilidad (no se usa `2`).
 
+**Round-trip estable**: el manifiesto de `forge export --json` depende solo de
+`project.yaml` y de los archivos instalados, no de cuándo se generaron. La
+secuencia `project.yaml → export → forge generate --force → export` produce el
+mismo JSON byte a byte; un orquestador puede cachear el manifiesto y
+regenerar superficies sin invalidarlo. El contrato lo fija el test de
+round-trip en `packages/cli/test/spec-083-json-contract.test.mjs`.
+
 Ejemplos:
 
 ```bash

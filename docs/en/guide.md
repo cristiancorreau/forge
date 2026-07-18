@@ -510,6 +510,13 @@ can consume them without parsing human-oriented text.
 > `audit` and `doctor` already used `1` for "findings/failed checks"; that
 > convention is kept for compatibility (no `2` is used).
 
+**Stable round-trip**: the `forge export --json` manifest depends only on
+`project.yaml` and the installed files, not on when they were generated. The
+sequence `project.yaml → export → forge generate --force → export` yields the
+same JSON byte for byte; an orchestrator can cache the manifest and regenerate
+surfaces without invalidating it. The contract is pinned by the round-trip test
+in `packages/cli/test/spec-083-json-contract.test.mjs`.
+
 Examples:
 
 ```bash

@@ -86,8 +86,9 @@ export function buildExportModel(root: string = process.cwd()): ProjectExportMod
   const config = loadProjectYaml(yamlPath);
   const projectRoot = dirname(yamlPath);
 
-  const runtimes = config.runtimes?.active ?? [];
-  const profiles = config.agents?.profiles ?? [];
+  // Normaliza listas de ids: el schema exige strings con minLength 1.
+  const runtimes = (config.runtimes?.active ?? []).map(r => String(r).trim()).filter(Boolean);
+  const profiles = (config.agents?.profiles ?? []).map(p => String(p).trim()).filter(Boolean);
   const scopeMap = config.agents?.scope ?? {};
 
   // Agentes instalados: .claude/agents/*.md, frontmatter resuelto.
@@ -148,7 +149,7 @@ export function buildExportModel(root: string = process.cwd()): ProjectExportMod
   const model: ProjectExportModel = {
     schemaVersion: EXPORT_SCHEMA_VERSION,
     project: {
-      name: config.project?.name ?? '(sin nombre)',
+      name: (config.project?.name ?? '').trim() || '(sin nombre)',
       path: projectRoot,
       ...(config.project?.mode ? { mode: config.project.mode } : {}),
       runtimes,
