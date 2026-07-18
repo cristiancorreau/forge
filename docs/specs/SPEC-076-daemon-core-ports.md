@@ -1,10 +1,12 @@
 # SPEC-076 daemon-core — puertos, dominio puro, modelo de datos y migraciones
 
-> Estado: APPROVED
+> Estado: APPROVED — TRANSFERIDA A MINGAKO (2026-07-18)
 > Responsable: forge maintainers
 > Creada: 2026-07-05 | Actualizada: 2026-07-05
 > Deriva de: SPEC-074 (spec maestro FORGE v4) — secciones "Puertos del dominio" y "Modelo de datos"
 > Depende de: SPEC-075 (paquete `schemas`) para los tipos de entidades
+
+> **Replanteo 2026-07-18 — split forge ↔ mingako**: daemon-core es dominio puro de orquestación y pasa entero a mingako. El código packages/daemon-core permanece en forge solo hasta el transplante; al transplantarlo se retira del workspace y del job test-v4-packages de CI en el mismo PR. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
 ## Contexto
 

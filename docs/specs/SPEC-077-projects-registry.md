@@ -1,8 +1,10 @@
 # SPEC-077 Registro multi-proyecto + CLI forge projects
 
-> Estado: APPROVED
+> Estado: APPROVED — REPLANTEADA (2026-07-18)
 > Responsable: forge maintainers
 > Creada: 2026-07-05 | Actualizada: 2026-07-05
+
+> **Replanteo 2026-07-18 — split forge ↔ mingako**: el registro SQLite con watcher y API HTTP se diseñó para el daemon y pasa a mingako; el trabajo parcial de implementación quedó archivado en el branch archive/v4-fase1-for-mingako (no mergear en forge). Forge evaluará por separado un `forge projects` liviano sin daemon (JSON plano) solo si muestra uso real. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
 Deriva de: SPEC-074 (spec maestro v4), componente "Registro multi-proyecto", Fase 1.
 Depende de: SPEC-075 (`packages/schemas`) y SPEC-076 (`packages/daemon-core`: puertos, modelo de datos, migraciones). Esta spec **no redefine** ningún contrato de sus dependencias: los extiende de forma aditiva o los compone.

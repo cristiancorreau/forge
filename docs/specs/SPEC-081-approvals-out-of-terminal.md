@@ -1,10 +1,12 @@
 # SPEC-081 Aprobaciones fuera de la terminal (hooks PreToolUse + servidor MCP)
 
-> Estado: APPROVED
+> Estado: APPROVED — DIVIDIDA (2026-07-18)
 > Responsable: forge maintainers
 > Creada: 2026-07-05 | Actualizada: 2026-07-05
 > Deriva de: SPEC-074 (spec maestro v4), componente "Aprobaciones fuera de la terminal" — Fase 3
 > Depende de: SPEC-075 (schemas), SPEC-076 (daemon-core), SPEC-078 (daemon). La UI que renderiza las cards es de SPEC-082; esta spec define el contrato completo que esa UI consume.
+
+> **Replanteo 2026-07-18 — split forge ↔ mingako**: forge es dueño del instalador (hook pre-approval-gate.js fail-open, hooks-registry.yaml, clave approvals.enabled en project.yaml, supervivencia a forge generate); el circuito de aprobación (endpoint del daemon, packages/mcp con ask_user, UI, resolución) pasa a mingako. El contrato ApprovalRequest/Resolution y el shape de ~/.forge/daemon.json son compartidos vía schemas. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
 
 ## Contexto
 
