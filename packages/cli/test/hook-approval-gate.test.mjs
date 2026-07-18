@@ -17,7 +17,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
-import { copyFileSync, mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -131,7 +131,8 @@ async function withFakeDaemon(t, handler, fn) {
   const port = server.address().port;
   const home = makeTmpDir(t);
   writeDaemonJson(home, {
-    pid: 4321, port, token: TOKEN, startedAt: new Date().toISOString(),
+    // pid vivo (este proceso): el hook verifica liveness antes de conectar.
+    pid: process.pid, port, token: TOKEN, startedAt: new Date().toISOString(),
   });
   await fn(home, port);
 }
@@ -163,11 +164,29 @@ describe('pre-approval-gate — fail-open sin daemon (SPEC-083 P6)', () => {
   test('daemon caído (puerto cerrado): exit 0', async (t) => {
     const home = makeTmpDir(t);
     writeDaemonJson(home, {
-      pid: 1, port: 1, token: TOKEN, startedAt: new Date().toISOString(),
+      pid: process.pid, port: 1, token: TOKEN, startedAt: new Date().toISOString(),
     });
     const { status, stdout } = await runGate(home);
     assert.equal(status, 0);
     assert.equal(stdout, '');
+  });
+
+  test('daemon.json stale (pid muerto): exit 0 sin conectar, aunque el puerto esté ocupado', async (t) => {
+    // Un proceso local malicioso podría bindear el puerto de un daemon muerto
+    // para capturar el token: el hook debe descartar el daemon.json si el pid
+    // declarado no vive, sin siquiera conectar.
+    let requests = 0;
+    await withFakeDaemon(t, () => { requests += 1; }, async (home) => {
+      const child = spawn(process.execPath, ['-e', ''], { stdio: 'ignore' });
+      const deadPid = child.pid;
+      await new Promise(resolve => child.on('exit', resolve));
+      const daemon = JSON.parse(readFileSync(join(home, '.forge', 'daemon.json'), 'utf-8'));
+      writeDaemonJson(home, { ...daemon, pid: deadPid });
+      const { status, stdout } = await runGate(home);
+      assert.equal(status, 0, 'fail-open con pid muerto');
+      assert.equal(stdout, '');
+      assert.equal(requests, 0, 'no debe conectar al puerto de un daemon muerto');
+    });
   });
 
   test('stdin vacío: exit 0', async (t) => {

@@ -100,8 +100,15 @@ function discoverDaemon() {
   if (!data || typeof data !== 'object') return null;
   const port = data.port;
   const token = data.token;
+  const pid = data.pid;
   if (!Number.isInteger(port) || port < 1 || port > 65535) return null;
   if (typeof token !== 'string' || token === '') return null;
+  // Liveness: un daemon.json stale (daemon muerto sin limpiar el archivo)
+  // dejaria el puerto libre para que cualquier proceso local lo ocupe y
+  // reciba el bearer token + tool_input. Si el pid declarado no vive,
+  // fail-open sin conectar. (kill(pid, 0) no envia senal: solo comprueba.)
+  if (!Number.isInteger(pid) || pid < 1) return null;
+  try { process.kill(pid, 0); } catch { return null; }
   return { host: '127.0.0.1', port, token };
 }
 
