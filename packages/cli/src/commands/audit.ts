@@ -15,8 +15,12 @@ Audit a project against the forge standard. Checks installed agents,
 hooks, runtime config, and project.yaml completeness.
 
 Options:
-  --json      Output results as JSON
+  --json      Output results as JSON (schemaVersion "1": summary + issues)
   -h, --help  Show this help
+
+Exit codes:
+  0  auditoría sin errores (puede haber warnings/info)
+  1  auditoría con al menos un error
 `;
 
 export interface AuditIssue {
@@ -448,6 +452,7 @@ export async function audit(args: string[]): Promise<number> {
 
   if (jsonMode) {
     console.log(JSON.stringify({
+      schemaVersion: '1',
       summary: { errors, warnings, ok, info },
       issues,
     }, null, 2));

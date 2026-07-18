@@ -41,6 +41,10 @@ Options:
   --force      Overwrite existing files without prompting
   -h, --help   Show this help
 
+Exit codes:
+  0  port/report generado (con --json: matriz emitida)
+  1  error de ejecución (runtime desconocido, sin project.yaml, generate falló)
+
 Classification:
   portable  Same artifact serves every runtime, untouched (project.yaml, docs/specs/, MCP)
   adapted   Regenerated automatically per runtime; same semantics, native format
@@ -99,9 +103,9 @@ export async function port(args: string[]): Promise<number> {
   const projectName = config.project.name ?? 'Proyecto';
   const matrix = portabilityMatrix(config, descriptor);
 
-  // Machine-readable: emit and stop.
+  // Machine-readable: emit and stop. schemaVersion "1" + la matriz estable.
   if (jsonMode) {
-    process.stdout.write(JSON.stringify(matrix, null, 2) + '\n');
+    process.stdout.write(JSON.stringify({ schemaVersion: '1', ...matrix }, null, 2) + '\n');
     return 0;
   }
 

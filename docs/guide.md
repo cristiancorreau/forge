@@ -36,8 +36,9 @@ La CLI expone los siguientes comandos. Todos corren sobre Node/Bun (Node.js 20+)
 | `forge init` | Wizard interactivo que genera `project.yaml` e instala agentes, comandos y skills. Al terminar abre un **dashboard post-install** interactivo. | — |
 | `forge generate` | Regenera la configuración nativa de cada runtime activo a partir de `project.yaml`. | `--runtime <id>`, `--dry-run`, `--force` |
 | `forge audit` | Audita los agentes del proyecto contra forge (frontmatter, secciones, similitud, oportunidades). | `--json`, `--only <agente>` |
+| `forge export` | Emite el **modelo resuelto** del proyecto (agentes + tools + skills + comandos + MCP servers por runtime). Con `--json` valida contra `export.schema.json` de `@cristiancorreau/forge-schemas`. | `--json` |
 | `forge validate` | Valida la estructura y el esquema de `project.yaml`. | `--json` |
-| `forge doctor` | Detecta los runtimes instalados (binario + versión) y valida `project.yaml` v2. | — |
+| `forge doctor` | Detecta los runtimes instalados (binario + versión) y valida `project.yaml` v2. | `--json` |
 | `forge migrate` | Migra `project.yaml` de v1 a v2. | `--dry-run`, `--backup` |
 | `forge wiki` | Gestiona el wiki del proyecto. | `status`, `ingest <file>`, `query <q>`, `lint` |
 | `forge skills` | Lista las 14 skills disponibles agrupadas por categoría. | `--json`, `--active` |
@@ -488,6 +489,46 @@ subcomandos no interactivos directamente:
 ```yaml
 - name: Audit forge agents
   run: npx @cristiancorreau/forge audit --json | jq -e '.summary.errors == 0'
+```
+
+### Contrato JSON y exit codes (SPEC-083)
+
+Los comandos de inspección aceptan `--json` con salida **versionada y estable**:
+todas incluyen el campo `schemaVersion: "1"`. Un orquestador externo (p. ej.
+mingako) puede consumirlas sin parsear texto humano.
+
+| Comando | Claves estables del `--json` | Exit codes |
+|---------|------------------------------|------------|
+| `forge export --json` | Modelo resuelto completo — valida contra `export.schema.json` (`forge://schemas/v4/export` en `@cristiancorreau/forge-schemas`): `project`, `agents[]`, `commands[]`, `skills[]`, `mcpServers[]`, `perRuntime` | `0` export generado · `1` error de ejecución (sin `project.yaml` o inválido) |
+| `forge audit --json` | `summary {errors, warnings, ok, info}`, `issues[] {level, check, message}` | `0` sin errores de auditoría · `1` con al menos un error |
+| `forge doctor --json` | `ok`, `nodeVersion`, `forgeRootOk`, `assetsOk`, `projectYaml`, `configMode`, `runtimes[] {id, installed, version, active}` | `0` entorno sano (`ok: true`) · `1` algún check falló |
+| `forge recommend --json` | `stack {language, backend, frontend, …}`, `recommendations[] {type, id, label, installable, why, signal}` | `0` recomendaciones emitidas · `1` error de ejecución o instalación fallida |
+| `forge port <runtime> --json` | Matriz de portabilidad: `target`, `targetLabel`, `surfaces[]`, `dimensions[] {id, portability}`, `summary {portable, adapted, vendor, total}` | `0` matriz emitida · `1` error de ejecución (runtime desconocido, sin `project.yaml`) |
+| `forge validate --json` | `valid`, `errors[]`, `warnings[]` | `0` válido · `1` inválido |
+
+> Convención general: `0` = ok, `1` = error de ejecución o hallazgos que fallan
+> el comando. `audit` y `doctor` ya usaban `1` para "hallazgos/checks fallidos";
+> esa convención se mantiene por compatibilidad (no se usa `2`).
+
+**Round-trip estable**: el manifiesto de `forge export --json` depende solo de
+`project.yaml` y de los archivos instalados, no de cuándo se generaron. La
+secuencia `project.yaml → export → forge generate --force → export` produce el
+mismo JSON byte a byte; un orquestador puede cachear el manifiesto y
+regenerar superficies sin invalidarlo. El contrato lo fija el test de
+round-trip en `packages/cli/test/spec-083-json-contract.test.mjs`.
+
+Ejemplos:
+
+```bash
+# Manifiesto resuelto del proyecto (agentes, skills, MCP por runtime)
+npx @cristiancorreau/forge export --json > forge-export.json
+
+# ¿El proyecto está sano antes de lanzar un team de agentes?
+npx @cristiancorreau/forge doctor --json | jq -e '.ok'
+npx @cristiancorreau/forge audit --json | jq -e '.summary.errors == 0'
+
+# ¿Cuánta config sobrevive un cambio de runtime?
+npx @cristiancorreau/forge port codex --json | jq '.summary'
 ```
 
 ---

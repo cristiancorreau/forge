@@ -27,8 +27,12 @@ Options:
   --export <file>        Escribe el RecommendBundle como JSON a <file>
   --apply [file]         Sin argumento: instala las recos en vivo. Con <file>: lee
                          el bundle JSON y aplica solo los items installable:true
-  --json                 Salida como JSON (recos en vivo)
+  --json                 Salida como JSON (schemaVersion "1": stack + recommendations)
   -h, --help             Muestra esta ayuda
+
+Exit codes:
+  0  recomendaciones emitidas (o aplicadas sin fallos)
+  1  error de ejecución (flags inválidos, bundle ilegible) o instalación fallida
 
 Examples:
   forge recommend
@@ -280,6 +284,7 @@ export async function recommend(args: string[]): Promise<number> {
     console.log(
       JSON.stringify(
         {
+          schemaVersion: '1',
           stack: {
             language: result.stack.language,
             backend: result.stack.backend,

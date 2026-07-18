@@ -35,6 +35,7 @@ const ENTITIES = [
   ['session', 'Session', 'session.schema.json'],
   ['approval', 'Approval', 'approval.schema.json'],
   ['event', 'Event', 'event.schema.json'],
+  ['export', 'ProjectExport', 'export.schema.json'],
 ];
 
 const readSchema = (file) => JSON.parse(readFileSync(join(SCHEMAS_DIR, file), 'utf-8'));

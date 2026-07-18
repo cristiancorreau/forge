@@ -1,7 +1,8 @@
 # @cristiancorreau/forge-schemas
 
 Contratos neutrales del dominio FORGE v4 (SPEC-075): `Project`, `Harness`,
-`Team`, `TeamRole`, `Task`, `Session`, `Approval`, `Event`.
+`Team`, `TeamRole`, `Task`, `Session`, `Approval`, `Event`, más el manifiesto
+`ProjectExport` de `forge export --json` (SPEC-083, `$id: forge://schemas/v4/export`).
 
 - **Fuente de verdad**: `schemas/*.schema.json` (JSON Schema draft-07, a mano).
 - **Generados** (no editar): `src/types.gen.ts`, `src/validators.gen.mjs`,

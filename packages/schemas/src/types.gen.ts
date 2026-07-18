@@ -110,6 +110,46 @@ export interface Event {
   payload?: {};
 }
 
+/**
+ * Modelo resuelto de un proyecto forge, emitido por `forge export --json` (SPEC-083 P2). Manifiesto machine-readable que un orquestador (mingako) puede consumir para inyectar agentes, skills y MCP servers en su runtime.
+ */
+export interface ProjectExport {
+  schemaVersion: "1";
+  project: {
+    name: string;
+    path: string;
+    mode?: string;
+    runtimes: string[];
+    profiles: string[];
+  };
+  agents: {
+    name: string;
+    description: string;
+    scope?: string;
+    tools?: string[];
+    model?: string;
+    skills?: string[];
+    mcpServers?: string[];
+    sourceFile: string;
+  }[];
+  commands: {
+    name: string;
+    sourceFile: string;
+  }[];
+  skills: string[];
+  mcpServers: {
+    name: string;
+    autoApprove?: string[];
+  }[];
+  perRuntime?: {
+    [k: string]: {
+      label: string;
+      kind: "native" | "rules";
+      surfaces: string[];
+    };
+  };
+}
+
 // Union types de enums, derivados de las entidades (única fuente: schemas/)
 export type TaskStatus = Task['status'];
 export type SessionStatus = Session['status'];

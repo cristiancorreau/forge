@@ -24,6 +24,7 @@ const api = await import('../dist/index.js');
 const {
   validateProject, validateHarness, validateTeam, validateTeamRole,
   validateTask, validateSession, validateApproval, validateEvent,
+  validateProjectExport, parseProjectExport,
   parseTask, SchemaValidationError, SCHEMAS, TASK_STATUSES,
 } = api;
 
@@ -87,15 +88,36 @@ const FIXTURES = {
     valid: { id: 1, ts: NOW, kind: 'task.created', entity: 'task', entityId: ID.task },
     validate: validateEvent,
   },
+  export: {
+    valid: {
+      schemaVersion: '1',
+      project: { name: 'demo', path: '/tmp/demo', mode: 'standard', runtimes: ['claude-code'], profiles: [] },
+      agents: [{
+        name: 'backend-engineer',
+        description: 'Implementa el backend',
+        tools: ['Read', 'Edit'],
+        model: 'sonnet',
+        sourceFile: '.claude/agents/backend-engineer.md',
+      }],
+      commands: [{ name: 'plan', sourceFile: '.claude/commands/plan.md' }],
+      skills: ['audit'],
+      mcpServers: [{ name: 'postgres', autoApprove: ['query'] }],
+      perRuntime: {
+        'claude-code': { label: 'Claude Code', kind: 'native', surfaces: ['CLAUDE.md'] },
+      },
+    },
+    validate: validateProjectExport,
+  },
 };
 
 describe('convenciones de schema (Decisión 3 de SPEC-075)', () => {
-  test('hay exactamente 9 archivos *.schema.json con los nombres exactos', () => {
+  test('hay exactamente 10 archivos *.schema.json con los nombres exactos', () => {
     const files = readdirSync(SCHEMAS_DIR).filter((f) => f.endsWith('.schema.json')).sort();
     assert.deepEqual(files, [
       'approval.schema.json', 'common.schema.json', 'event.schema.json',
-      'harness.schema.json', 'project.schema.json', 'session.schema.json',
-      'task.schema.json', 'team-role.schema.json', 'team.schema.json',
+      'export.schema.json', 'harness.schema.json', 'project.schema.json',
+      'session.schema.json', 'task.schema.json', 'team-role.schema.json',
+      'team.schema.json',
     ]);
   });
 
@@ -155,6 +177,26 @@ describe('validadores — casos negativos', () => {
   test('validateEvent rechaza kind: "TaskCreated"', () => {
     assert.equal(validateEvent({ ...FIXTURES.event.valid, kind: 'TaskCreated' }), false);
   });
+
+  test('validateProjectExport rechaza schemaVersion: "2"', () => {
+    assert.equal(validateProjectExport({ ...FIXTURES.export.valid, schemaVersion: '2' }), false);
+  });
+
+  test('validateProjectExport rechaza un agente sin sourceFile', () => {
+    const bad = structuredClone(FIXTURES.export.valid);
+    delete bad.agents[0].sourceFile;
+    assert.equal(validateProjectExport(bad), false);
+  });
+
+  test('validateProjectExport rechaza perRuntime con kind desconocido', () => {
+    const bad = structuredClone(FIXTURES.export.valid);
+    bad.perRuntime['claude-code'].kind = 'daemon';
+    assert.equal(validateProjectExport(bad), false);
+  });
+
+  test('parseProjectExport(válido) retorna el objeto', () => {
+    assert.deepEqual(parseProjectExport(FIXTURES.export.valid), FIXTURES.export.valid);
+  });
 });
 
 describe('parse<X> y SchemaValidationError', () => {
@@ -181,9 +223,10 @@ describe('SCHEMAS crudos', () => {
     assert.deepEqual(JSON.parse(JSON.stringify(SCHEMAS.task)), file);
   });
 
-  test('SCHEMAS expone las 8 entidades', () => {
+  test('SCHEMAS expone las 9 entidades', () => {
     assert.deepEqual(Object.keys(SCHEMAS).sort(), [
-      'approval', 'event', 'harness', 'project', 'session', 'task', 'team', 'teamRole',
+      'approval', 'event', 'export', 'harness', 'project', 'session', 'task',
+      'team', 'teamRole',
     ]);
   });
 });

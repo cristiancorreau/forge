@@ -36,8 +36,9 @@ The CLI exposes the following commands. They all run on Node/Bun (Node.js 20+).
 | `forge init` | Interactive wizard that generates `project.yaml` and installs agents, commands, and skills. When it finishes, it opens an interactive **post-install dashboard**. | — |
 | `forge generate` | Regenerates the native configuration of each active runtime from `project.yaml`. | `--runtime <id>`, `--dry-run`, `--force` |
 | `forge audit` | Audits the project's agents against forge (frontmatter, sections, similarity, opportunities). | `--json`, `--only <agente>` |
+| `forge export` | Emits the project's **resolved model** (agents + tools + skills + commands + MCP servers per runtime). With `--json` it validates against `export.schema.json` from `@cristiancorreau/forge-schemas`. | `--json` |
 | `forge validate` | Validates the structure and schema of `project.yaml`. | `--json` |
-| `forge doctor` | Detects installed runtimes (binary + version) and validates `project.yaml` v2. | — |
+| `forge doctor` | Detects installed runtimes (binary + version) and validates `project.yaml` v2. | `--json` |
 | `forge migrate` | Migrates `project.yaml` from v1 to v2. | `--dry-run`, `--backup` |
 | `forge wiki` | Manages the project wiki. | `status`, `ingest <file>`, `query <q>`, `lint` |
 | `forge skills` | Lists the 14 available skills grouped by category. | `--json`, `--active` |
@@ -488,6 +489,46 @@ non-interactive subcommands directly:
 ```yaml
 - name: Audit forge agents
   run: npx @cristiancorreau/forge audit --json | jq -e '.summary.errors == 0'
+```
+
+### JSON contract and exit codes (SPEC-083)
+
+The inspection commands accept `--json` with **versioned, stable** output: every
+payload includes `schemaVersion: "1"`. An external orchestrator (e.g. mingako)
+can consume them without parsing human-oriented text.
+
+| Command | Stable `--json` keys | Exit codes |
+|---------|----------------------|------------|
+| `forge export --json` | Full resolved model — validates against `export.schema.json` (`forge://schemas/v4/export` in `@cristiancorreau/forge-schemas`): `project`, `agents[]`, `commands[]`, `skills[]`, `mcpServers[]`, `perRuntime` | `0` export emitted · `1` execution error (missing/invalid `project.yaml`) |
+| `forge audit --json` | `summary {errors, warnings, ok, info}`, `issues[] {level, check, message}` | `0` no audit errors · `1` at least one error |
+| `forge doctor --json` | `ok`, `nodeVersion`, `forgeRootOk`, `assetsOk`, `projectYaml`, `configMode`, `runtimes[] {id, installed, version, active}` | `0` healthy (`ok: true`) · `1` some check failed |
+| `forge recommend --json` | `stack {language, backend, frontend, …}`, `recommendations[] {type, id, label, installable, why, signal}` | `0` recommendations emitted · `1` execution error or failed install |
+| `forge port <runtime> --json` | Portability matrix: `target`, `targetLabel`, `surfaces[]`, `dimensions[] {id, portability}`, `summary {portable, adapted, vendor, total}` | `0` matrix emitted · `1` execution error (unknown runtime, missing `project.yaml`) |
+| `forge validate --json` | `valid`, `errors[]`, `warnings[]` | `0` valid · `1` invalid |
+
+> General convention: `0` = ok, `1` = execution error or failing findings.
+> `audit` and `doctor` already used `1` for "findings/failed checks"; that
+> convention is kept for compatibility (no `2` is used).
+
+**Stable round-trip**: the `forge export --json` manifest depends only on
+`project.yaml` and the installed files, not on when they were generated. The
+sequence `project.yaml → export → forge generate --force → export` yields the
+same JSON byte for byte; an orchestrator can cache the manifest and regenerate
+surfaces without invalidating it. The contract is pinned by the round-trip test
+in `packages/cli/test/spec-083-json-contract.test.mjs`.
+
+Examples:
+
+```bash
+# Resolved project manifest (agents, skills, MCP per runtime)
+npx @cristiancorreau/forge export --json > forge-export.json
+
+# Is the project healthy before launching an agent team?
+npx @cristiancorreau/forge doctor --json | jq -e '.ok'
+npx @cristiancorreau/forge audit --json | jq -e '.summary.errors == 0'
+
+# How much config survives a runtime switch?
+npx @cristiancorreau/forge port codex --json | jq '.summary'
 ```
 
 ---

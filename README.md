@@ -177,7 +177,7 @@ Full detail in [docs/en/tiers.md](docs/en/tiers.md).
 
 ## Commands
 
-The 17 CLI commands.
+The 18 CLI commands.
 
 | Command | What it does |
 |---------|----------|
@@ -190,6 +190,7 @@ The 17 CLI commands.
 | `forge doctor` | Environment health-check: Node.js, git, active AI runtime, permissions. |
 | `forge migrate` | Migrates `project.yaml` from schema v1 to v2 (`--dry-run`, `--backup`). |
 | `forge audit` | Verifies the project against the manifest; detects modified or missing files. |
+| `forge export` | Emits the project's resolved model (agents, skills, commands, MCP servers) as stable JSON (`--json`, validates against `export.schema.json`). |
 | `forge scaffold` | Generates a new agent: Tier 2 profile or Tier 3 domain agent. |
 | `forge teardown` | Cleanly uninstalls forge from the project via the manifest (`--dry-run`, `--keep-config`). |
 | `forge skills` | Lists the available skills grouped by category. |

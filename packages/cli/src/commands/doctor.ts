@@ -8,6 +8,20 @@ import { box } from '../ui/box.js';
 import { RUNTIMES } from '../lib/catalog.js';
 import type { ProjectYaml } from '../lib/yaml.js';
 
+const HELP = `Usage: forge doctor [options]
+
+Chequea el entorno: Node.js, assets de forge, runtimes instalados y
+completitud del project.yaml v2.
+
+Options:
+  --json      Salida como JSON (schemaVersion "1": ok, runtimes, project.yaml)
+  -h, --help  Muestra esta ayuda
+
+Exit codes:
+  0  entorno sano (ok: true)
+  1  al menos un check falló (ok: false)
+`;
+
 interface RuntimeProbe {
   installed: boolean;
   version?: string;
@@ -135,7 +149,19 @@ function probeRuntime(cmd: string[]): RuntimeProbe {
   }
 }
 
-export async function doctor(_args: string[]): Promise<number> {
+export async function doctor(args: string[]): Promise<number> {
+  if (args.includes('-h') || args.includes('--help')) {
+    process.stdout.write(HELP);
+    return 0;
+  }
+
+  // --json: reporte estructurado estable (SPEC-083 P3), mismo exit code que el modo humano.
+  if (args.includes('--json')) {
+    const report = runDoctor(process.cwd());
+    console.log(JSON.stringify({ schemaVersion: '1', ...report }, null, 2));
+    return report.ok ? 0 : 1;
+  }
+
   let ok = true;
   const lines: string[] = [];
 

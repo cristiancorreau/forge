@@ -5,6 +5,7 @@ import { add } from './commands/add.js';
 import { evalCmd } from './commands/eval.js';
 import { specProbe } from './commands/spec-probe.js';
 import { audit } from './commands/audit.js';
+import { exportCmd } from './commands/export.js';
 import { analyze } from './commands/analyze.js';
 import { generate } from './commands/generate.js';
 import { port } from './commands/port.js';
@@ -56,6 +57,9 @@ switch (cmd) {
     break;
   case 'audit':
     exitCode = await audit(rest);
+    break;
+  case 'export':
+    exitCode = await exportCmd(rest);
     break;
   case 'analyze':
     exitCode = await analyze(rest);
@@ -130,4 +134,7 @@ switch (cmd) {
     exitCode = 1;
 }
 
-process.exit(exitCode);
+// Drena stdout antes de salir: process.exit() directo trunca salidas grandes
+// (p. ej. --json > 8KB por pipe). El callback corre cuando todo lo escrito
+// antes ya fue flusheado (los writes de un stream son FIFO).
+process.stdout.write('', () => process.exit(exitCode));
