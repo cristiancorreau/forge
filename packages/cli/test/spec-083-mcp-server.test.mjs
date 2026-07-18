@@ -183,6 +183,67 @@ describe('SPEC-083 P4 — forge mcp serve (stdio)', () => {
     assert.ok(!existsSync(join(dir, 'CLAUDE.md')), 'dry-run no escribe CLAUDE.md');
   });
 
+  test('paths.specs fuera del root no expone archivos externos (confinamiento)', async (t) => {
+    const parent = makeTmpDir(t);
+    const dir = join(parent, 'proyecto');
+    mkdirSync(dir, { recursive: true });
+    // .md sensible FUERA del proyecto, hermano del root.
+    mkdirSync(join(parent, 'outside'), { recursive: true });
+    writeFileSync(join(parent, 'outside', 'SPEC-999-privado.md'), '# SPEC-999\n\nSECRETO-FUERA-DEL-ROOT\n');
+    // project.yaml malicioso: paths.specs escapa del root con `..`.
+    writeFileSync(join(dir, 'project.yaml'), `project:
+  name: "demo"
+  mode: standard
+paths:
+  specs: ../outside
+`);
+    const client = await connectClient(t, dir);
+    const { resources } = await client.listResources();
+    const uris = resources.map(r => r.uri);
+    assert.ok(!uris.some(u => u.startsWith('forge://specs/')), `no debe listar specs externas: ${uris}`);
+    await assert.rejects(
+      client.readResource({ uri: 'forge://specs/SPEC-999' }),
+      /desconocido|no se pudo/,
+      'leer una spec fuera del root debe fallar',
+    );
+  });
+
+  test('cerrar stdin (shutdown MCP estándar) termina el proceso con exit 0', async (t) => {
+    const dir = makeFixtureProject(t);
+    const child = spawn(process.execPath, [CLI, 'mcp', 'serve'], {
+      cwd: dir,
+      env: { ...process.env, FORGE_HOME: '' },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    t.after(() => { try { child.kill('SIGKILL'); } catch { /* ya salió */ } });
+
+    let stdout = '';
+    child.stdout.on('data', d => { stdout += d.toString(); });
+    child.stdin.write(JSON.stringify({
+      jsonrpc: '2.0', id: 1, method: 'initialize',
+      params: {
+        protocolVersion: '2025-06-18',
+        capabilities: {},
+        clientInfo: { name: 'shutdown-test', version: '1.0.0' },
+      },
+    }) + '\n');
+
+    // Espera la respuesta al initialize y luego cierra stdin (como hará mingako).
+    await new Promise((resolve, reject) => {
+      const deadline = setTimeout(() => reject(new Error(`timeout — stdout: ${stdout}`)), 15000);
+      child.stdout.on('data', () => {
+        if (stdout.includes('"id":1')) { clearTimeout(deadline); resolve(); }
+      });
+    });
+    child.stdin.end();
+
+    const code = await new Promise((resolve, reject) => {
+      const deadline = setTimeout(() => reject(new Error('el server no salió tras cerrar stdin')), 15000);
+      child.on('exit', c => { clearTimeout(deadline); resolve(c); });
+    });
+    assert.equal(code, 0, `exit code tras cerrar stdin debe ser 0, fue ${code}`);
+  });
+
   test('--dir expone un proyecto distinto del cwd', async (t) => {
     const dir = makeFixtureProject(t);
     const elsewhere = makeTmpDir(t);

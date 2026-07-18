@@ -15,8 +15,8 @@
  * Este módulo se carga con import() dinámico desde `forge mcp` para que el
  * SDK de MCP no pese en el cold-start del resto de la CLI.
  */
-import { existsSync, readFileSync, readdirSync } from 'fs';
-import { join, resolve, dirname, basename } from 'path';
+import { existsSync, readFileSync, readdirSync, realpathSync } from 'fs';
+import { join, resolve, dirname, basename, sep } from 'path';
 import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -69,7 +69,19 @@ function specId(file: string): string {
   return m ? m[1].toUpperCase() : base;
 }
 
-/** Lista las specs del proyecto (docs/specs/ o config.paths.specs). */
+/** true si `path` es `root` o un descendiente de `root`. */
+function isInsideRoot(root: string, path: string): boolean {
+  return path === root || path.startsWith(root + sep);
+}
+
+/**
+ * Lista las specs del proyecto (docs/specs/ o config.paths.specs).
+ *
+ * Confinamiento: `paths.specs` viene de project.yaml (dato del repo, que puede
+ * ser hostil en un clon ajeno), así que un valor con `..`, absoluto o con
+ * symlinks no puede exponer archivos de FUERA del root del proyecto por MCP.
+ * Se compara sobre realpath para cubrir symlinks, por directorio y por archivo.
+ */
 function listSpecs(root: string): SpecEntry[] {
   let specsRel = 'docs/specs';
   const yamlPath = findProjectYaml(root);
@@ -78,15 +90,34 @@ function listSpecs(root: string): SpecEntry[] {
       specsRel = loadProjectYaml(yamlPath).paths?.specs ?? specsRel;
     } catch { /* project.yaml inválido: usar el default */ }
   }
-  const dir = join(root, specsRel);
+  const dir = resolve(root, specsRel);
   if (!existsSync(dir)) return [];
+  let rootReal: string;
+  let dirReal: string;
+  try {
+    rootReal = realpathSync(root);
+    dirReal = realpathSync(dir);
+  } catch {
+    return [];
+  }
+  if (!isInsideRoot(rootReal, dirReal)) {
+    process.stderr.write(`forge mcp serve: paths.specs apunta fuera del proyecto (${specsRel}); no se exponen specs.\n`);
+    return [];
+  }
   const seen = new Set<string>();
   const out: SpecEntry[] = [];
-  for (const f of readdirSync(dir).filter(f => f.endsWith('.md')).sort()) {
+  for (const f of readdirSync(dirReal).filter(f => f.endsWith('.md')).sort()) {
+    const file = join(dirReal, f);
+    try {
+      // Symlink individual que escapa del root: tampoco se expone.
+      if (!isInsideRoot(rootReal, realpathSync(file))) continue;
+    } catch {
+      continue;
+    }
     const id = specId(f);
     if (seen.has(id)) continue; // primera spec con ese id gana (orden estable)
     seen.add(id);
-    out.push({ uri: `forge://specs/${id}`, name: id, file: join(dir, f) });
+    out.push({ uri: `forge://specs/${id}`, name: id, file });
   }
   return out;
 }
@@ -408,6 +439,10 @@ export async function mcpServe(args: string[]): Promise<number> {
 
   return await new Promise<number>((resolvePromise) => {
     transport.onclose = () => resolvePromise(0);
+    // Shutdown estándar de MCP por stdio: el cliente cierra nuestro stdin.
+    // El transport del SDK no escucha 'end', así que sin este handler la
+    // Promise quedaría sin resolver y Node saldría con código 13.
+    process.stdin.on('end', () => resolvePromise(0));
     process.on('SIGINT', () => resolvePromise(0));
     process.on('SIGTERM', () => resolvePromise(0));
   });
