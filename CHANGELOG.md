@@ -7,6 +7,24 @@ Versioning: [Semantic Versioning](https://semver.org/lang/es/)
 
 ---
 
+## [3.12.0] — 2026-07-18
+
+### Agregado
+- **Capa de compatibilidad con orquestadores (SPEC-083, P1–P6 completos)** — forge se consolida como generador de configuración cuya salida puede heredar y consumir cualquier orquestador de agentes, con contratos congelados desde esta versión:
+  - **`forge export --json`** — el modelo resuelto del proyecto (agentes + tools + skills + MCP servers por runtime) como manifiesto machine-readable validado por `export.schema.json`. Determinista byte a byte, stdout JSON puro, apto para pipelines headless.
+  - **`--json` + exit codes estables** en `audit`, `recommend`, `doctor` y `port` (`schemaVersion: "1"` top-level, claves solo aditivas).
+  - **Suite de conformidad de salida estándar** — el output de `forge generate` se valida en CI contra los estándares que los orquestadores heredan: AGENTS.md, skills (agentskills.io: 19 skills del bundle ganaron frontmatter conforme), frontmatter completo de `.claude/agents/`. Incluye hardening de AGENTS.md anidados: guard de traversal con separadores Windows y protección de archivos escritos a mano (nunca se sobrescriben, ni con `--force`).
+  - **`forge mcp serve`** — server MCP completo por stdio: resources (`forge://specs/<ID>`, `forge://project/export`, `forge://project/audit`), prompts (agentes y comandos del proyecto + catálogo) y tools (`forge_audit`, `forge_recommend`, `forge_generate`). Root único verificado, confinamiento realpath, stdout limpio de protocolo.
+  - **`.forge/mcp-policy.json` + `forge audit --mcp`** — la política MCP efectiva (default-deny) como artefacto escaneable con schema; el escáner detecta drift (edición manual → error), `autoApprove` demasiado amplio y ausencia del archivo con servers declarados.
+  - **Instalador de approvals (mitad forge de SPEC-081)** — hook PreToolUse `pre-approval-gate.cjs` fail-open (loopback-only, verificación de vida del pid, token jamás en logs), instalado por `approvals.enabled: true` en project.yaml y sobreviviente a `forge generate`. Contrato del circuito en schemas: `approval-request`, `approval-resolution`, `daemon-discovery`.
+- **`@cristiancorreau/forge-schemas` 0.1.0 publish-ready** — 11 JSON Schemas (draft-07, generación idempotente) con los JSON crudos en el pack; los 5 schemas de frontera (`export`, `mcp-policy`, `approval-request`, `approval-resolution`, `daemon-discovery`) quedan **congelados bajo SemVer**: cualquier cambio rompe versión, nunca muta en silencio.
+
+### Corregido
+- **stdout truncado en pipes >8KB** — `process.exit()` directo cortaba salidas `--json` grandes (lo disparaba `audit --json`); ahora stdout se drena antes de salir. Sin esto los contratos JSON eran inutilizables para un orquestador.
+- **Roadmap v4 replanteado** — el plano de control (daemon, sesiones, web UI) pasa al proyecto orquestador; SPEC-074..082 marcadas (transferidas/divididas/replanteadas) con notas de frontera: puerto `41414`, `/api/v1` y `~/.forge/daemon.json` describen el daemon TS standalone. Ver `docs/analysis/forge-mingako-replanteo-2026-07.md` y SPEC-083.
+
+---
+
 ## [3.11.0] — 2026-06-14
 
 ### Agregado
