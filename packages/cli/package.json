@@ -1,6 +1,6 @@
 {
   "name": "@cristiancorreau/forge",
-  "version": "3.11.0",
+  "version": "3.12.0",
   "description": "Forge AI — agentic development framework with multi-runtime support for 19 AI coding runtimes (Claude Code, OpenCode, Codex, Kiro + 15 rules-based editors)",
   "author": "Cristian Correa <cristian@socialweb.cl>",
   "license": "Apache-2.0",
