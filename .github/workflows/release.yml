@@ -45,9 +45,12 @@ jobs:
           bun-version: latest
 
       # Node provides npm for publishing with provenance (Bun has no equivalent).
+      # Node 22 here: npm@latest (needed for OIDC Trusted Publishing) dropped
+      # Node 20 support — v3.12.0's publish failed with `notsup` on 20.20.2.
+      # Node 20 compatibility is covered by the test matrix, not the publisher.
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies (Bun, frozen lockfile)
